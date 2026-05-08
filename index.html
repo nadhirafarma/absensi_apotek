@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
 
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>ABSENSI AI APOTEK</title>
 
@@ -15,68 +13,39 @@ content="width=device-width, initial-scale=1.0">
 <style>
 
 body{
-
   margin:0;
   padding:0;
-
   background:#eef2f7;
-
-  font-family:Arial,sans-serif;
-
+  font-family:Arial;
   display:flex;
-
   justify-content:center;
-
   align-items:center;
-
   height:100vh;
-
 }
 
 .card{
-
   width:420px;
-
   background:white;
-
   border-radius:25px;
-
   padding:25px;
-
   text-align:center;
-
   box-shadow:0 10px 30px rgba(0,0,0,0.1);
-
 }
 
 h1{
-
   color:#1e3a8a;
-
-  margin-bottom:20px;
-
 }
 
 video{
-
   width:100%;
-
   border-radius:20px;
-
   background:black;
-
 }
 
 #status{
-
   margin-top:20px;
-
-  font-size:18px;
-
+  font-size:20px;
   font-weight:bold;
-
-  color:#444;
-
 }
 
 </style>
@@ -87,85 +56,61 @@ video{
 
 <div class="card">
 
-<h1>
-ABSENSI AI APOTEK
-</h1>
+<h1>ABSENSI AI APOTEK</h1>
 
-<video
-  id="video"
-  autoplay
-  muted
-  playsinline>
-</video>
+<video id="video" autoplay muted playsinline></video>
 
 <div id="status">
-
 ⏳ Loading AI...
-
 </div>
 
 </div>
 
 <script>
 
-const video =
-document.getElementById("video");
+const video = document.getElementById("video");
+const statusText = document.getElementById("status");
 
-const statusText =
-document.getElementById("status");
-
-async function loadModels(){
-
-  statusText.innerHTML =
-  "🧠 Loading AI model...";
-
-  await faceapi.nets.tinyFaceDetector
-  .loadFromUri('./models');
-
-  await faceapi.nets.faceLandmark68Net
-  .loadFromUri('./models');
-
-  await faceapi.nets.faceRecognitionNet
-  .loadFromUri('./models');
-
-  statusText.innerHTML =
-  "✅ AI berhasil dimuat";
-
-  startCamera();
-
-}
-
-async function startCamera(){
+async function start(){
 
   try{
 
+    statusText.innerHTML =
+    "🧠 Loading AI Model...";
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
+
+    statusText.innerHTML =
+    "📸 Membuka kamera...";
+
     const stream =
     await navigator.mediaDevices.getUserMedia({
-
-      video:true,
-      audio:false
-
+      video:true
     });
 
     video.srcObject = stream;
 
     statusText.innerHTML =
-    "📸 Kamera aktif";
+    "✅ AI Aktif & Kamera Menyala";
 
   }
 
-  catch(error){
+  catch(err){
 
-    console.log(error);
+    console.log(err);
 
     statusText.innerHTML =
-    "❌ Kamera gagal dibuka";
+    "❌ ERROR: " + err.message;
 
   }
 
 }
 
-loadModels();
+window.onload = start;
 
 </script>
 
