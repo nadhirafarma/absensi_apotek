@@ -178,7 +178,8 @@ async function startRecognition(){
 
     if(detections.length > 0){
 
-      const bestMatch = faceMatcher.findBestMatch(
+      const bestMatch =
+      faceMatcher.findBestMatch(
         detections[0].descriptor
       );
 
