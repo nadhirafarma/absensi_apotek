@@ -263,10 +263,17 @@ audio.play();
   );
 
 const hasil =
-await response.text();
+await response.json();
 
 statusText.innerHTML =
-"✅ " + hasil;
+"✅ ABSEN BERHASIL";
+
+setTimeout(()=>{
+
+  statusText.innerHTML =
+  "🎉 SELAMAT BEKERJA " + nama;
+
+},2000);
 
 }
 
