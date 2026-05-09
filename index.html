@@ -202,7 +202,13 @@ async function startRecognition(){
 
       statusText.innerHTML =
       "👤 " + bestMatch.toString();
+  if(bestMatch.label !== "unknown"){
 
+  kirimAbsensi(
+    bestMatch.label
+  );
+
+}
     }
 
   },1000);
@@ -252,19 +258,21 @@ async function kirimAbsensi(nama){
     }
   );
 
-  const hasil =
-  await response.text();
+const hasil =
+await response.text();
 
-  statusText.innerHTML =
-"👤 " + bestMatch.toString();
+statusText.innerHTML =
+"✅ " + hasil;
 
-if(bestMatch.label !== "unknown"){
-
-  kirimAbsensi(
-    bestMatch.label
-  );
 }
-}
+
+window.onload = async ()=>{
+
+  await start();
+
+  await startRecognition();
+
+};
 window.onload = async ()=>{
 
   await start();
