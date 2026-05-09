@@ -142,6 +142,7 @@ async function loadLabeledImages(){
       )
       .withFaceLandmarks()
       .withFaceDescriptor();
+      console.log(label, detections);
 
       return new faceapi.LabeledFaceDescriptors(
         label,
