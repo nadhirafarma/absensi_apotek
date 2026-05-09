@@ -135,19 +135,29 @@ async function loadLabeledImages(){
       );
 
       const detections =
-      await faceapi
-      .detectSingleFace(
-        img,
-        new faceapi.TinyFaceDetectorOptions()
-      )
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-      console.log(label, detections);
+await faceapi
+.detectSingleFace(
+  img,
+  new faceapi.TinyFaceDetectorOptions()
+)
+.withFaceLandmarks()
+.withFaceDescriptor();
 
-      return new faceapi.LabeledFaceDescriptors(
-        label,
-        [detections.descriptor]
-      );
+console.log(label);
+console.log(detections);
+
+      if(!detections){
+
+  console.log("GAGAL DETEKSI:", label);
+
+  return null;
+
+}
+
+return new faceapi.LabeledFaceDescriptors(
+  label,
+  [detections.descriptor]
+);
 
     })
 
@@ -158,7 +168,8 @@ async function loadLabeledImages(){
 async function startRecognition(){
 
   const labeledDescriptors =
-  await loadLabeledImages();
+(await loadLabeledImages())
+.filter(x => x !== null);
 
   faceMatcher =
   new faceapi.FaceMatcher(
