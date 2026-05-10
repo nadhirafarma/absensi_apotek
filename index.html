@@ -736,6 +736,28 @@ color:#00aa55;
 margin-bottom:30px;
 ">
 🎉 Selamat bekerja
+<button
+onclick="tutupAplikasi()"
+style="
+margin-top:25px;
+padding:14px 30px;
+border:none;
+border-radius:15px;
+background:
+linear-gradient(
+90deg,
+#ff008c,
+#4f46e5
+);
+color:white;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:
+0 0 20px rgba(255,0,170,0.4);
+">
+❌ Keluar Aplikasi
+</button>
 </p>
 
 <button onclick="window.location.href='https://yolanalfarel.github.io/absensi-ai-apotek/'" style="
@@ -849,7 +871,73 @@ await start();
 await startRecognition();
 
 };
+function tutupAplikasi(){
 
+  // MATIKAN KAMERA
+  if(video.srcObject){
+
+    video.srcObject
+    .getTracks()
+    .forEach(track => track.stop());
+
+  }
+
+  // TAMPILAN KELUAR
+  document.body.innerHTML = `
+
+  <div style="
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:
+  linear-gradient(
+    135deg,
+    #ffe4f6,
+    #e6f0ff
+  );
+  font-family:Arial;
+  ">
+
+    <div style="
+    background:white;
+    padding:40px;
+    border-radius:35px;
+    text-align:center;
+    box-shadow:
+    0 0 40px rgba(255,0,170,0.2);
+    width:85%;
+    max-width:350px;
+    ">
+
+      <div style="
+      font-size:90px;
+      ">
+        👋
+      </div>
+
+      <h1 style="
+      color:#4f46e5;
+      margin-top:10px;
+      ">
+        TERIMA KASIH
+      </h1>
+
+      <p style="
+      color:#666;
+      font-size:18px;
+      line-height:1.7;
+      ">
+        Sampai jumpa kembali
+      </p>
+
+    </div>
+
+  </div>
+
+  `;
+
+}
 </script>
 
 </body>
