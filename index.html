@@ -178,6 +178,63 @@ top:100%;
 /* AI GRID */
 
 .face-grid{
+  /* FACE AI SCAN */
+
+.face-scan{
+position:absolute;
+inset:0;
+pointer-events:none;
+}
+
+/* TITIK AI */
+
+.face-dot{
+position:absolute;
+width:10px;
+height:10px;
+border-radius:50%;
+
+background:#00ffee;
+
+box-shadow:
+0 0 15px #00ffee,
+0 0 25px #00ffee;
+
+animation:pulseDot 1.5s infinite;
+}
+
+/* POSISI TITIK */
+
+.dot1{top:28%;left:50%;}
+.dot2{top:38%;left:38%;}
+.dot3{top:38%;left:62%;}
+.dot4{top:50%;left:50%;}
+.dot5{top:60%;left:42%;}
+.dot6{top:60%;left:58%;}
+.dot7{top:72%;left:50%;}
+.dot8{top:48%;left:32%;}
+.dot9{top:48%;left:68%;}
+
+/* ANIMASI */
+
+@keyframes pulseDot{
+
+0%{
+transform:scale(0.8);
+opacity:0.5;
+}
+
+50%{
+transform:scale(1.4);
+opacity:1;
+}
+
+100%{
+transform:scale(0.8);
+opacity:0.5;
+}
+
+}
 position:absolute;
 inset:0;
 
@@ -308,6 +365,18 @@ playsinline>
 <div class="scan"></div>
 
 <div class="face-grid"></div>
+
+<div class="face-scan">
+<div class="face-dot dot1"></div>
+<div class="face-dot dot2"></div>
+<div class="face-dot dot3"></div>
+<div class="face-dot dot4"></div>
+<div class="face-dot dot5"></div>
+<div class="face-dot dot6"></div>
+<div class="face-dot dot7"></div>
+<div class="face-dot dot8"></div>
+<div class="face-dot dot9"></div>
+</div>
 
 </div>
 
@@ -669,7 +738,7 @@ margin-bottom:30px;
 🎉 Selamat bekerja
 </p>
 
-<button onclick="location.reload()" style="
+<button onclick="window.location.href='https://yolanalfarel.github.io/absensi-ai-apotek/'" style="
 padding:15px 28px;
 border:none;
 border-radius:18px;
