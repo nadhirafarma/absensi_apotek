@@ -1089,8 +1089,9 @@ margin-bottom:35px;
 🎉 Selamat bekerja
 </p>
 
-<a
-href="#terimakasih"
+<button
+onclick="tutupAplikasi()"
+
 style="
 margin-top:35px;
 
@@ -1106,6 +1107,8 @@ align-items:center;
 margin-left:auto;
 margin-right:auto;
 
+border:none;
+
 border-radius:24px;
 
 background:
@@ -1117,28 +1120,24 @@ linear-gradient(
 
 color:white;
 
-font-size:18px;
+font-size:20px;
 font-weight:700;
 
-white-space:nowrap;
+cursor:pointer;
 
 box-shadow:
 0 12px 35px rgba(255,0,170,0.35);
 
-text-decoration:none;
-
 -webkit-tap-highlight-color:transparent;
 
 touch-action:manipulation;
-
-user-select:none;
 "
 
 >
 
 ❌ KELUAR APLIKASI
 
-</a>
+</button>
 
 </div>
 
@@ -1234,132 +1233,40 @@ await startRecognition();
 };
 function tutupAplikasi(){
 
-  document.body.innerHTML = `
+document.body.innerHTML = `
 
-  <div style="
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:
-  linear-gradient(
-    135deg,
-    #fff0f7,
-    #edf4ff
-  );
-  font-family:Poppins;
-  overflow:hidden;
-  ">
-
-    <div style="
-    background:rgba(255,255,255,0.7);
-    backdrop-filter:blur(20px);
-
-    padding:45px 35px;
-
-    border-radius:40px;
-
-    text-align:center;
-
-    width:90%;
-    max-width:380px;
-
-    box-shadow:
-    0 10px 40px rgba(0,0,0,0.1),
-    0 0 25px #ff00aa33,
-    0 0 25px #0055ff33;
-    ">
-
-      <div style="
-      font-size:100px;
-      margin-bottom:15px;
-
-      animation:wave 1s infinite;
-      ">
-        👋
-      </div>
-
-      <h1 style="
-      font-size:38px;
-      font-weight:700;
-
-      margin-bottom:18px;
-
-      background:
-      linear-gradient(
-        90deg,
-        #0055ff,
-        #ff00aa
-      );
-
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      ">
-        TERIMA KASIH
-      </h1>
-
-      <p style="
-      font-size:20px;
-      color:#555;
-      line-height:1.8;
-      margin-bottom:10px;
-      ">
-        Sampai jumpa kembali 👋
-      </p>
-
-      <p style="
-      font-size:16px;
-      color:#888;
-      ">
-        Absensi berhasil tersimpan
-      </p>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
-window.addEventListener("hashchange", ()=>{
-
-if(location.hash === "#terimakasih"){
-
-document
-.getElementById("terimakasih")
-.style.display = "flex";
-
-}
-
-});  
-</script>
-<div id="terimakasih" style="
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
+<div style="
 height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+
 background:
 linear-gradient(
 135deg,
 #fff0f7,
 #edf4ff
 );
-justify-content:center;
-align-items:center;
-z-index:999999;
+
 font-family:Poppins;
 padding:20px;
+overflow:hidden;
 ">
 
 <div style="
-background:white;
+background:rgba(255,255,255,0.8);
+
+backdrop-filter:blur(25px);
+
 padding:45px 35px;
+
 border-radius:40px;
+
 text-align:center;
-max-width:380px;
+
 width:100%;
+max-width:380px;
+
 box-shadow:
 0 10px 40px rgba(0,0,0,0.1),
 0 0 25px #ff00aa33,
@@ -1367,11 +1274,57 @@ box-shadow:
 ">
 
 <div style="
-font-size:100px;
-margin-bottom:15px;
+font-size:110px;
+margin-bottom:20px;
+animation:wave 1s infinite;
 ">
 👋
 </div>
+
+<h1 style="
+font-size:40px;
+font-weight:700;
+
+margin-bottom:18px;
+
+background:
+linear-gradient(
+90deg,
+#0055ff,
+#ff00aa
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+">
+TERIMA KASIH
+</h1>
+
+<p style="
+font-size:22px;
+color:#555;
+line-height:1.8;
+margin-bottom:10px;
+">
+Sampai jumpa kembali 👋
+</p>
+
+<p style="
+font-size:16px;
+color:#888;
+">
+Absensi berhasil tersimpan
+</p>
+
+</div>
+
+</div>
+
+`;
+
+}
+  
+</script>
 
 <h1 style="
 font-size:38px;
