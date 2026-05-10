@@ -854,23 +854,28 @@ margin-bottom:35px;
 </p>
 
 <div
-onclick="location.reload()"
+ontouchstart="tutupAplikasi()"
+onclick="tutupAplikasi()"
 style="
+margin-top:35px;
+
+width:340px;
+height:72px;
+
 display:flex;
 justify-content:center;
 align-items:center;
 
-text-decoration:none;
-text-align:center;
+margin-left:auto;
+margin-right:auto;
 
-padding:18px 30px;
+border-radius:24px;
 
-border-radius:20px;
-
-background:linear-gradient(
-135deg,
-#0055ff,
-#ff008c
+background:
+linear-gradient(
+90deg,
+#2140ff,
+#ff00a8
 );
 
 color:white;
@@ -878,14 +883,13 @@ color:white;
 font-size:20px;
 font-weight:700;
 
-width:100%;
+white-space:nowrap;
 
-min-height:70px;
-
-margin-top:10px;
+box-shadow:
+0 12px 35px rgba(255,0,170,0.35);
 
 position:relative;
-z-index:999999999;
+z-index:9999999999;
 
 pointer-events:auto;
 
@@ -896,18 +900,11 @@ touch-action:manipulation;
 user-select:none;
 
 cursor:pointer;
+"
 
-transform:translateZ(0);
-
-box-shadow:
-0 0 30px rgba(255,0,170,0.45);
-">
+>
 
 ❌ KELUAR APLIKASI
-
-</div>
-
-</div>
 
 </div>
 
@@ -999,7 +996,95 @@ await start();
 await startRecognition();
 
 };
+function tutupAplikasi(){
 
+  document.body.innerHTML = `
+
+  <div style="
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:
+  linear-gradient(
+    135deg,
+    #fff0f7,
+    #edf4ff
+  );
+  font-family:Poppins;
+  overflow:hidden;
+  ">
+
+    <div style="
+    background:rgba(255,255,255,0.7);
+    backdrop-filter:blur(20px);
+
+    padding:45px 35px;
+
+    border-radius:40px;
+
+    text-align:center;
+
+    width:90%;
+    max-width:380px;
+
+    box-shadow:
+    0 10px 40px rgba(0,0,0,0.1),
+    0 0 25px #ff00aa33,
+    0 0 25px #0055ff33;
+    ">
+
+      <div style="
+      font-size:100px;
+      margin-bottom:15px;
+
+      animation:wave 1s infinite;
+      ">
+        👋
+      </div>
+
+      <h1 style="
+      font-size:38px;
+      font-weight:700;
+
+      margin-bottom:18px;
+
+      background:
+      linear-gradient(
+        90deg,
+        #0055ff,
+        #ff00aa
+      );
+
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      ">
+        TERIMA KASIH
+      </h1>
+
+      <p style="
+      font-size:20px;
+      color:#555;
+      line-height:1.8;
+      margin-bottom:10px;
+      ">
+        Sampai jumpa kembali 👋
+      </p>
+
+      <p style="
+      font-size:16px;
+      color:#888;
+      ">
+        Absensi berhasil tersimpan
+      </p>
+
+    </div>
+
+  </div>
+
+  `;
+
+}
 </script>
 
 </body>
