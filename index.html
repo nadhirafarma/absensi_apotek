@@ -853,10 +853,10 @@ margin-bottom:35px;
 
 </p>
 
-<div
-ontouchstart="tutupAplikasi()"
-onclick="tutupAplikasi()"
+<button
+id="btnKeluar"
 style="
+
 margin-top:35px;
 
 width:340px;
@@ -868,6 +868,8 @@ align-items:center;
 
 margin-left:auto;
 margin-right:auto;
+
+border:none;
 
 border-radius:24px;
 
@@ -888,23 +890,15 @@ white-space:nowrap;
 box-shadow:
 0 12px 35px rgba(255,0,170,0.35);
 
-position:relative;
-z-index:9999999999;
-
-pointer-events:auto;
-
-touch-action:manipulation;
-
--webkit-tap-highlight-color:transparent;
-
-user-select:none;
-
 cursor:pointer;
+
 "
 
 >
 
 ❌ KELUAR APLIKASI
+
+</button>
 
 </div>
 
@@ -999,7 +993,13 @@ await startRecognition();
 function tutupAplikasi(){
 
   document.body.innerHTML = `
+document
+.getElementById("btnKeluar")
+.addEventListener("click", tutupAplikasi);
 
+document
+.getElementById("btnKeluar")
+.addEventListener("touchstart", tutupAplikasi);
   <div style="
   height:100vh;
   display:flex;
