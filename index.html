@@ -248,6 +248,10 @@ APOTEK NADHIRA FARMA
 
 <canvas id="canvas" style="display:none;"></canvas>
 
+<div id="status">
+⏳ Loading AI...
+</div>
+
 <button id="btnBatal">
 ❌ BATAL ABSEN
 </button>
@@ -551,7 +555,7 @@ async function kirimAbsensi(nama){
         </p>
 <br><br>
 
-<button onclick="tutupAplikasi()" style="
+<button onclick="location.reload()" style="
 padding:14px 28px;
 border:none;
 border-radius:18px;
@@ -654,48 +658,4 @@ window.onload = async ()=>{
 
 </body>
 </html>
-function tutupAplikasi(){
 
-  document.body.innerHTML = `
-
-  <div style="
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  background:#eef2f7;
-  font-family:Arial;
-  ">
-
-    <div style="
-    background:white;
-    padding:40px;
-    border-radius:30px;
-    text-align:center;
-    box-shadow:0 10px 30px rgba(0,0,0,0.1);
-    ">
-
-      <div style="font-size:90px;">
-        👋
-      </div>
-
-      <h1 style="
-      color:#1e3a8a;
-      ">
-        TERIMA KASIH
-      </h1>
-
-      <p style="
-      font-size:18px;
-      color:#555;
-      ">
-        Sampai jumpa kembali
-      </p>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
