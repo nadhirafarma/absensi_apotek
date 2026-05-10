@@ -4,7 +4,8 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>ABSENSI APOTEK</title>
 
@@ -21,81 +22,124 @@ box-sizing:border-box;
 }
 
 body{
+
 font-family:'Poppins',sans-serif;
+
 min-height:100vh;
+
 display:flex;
 justify-content:center;
 align-items:center;
+
 background:
 radial-gradient(circle at top left,#ff008c55,transparent 30%),
 radial-gradient(circle at bottom right,#0066ff55,transparent 35%),
 linear-gradient(135deg,#eef2ff,#fdfdff);
+
 padding:20px;
+
 overflow:hidden;
+
 }
 
-/* BACKGROUND GLOW */
+/* GLOW */
 
 body::before{
+
 content:"";
+
 position:absolute;
+
 width:500px;
 height:500px;
+
 background:#ff00aa22;
+
 border-radius:50%;
+
 filter:blur(120px);
+
 top:-150px;
 left:-150px;
+
 }
 
 body::after{
+
 content:"";
+
 position:absolute;
+
 width:500px;
 height:500px;
+
 background:#0044ff22;
+
 border-radius:50%;
+
 filter:blur(120px);
+
 bottom:-150px;
 right:-150px;
+
 }
 
 /* CARD */
 
 .card{
+
 width:100%;
 max-width:420px;
+
 padding:28px;
+
 border-radius:35px;
+
 background:rgba(255,255,255,0.25);
+
 backdrop-filter:blur(25px);
+
 border:1px solid rgba(255,255,255,0.5);
+
 box-shadow:
 0 10px 40px rgba(0,0,0,0.1),
 0 0 25px #ff00aa33,
 0 0 25px #0055ff33;
+
 position:relative;
 z-index:5;
+
 }
 
 /* LOGO */
 
 .logo{
+
 width:90px;
+
 display:block;
+
 margin:0 auto 15px;
+
 mix-blend-mode:multiply;
+
 filter:
 drop-shadow(0 0 15px #ff00aa66);
+
 }
 
 /* TITLE */
 
 h1{
+
 text-align:center;
+
 font-size:34px;
+
 line-height:1.2;
+
 font-weight:700;
+
 margin-bottom:10px;
 
 background:linear-gradient(
@@ -106,23 +150,33 @@ background:linear-gradient(
 
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
+
 }
 
 /* CLOCK */
 
 #clock{
+
 text-align:center;
+
 font-size:18px;
+
 font-weight:600;
+
 color:#444;
+
 margin-bottom:20px;
+
 }
 
 /* VIDEO */
 
 .video-wrapper{
+
 position:relative;
+
 border-radius:28px;
+
 overflow:hidden;
 
 border:3px solid rgba(255,255,255,0.4);
@@ -132,21 +186,32 @@ box-shadow:
 0 0 20px #ff00aa55;
 
 transition:0.4s;
+
 }
+
+/* VIDEO */
 
 video{
+
 width:100%;
 height:330px;
+
 object-fit:cover;
+
 background:black;
+
 display:block;
+
 transform:scaleX(-1);
+
 }
 
-/* SCAN */
+/* SCAN LINE */
 
 .scan{
+
 position:absolute;
+
 width:100%;
 height:4px;
 
@@ -154,13 +219,19 @@ background:linear-gradient(
 90deg,
 transparent,
 #ff00aa,
+#00ffee,
 #0055ff,
 transparent
 );
 
-box-shadow:0 0 20px #ff00aa;
+box-shadow:
+0 0 20px #00ffee,
+0 0 40px #ff00aa;
 
 animation:scanMove 2s linear infinite;
+
+z-index:8;
+
 }
 
 @keyframes scanMove{
@@ -175,11 +246,12 @@ top:100%;
 
 }
 
-/* AI GRID */
+/* GRID */
 
 .face-grid{
 
 position:absolute;
+
 inset:0;
 
 background:
@@ -201,23 +273,49 @@ animation:gridPulse 2s infinite;
 
 pointer-events:none;
 
+z-index:2;
+
 }
 
-/* AI FACE */
+@keyframes gridPulse{
+
+0%{
+opacity:0.2;
+}
+
+50%{
+opacity:1;
+}
+
+100%{
+opacity:0.2;
+}
+
+}
+
+/* FACE AI */
 
 .face-scan{
+
 position:absolute;
+
 inset:0;
+
 pointer-events:none;
+
 z-index:10;
+
 }
 
 /* DOT */
 
 .face-dot{
+
 position:absolute;
+
 width:10px;
 height:10px;
+
 border-radius:50%;
 
 background:#00ffee;
@@ -227,9 +325,10 @@ box-shadow:
 0 0 25px #00ffee;
 
 animation:pulseDot 1.5s infinite;
+
 }
 
-/* POSISI */
+/* DOT POSITION */
 
 .dot1{top:28%;left:50%;}
 .dot2{top:38%;left:38%;}
@@ -240,8 +339,6 @@ animation:pulseDot 1.5s infinite;
 .dot7{top:72%;left:50%;}
 .dot8{top:48%;left:32%;}
 .dot9{top:48%;left:68%;}
-
-/* ANIMASI */
 
 @keyframes pulseDot{
 
@@ -262,44 +359,41 @@ opacity:0.5;
 
 }
 
-@keyframes gridPulse{
-
-0%{
-opacity:0.2;
-}
-
-50%{
-opacity:1;
-}
-
-100%{
-opacity:0.2;
-}
-
-}
-
 /* STATUS */
 
 #status{
+
 margin-top:22px;
+
 text-align:center;
+
 font-size:22px;
+
 font-weight:600;
+
 color:#111;
+
 line-height:1.5;
+
 }
 
 /* BUTTON */
 
 #btnBatal{
+
 margin-top:22px;
+
 width:220px;
+
 display:block;
+
 margin-left:auto;
 margin-right:auto;
 
 padding:14px 20px;
+
 border:none;
+
 border-radius:18px;
 
 background:linear-gradient(
@@ -309,17 +403,22 @@ background:linear-gradient(
 );
 
 color:white;
+
 font-size:16px;
+
 font-weight:bold;
 
 cursor:pointer;
 
 box-shadow:
 0 0 20px rgba(255,0,102,0.4);
+
 }
 
 #btnBatal:active{
+
 transform:scale(0.95);
+
 }
 
 /* MOBILE */
@@ -371,6 +470,7 @@ playsinline>
 <div class="face-grid"></div>
 
 <div class="face-scan">
+
 <div class="face-dot dot1"></div>
 <div class="face-dot dot2"></div>
 <div class="face-dot dot3"></div>
@@ -380,6 +480,7 @@ playsinline>
 <div class="face-dot dot7"></div>
 <div class="face-dot dot8"></div>
 <div class="face-dot dot9"></div>
+
 </div>
 
 </div>
@@ -419,7 +520,7 @@ let sudahAbsen = false;
 
 let sedangDeteksi = false;
 
-/* JAM */
+/* CLOCK */
 
 setInterval(()=>{
 
@@ -431,7 +532,7 @@ now.toLocaleTimeString('id-ID')
 
 },1000);
 
-/* START CAMERA */
+/* START */
 
 async function start(){
 
@@ -467,7 +568,7 @@ statusText.innerHTML =
 
 }
 
-/* LOAD FACE */
+/* FACE */
 
 async function loadLabeledImages(){
 
@@ -516,7 +617,7 @@ label,
 
 }
 
-/* START AI */
+/* AI */
 
 async function startRecognition(){
 
@@ -548,8 +649,6 @@ faceMatcher.findBestMatch(
 detections[0].descriptor
 );
 
-/* GLOW */
-
 if(bestMatch.label !== "unknown"){
 
 document
@@ -572,8 +671,6 @@ document
 
 statusText.innerHTML =
 "👤 " + bestMatch.toString();
-
-/* DETEKSI */
 
 if(
 bestMatch.label !== "unknown"
@@ -612,16 +709,12 @@ if(sudahAbsen) return;
 
 sudahAbsen = true;
 
-/* SOUND */
-
 const audio =
 new Audio(
 "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
 );
 
 audio.play();
-
-/* FOTO */
 
 canvas.width =
 video.videoWidth;
@@ -677,7 +770,7 @@ video.srcObject
 
 }
 
-/* SUCCESS SCREEN */
+/* SUCCESS */
 
 document.body.innerHTML = `
 
@@ -708,13 +801,11 @@ box-shadow:
 0 10px 40px rgba(0,0,0,0.1),
 0 0 25px #ff00aa33,
 0 0 25px #0055ff33;
-border:1px solid rgba(255,255,255,0.5);
 ">
 
 <div style="
 font-size:95px;
 margin-bottom:10px;
-animation:pulse 1.5s infinite;
 ">
 ✅
 </div>
@@ -762,7 +853,7 @@ margin-bottom:35px;
 </p>
 
 <button
-onclick="tutupAplikasi()"
+id="btnKeluar"
 style="
 padding:16px 30px;
 border:none;
@@ -777,17 +868,15 @@ font-size:18px;
 font-weight:bold;
 cursor:pointer;
 width:100%;
-
 position:relative;
-z-index:99999;
+z-index:999999;
 pointer-events:auto;
 touch-action:manipulation;
-
 box-shadow:
 0 0 25px rgba(255,0,170,0.4);
 ">
 
-❌ KELUAR APLIKASI
+🚪 KELUAR APLIKASI
 
 </button>
 
@@ -796,6 +885,80 @@ box-shadow:
 </div>
 
 `;
+
+setTimeout(()=>{
+
+const btnKeluar =
+document.getElementById("btnKeluar");
+
+if(btnKeluar){
+
+btnKeluar.addEventListener(
+"click",
+function(){
+
+document.body.innerHTML = `
+
+<div style="
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:
+linear-gradient(
+135deg,
+#ffe4f6,
+#e6f0ff
+);
+font-family:Poppins;
+padding:20px;
+">
+
+<div style="
+background:white;
+padding:40px;
+border-radius:35px;
+text-align:center;
+box-shadow:
+0 0 40px rgba(255,0,170,0.2);
+width:100%;
+max-width:350px;
+">
+
+<div style="
+font-size:90px;
+margin-bottom:15px;
+">
+👋
+</div>
+
+<h1 style="
+color:#4f46e5;
+margin-bottom:15px;
+">
+TERIMA KASIH
+</h1>
+
+<p style="
+color:#666;
+font-size:18px;
+line-height:1.7;
+">
+Sampai jumpa kembali
+</p>
+
+</div>
+
+</div>
+
+`;
+
+}
+);
+
+}
+
+},300);
 
 }catch(err){
 
@@ -812,7 +975,7 @@ sedangDeteksi = false;
 
 }
 
-/* BATAL */
+/* CANCEL */
 
 document
 .getElementById("btnBatal")
@@ -883,73 +1046,7 @@ await start();
 await startRecognition();
 
 };
-function tutupAplikasi(){
 
-  // MATIKAN KAMERA
-  if(video.srcObject){
-
-    video.srcObject
-    .getTracks()
-    .forEach(track => track.stop());
-
-  }
-
-  // TAMPILAN KELUAR
-  document.body.innerHTML = `
-
-  <div style="
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:
-  linear-gradient(
-    135deg,
-    #ffe4f6,
-    #e6f0ff
-  );
-  font-family:Arial;
-  ">
-
-    <div style="
-    background:white;
-    padding:40px;
-    border-radius:35px;
-    text-align:center;
-    box-shadow:
-    0 0 40px rgba(255,0,170,0.2);
-    width:85%;
-    max-width:350px;
-    ">
-
-      <div style="
-      font-size:90px;
-      ">
-        👋
-      </div>
-
-      <h1 style="
-      color:#4f46e5;
-      margin-top:10px;
-      ">
-        TERIMA KASIH
-      </h1>
-
-      <p style="
-      color:#666;
-      font-size:18px;
-      line-height:1.7;
-      ">
-        Sampai jumpa kembali
-      </p>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
 </script>
 
 </body>
