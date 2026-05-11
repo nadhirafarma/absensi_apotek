@@ -323,58 +323,6 @@ z-index:10;
 
 }
 
-/* DOT */
-
-.face-dot{
-
-position:absolute;
-
-width:10px;
-height:10px;
-
-border-radius:50%;
-
-background:#00ffee;
-
-box-shadow:
-0 0 15px #00ffee,
-0 0 25px #00ffee;
-
-animation:pulseDot 1.5s infinite;
-
-}
-
-/* DOT POSITION */
-
-.dot1{top:28%;left:50%;}
-.dot2{top:38%;left:38%;}
-.dot3{top:38%;left:62%;}
-.dot4{top:50%;left:50%;}
-.dot5{top:60%;left:42%;}
-.dot6{top:60%;left:58%;}
-.dot7{top:72%;left:50%;}
-.dot8{top:48%;left:32%;}
-.dot9{top:48%;left:68%;}
-
-@keyframes pulseDot{
-
-0%{
-transform:scale(0.8);
-opacity:0.5;
-}
-
-50%{
-transform:scale(1.5);
-opacity:1;
-}
-
-100%{
-transform:scale(0.8);
-opacity:0.5;
-}
-
-}
-
 /* STATUS */
 
 #status{
@@ -484,20 +432,6 @@ playsinline>
 <div class="scan"></div>
 
 <div class="face-grid"></div>
-
-<div class="face-scan">
-
-<div class="face-dot dot1"></div>
-<div class="face-dot dot2"></div>
-<div class="face-dot dot3"></div>
-<div class="face-dot dot4"></div>
-<div class="face-dot dot5"></div>
-<div class="face-dot dot6"></div>
-<div class="face-dot dot7"></div>
-<div class="face-dot dot8"></div>
-<div class="face-dot dot9"></div>
-
-</div>
 
 </div>
 
@@ -791,7 +725,10 @@ const detections =
 await faceapi
 .detectAllFaces(
 video,
-new faceapi.TinyFaceDetectorOptions()
+new faceapi.TinyFaceDetectorOptions({
+inputSize: 416,
+scoreThreshold: 0.5
+})
 )
 .withFaceLandmarks()
 .withFaceDescriptors();
@@ -834,7 +771,7 @@ for(let i=0;i<landmarks.length;i++){
 const point =
 landmarks[i];
 
-/* FULL FACE OUTLINE */
+/* FULL FACE HOLOGRAM */
 
 faceCtx.beginPath();
 
@@ -858,17 +795,14 @@ faceCtx.closePath();
 
 faceCtx.strokeStyle = "#00ffee";
 
-faceCtx.lineWidth = 1.5;
+faceCtx.lineWidth = 1.8;
 
 faceCtx.shadowColor = "#00ffee";
 
-faceCtx.shadowBlur = 12;
+faceCtx.shadowBlur = 14;
 
 faceCtx.stroke();
-}
-
-}
-
+   
 /* RADAR */
 
 const radarY =
