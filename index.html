@@ -746,7 +746,10 @@ const detections =
 await faceapi
 .detectSingleFace(
 img,
-new faceapi.TinyFaceDetectorOptions()
+new faceapi.TinyFaceDetectorOptions({
+inputSize: 416,
+scoreThreshold: 0.5
+})
 )
 .withFaceLandmarks()
 .withFaceDescriptor();
@@ -779,7 +782,7 @@ const labeledDescriptors =
 faceMatcher =
 new faceapi.FaceMatcher(
 labeledDescriptors,
-0.55
+0.50
 );
 
 setInterval(async ()=>{
@@ -831,38 +834,37 @@ for(let i=0;i<landmarks.length;i++){
 const point =
 landmarks[i];
 
-/* DOT */
+/* FULL FACE OUTLINE */
 
 faceCtx.beginPath();
 
-faceCtx.arc(
-point.x,
-point.y,
-2.2,
-0,
-Math.PI*2
-);
+for(let i = 0; i < landmarks.length; i++){
 
-faceCtx.fill();
+const p = landmarks[i];
 
-/* LINE */
+if(i === 0){
 
-if(i < landmarks.length - 1){
+faceCtx.moveTo(p.x,p.y);
 
-faceCtx.beginPath();
+}else{
 
-faceCtx.moveTo(
-point.x,
-point.y
-);
+faceCtx.lineTo(p.x,p.y);
 
-faceCtx.lineTo(
-landmarks[i+1].x,
-landmarks[i+1].y
-);
+}
+
+}
+
+faceCtx.closePath();
+
+faceCtx.strokeStyle = "#00ffee";
+
+faceCtx.lineWidth = 1.5;
+
+faceCtx.shadowColor = "#00ffee";
+
+faceCtx.shadowBlur = 12;
 
 faceCtx.stroke();
-
 }
 
 }
@@ -942,7 +944,8 @@ document
 }
 
 statusText.innerHTML =
-"👤 " + bestMatch.toString();
+"👤 " +
+bestMatch.label.replaceAll("_"," ");
 
 if(
 bestMatch.label !== "unknown"
