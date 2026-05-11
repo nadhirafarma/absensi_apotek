@@ -905,17 +905,9 @@ faceCtx.stroke();
 
 const box =
 detections[0].detection.box;
+   
 faceCanvas.style.display = "block";
-}else{
-
-faceCtx.clearRect(
-0,
-0,
-faceCanvas.width,
-faceCanvas.height
-);
-
-}
+   
 const faceX = box.x;
 const faceY = box.y;
 const faceW = box.width;
@@ -1042,65 +1034,7 @@ faceCtx.stroke();
 }
 
 }
-/* =========================
-   DYNAMIC FACE FRAME
-========================= */
 
-const x = box.x;
-const y = box.y;
-const w = box.width;
-const h = box.height;
-
-const corner = 28;
-
-faceCtx.strokeStyle =
-"#00ff99";
-
-faceCtx.lineWidth = 3;
-
-faceCtx.shadowColor =
-"#00ff99";
-
-faceCtx.shadowBlur = 15;
-
-/* TOP LEFT */
-
-faceCtx.beginPath();
-
-faceCtx.moveTo(faceX,faceY+c);
-faceCtx.lineTo(faceX,faceY);
-faceCtx.lineTo(faceX+c,faceY);
-
-faceCtx.stroke();
-
-/* TOP RIGHT */
-
-faceCtx.beginPath();
-
-faceCtx.moveTo(faceX+faceW-c,faceY);
-faceCtx.lineTo(faceX+faceW,faceY);
-faceCtx.lineTo(faceX+faceW,faceY+c);
-faceCtx.stroke();
-
-/* BOTTOM LEFT */
-
-faceCtx.beginPath();
-
-faceCtx.moveTo(faceX,faceY+faceH-c);
-faceCtx.lineTo(faceX,faceY+faceH);
-faceCtx.lineTo(faceX+c,faceY+faceH);
-
-faceCtx.stroke();
-
-/* BOTTOM RIGHT */
-
-faceCtx.beginPath();
-
-faceCtx.moveTo(faceX+faceW-c,faceY+faceH);
-faceCtx.lineTo(faceX+faceW,faceY+faceH);
-faceCtx.lineTo(faceX+faceW,faceY+faceH-c);
-
-faceCtx.stroke();
 /* RADAR */
 
 const radarY =
@@ -1220,6 +1154,17 @@ cekAbsensi(bestMatch.label);
 },800);
 
 }
+
+}
+
+}else{
+
+faceCtx.clearRect(
+0,
+0,
+faceCanvas.width,
+faceCanvas.height
+);
 
 }
 
