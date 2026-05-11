@@ -173,24 +173,21 @@ margin-bottom:20px;
 
 .video-wrapper{
 
-bottom:12px;
-right:12px;
-border-left:none;
-border-top:none;
-}
 position:relative;
 
-border-radius:28px;
+border-radius:32px;
 
 overflow:hidden;
 
 border:3px solid rgba(255,255,255,0.4);
 
 box-shadow:
-0 0 20px #0055ff55,
-0 0 20px #ff00aa55;
+0 0 25px #0055ff55,
+0 0 25px #ff00aa55;
 
 transition:0.4s;
+
+background:black;
 
 }
 
@@ -224,7 +221,8 @@ background:black;
 display:block;
 
 transform:scaleX(-1);
-
+border-radius:28px;
+   
 }
 
 /* SCAN LINE */
@@ -332,7 +330,7 @@ z-index:10;
 
 #status{
 
-margin-top:22px;
+margin-top:10px;
 
 text-align:center;
 
@@ -907,7 +905,17 @@ faceCtx.stroke();
 
 const box =
 detections[0].detection.box;
+faceCanvas.style.display = "block";
+}else{
 
+faceCtx.clearRect(
+0,
+0,
+faceCanvas.width,
+faceCanvas.height
+);
+
+}
 const x = box.x;
 const y = box.y;
 const w = box.width;
@@ -1037,9 +1045,6 @@ faceCtx.stroke();
 /* =========================
    DYNAMIC FACE FRAME
 ========================= */
-
-const box =
-detections[0].detection.box;
 
 const x = box.x;
 const y = box.y;
