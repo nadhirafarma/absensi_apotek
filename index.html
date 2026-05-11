@@ -172,47 +172,7 @@ margin-bottom:20px;
 /* VIDEO */
 
 .video-wrapper{
-/* FUTURISTIC CORNER */
 
-.corner{
-
-position:absolute;
-
-width:45px;
-height:45px;
-
-border:4px solid #ffee00;
-
-z-index:20;
-
-box-shadow:
-0 0 15px #ffee00,
-0 0 25px #ffee00;
-
-}
-
-.corner-tl{
-top:12px;
-left:12px;
-border-right:none;
-border-bottom:none;
-}
-
-.corner-tr{
-top:12px;
-right:12px;
-border-left:none;
-border-bottom:none;
-}
-
-.corner-bl{
-bottom:12px;
-left:12px;
-border-right:none;
-border-top:none;
-}
-
-.corner-br{
 bottom:12px;
 right:12px;
 border-left:none;
@@ -477,10 +437,7 @@ playsinline>
 <div class="scan"></div>
 
 <div class="face-grid"></div>
-<div class="corner corner-tl"></div>
-<div class="corner corner-tr"></div>
-<div class="corner corner-bl"></div>
-<div class="corner corner-br"></div>
+
 </div>
 
 <canvas
@@ -800,33 +757,25 @@ faceCanvas.height
 const landmarks =
 detections[0].landmarks.positions;
 
-/* =========================
-   FUTURISTIC FACE MESH
+   /* =========================
+   PROFESSIONAL FACE MESH
 ========================= */
 
-faceCtx.strokeStyle =
-"#66ffff";
+const points = landmarks;
+
+/* TITIK */
 
 faceCtx.fillStyle =
-"#66ffff";
+"#cfffff";
 
-faceCtx.lineWidth = 1.2;
-
-faceCtx.shadowColor =
-"#00ffee";
-
-faceCtx.shadowBlur = 12;
-
-/* DRAW POINT */
-
-landmarks.forEach(point=>{
+points.forEach(p=>{
 
 faceCtx.beginPath();
 
 faceCtx.arc(
-point.x,
-point.y,
-1.8,
+p.x,
+p.y,
+2,
 0,
 Math.PI*2
 );
@@ -835,35 +784,45 @@ faceCtx.fill();
 
 });
 
-/* CONNECT ALL POINTS */
+/* GARIS ANTAR TITIK TERDEKAT */
 
-for(let i=0;i<landmarks.length;i++){
+faceCtx.strokeStyle =
+"#b8ffff";
 
-for(let j=i+1;j<landmarks.length;j++){
+faceCtx.lineWidth = 1.1;
 
-const p1 = landmarks[i];
-const p2 = landmarks[j];
+faceCtx.shadowColor =
+"#66ffff";
 
-const dx = p1.x - p2.x;
-const dy = p1.y - p2.y;
+faceCtx.shadowBlur = 8;
 
-const distance =
+for(let i=0;i<points.length;i++){
+
+for(let j=i+1;j<points.length;j++){
+
+const dx =
+points[i].x - points[j].x;
+
+const dy =
+points[i].y - points[j].y;
+
+const dist =
 Math.sqrt(dx*dx + dy*dy);
 
-/* CONNECT ONLY CLOSE POINTS */
+/* HUBUNGKAN YANG DEKAT SAJA */
 
-if(distance < 42){
+if(dist < 38){
 
 faceCtx.beginPath();
 
 faceCtx.moveTo(
-p1.x,
-p1.y
+points[i].x,
+points[i].y
 );
 
 faceCtx.lineTo(
-p2.x,
-p2.y
+points[j].x,
+points[j].y
 );
 
 faceCtx.stroke();
@@ -873,7 +832,69 @@ faceCtx.stroke();
 }
 
 }
-   
+/* =========================
+   DYNAMIC FACE FRAME
+========================= */
+
+const box =
+detections[0].detection.box;
+
+const x = box.x;
+const y = box.y;
+const w = box.width;
+const h = box.height;
+
+const corner = 28;
+
+faceCtx.strokeStyle =
+"#ffee00";
+
+faceCtx.lineWidth = 4;
+
+faceCtx.shadowColor =
+"#ffee00";
+
+faceCtx.shadowBlur = 15;
+
+/* TOP LEFT */
+
+faceCtx.beginPath();
+
+faceCtx.moveTo(x,y+corner);
+faceCtx.lineTo(x,y);
+faceCtx.lineTo(x+corner,y);
+
+faceCtx.stroke();
+
+/* TOP RIGHT */
+
+faceCtx.beginPath();
+
+faceCtx.moveTo(x+w-corner,y);
+faceCtx.lineTo(x+w,y);
+faceCtx.lineTo(x+w,y+corner);
+
+faceCtx.stroke();
+
+/* BOTTOM LEFT */
+
+faceCtx.beginPath();
+
+faceCtx.moveTo(x,y+h-corner);
+faceCtx.lineTo(x,y+h);
+faceCtx.lineTo(x+corner,y+h);
+
+faceCtx.stroke();
+
+/* BOTTOM RIGHT */
+
+faceCtx.beginPath();
+
+faceCtx.moveTo(x+w-corner,y+h);
+faceCtx.lineTo(x+w,y+h);
+faceCtx.lineTo(x+w,y+h-corner);
+
+faceCtx.stroke();
 /* RADAR */
 
 const radarY =
