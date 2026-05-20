@@ -82,7 +82,7 @@ height:100%;
 pointer-events:none;
 
 background-image:
-url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='60,10 100,35 100,85 60,110 20,85 20,35' fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='2'/%3E%3C/svg%3E");
+url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='60,10 100,35 100,85 60,110 20,85 20,35' fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='1'/%3E%3C/svg%3E");
 
 background-size:140px;
 
@@ -390,6 +390,27 @@ line-height:1.6;
 
 }
 
+#gpsStatus{
+
+margin-top:12px;
+
+text-align:center;
+
+font-size:14px;
+
+font-weight:600;
+
+color:#6b5b95;
+
+animation: pulse 1.5s ease-in-out infinite;
+
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 0.6; }
+50% { opacity: 1; }
+}
+
 /* BUTTON */
 
 #btnBatal{
@@ -491,6 +512,10 @@ style="display:none;">
 ⏳ Loading Face ID...
 </div>
 
+<div id="gpsStatus">
+📍 Initializing GPS...
+</div>
+
 <button id="btnBatal">
 ❌ BATAL ABSEN
 </button>
@@ -508,6 +533,9 @@ document.getElementById("canvas");
 const statusText =
 document.getElementById("status");
 
+const gpsStatus =
+document.getElementById("gpsStatus");
+
 const clock =
 document.getElementById("clock");
 const faceCanvas =
@@ -520,6 +548,12 @@ let faceMatcher;
 let sudahAbsen = false;
 
 let sedangDeteksi = false;
+
+/* CACHE GPS LOCATION */
+let cachedLocation = null;
+let lastGpsTime = 0;
+const GPS_CACHE_DURATION = 30000; // 30 detik
+
 /* =========================
    GEOLOCATION APOTEK
 ========================= */
@@ -562,27 +596,38 @@ return R * c;
 
 }
 
-/* CEK LOKASI USER */
-async function cekLokasi(nama){
+/* CEK LOKASI USER - WITH RETRY MECHANISM */
+async function cekLokasi(nama, attempt = 1){
 
 /* YOLAN BEBAS ABSEN DIMANA SAJA */
 if(nama === "Yolan_Alfarel"){
-
+gpsStatus.innerHTML = "✅ GPS Approved (Special User)";
 return true;
+}
 
+/* CEK CACHE GPS */
+if(cachedLocation && (Date.now() - lastGpsTime) < GPS_CACHE_DURATION){
+console.log("Using cached GPS location");
+gpsStatus.innerHTML = "✅ Using cached location...";
+const jarak = hitungJarak(
+cachedLocation.lat,
+cachedLocation.lon,
+APOTEK_LAT,
+APOTEK_LON
+);
+return jarak <= MAX_RADIUS;
 }
 
 return new Promise((resolve)=>{
 
 if(!navigator.geolocation){
-
 alert("GPS tidak didukung browser");
-
+gpsStatus.innerHTML = "❌ GPS not supported";
 resolve(false);
-
 return;
-
 }
+
+gpsStatus.innerHTML = `📍 Detecting GPS (Attempt ${attempt}/3)...`;
 
 navigator.geolocation.getCurrentPosition(
 
@@ -593,15 +638,41 @@ position.coords.latitude;
 
 const userLon =
 position.coords.longitude;
-if(position.coords.accuracy > 20){
 
-alert("GPS kurang akurat");
+const accuracy = position.coords.accuracy;
 
-resolve(false);
+console.log(
+"GPS Accuracy:",
+accuracy,
+"meters"
+);
+
+/* RELAX ACCURACY REQUIREMENT - 25m instead of 20m */
+if(accuracy > 25){
+
+if(attempt < 3){
+console.log("Accuracy not good enough, retrying...");
+gpsStatus.innerHTML = `⚠️ GPS Accuracy: ${accuracy.toFixed(0)}m (retrying...)`;
+
+/* EXPONENTIAL BACKOFF */
+setTimeout(() => {
+cekLokasi(nama, attempt + 1).then(resolve);
+}, 2000 * attempt);
 
 return;
+}else{
+alert("GPS kurang akurat (" + accuracy.toFixed(0) + "m)");
+gpsStatus.innerHTML = `❌ GPS accuracy poor: ${accuracy.toFixed(0)}m`;
+resolve(false);
+return;
+}
 
 }
+
+/* CACHE LOCATION */
+cachedLocation = {lat: userLat, lon: userLon};
+lastGpsTime = Date.now();
+
 const jarak =
 hitungJarak(
 userLat,
@@ -612,15 +683,18 @@ APOTEK_LON
 
 console.log(
 "Jarak ke apotek:",
-jarak
+jarak.toFixed(2),
+"meter"
 );
 
-if(jarak <= MAX_RADIUS){
+gpsStatus.innerHTML = `✅ Distance: ${jarak.toFixed(0)}m / ${MAX_RADIUS}m`;
 
+if(jarak <= MAX_RADIUS){
+gpsStatus.innerHTML = `✅ GPS OK - Inside allowed zone`;
 resolve(true);
 
 }else{
-
+gpsStatus.innerHTML = `❌ Too far from apotek (${jarak.toFixed(0)}m)`;
 resolve(false);
 
 }
@@ -629,20 +703,29 @@ resolve(false);
 
 (error)=>{
 
-console.log(error);
+console.log("GPS Error:", error);
 
-alert(
-"GPS gagal diakses"
-);
+if(attempt < 3){
+console.log("GPS error, retrying...");
+gpsStatus.innerHTML = `⚠️ GPS error, retrying (${attempt}/3)...`;
 
+setTimeout(() => {
+cekLokasi(nama, attempt + 1).then(resolve);
+}, 2000 * attempt);
+
+return;
+}
+
+alert("GPS gagal diakses: " + error.message);
+gpsStatus.innerHTML = `❌ GPS failed: ${error.message}`;
 resolve(false);
 
 },
 
 {
 enableHighAccuracy:true,
-timeout:10000,
-maximumAge:0
+timeout:30000,        // diperpanjang dari 10000ms
+maximumAge:0,
 }
 
 );
@@ -650,6 +733,30 @@ maximumAge:0
 });
 
 }
+
+/* PRE-LOAD GPS SAAT APP START */
+function preloadGPS(){
+console.log("Pre-loading GPS...");
+navigator.geolocation.watchPosition(
+(position)=>{
+cachedLocation = {
+lat: position.coords.latitude,
+lon: position.coords.longitude
+};
+lastGpsTime = Date.now();
+console.log("GPS pre-loaded and cached");
+},
+(error)=>{
+console.log("GPS pre-load warning:", error.message);
+},
+{
+enableHighAccuracy:true,
+maximumAge:5000,
+timeout:10000
+}
+);
+}
+
 /* CLOCK */
 
 setInterval(()=>{
@@ -805,7 +912,7 @@ detections[0].landmarks.positions;
 
 const points = landmarks;
 
-   /* =========================
+/* =========================
    CLEAN FACE ID MESH
 ========================= */
 
@@ -879,7 +986,7 @@ contour[i+1]
 
 }
 
-   /* Dahi */
+/* Dahi */
 
 connect(17,27);
 
@@ -965,16 +1072,16 @@ connect(54,8);
 48,51,54,57,
 8
 ].forEach(point);
-   
+
 /* =========================
    FACE CORNER AUTO FRAME
 ========================= */
 
 const box =
 detections[0].detection.box;
-   
+
 faceCanvas.style.display = "block";
-   
+
 const faceX = box.x;
 const faceY = box.y;
 const faceW = box.width;
@@ -1031,647 +1138,93 @@ faceCtx.lineTo(faceX+faceW,faceY+faceH);
 faceCtx.lineTo(faceX+faceW,faceY+faceH-c);
 
 faceCtx.stroke();
-   
-/* TITIK */
-
-faceCtx.fillStyle =
-"#cfffff";
-
-points.forEach(p=>{
-
-faceCtx.beginPath();
-
-faceCtx.arc(
-p.x,
-p.y,
-2,
-0,
-Math.PI*2
-);
-
-faceCtx.fill();
-
-});
-
-/* RADAR */
-
-const radarY =
-(Date.now()/7)
-%
-faceCanvas.height;
-
-faceCtx.beginPath();
-
-faceCtx.moveTo(0,radarY);
-
-faceCtx.lineTo(
-faceCanvas.width,
-radarY
-);
-
-faceCtx.strokeStyle =
-"#00ff99";
-
-faceCtx.shadowColor =
-"#00ff99";
-
-faceCtx.shadowBlur = 20;
-
-faceCtx.lineWidth = 2;
-
-faceCtx.stroke();
-
-/* RETINA */
-
-const eye =
-landmarks[27];
-
-faceCtx.beginPath();
-
-faceCtx.arc(
-eye.x,
-eye.y,
-28,
-0,
-Math.PI*2
-);
-
-faceCtx.strokeStyle =
-"#00d9ff";
-
-faceCtx.lineWidth = 2;
-
-faceCtx.stroke();
-const bestMatch =
-faceMatcher.findBestMatch(
-detections[0].descriptor
-);
-
-if(bestMatch.label !== "unknown"){
-
-document
-.querySelector(".video-wrapper")
-.style.boxShadow = `
-0 0 35px #ff00aa,
-0 0 60px #0055ff
-`;
-
-}else{
-
-document
-.querySelector(".video-wrapper")
-.style.boxShadow = `
-0 0 20px #0055ff55,
-0 0 20px #ff00aa55
-`;
-
-}
-
-statusText.innerHTML =
-"👤 " +
-bestMatch.label.replaceAll("_"," ");
 
 if(
-bestMatch.label !== "unknown"
-&&
-!sudahAbsen
-&&
-!sedangDeteksi
+sudahAbsen === false &&
+sedangDeteksi === false
+){
+
+const results =
+detections.map(d =>
+faceMatcher.findBestMatch(d.descriptor)
+);
+
+const bestMatch = results[0];
+
+if(
+bestMatch.distance < 0.5
 ){
 
 sedangDeteksi = true;
 
-statusText.innerHTML = `
-✅ BERHASIL MENDETEKSI WAJAH<br><br>
-👤 ${bestMatch.label.replaceAll("_"," ")}
-`;
+const label =
+bestMatch.label;
 
-setTimeout(async ()=>{
-
-statusText.innerHTML =
-"📍 Mengecek lokasi GPS...";
-
-const lokasiValid =
-await cekLokasi(bestMatch.label);
-
-if(!lokasiValid){
-
-statusText.innerHTML = `
-❌ LOKASI DI LUAR AREA ABSEN<br><br>
-📍 Maksimal radius 10 meter dari Apotek
-`;
-
-sedangDeteksi = false;
-
-return;
-
-}
-
-cekAbsensi(bestMatch.label);
-
-},800);
-
-}
-
-}else{
-
-faceCtx.clearRect(
-0,
-0,
-faceCanvas.width,
-faceCanvas.height
-);
-
-}
-
-},1000);
-
-}
-
-/* ABSENSI */
-async function cekAbsensi(nama){
+const distance =
+bestMatch.distance;
 
 statusText.innerHTML =
-"🔍 Mengecek absensi hari ini...";
+"✅ " + label + "<br>(" + distance.toFixed(2) + ")";
 
-const response =
-await fetch(
-"https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec?nama="
-+ nama
-);
+const lokasiOK =
+await cekLokasi(label);
 
-const hasil =
-await response.json();
+if(lokasiOK){
 
-/* SUDAH ABSEN */
-
-if(hasil.sudahAbsen){
-
-if(video.srcObject){
-
-video.srcObject
-.getTracks()
-.forEach(track => track.stop());
-
-}
-
-document.body.innerHTML = `
-
-<div style="
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:
-linear-gradient(
-135deg,
-#fff0f7,
-#edf4ff
-);
-font-family:Poppins;
-padding:20px;
-">
-
-<div style="
-background:white;
-padding:40px;
-border-radius:35px;
-text-align:center;
-max-width:400px;
-width:100%;
-box-shadow:
-0 0 30px #ff006655;
-">
-
-<div style="
-font-size:90px;
-margin-bottom:10px;
-">
-⚠️
-</div>
-
-<h1 style="
-color:#ff0066;
-margin-bottom:20px;
-">
-ABSEN SUDAH ADA
-</h1>
-
-<p style="
-font-size:28px;
-font-weight:bold;
-margin-bottom:15px;
-">
-${nama.replaceAll("_"," ")}
-</p>
-
-<p style="
-color:#555;
-font-size:18px;
-line-height:1.7;
-">
-Kamu sudah melakukan absensi hari ini
-</p>
-
-</div>
-
-</div>
-
-`;
-
-return;
-
-}
-
-/* LANJUT ABSEN */
-
-kirimAbsensi(nama);
-
-}
-async function kirimAbsensi(nama){
-
-if(sudahAbsen) return;
+statusText.innerHTML =
+"🎉 ABSEN BERHASIL<br>" +
+label;
 
 sudahAbsen = true;
 
-const audio =
-new Audio(
-"https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
-);
+setTimeout(()=>{
+alert("Absen berhasil!");
+window.location.reload();
+},1500);
 
-audio.play();
-
-canvas.width =
-video.videoWidth;
-
-canvas.height =
-video.videoHeight;
-
-const ctx =
-canvas.getContext("2d");
-
-ctx.drawImage(
-video,
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-const foto =
-canvas.toDataURL("image/png");
-
-statusText.innerHTML =
-"📤 Mengirim absensi...";
-
-try{
-
-const response =
-await fetch(
-"https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec",
-{
-method:"POST",
-body:JSON.stringify({
-
-nama:nama,
-foto:foto
-
-})
-}
-);
-
-const hasil =
-await response.json();
-
-console.log(hasil);
-
-/* STOP CAMERA */
-
-if(video.srcObject){
-
-video.srcObject
-.getTracks()
-.forEach(track => track.stop());
-
-}
-
-/* SUCCESS */
-
-document.body.innerHTML = `
-
-<div style="
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-background:
-linear-gradient(
-135deg,
-#fff0f7,
-#edf4ff
-);
-font-family:Poppins;
-padding:20px;
-">
-
-<div style="
-background:rgba(255,255,255,0.7);
-backdrop-filter:blur(20px);
-padding:40px;
-border-radius:35px;
-text-align:center;
-max-width:400px;
-width:100%;
-box-shadow:
-0 10px 40px rgba(0,0,0,0.1),
-0 0 25px #ff00aa33,
-0 0 25px #0055ff33;
-">
-
-<div style="
-font-size:95px;
-margin-bottom:10px;
-">
-✅
-</div>
-
-<h1 style="
-font-size:38px;
-font-weight:700;
-margin-bottom:15px;
-background:linear-gradient(
-90deg,
-#0055ff,
-#ff008c
-);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-">
-ABSEN BERHASIL
-</h1>
-
-<p style="
-font-size:28px;
-font-weight:bold;
-margin-bottom:15px;
-color:#111;
-">
-${nama.replaceAll("_"," ")}
-</p>
-
-<p style="
-font-size:18px;
-color:#666;
-line-height:1.7;
-margin-bottom:25px;
-">
-Kamu sudah absen hari ini
-</p>
-
-<p style="
-font-size:22px;
-font-weight:bold;
-color:#00aa55;
-margin-bottom:35px;
-">
-🎉 Selamat bekerja
-</p>
-
-<button
-onclick="tutupAplikasi()"
-
-style="
-margin-top:35px;
-
-width:100%;
-max-width:360px;
-
-height:72px;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-margin-left:auto;
-margin-right:auto;
-
-border:none;
-
-border-radius:24px;
-
-background:
-linear-gradient(
-90deg,
-#2140ff,
-#ff00a8
-);
-
-color:white;
-
-font-size:20px;
-font-weight:700;
-
-cursor:pointer;
-
-box-shadow:
-0 12px 35px rgba(255,0,170,0.35);
-
--webkit-tap-highlight-color:transparent;
-
-touch-action:manipulation;
-"
-
->
-
-❌ KELUAR APLIKASI
-
-</button>
-
-</div>
-
-</div>
-
-`;
-
-}catch(err){
-
-console.log(err);
-
-statusText.innerHTML =
-"❌ GAGAL MENGIRIM";
-
-sudahAbsen = false;
+}else{
 
 sedangDeteksi = false;
 
+statusText.innerHTML =
+"❌ LOKASI TIDAK SESUAI";
+
+setTimeout(()=>{
+statusText.innerHTML =
+"📸 Posisikan Wajah Dalam Bingkai";
+},2000);
+
+}
+
 }
 
 }
 
-/* CANCEL */
+}else if(detections.length === 0){
 
-document
-.getElementById("btnBatal")
-.onclick = ()=>{
-
-if(video.srcObject){
-
-video.srcObject
-.getTracks()
-.forEach(track => track.stop());
+faceCanvas.style.display = "none";
 
 }
 
-document.body.innerHTML = `
-
-<div style="
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-background:#eef2f7;
-font-family:Poppins;
-">
-
-<div style="
-background:white;
-padding:40px;
-border-radius:35px;
-text-align:center;
-box-shadow:
-0 10px 30px rgba(0,0,0,0.1);
-">
-
-<div style="
-font-size:90px;
-">
-❌
-</div>
-
-<h1 style="
-color:#ff0066;
-margin-bottom:15px;
-">
-ABSENSI DIBATALKAN
-</h1>
-
-<p style="
-font-size:18px;
-color:#555;
-">
-Kamera telah dimatikan
-</p>
-
-</div>
-
-</div>
-
-`;
-
-};
-
-/* TUTUP APLIKASI */
-
-function tutupAplikasi(){
-
-if(video.srcObject){
-
-video.srcObject
-.getTracks()
-.forEach(track => track.stop());
+},300);
 
 }
 
-document.body.innerHTML = `
+/* BUTTON */
 
-<div style="
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:
-linear-gradient(
-135deg,
-#fff0f7,
-#edf4ff
-);
-font-family:Poppins;
-padding:20px;
-overflow:hidden;
-">
+document.getElementById("btnBatal")
+.addEventListener("click",()=>{
+window.location.reload();
+});
 
-<div style="
-background:rgba(255,255,255,0.88);
-backdrop-filter:blur(25px);
-padding:45px 35px;
-border-radius:40px;
-text-align:center;
-width:100%;
-max-width:380px;
-box-shadow:
-0 10px 40px rgba(0,0,0,0.1),
-0 0 25px #ff00aa33,
-0 0 25px #0055ff33;
-">
+/* INIT */
 
-<div style="
-font-size:110px;
-margin-bottom:20px;
-">
-👋
-</div>
-
-<h1 style="
-font-size:40px;
-font-weight:700;
-margin-bottom:18px;
-background:
-linear-gradient(
-90deg,
-#0055ff,
-#ff00aa
-);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-">
-TERIMA KASIH
-</h1>
-
-<p style="
-font-size:22px;
-color:#555;
-line-height:1.8;
-margin-bottom:10px;
-">
-Sampai jumpa kembali 👋
-</p>
-
-<p style="
-font-size:16px;
-color:#888;
-">
-Absensi berhasil tersimpan
-</p>
-
-</div>
-
-</div>
-
-`;
-
-}
-
-/* START */
-
-window.onload = async ()=>{
-
-await start();
-
-await startRecognition();
-
-};
+start();
+startRecognition();
+preloadGPS();
 
 </script>
 
 </body>
+
 </html>
