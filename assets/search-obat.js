@@ -27,7 +27,10 @@
     isSyncing: false,
     scannerStream: null,
     scannerFrame: null,
-    barcodeDetector: null
+    barcodeDetector: null,
+    zxingReader: null,
+    zxingControls: null,
+    torchOn: false
   };
 
   const els = {};
@@ -85,6 +88,7 @@
     els.barcodeVideo = document.getElementById("barcodeVideo");
     els.scannerStatus = document.getElementById("scannerStatus");
     els.closeScannerButton = document.getElementById("closeScannerButton");
+    els.flashButton = document.getElementById("flashButton");
     els.filtersPanel = document.getElementById("filtersPanel");
     els.resetFiltersButton = document.getElementById("resetFiltersButton");
     els.filterStock = document.getElementById("filterStock");
@@ -117,6 +121,7 @@
       els.filtersPanel.hidden = !els.filtersPanel.hidden;
     });
     els.closeScannerButton.addEventListener("click", stopScanner);
+    els.flashButton.addEventListener("click", toggleFlash);
     els.closeResultsButton.addEventListener("click", () => {
       els.resultsArea.hidden = true;
     });
@@ -634,7 +639,7 @@
     const tone = getMedicineTone(medicine, index);
     const summary = [
       ["barcode", "Barcode", medicine.barcode],
-      ["stock", "Stok", medicine.stok || "-"],
+      ["stock", "Stok", formatStockValue(medicine)],
       ["purchaseUnit", "Satuan Beli", formatDisplayText(medicine.satuanBeli)],
       ["expired", "Expired", formatDateValue(medicine.expired)],
       ["supplier", "Supplier", formatDisplayText(medicine.suplier)],
@@ -656,9 +661,9 @@
             </div>
             ${priceRows.map(([, level, unit, price]) => `
               <div class="price-table-row">
-                <span>${escapeHtml(level)}</span>
-                <strong>${escapeHtml(formatDisplayText(unit) || "-")}</strong>
-                <strong>${escapeHtml(formatPrice(price) || "-")}</strong>
+                <span class="price-level">${escapeHtml(level)}</span>
+                <strong class="price-unit">${escapeHtml(formatDisplayText(unit) || "-")}</strong>
+                <strong class="price-value">${escapeHtml(formatPrice(price) || "-")}</strong>
               </div>
             `).join("")}
           </div>
@@ -667,6 +672,7 @@
     return `
       <article class="medicine-card">
         <div class="medicine-main">
+          <div class="medicine-thumb name-tone-${tone}" aria-hidden="true">${escapeHtml(getMedicineInitials(medicine.nama))}</div>
           <div class="medicine-title">
             <h2><span class="medicine-name-chip name-tone-${tone}">${highlightMedicineName(medicine.nama, query)}</span></h2>
             ${medicine.barcode ? `<p>${escapeHtml(medicine.barcode)}</p>` : ""}
@@ -675,8 +681,8 @@
         </div>
         <div class="medicine-review ${priceRows.length ? "" : "single-column"}">
           <dl class="medicine-summary">
-            ${summary.map(([, label, value]) => `
-              <div>
+            ${summary.map(([key, label, value]) => `
+              <div data-key="${escapeHtml(key)}">
                 <dt>${escapeHtml(label)}</dt>
                 <dd>${escapeHtml(value)}</dd>
               </div>
@@ -697,6 +703,15 @@
     }
 
     return (hash % 6) + 1;
+  }
+
+  function getMedicineInitials(value) {
+    const words = String(value || "")
+      .replace(/[()]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+
+    return (words[0] || "OBAT").slice(0, 10).toUpperCase();
   }
 
   function highlightMedicineName(value, query) {
@@ -744,17 +759,16 @@
       return;
     }
 
-    if (!("BarcodeDetector" in window)) {
-      setScannerStatus("Scanner kamera belum didukung di browser ini.", "error");
-      els.scannerPanel.hidden = false;
-      return;
-    }
-
     stopScanner({ keepPanelOpen: true });
     els.scannerPanel.hidden = false;
     setScannerStatus("Membuka kamera...", "info");
 
     try {
+      if (!("BarcodeDetector" in window)) {
+        await startFallbackScanner();
+        return;
+      }
+
       const supportedFormats = window.BarcodeDetector.getSupportedFormats
         ? await window.BarcodeDetector.getSupportedFormats()
         : [];
@@ -786,6 +800,7 @@
 
       els.barcodeVideo.srcObject = state.scannerStream;
       await els.barcodeVideo.play();
+      setupFlashButton();
       setScannerStatus("Kamera aktif.", "success");
       scanBarcodeFrame();
     } catch (error) {
@@ -804,8 +819,7 @@
 
         if (rawValue) {
           els.searchInput.value = rawValue;
-          renderResults();
-          setStatus(`Barcode ${rawValue} terbaca.`, "success");
+          handleScannedBarcode(rawValue);
           stopScanner();
           return;
         }
@@ -817,6 +831,35 @@
     state.scannerFrame = window.requestAnimationFrame(scanBarcodeFrame);
   }
 
+  async function startFallbackScanner() {
+    const Reader = window.ZXingBrowser?.BrowserMultiFormatReader || window.ZXing?.BrowserMultiFormatReader;
+
+    if (!Reader) {
+      setScannerStatus("Scanner Safari belum siap. Coba muat ulang halaman saat internet aktif.", "error");
+      return;
+    }
+
+    state.zxingReader = new Reader();
+
+    const onResult = (result) => {
+      const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
+      if (!rawValue) return;
+      handleScannedBarcode(rawValue);
+      stopScanner();
+    };
+
+    const controls = await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
+    state.zxingControls = controls || null;
+    window.setTimeout(setupFlashButton, 500);
+    setScannerStatus("Kamera aktif.", "success");
+  }
+
+  function handleScannedBarcode(rawValue) {
+    els.searchInput.value = rawValue;
+    renderResults();
+    setStatus(`Barcode ${rawValue} terbaca.`, "success");
+  }
+
   function stopScanner(options = {}) {
     if (state.scannerFrame) {
       window.cancelAnimationFrame(state.scannerFrame);
@@ -826,6 +869,22 @@
     if (state.scannerStream) {
       state.scannerStream.getTracks().forEach((track) => track.stop());
       state.scannerStream = null;
+    }
+
+    if (state.zxingControls?.stop) {
+      state.zxingControls.stop();
+      state.zxingControls = null;
+    }
+
+    if (state.zxingReader?.reset) {
+      state.zxingReader.reset();
+      state.zxingReader = null;
+    }
+
+    state.torchOn = false;
+    if (els.flashButton) {
+      els.flashButton.hidden = true;
+      els.flashButton.classList.remove("is-active");
     }
 
     if (els.barcodeVideo) {
@@ -840,6 +899,36 @@
   function setScannerStatus(message, type) {
     els.scannerStatus.textContent = message;
     els.scannerStatus.dataset.type = type;
+  }
+
+  async function toggleFlash() {
+    const track = getScannerVideoTrack();
+    if (!track?.applyConstraints) return;
+
+    try {
+      state.torchOn = !state.torchOn;
+      await track.applyConstraints({ advanced: [{ torch: state.torchOn }] });
+      els.flashButton.classList.toggle("is-active", state.torchOn);
+    } catch (error) {
+      state.torchOn = false;
+      els.flashButton.classList.remove("is-active");
+      setScannerStatus("Flash tidak tersedia di perangkat ini.", "warning");
+    }
+  }
+
+  function setupFlashButton() {
+    const track = getScannerVideoTrack();
+    const capabilities = track?.getCapabilities ? track.getCapabilities() : {};
+    const hasTorch = Boolean(capabilities && "torch" in capabilities);
+
+    els.flashButton.hidden = !hasTorch;
+    els.flashButton.classList.toggle("is-active", state.torchOn);
+  }
+
+  function getScannerVideoTrack() {
+    const stream = state.scannerStream || els.barcodeVideo?.srcObject;
+    if (!stream?.getVideoTracks) return null;
+    return stream.getVideoTracks()[0] || null;
   }
 
   function showEmpty(title, message) {
@@ -892,6 +981,13 @@
     if (!raw) return "";
 
     return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
+  function formatStockValue(medicine) {
+    const stock = String(medicine.stok || "-").trim() || "-";
+    const unit = formatDisplayText(medicine.satuanBeli);
+
+    return stock !== "-" && unit ? `${stock} ${unit}` : stock;
   }
 
   function formatPrice(value) {

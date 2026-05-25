@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="assets/search-obat.js"></script>
 </head>
 <body data-page="medicine">
@@ -112,12 +113,19 @@
       <div class="scanner-panel" id="scannerPanel" hidden>
         <div class="scanner-head">
           <strong>Scanner Barcode</strong>
-          <button class="icon-button" id="closeScannerButton" type="button" aria-label="Tutup scanner" title="Tutup scanner">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 6 6 18"></path>
-              <path d="m6 6 12 12"></path>
-            </svg>
-          </button>
+          <div class="scanner-actions">
+            <button class="icon-button flash-button" id="flashButton" type="button" aria-label="Flash" title="Flash" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M13 2 4 14h7l-1 8 10-13h-7l1-7Z"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="closeScannerButton" type="button" aria-label="Tutup scanner" title="Tutup scanner">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="scanner-frame">
           <video id="barcodeVideo" muted playsinline></video>

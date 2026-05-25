@@ -458,7 +458,7 @@ h1 {
 .search-popover-anchor {
   position: relative;
   z-index: 12;
-  width: min(820px, 100%);
+  width: min(760px, 100%);
 }
 
 .icon-button {
@@ -544,6 +544,18 @@ h1 {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.scanner-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flash-button.is-active {
+  border-color: rgba(232, 23, 152, 0.5);
+  background: #fff0f8;
+  color: var(--pink);
 }
 
 .scanner-head strong {
@@ -837,6 +849,48 @@ h1 {
   margin-bottom: 14px;
 }
 
+.medicine-thumb {
+  flex: 0 0 auto;
+  display: none;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 6px;
+  border: 1px solid rgba(207, 224, 244, 0.78);
+  border-radius: 8px;
+  background: var(--name-accent, var(--blue));
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow: hidden;
+}
+
+.medicine-thumb.name-tone-1 {
+  --name-accent: #1378ee;
+}
+
+.medicine-thumb.name-tone-2 {
+  --name-accent: #e81798;
+}
+
+.medicine-thumb.name-tone-3 {
+  --name-accent: #0fa968;
+}
+
+.medicine-thumb.name-tone-4 {
+  --name-accent: #d08a00;
+}
+
+.medicine-thumb.name-tone-5 {
+  --name-accent: #0095b8;
+}
+
+.medicine-thumb.name-tone-6 {
+  --name-accent: #6b52d9;
+}
+
 .medicine-title {
   flex: 1 1 auto;
   min-width: 0;
@@ -1062,10 +1116,140 @@ h1 {
 
   .results-popover {
     max-height: min(68vh, 620px);
+    padding: 10px;
+  }
+
+  .results-popover-head {
+    margin: -10px -10px 10px;
+    padding: 10px;
+  }
+
+  .results-popover-head strong {
+    font-size: 0.92rem;
+  }
+
+  .medicine-card {
+    padding: 12px;
+    background: #fbfaff;
+  }
+
+  .medicine-main {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 10px;
+  }
+
+  .medicine-thumb {
+    display: grid;
+  }
+
+  .medicine-name-chip {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .medicine-main h2 {
+    margin-bottom: 3px;
+    font-size: 0.98rem;
+    line-height: 1.28;
+  }
+
+  .medicine-main p {
+    font-size: 0.78rem;
+  }
+
+  .stock-pill {
+    padding: 6px 8px;
+    font-size: 0.7rem;
   }
 
   .medicine-review {
-    grid-template-columns: 1fr;
+    display: block;
+  }
+
+  .medicine-summary {
+    gap: 0;
+  }
+
+  .medicine-summary div {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    min-height: 0;
+    padding: 3px 0;
+    border: 0;
+  }
+
+  .medicine-summary div:first-child {
+    border-top: 0;
+  }
+
+  .medicine-summary div:not([data-key="stock"]):not([data-key="expired"]) {
+    display: none;
+  }
+
+  .medicine-summary dt,
+  .medicine-summary dd,
+  .price-table-row span,
+  .price-table-row strong {
+    font-size: 0.86rem;
+  }
+
+  .medicine-summary dt {
+    color: var(--ink);
+    text-transform: none;
+  }
+
+  .medicine-summary dt::after {
+    content: " :";
+  }
+
+  .price-table {
+    margin-top: 8px;
+    border: 0;
+    background: transparent;
+  }
+
+  .price-table-head {
+    display: none;
+  }
+
+  .price-table-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 0;
+    padding: 3px 0;
+    border: 0;
+  }
+
+  .price-level {
+    color: var(--ink);
+  }
+
+  .price-level::before {
+    content: "Harga ";
+  }
+
+  .price-level::after {
+    content: " :";
+  }
+
+  .price-value {
+    order: 2;
+  }
+
+  .price-unit {
+    order: 3;
+  }
+
+  .price-unit::before {
+    content: " / ";
+    color: var(--ink);
+    font-weight: 700;
   }
 
   .feature-card {
@@ -1111,9 +1295,7 @@ h1 {
     flex-direction: column;
   }
 
-  .medicine-summary div,
-  .price-table-head,
-  .price-table-row {
+  .price-table-head {
     grid-template-columns: 1fr;
   }
 }

@@ -367,7 +367,7 @@
     const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=HADIR`;
     const timestamp = new Date().toISOString();
     const fileName = `absensi_${label}_${timestamp.replace(/[:.]/g, "-")}.jpg`;
-    const payload = new URLSearchParams({
+    const payload = {
       nama: label,
       nama_karyawan: displayName,
       namaKaryawan: displayName,
@@ -385,17 +385,24 @@
       fileName,
       folder: "foto_absensi",
       timestamp
-    });
+    };
     const response = await fetch(submitUrl, {
       method: "POST",
-      body: payload
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
       throw new Error(`Pengiriman gagal (${response.status}).`);
     }
 
-    const result = await response.json();
+    const responseText = await response.text();
+    let result = {};
+
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch (error) {
+      result = { ok: true, raw: responseText };
+    }
 
     if (result && result.error) {
       throw new Error(result.error);
