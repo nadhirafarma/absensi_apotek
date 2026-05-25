@@ -27,7 +27,10 @@
     isSyncing: false,
     scannerStream: null,
     scannerFrame: null,
+    scannerTimer: null,
+    scannerLocked: false,
     barcodeDetector: null,
+    scannerCanvas: null,
     zxingReader: null,
     zxingControls: null,
     torchOn: false
@@ -755,6 +758,7 @@
     }
 
     stopScanner({ keepPanelOpen: true });
+    state.scannerLocked = false;
     els.scannerPanel.hidden = false;
     setScannerStatus("Membuka kamera...", "info");
 
@@ -765,14 +769,33 @@
       await tuneScannerTrack();
       window.setTimeout(tuneScannerTrack, 700);
       setupFlashButton();
+      await setupNativeBarcodeDetector();
+      scanBarcodeFrame();
 
-      if (await startZxingScanner(state.scannerStream)) return;
+      if (await startZxingScanner(state.scannerStream)) {
+        setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.", "success");
+        return;
+      }
 
-      if (!("BarcodeDetector" in window)) {
+      if (!state.barcodeDetector && !window.jsQR) {
         setScannerStatus("Scanner belum siap. Coba muat ulang halaman saat internet aktif.", "error");
         return;
       }
 
+      setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.", "success");
+    } catch (error) {
+      stopScanner({ keepPanelOpen: true });
+      setScannerStatus(`Scanner gagal: ${error.message}`, "error");
+    }
+  }
+
+  async function setupNativeBarcodeDetector() {
+    if (!("BarcodeDetector" in window)) {
+      state.barcodeDetector = null;
+      return;
+    }
+
+    try {
       const supportedFormats = window.BarcodeDetector.getSupportedFormats
         ? await window.BarcodeDetector.getSupportedFormats()
         : [];
@@ -793,25 +816,41 @@
       state.barcodeDetector = formats.length
         ? new window.BarcodeDetector({ formats })
         : new window.BarcodeDetector();
-
-      setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
-      scanBarcodeFrame();
     } catch (error) {
-      stopScanner({ keepPanelOpen: true });
-      setScannerStatus(`Scanner gagal: ${error.message}`, "error");
+      state.barcodeDetector = null;
     }
   }
 
   async function scanBarcodeFrame() {
-    if (!state.barcodeDetector || !els.barcodeVideo.srcObject) return;
+    if (state.scannerLocked || !els.barcodeVideo.srcObject) return;
 
     try {
       if (els.barcodeVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        const barcodes = await state.barcodeDetector.detect(els.barcodeVideo);
-        const rawValue = barcodes[0]?.rawValue?.trim();
+        const scanCanvas = getScannerCanvas();
+        const scanContext = scanCanvas.getContext("2d", { willReadFrequently: true });
+        const crop = getScanCrop();
+
+        scanCanvas.width = crop.targetWidth;
+        scanCanvas.height = crop.targetHeight;
+        scanContext.drawImage(
+          els.barcodeVideo,
+          crop.sourceX,
+          crop.sourceY,
+          crop.sourceWidth,
+          crop.sourceHeight,
+          0,
+          0,
+          crop.targetWidth,
+          crop.targetHeight
+        );
+
+        const nativeValue = state.barcodeDetector
+          ? await detectWithNativeBarcodeDetector(scanCanvas)
+          : "";
+        const qrValue = nativeValue || detectWithJsQr(scanContext, scanCanvas.width, scanCanvas.height);
+        const rawValue = (nativeValue || qrValue || "").trim();
 
         if (rawValue) {
-          els.searchInput.value = rawValue;
           handleScannedBarcode(rawValue);
           stopScanner();
           return;
@@ -821,7 +860,56 @@
       setScannerStatus(`Scanner gagal membaca: ${error.message}`, "error");
     }
 
-    state.scannerFrame = window.requestAnimationFrame(scanBarcodeFrame);
+    state.scannerTimer = window.setTimeout(scanBarcodeFrame, 260);
+  }
+
+  async function detectWithNativeBarcodeDetector(scanCanvas) {
+    try {
+      const barcodes = await state.barcodeDetector.detect(scanCanvas);
+
+      return barcodes[0]?.rawValue?.trim() || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function detectWithJsQr(scanContext, width, height) {
+    if (!window.jsQR) return "";
+
+    try {
+      const imageData = scanContext.getImageData(0, 0, width, height);
+      const result = window.jsQR(imageData.data, width, height, {
+        inversionAttempts: "attemptBoth"
+      });
+
+      return result?.data?.trim() || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function getScannerCanvas() {
+    if (!state.scannerCanvas) {
+      state.scannerCanvas = document.createElement("canvas");
+    }
+
+    return state.scannerCanvas;
+  }
+
+  function getScanCrop() {
+    const sourceWidth = els.barcodeVideo.videoWidth || 1280;
+    const sourceHeight = els.barcodeVideo.videoHeight || 720;
+    const cropWidth = Math.round(sourceWidth * 0.78);
+    const cropHeight = Math.round(sourceHeight * 0.58);
+
+    return {
+      sourceX: Math.round((sourceWidth - cropWidth) / 2),
+      sourceY: Math.round((sourceHeight - cropHeight) / 2),
+      sourceWidth: cropWidth,
+      sourceHeight: cropHeight,
+      targetWidth: Math.min(720, cropWidth),
+      targetHeight: Math.min(420, cropHeight)
+    };
   }
 
   async function startZxingScanner(stream) {
@@ -831,15 +919,15 @@
       return false;
     }
 
-    state.zxingReader = new Reader(undefined, {
-      delayBetweenScanAttempts: 120,
-      delayBetweenScanSuccess: 500,
-      tryPlayVideoTimeout: 5000
-    });
+    state.zxingReader = createZxingReader(Reader);
+
+    if (!state.zxingReader) {
+      return false;
+    }
 
     const onResult = (result) => {
       const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
-      if (!rawValue) return;
+      if (!rawValue || state.scannerLocked) return;
       handleScannedBarcode(rawValue);
       stopScanner();
     };
@@ -849,8 +937,63 @@
       : await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
     state.zxingControls = controls || null;
     window.setTimeout(setupFlashButton, 500);
-    setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
     return true;
+  }
+
+  function createZxingReader(Reader) {
+    const formats = getZxingFormats();
+    const hints = getZxingHints(formats);
+
+    try {
+      return new Reader(hints, {
+        delayBetweenScanAttempts: 260,
+        delayBetweenScanSuccess: 900,
+        tryPlayVideoTimeout: 5000
+      });
+    } catch (error) {
+      return new Reader(undefined, {
+        delayBetweenScanAttempts: 260,
+        delayBetweenScanSuccess: 900,
+        tryPlayVideoTimeout: 5000
+      });
+    }
+  }
+
+  function getZxingFormats() {
+    const BarcodeFormat = window.ZXingBrowser?.BarcodeFormat || window.ZXing?.BarcodeFormat;
+
+    if (!BarcodeFormat) return null;
+
+    return [
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.CODE_93,
+      BarcodeFormat.CODABAR,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.ITF,
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E
+    ].filter((format) => format !== undefined);
+  }
+
+  function getZxingHints(formats) {
+    const DecodeHintType = window.ZXingBrowser?.DecodeHintType || window.ZXing?.DecodeHintType;
+
+    if (!DecodeHintType) return undefined;
+
+    const hints = new Map();
+
+    if (formats?.length) {
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+    }
+
+    if (DecodeHintType.TRY_HARDER !== undefined) {
+      hints.set(DecodeHintType.TRY_HARDER, true);
+    }
+
+    return hints;
   }
 
   async function startFallbackScanner() {
@@ -861,7 +1004,7 @@
       return;
     }
 
-    state.zxingReader = new Reader(undefined, {
+    state.zxingReader = createZxingReader(Reader) || new Reader(undefined, {
       delayBetweenScanAttempts: 120,
       delayBetweenScanSuccess: 500,
       tryPlayVideoTimeout: 5000
@@ -869,7 +1012,7 @@
 
     const onResult = (result) => {
       const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
-      if (!rawValue) return;
+      if (!rawValue || state.scannerLocked) return;
       handleScannedBarcode(rawValue);
       stopScanner();
     };
@@ -883,7 +1026,7 @@
       : await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
     state.zxingControls = controls || null;
     window.setTimeout(setupFlashButton, 500);
-    setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
+    setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.", "success");
   }
 
   async function openScannerStream() {
@@ -931,8 +1074,8 @@
     return {
       ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
       ...(!deviceId ? { facingMode: exactFacingMode ? { exact: "environment" } : { ideal: "environment" } } : {}),
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
       frameRate: { ideal: 30, max: 30 },
       advanced: [
         { focusMode: "continuous" },
@@ -958,6 +1101,9 @@
   }
 
   function handleScannedBarcode(rawValue) {
+    if (state.scannerLocked) return;
+
+    state.scannerLocked = true;
     els.searchInput.value = rawValue;
     renderResults();
     setStatus(`Barcode ${rawValue} terbaca.`, "success");
@@ -967,6 +1113,11 @@
     if (state.scannerFrame) {
       window.cancelAnimationFrame(state.scannerFrame);
       state.scannerFrame = null;
+    }
+
+    if (state.scannerTimer) {
+      window.clearTimeout(state.scannerTimer);
+      state.scannerTimer = null;
     }
 
     if (state.scannerStream) {
@@ -985,6 +1136,8 @@
     }
 
     state.torchOn = false;
+    state.scannerLocked = false;
+    state.barcodeDetector = null;
     if (els.flashButton) {
       els.flashButton.hidden = true;
       els.flashButton.classList.remove("is-active");

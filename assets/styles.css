@@ -570,6 +570,19 @@ h1 {
   aspect-ratio: 16 / 9;
 }
 
+.scanner-frame::after {
+  content: "";
+  position: absolute;
+  left: 11%;
+  right: 11%;
+  top: 21%;
+  bottom: 21%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  box-shadow: 0 0 18px rgba(232, 23, 152, 0.38);
+  pointer-events: none;
+}
+
 .scanner-frame video {
   display: block;
   width: 100%;
@@ -584,6 +597,7 @@ h1 {
   left: 10%;
   right: 10%;
   top: 50%;
+  z-index: 1;
   height: 2px;
   background: var(--pink);
   box-shadow: 0 0 14px rgba(232, 23, 152, 0.65);
