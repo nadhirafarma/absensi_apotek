@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Absensi Face ID - Nadhira Farma</title>
+  <meta name="description" content="Absensi Face ID Nadhira Farma dengan deteksi wajah ringan dan validasi GPS cepat.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/attendance.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="assets/attendance.js"></script>
+</head>
+<body>
+  <main class="attendance-shell">
+    <section class="attendance-card">
+      <header class="attendance-header">
+        <a class="brand-link" href="index.html" aria-label="Kembali ke menu utama">
+          <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+          <span>
+            <strong>Absensi Face ID</strong>
+            <small>Apotek Nadhira Farma</small>
+          </span>
+        </a>
+        <div class="clock" id="clockLabel">--:-- WIB</div>
+      </header>
+
+      <div class="status-row" aria-label="Status sistem">
+        <span class="status-pill" id="modelStatus">Model disiapkan</span>
+        <span class="status-pill" id="gpsStatus">GPS disiapkan</span>
+      </div>
+
+      <div class="camera-box">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="faceCanvas"></canvas>
+        <div class="scan-guide" aria-hidden="true"></div>
+      </div>
+
+      <canvas id="captureCanvas" hidden></canvas>
+
+      <p class="main-status" id="statusText">Menyiapkan kamera dan Face ID...</p>
+
+      <div class="actions">
+        <button class="secondary-button" id="retryButton" type="button" hidden>Coba lagi</button>
+        <button class="danger-button" id="cancelButton" type="button">Batalkan absensi</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

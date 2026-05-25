@@ -1,0 +1,233 @@
+:root {
+  --bg: #eef7ff;
+  --surface: #ffffff;
+  --ink: #0b1f4d;
+  --muted: #587093;
+  --line: #cfe0f4;
+  --blue: #1378ee;
+  --pink: #e81798;
+  --green: #0fa968;
+  --yellow: #b87900;
+  --red: #cc2f4a;
+  --shadow: 0 18px 48px rgba(17, 69, 134, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Poppins", Arial, sans-serif;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(238, 247, 255, 0.96)),
+    var(--bg);
+}
+
+button {
+  font: inherit;
+}
+
+.attendance-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.attendance-card {
+  width: min(460px, 100%);
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.attendance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.brand-link strong,
+.brand-link small {
+  display: block;
+}
+
+.brand-link strong {
+  font-size: 1rem;
+}
+
+.brand-link small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.clock {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #244679;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.status-pill {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.status-pill.is-ready {
+  background: #e7f7ef;
+  border-color: #bfe9d3;
+  color: #08764a;
+}
+
+.status-pill.is-warning {
+  background: #fff5d8;
+  border-color: #f2daa0;
+  color: var(--yellow);
+}
+
+.status-pill.is-error {
+  background: #ffe9ed;
+  border-color: #f4b9c3;
+  color: var(--red);
+}
+
+.camera-box {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background:
+    linear-gradient(#06142e, #06142e) padding-box,
+    linear-gradient(135deg, var(--blue), var(--pink)) border-box;
+}
+
+video,
+#faceCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+video {
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+#faceCanvas {
+  pointer-events: none;
+}
+
+.scan-guide {
+  position: absolute;
+  inset: 14%;
+  border: 2px solid rgba(255, 255, 255, 0.58);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.main-status {
+  min-height: 58px;
+  margin: 16px 0;
+  color: #213b70;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.secondary-button,
+.danger-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button {
+  background: var(--blue);
+}
+
+.danger-button {
+  background: var(--red);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 420px) {
+  .attendance-shell {
+    padding: 10px;
+  }
+
+  .attendance-card {
+    padding: 14px;
+  }
+
+  .attendance-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .clock {
+    width: 100%;
+    text-align: center;
+  }
+}
