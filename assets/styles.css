@@ -447,6 +447,8 @@ h1 {
 }
 
 .search-panel {
+  position: relative;
+  z-index: 3;
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -469,7 +471,7 @@ h1 {
 
 .search-popover-anchor {
   position: relative;
-  z-index: 12;
+  z-index: 60;
   width: min(760px, 100%);
 }
 
@@ -888,7 +890,7 @@ h1 {
   top: calc(100% + 10px);
   left: 0;
   right: 0;
-  z-index: 30;
+  z-index: 100;
   display: block;
   padding: 0;
   background: transparent;
@@ -1173,6 +1175,11 @@ h1 {
 
 [hidden] {
   display: none !important;
+}
+
+body.has-search-popover .topbar,
+body.has-search-popover .footer {
+  display: none;
 }
 
 .results-popover {

@@ -31,6 +31,8 @@
     scannerLocked: false,
     barcodeDetector: null,
     scannerCanvas: null,
+    quaggaBusy: false,
+    lastQuaggaScanAt: 0,
     zxingReader: null,
     zxingControls: null,
     importHeaders: [],
@@ -1080,7 +1082,8 @@
           ? await detectWithNativeBarcodeDetector(scanCanvas)
           : "";
         const qrValue = nativeValue || detectWithJsQr(scanContext, scanCanvas.width, scanCanvas.height);
-        const rawValue = (nativeValue || qrValue || "").trim();
+        const quaggaValue = nativeValue || qrValue ? "" : await detectWithQuagga(scanCanvas);
+        const rawValue = (nativeValue || qrValue || quaggaValue || "").trim();
 
         if (rawValue) {
           handleScannedBarcode(rawValue);
@@ -1120,6 +1123,55 @@
     }
   }
 
+  function detectWithQuagga(scanCanvas) {
+    const quagga = window.Quagga || window.Quagga2;
+    const now = Date.now();
+
+    if (!quagga?.decodeSingle || state.quaggaBusy || now - state.lastQuaggaScanAt < 450) {
+      return Promise.resolve("");
+    }
+
+    state.quaggaBusy = true;
+    state.lastQuaggaScanAt = now;
+
+    return new Promise((resolve) => {
+      try {
+        quagga.decodeSingle({
+          src: scanCanvas.toDataURL("image/png"),
+          locate: true,
+          inputStream: {
+            size: 960,
+            singleChannel: false
+          },
+          locator: {
+            patchSize: "medium",
+            halfSample: false
+          },
+          decoder: {
+            readers: [
+              "code_128_reader",
+              "code_39_reader",
+              "code_93_reader",
+              "codabar_reader",
+              "ean_reader",
+              "ean_8_reader",
+              "i2of5_reader",
+              "upc_reader",
+              "upc_e_reader"
+            ],
+            multiple: false
+          }
+        }, (result) => {
+          state.quaggaBusy = false;
+          resolve(result?.codeResult?.code?.trim() || "");
+        });
+      } catch (error) {
+        state.quaggaBusy = false;
+        resolve("");
+      }
+    });
+  }
+
   function getScannerCanvas() {
     if (!state.scannerCanvas) {
       state.scannerCanvas = document.createElement("canvas");
@@ -1131,7 +1183,7 @@
   function getScanCrop() {
     const sourceWidth = els.barcodeVideo.videoWidth || 1280;
     const sourceHeight = els.barcodeVideo.videoHeight || 720;
-    const cropWidth = Math.round(sourceWidth * 0.78);
+    const cropWidth = Math.round(sourceWidth * 0.84);
     const cropHeight = Math.round(sourceHeight * 0.58);
 
     return {
@@ -1139,8 +1191,8 @@
       sourceY: Math.round((sourceHeight - cropHeight) / 2),
       sourceWidth: cropWidth,
       sourceHeight: cropHeight,
-      targetWidth: Math.min(720, cropWidth),
-      targetHeight: Math.min(420, cropHeight)
+      targetWidth: Math.min(1280, cropWidth),
+      targetHeight: Math.min(720, cropHeight)
     };
   }
 
@@ -1432,8 +1484,8 @@
       hints.push({ whiteBalanceMode: "continuous" });
     }
 
-    if (capabilities.zoom && typeof capabilities.zoom.min === "number" && typeof capabilities.zoom.max === "number") {
-      const targetZoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, 1.35));
+    if (point && capabilities.zoom && typeof capabilities.zoom.min === "number" && typeof capabilities.zoom.max === "number") {
+      const targetZoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, 1.1));
       hints.push({ zoom: targetZoom });
     }
 
@@ -1467,7 +1519,7 @@
 
     if (state.zxingControls?.streamVideoConstraintsApply) {
       try {
-        state.zxingControls.streamVideoConstraintsApply({ advanced: [{ torch: nextTorchState }] });
+        await state.zxingControls.streamVideoConstraintsApply({ advanced: [{ torch: nextTorchState }] });
         state.torchOn = nextTorchState;
         els.flashButton.classList.toggle("is-active", state.torchOn);
         setScannerStatus(state.torchOn ? "Flash aktif." : "Flash mati.", "success");
@@ -1484,7 +1536,10 @@
     }
 
     try {
-      await track.applyConstraints({ advanced: [{ torch: nextTorchState }] });
+      const changed = await applyTorchToTrack(track, nextTorchState);
+      if (!changed) {
+        throw new Error("Torch constraint rejected");
+      }
       state.torchOn = nextTorchState;
       els.flashButton.classList.toggle("is-active", state.torchOn);
       setScannerStatus(state.torchOn ? "Flash aktif." : "Flash mati.", "success");
@@ -1493,6 +1548,38 @@
       els.flashButton.classList.remove("is-active");
       setScannerStatus("Flash belum bisa dikontrol oleh browser ini.", "warning");
     }
+  }
+
+  async function applyTorchToTrack(track, nextTorchState) {
+    const attempts = [
+      { advanced: [{ torch: nextTorchState }] },
+      { torch: nextTorchState },
+      { advanced: [{ fillLightMode: nextTorchState ? "flash" : "off" }] }
+    ];
+
+    for (const constraints of attempts) {
+      try {
+        await track.applyConstraints(constraints);
+        return true;
+      } catch (error) {
+        // Keep trying: Android Chrome/WebView variants expose torch differently.
+      }
+    }
+
+    if (window.ImageCapture) {
+      try {
+        const imageCapture = new window.ImageCapture(track);
+
+        if (imageCapture.setOptions) {
+          await imageCapture.setOptions({ fillLightMode: nextTorchState ? "flash" : "off" });
+          return true;
+        }
+      } catch (error) {
+        return false;
+      }
+    }
+
+    return false;
   }
 
   function setupFlashButton() {
