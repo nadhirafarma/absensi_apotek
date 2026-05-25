@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="assets/search-obat.js"></script>
@@ -24,19 +25,40 @@
       </span>
     </a>
 
-    <nav class="page-nav" aria-label="Navigasi">
-      <a href="index.html">Menu</a>
-      <a href="absensi.html">Absensi</a>
-      <button class="nav-action sync-nav-action" id="syncButton" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
-          <path d="M3 21v-5h5"></path>
-          <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"></path>
-          <path d="M16 3h5v5"></path>
-        </svg>
-        <span class="sync-label">Sinkronkan</span>
-      </button>
-    </nav>
+    <div class="top-actions">
+      <nav class="page-nav" aria-label="Navigasi">
+        <a href="index.html">Menu</a>
+        <a href="absensi.html">Absensi</a>
+        <button class="nav-action sync-nav-action" id="syncButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
+            <path d="M3 21v-5h5"></path>
+            <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"></path>
+            <path d="M16 3h5v5"></path>
+          </svg>
+          <span class="sync-label">Sinkronkan</span>
+        </button>
+      </nav>
+
+      <section class="import-panel import-panel-top" id="importPanel">
+        <div class="import-head">
+          <strong>Import Excel Data Obat</strong>
+          <span id="importSummary">Belum ada file</span>
+        </div>
+        <div class="import-row">
+          <label class="file-picker">
+            <input id="importFileInput" type="file" accept=".xlsx,.xls,.csv">
+            <span>Pilih file Excel</span>
+          </label>
+          <select id="importMode" aria-label="Mode import">
+            <option value="replace">Ganti seluruh data_obat</option>
+            <option value="append">Tambahkan ke data_obat</option>
+          </select>
+          <button class="secondary-action" id="importButton" type="button" disabled>Upload ke Google Sheet</button>
+        </div>
+        <p id="importStatus">File akan dicek dulu sebelum dikirim ke Google Sheet.</p>
+      </section>
+    </div>
   </header>
 
   <main class="shell search-shell">

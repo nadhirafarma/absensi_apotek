@@ -33,6 +33,9 @@
     scannerCanvas: null,
     zxingReader: null,
     zxingControls: null,
+    importHeaders: [],
+    importRows: [],
+    importMedicines: [],
     torchOn: false
   };
 
@@ -107,6 +110,11 @@
     els.apiUrlInput = document.getElementById("apiUrlInput");
     els.saveApiButton = document.getElementById("saveApiButton");
     els.clearCacheButton = document.getElementById("clearCacheButton");
+    els.importFileInput = document.getElementById("importFileInput");
+    els.importMode = document.getElementById("importMode");
+    els.importButton = document.getElementById("importButton");
+    els.importSummary = document.getElementById("importSummary");
+    els.importStatus = document.getElementById("importStatus");
     els.cacheStatus = document.getElementById("cacheStatus");
     els.medicineCount = document.getElementById("medicineCount");
     els.resultsArea = document.getElementById("resultsArea");
@@ -140,6 +148,8 @@
       }
     });
     els.syncButton.addEventListener("click", () => syncMedicines());
+    els.importFileInput.addEventListener("change", handleImportFileChange);
+    els.importButton.addEventListener("click", importExcelToGoogleSheet);
     window.addEventListener("beforeunload", stopScanner);
 
     [
@@ -327,6 +337,228 @@
       state.isSyncing = false;
       setSyncState(false);
     }
+  }
+
+  async function handleImportFileChange() {
+    const file = els.importFileInput.files?.[0];
+
+    state.importHeaders = [];
+    state.importRows = [];
+    state.importMedicines = [];
+    els.importButton.disabled = true;
+
+    if (!file) {
+      setImportStatus("File akan dicek dulu sebelum dikirim ke Google Sheet.", "info");
+      els.importSummary.textContent = "Belum ada file";
+      return;
+    }
+
+    try {
+      const parsed = await parseImportFile(file);
+      const medicines = sortMedicinesByName(parsed.rows
+        .map(normalizeMedicine)
+        .filter(Boolean));
+
+      if (!medicines.length) {
+        throw new Error("File tidak memiliki kolom nama obat atau barcode.");
+      }
+
+      state.importHeaders = parsed.headers;
+      state.importRows = parsed.rows;
+      state.importMedicines = medicines;
+      els.importButton.disabled = false;
+      els.importSummary.textContent = `${medicines.length} data siap import`;
+      setImportStatus(`File ${file.name} berhasil dibaca. Periksa mode import sebelum upload.`, "success");
+    } catch (error) {
+      els.importSummary.textContent = "File belum valid";
+      setImportStatus(`Import gagal dibaca: ${error.message}`, "error");
+    }
+  }
+
+  async function parseImportFile(file) {
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (extension === "csv") {
+      const text = await file.text();
+      return matrixToImportRows(parseCsvMatrix(text));
+    }
+
+    if (!window.XLSX) {
+      throw new Error("Library pembaca Excel belum termuat. Coba muat ulang halaman.");
+    }
+
+    const buffer = await file.arrayBuffer();
+    const workbook = window.XLSX.read(buffer, {
+      type: "array",
+      cellDates: false
+    });
+    const firstSheetName = workbook.SheetNames[0];
+
+    if (!firstSheetName) {
+      throw new Error("Workbook tidak memiliki sheet.");
+    }
+
+    const matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      header: 1,
+      raw: false,
+      defval: ""
+    });
+
+    return matrixToImportRows(matrix);
+  }
+
+  function parseCsvMatrix(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let insideQuote = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      const nextChar = text[index + 1];
+
+      if (char === '"' && nextChar === '"') {
+        cell += '"';
+        index += 1;
+      } else if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (char === "," && !insideQuote) {
+        row.push(cell);
+        cell = "";
+      } else if ((char === "\n" || char === "\r") && !insideQuote) {
+        if (char === "\r" && nextChar === "\n") {
+          index += 1;
+        }
+        row.push(cell);
+        rows.push(row);
+        row = [];
+        cell = "";
+      } else {
+        cell += char;
+      }
+    }
+
+    row.push(cell);
+    rows.push(row);
+    return rows.filter((item) => item.some((value) => String(value || "").trim()));
+  }
+
+  function matrixToImportRows(matrix) {
+    if (!matrix.length) {
+      throw new Error("File kosong.");
+    }
+
+    const headers = matrix[0].map((header) => String(header || "").trim()).filter(Boolean);
+
+    if (!headers.length) {
+      throw new Error("Header kolom tidak ditemukan.");
+    }
+
+    const normalizedHeaders = matrix[0].map((header) => normalizeKey(header));
+    const rows = matrix.slice(1).map((row) => {
+      const item = {};
+      normalizedHeaders.forEach((header, index) => {
+        if (header) {
+          item[header] = row[index] || "";
+        }
+      });
+      return item;
+    }).filter((item) => Object.values(item).some((value) => String(value || "").trim()));
+
+    return { headers, rows };
+  }
+
+  async function importExcelToGoogleSheet() {
+    if (!state.importRows.length) {
+      setImportStatus("Pilih file Excel terlebih dahulu.", "warning");
+      return;
+    }
+
+    const apiUrl = getImportApiUrl();
+
+    if (!apiUrl) {
+      setImportStatus("URL API Google Sheet belum tersedia.", "error");
+      return;
+    }
+
+    els.importButton.disabled = true;
+    setImportStatus("Mengupload data obat ke Google Sheet...", "info");
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: "import_data_obat",
+          sheet: "data_obat",
+          mode: els.importMode.value,
+          headers: state.importHeaders,
+          rows: state.importRows
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const text = await response.text();
+      const result = parseImportResponse(text);
+
+      if (result && result.error) {
+        throw new Error(result.error);
+      }
+
+      const now = new Date().toISOString();
+      const previousMeta = readMeta();
+      const dataSignature = createMedicineSignature(state.importMedicines);
+
+      await replaceMedicines(state.importMedicines);
+      state.medicines = state.importMedicines;
+      populateFilterOptions();
+      localStorage.setItem(META_KEY, JSON.stringify({
+        ...previousMeta,
+        lastChecked: now,
+        lastChanged: now,
+        dataSignature,
+        source: getApiUrl(),
+        total: state.medicines.length
+      }));
+      renderResults();
+      updateCacheSummary();
+      setImportStatus(`Import selesai. ${state.importMedicines.length} data tersimpan.`, "success");
+    } catch (error) {
+      setImportStatus(`Upload gagal: ${error.message}. Pastikan Apps Script sudah mendukung action import_data_obat.`, "error");
+    } finally {
+      els.importButton.disabled = !state.importRows.length;
+    }
+  }
+
+  function getImportApiUrl() {
+    const apiUrl = getApiUrl();
+    if (!apiUrl) return "";
+
+    const url = new URL(apiUrl, window.location.href);
+    url.searchParams.set("sheet", "data_obat");
+    url.searchParams.set("action", "import_data_obat");
+    return url.toString();
+  }
+
+  function parseImportResponse(text) {
+    const value = String(text || "").trim();
+    if (!value) return {};
+
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return { ok: true, raw: value };
+    }
+  }
+
+  function setImportStatus(message, type) {
+    els.importStatus.textContent = message;
+    els.importStatus.dataset.type = type;
   }
 
   function parsePayload(payload) {

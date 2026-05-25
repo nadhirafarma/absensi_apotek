@@ -137,6 +137,18 @@ svg {
   justify-content: flex-end;
 }
 
+.top-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  width: min(560px, 100%);
+  margin-left: auto;
+}
+
+.top-actions .page-nav {
+  width: 100%;
+}
+
 .online-pill,
 .status-item,
 .page-nav a,
@@ -625,6 +637,105 @@ h1 {
   background: #f8fbff;
 }
 
+.import-panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(248, 251, 255, 0.92);
+  box-shadow: none;
+  backdrop-filter: blur(14px);
+}
+
+.import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.import-head strong {
+  color: var(--ink);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.import-head span,
+.import-panel p {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.import-row {
+  display: grid;
+  grid-template-columns: minmax(118px, 0.85fr) minmax(150px, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.file-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: #244679;
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.file-picker input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.import-row select {
+  min-height: 34px;
+  width: 100%;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.import-row .secondary-action {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.import-panel p {
+  margin: 6px 0 0;
+}
+
+.import-panel p[data-type="success"] {
+  color: var(--green);
+}
+
+.import-panel p[data-type="warning"] {
+  color: var(--yellow);
+}
+
+.import-panel p[data-type="error"] {
+  color: var(--red);
+}
+
 .filter-head {
   display: flex;
   align-items: center;
@@ -1064,6 +1175,140 @@ h1 {
   display: none !important;
 }
 
+.results-popover {
+  width: min(430px, 100%);
+  max-height: min(74vh, 660px);
+  padding: 10px;
+}
+
+.results-popover-head {
+  margin: -10px -10px 10px;
+  padding: 10px;
+}
+
+.results-popover-head strong {
+  font-size: 0.92rem;
+}
+
+.results-popover .medicine-card {
+  padding: 12px;
+  background: #fbfaff;
+}
+
+.results-popover .medicine-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 10px;
+}
+
+.results-popover .medicine-name-chip {
+  padding: 6px 8px 6px 10px;
+  border-radius: 7px;
+  box-shadow: inset 3px 0 0 var(--name-accent, var(--blue));
+}
+
+.results-popover .medicine-main h2 {
+  margin-bottom: 3px;
+  font-size: 0.98rem;
+  line-height: 1.28;
+}
+
+.results-popover .medicine-main p {
+  font-size: 0.78rem;
+}
+
+.results-popover .stock-pill {
+  padding: 6px 8px;
+  font-size: 0.7rem;
+}
+
+.results-popover .medicine-review {
+  display: block;
+}
+
+.results-popover .medicine-summary {
+  gap: 0;
+}
+
+.results-popover .medicine-summary div {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  padding: 3px 0;
+  border: 0;
+}
+
+.results-popover .medicine-summary div:first-child {
+  border-top: 0;
+}
+
+.results-popover .medicine-summary div:not([data-key="stock"]):not([data-key="expired"]) {
+  display: none;
+}
+
+.results-popover .medicine-summary dt,
+.results-popover .medicine-summary dd,
+.results-popover .price-table-row span,
+.results-popover .price-table-row strong {
+  font-size: 0.86rem;
+}
+
+.results-popover .medicine-summary dt {
+  color: var(--ink);
+  text-transform: none;
+}
+
+.results-popover .medicine-summary dt::after {
+  content: " :";
+}
+
+.results-popover .price-table {
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+}
+
+.results-popover .price-table-head {
+  display: none;
+}
+
+.results-popover .price-table-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 0;
+  padding: 3px 0;
+  border: 0;
+}
+
+.results-popover .price-level {
+  color: var(--ink);
+}
+
+.results-popover .price-level::before {
+  content: "Harga ";
+}
+
+.results-popover .price-level::after {
+  content: " :";
+}
+
+.results-popover .price-value {
+  order: 2;
+}
+
+.results-popover .price-unit {
+  order: 3;
+}
+
+.results-popover .price-unit::before {
+  content: " / ";
+  color: var(--ink);
+  font-weight: 700;
+}
+
 @media (max-width: 760px) {
   body {
     background:
@@ -1082,19 +1327,16 @@ h1 {
     justify-content: flex-start;
   }
 
+  .top-actions {
+    width: 100%;
+    justify-items: stretch;
+  }
+
   .menu-grid,
   .search-form,
-  .settings-row {
+  .settings-row,
+  .import-row {
     grid-template-columns: 1fr;
-  }
-
-  body.has-search-popover .topbar,
-  body.has-search-popover .footer {
-    display: none;
-  }
-
-  body.has-search-popover .search-shell {
-    padding-top: 12px;
   }
 
   .results-popover {
