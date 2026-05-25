@@ -120,6 +120,7 @@
     els.filterButton.addEventListener("click", () => {
       els.filtersPanel.hidden = !els.filtersPanel.hidden;
     });
+    els.barcodeVideo.addEventListener("click", handleScannerTapFocus);
     els.closeScannerButton.addEventListener("click", stopScanner);
     els.flashButton.addEventListener("click", toggleFlash);
     els.closeResultsButton.addEventListener("click", () => {
@@ -758,8 +759,17 @@
     setScannerStatus("Membuka kamera...", "info");
 
     try {
+      state.scannerStream = await openScannerStream();
+      els.barcodeVideo.srcObject = state.scannerStream;
+      await els.barcodeVideo.play();
+      await tuneScannerTrack();
+      window.setTimeout(tuneScannerTrack, 700);
+      setupFlashButton();
+
+      if (await startZxingScanner(state.scannerStream)) return;
+
       if (!("BarcodeDetector" in window)) {
-        await startFallbackScanner();
+        setScannerStatus("Scanner belum siap. Coba muat ulang halaman saat internet aktif.", "error");
         return;
       }
 
@@ -783,19 +793,8 @@
       state.barcodeDetector = formats.length
         ? new window.BarcodeDetector({ formats })
         : new window.BarcodeDetector();
-      state.scannerStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
 
-      els.barcodeVideo.srcObject = state.scannerStream;
-      await els.barcodeVideo.play();
-      setupFlashButton();
-      setScannerStatus("Kamera aktif.", "success");
+      setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
       scanBarcodeFrame();
     } catch (error) {
       stopScanner({ keepPanelOpen: true });
@@ -825,6 +824,35 @@
     state.scannerFrame = window.requestAnimationFrame(scanBarcodeFrame);
   }
 
+  async function startZxingScanner(stream) {
+    const Reader = window.ZXingBrowser?.BrowserMultiFormatReader || window.ZXing?.BrowserMultiFormatReader;
+
+    if (!Reader) {
+      return false;
+    }
+
+    state.zxingReader = new Reader(undefined, {
+      delayBetweenScanAttempts: 120,
+      delayBetweenScanSuccess: 500,
+      tryPlayVideoTimeout: 5000
+    });
+
+    const onResult = (result) => {
+      const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
+      if (!rawValue) return;
+      handleScannedBarcode(rawValue);
+      stopScanner();
+    };
+
+    const controls = state.zxingReader.decodeFromStream
+      ? await state.zxingReader.decodeFromStream(stream, els.barcodeVideo, onResult)
+      : await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
+    state.zxingControls = controls || null;
+    window.setTimeout(setupFlashButton, 500);
+    setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
+    return true;
+  }
+
   async function startFallbackScanner() {
     const Reader = window.ZXingBrowser?.BrowserMultiFormatReader || window.ZXing?.BrowserMultiFormatReader;
 
@@ -833,7 +861,11 @@
       return;
     }
 
-    state.zxingReader = new Reader();
+    state.zxingReader = new Reader(undefined, {
+      delayBetweenScanAttempts: 120,
+      delayBetweenScanSuccess: 500,
+      tryPlayVideoTimeout: 5000
+    });
 
     const onResult = (result) => {
       const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
@@ -844,18 +876,85 @@
 
     const constraints = {
       audio: false,
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
+      video: buildScannerVideoConstraints()
     };
     const controls = state.zxingReader.decodeFromConstraints
       ? await state.zxingReader.decodeFromConstraints(constraints, els.barcodeVideo, onResult)
       : await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
     state.zxingControls = controls || null;
     window.setTimeout(setupFlashButton, 500);
-    setScannerStatus("Kamera aktif.", "success");
+    setScannerStatus("Kamera aktif. Ketuk gambar untuk fokus ulang.", "success");
+  }
+
+  async function openScannerStream() {
+    const initialStream = await getScannerStreamWithFallbacks();
+    const selectedTrack = initialStream.getVideoTracks()[0];
+    const rearDevice = await findRearCameraDevice(selectedTrack?.label);
+
+    if (!rearDevice || selectedTrack?.label === rearDevice.label) {
+      return initialStream;
+    }
+
+    initialStream.getTracks().forEach((track) => track.stop());
+
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildScannerVideoConstraints(rearDevice.deviceId)
+      });
+    } catch (error) {
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildScannerVideoConstraints()
+      });
+    }
+  }
+
+  async function getScannerStreamWithFallbacks() {
+    const exactBackCamera = {
+      audio: false,
+      video: buildScannerVideoConstraints(null, true)
+    };
+    const idealBackCamera = {
+      audio: false,
+      video: buildScannerVideoConstraints()
+    };
+
+    try {
+      return await navigator.mediaDevices.getUserMedia(exactBackCamera);
+    } catch (error) {
+      return navigator.mediaDevices.getUserMedia(idealBackCamera);
+    }
+  }
+
+  function buildScannerVideoConstraints(deviceId, exactFacingMode = false) {
+    return {
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      ...(!deviceId ? { facingMode: exactFacingMode ? { exact: "environment" } : { ideal: "environment" } } : {}),
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      frameRate: { ideal: 30, max: 30 },
+      advanced: [
+        { focusMode: "continuous" },
+        { exposureMode: "continuous" },
+        { whiteBalanceMode: "continuous" }
+      ]
+    };
+  }
+
+  async function findRearCameraDevice(currentLabel) {
+    if (!navigator.mediaDevices?.enumerateDevices) return null;
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((device) => device.kind === "videoinput");
+      const rearPattern = /(back|rear|environment|belakang|kamera belakang|0)/i;
+      const rearDevice = videoInputs.find((device) => rearPattern.test(device.label));
+
+      return rearDevice || videoInputs.find((device) => device.label && device.label !== currentLabel) || null;
+    } catch (error) {
+      return null;
+    }
   }
 
   function handleScannedBarcode(rawValue) {
@@ -905,6 +1004,65 @@
     els.scannerStatus.dataset.type = type;
   }
 
+  async function handleScannerTapFocus(event) {
+    if (!els.barcodeVideo.srcObject) return;
+
+    const rect = els.barcodeVideo.getBoundingClientRect();
+    const point = {
+      x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
+    };
+
+    setScannerStatus("Mencoba fokus ulang...", "info");
+    await tuneScannerTrack(point);
+    setScannerStatus("Kamera aktif. Arahkan garis ke barcode.", "success");
+  }
+
+  async function tuneScannerTrack(point) {
+    const track = getScannerVideoTrack();
+    if (!track?.applyConstraints) return;
+
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    const hints = [];
+
+    if (point && "pointsOfInterest" in capabilities) {
+      hints.push({ pointsOfInterest: [point] });
+    }
+
+    if (Array.isArray(capabilities.focusMode)) {
+      if (point && capabilities.focusMode.includes("single-shot")) {
+        hints.push({ focusMode: "single-shot" });
+      }
+
+      if (capabilities.focusMode.includes("continuous")) {
+        hints.push({ focusMode: "continuous" });
+      }
+    }
+
+    if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes("continuous")) {
+      hints.push({ exposureMode: "continuous" });
+    }
+
+    if (Array.isArray(capabilities.whiteBalanceMode) && capabilities.whiteBalanceMode.includes("continuous")) {
+      hints.push({ whiteBalanceMode: "continuous" });
+    }
+
+    if (capabilities.zoom && typeof capabilities.zoom.min === "number" && typeof capabilities.zoom.max === "number") {
+      const targetZoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, 1.35));
+      hints.push({ zoom: targetZoom });
+    }
+
+    for (const hint of hints) {
+      try {
+        await track.applyConstraints({ advanced: [hint] });
+      } catch (error) {
+        // Some Android browsers expose a capability but reject it per camera.
+      }
+    }
+
+    setupFlashButton();
+  }
+
   async function toggleFlash() {
     const track = getScannerVideoTrack();
     const nextTorchState = !state.torchOn;
@@ -922,8 +1080,21 @@
       }
     }
 
+    if (state.zxingControls?.streamVideoConstraintsApply) {
+      try {
+        state.zxingControls.streamVideoConstraintsApply({ advanced: [{ torch: nextTorchState }] });
+        state.torchOn = nextTorchState;
+        els.flashButton.classList.toggle("is-active", state.torchOn);
+        setScannerStatus(state.torchOn ? "Flash aktif." : "Flash mati.", "success");
+        return;
+      } catch (error) {
+        state.torchOn = false;
+        els.flashButton.classList.remove("is-active");
+      }
+    }
+
     if (!track?.applyConstraints) {
-      setScannerStatus("Flash tidak tersedia di browser ini.", "warning");
+      setScannerStatus("Flash belum bisa dikontrol oleh browser ini.", "warning");
       return;
     }
 
@@ -935,7 +1106,7 @@
     } catch (error) {
       state.torchOn = false;
       els.flashButton.classList.remove("is-active");
-      setScannerStatus("Flash tidak tersedia di perangkat ini.", "warning");
+      setScannerStatus("Flash belum bisa dikontrol oleh browser ini.", "warning");
     }
   }
 
@@ -944,6 +1115,7 @@
     const capabilities = track?.getCapabilities ? track.getCapabilities() : {};
     const hasTorch = Boolean(
       state.zxingControls?.switchTorch ||
+      state.zxingControls?.streamVideoConstraintsApply ||
       track ||
       (capabilities && "torch" in capabilities)
     );
@@ -953,10 +1125,6 @@
   }
 
   function getScannerVideoTrack() {
-    if (state.zxingControls?.streamVideoConstraintsGetTrack) {
-      return state.zxingControls.streamVideoConstraintsGetTrack();
-    }
-
     const stream = state.scannerStream || els.barcodeVideo?.srcObject;
     if (!stream?.getVideoTracks) return null;
     return stream.getVideoTracks()[0] || null;
