@@ -254,7 +254,10 @@
       ]);
 
       if (attendanceResult.sudahAbsen) {
-        showResult("ABSEN SUDAH ADA", formatName(label), "Kamu sudah melakukan absensi hari ini.", "warning");
+        showResult("Absen sudah ada", formatName(label), {
+          primary: "Absensi hari ini sudah tercatat.",
+          secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+        }, "warning");
         return;
       }
 
@@ -359,26 +362,63 @@
     setStatus("Mengirim absensi...");
 
     const photo = capturePhoto();
-    const response = await fetch(ABSENSI_API_URL, {
+    const displayName = formatName(label);
+    const shift = getShiftLabel();
+    const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=HADIR`;
+    const timestamp = new Date().toISOString();
+    const fileName = `absensi_${label}_${timestamp.replace(/[:.]/g, "-")}.jpg`;
+    const payload = new URLSearchParams({
+      nama: label,
+      nama_karyawan: displayName,
+      namaKaryawan: displayName,
+      status: "HADIR",
+      status_kehadiran: "HADIR",
+      statusKehadiran: "HADIR",
+      shift,
+      SHIFT: shift,
+      foto: photo,
+      foto_absensi: photo,
+      fotoAbsensi: photo,
+      image: photo,
+      imageBase64: photo.replace(/^data:image\/jpeg;base64,/, ""),
+      mimeType: "image/jpeg",
+      fileName,
+      folder: "foto_absensi",
+      timestamp
+    });
+    const response = await fetch(submitUrl, {
       method: "POST",
-      body: JSON.stringify({
-        nama: label,
-        foto: photo
-      })
+      body: payload
     });
 
     if (!response.ok) {
       throw new Error(`Pengiriman gagal (${response.status}).`);
     }
 
-    await response.json();
-    showResult("ABSEN BERHASIL", formatName(label), "Absensi tersimpan. Selamat bekerja.", "success");
+    const result = await response.json();
+
+    if (result && result.error) {
+      throw new Error(result.error);
+    }
+
+    if (result && result.sudahAbsen) {
+      showResult("Absen sudah ada", displayName, {
+        primary: "Absensi hari ini sudah tercatat.",
+        secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+      }, "warning");
+      return;
+    }
+
+    showResult("Absen Berhasil", displayName, {
+      primary: "Absensi tersimpan",
+      secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+    }, "success");
   }
 
   function capturePhoto() {
     const width = els.video.videoWidth || 640;
     const height = els.video.videoHeight || 480;
-    const maxWidth = 640;
+    const maxWidth = 480;
     const scale = Math.min(1, maxWidth / width);
 
     els.captureCanvas.width = Math.round(width * scale);
@@ -386,7 +426,7 @@
 
     const context = els.captureCanvas.getContext("2d");
     context.drawImage(els.video, 0, 0, els.captureCanvas.width, els.captureCanvas.height);
-    return els.captureCanvas.toDataURL("image/jpeg", 0.76);
+    return els.captureCanvas.toDataURL("image/jpeg", 0.68);
   }
 
   function drawFaceBox(box) {
@@ -423,13 +463,42 @@
     return value * Math.PI / 180;
   }
 
+  function getShiftLabel() {
+    const jakartaHour = Number(new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Jakarta"
+    }).format(new Date()));
+
+    return jakartaHour < 12 ? "SHIFT PAGI" : "SHIFT SORE";
+  }
+
   function showResult(title, name, message, type) {
     state.finished = true;
     stopAll();
+    const icon = type === "success"
+      ? `
+        <span class="result-icon success" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        </span>
+      `
+      : `
+        <span class="result-icon warning" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8v5"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+        </span>
+      `;
+    const primaryMessage = typeof message === "string" ? message : message.primary;
+    const secondaryMessage = typeof message === "string" ? "" : message.secondary;
+
     document.body.innerHTML = `
       <main class="attendance-shell">
-        <section class="attendance-card">
-          <header class="attendance-header">
+        <section class="attendance-card result-card">
+          <header class="attendance-header result-header">
             <a class="brand-link" href="index.html" aria-label="Kembali ke menu utama">
               <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
               <span>
@@ -438,10 +507,16 @@
               </span>
             </a>
           </header>
-          <p class="main-status">${escapeHtml(title)}</p>
-          <p class="main-status">${escapeHtml(name)}</p>
-          <p class="main-status">${escapeHtml(message)}</p>
-          <a class="${type === "success" ? "secondary-button" : "danger-button"}" href="index.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Kembali ke menu</a>
+          <div class="result-body">
+            <p class="result-title">${escapeHtml(title)}</p>
+            ${icon}
+            <p class="result-name">${escapeHtml(name)}</p>
+            <div class="result-message">
+              <strong>${escapeHtml(primaryMessage)}</strong>
+              ${secondaryMessage ? `<span>${escapeHtml(secondaryMessage)}</span>` : ""}
+            </div>
+          </div>
+          <a class="${type === "success" ? "secondary-button" : "danger-button"} result-button" href="index.html">Kembali ke menu</a>
         </section>
       </main>
     `;
