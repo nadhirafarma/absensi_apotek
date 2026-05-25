@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cari Data Obat - Nadhira Farma Digital</title>
-  <meta name="description" content="Pencarian data obat dengan cache lokal pengguna.">
+  <meta name="description" content="Pencarian data obat Nadhira Farma.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,6 +25,15 @@
     <nav class="page-nav" aria-label="Navigasi">
       <a href="index.html">Menu</a>
       <a href="absensi.html">Absensi</a>
+      <button class="nav-action sync-nav-action" id="syncButton" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
+          <path d="M3 21v-5h5"></path>
+          <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"></path>
+          <path d="M16 3h5v5"></path>
+        </svg>
+        <span class="sync-label">Sinkronkan</span>
+      </button>
     </nav>
   </header>
 
@@ -32,10 +41,9 @@
     <section class="search-panel" aria-labelledby="searchTitle">
       <div class="search-heading">
         <div>
-          <p class="eyebrow">Cache lokal pengguna</p>
           <h1 id="searchTitle">Cari data obat</h1>
         </div>
-        <button class="icon-button" id="settingsButton" type="button" aria-label="Pengaturan API" title="Pengaturan API">
+        <button class="icon-button" id="settingsButton" type="button" aria-label="Pengaturan API" title="Pengaturan API" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
             <path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1.1 1.7v.2a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1.1-1.7 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.7-1.1h-.2a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.7-1.1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4h.1a1.8 1.8 0 0 0 1-1.6v-.2a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1.1 1.7 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2v.1a1.8 1.8 0 0 0 1.7 1h.2a2.1 2.1 0 0 1 0 4.2h-.2a1.8 1.8 0 0 0-1.7 1Z"></path>
@@ -43,46 +51,63 @@
         </button>
       </div>
 
-      <form class="search-form" id="searchForm" autocomplete="off">
-        <label class="sr-only" for="searchInput">Cari nama obat atau barcode</label>
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="10.5" cy="10.5" r="6.5"></circle>
-            <path d="m15.2 15.2 4.8 4.8"></path>
-          </svg>
-          <input id="searchInput" type="search" placeholder="Cari nama obat atau barcode" inputmode="search">
-        </div>
-        <button class="scan-action" id="scanButton" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-            <path d="M7 8v8"></path>
-            <path d="M11 8v8"></path>
-            <path d="M14 8v8"></path>
-            <path d="M17 8v8"></path>
-          </svg>
-          Scan
-        </button>
-        <button class="filter-action" id="filterButton" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 6h16"></path>
-            <path d="M7 12h10"></path>
-            <path d="M10 18h4"></path>
-          </svg>
-          Filter
-        </button>
-        <button class="secondary-action" id="syncButton" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
-            <path d="M3 21v-5h5"></path>
-            <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"></path>
-            <path d="M16 3h5v5"></path>
-          </svg>
-          Sinkronkan
-        </button>
-      </form>
+      <div class="search-popover-anchor">
+        <form class="search-form" id="searchForm" autocomplete="off">
+          <label class="sr-only" for="searchInput">Cari nama obat atau barcode</label>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="m15.2 15.2 4.8 4.8"></path>
+            </svg>
+            <input id="searchInput" type="search" placeholder="Cari nama obat atau barcode" inputmode="search">
+            <button class="search-scan-button" id="scanButton" type="button" aria-label="Scan barcode" title="Scan barcode">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M7 8v8"></path>
+                <path d="M11 8v8"></path>
+                <path d="M14 8v8"></path>
+                <path d="M17 8v8"></path>
+              </svg>
+            </button>
+          </div>
+          <button class="filter-action" id="filterButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16"></path>
+              <path d="M7 12h10"></path>
+              <path d="M10 18h4"></path>
+            </svg>
+            Filter
+          </button>
+        </form>
+
+        <section class="results-area" id="resultsArea" aria-live="polite" hidden>
+          <div class="results-popover" role="dialog" aria-label="Hasil pencarian obat">
+            <div class="results-popover-head">
+              <strong>Hasil pencarian</strong>
+              <button class="icon-button" id="closeResultsButton" type="button" aria-label="Tutup hasil pencarian" title="Tutup">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="empty-state" id="emptyState">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path>
+                <path d="M9.5 8h5"></path>
+                <path d="M9.5 12h5"></path>
+                <path d="M9.5 16h3"></path>
+              </svg>
+              <h2>Belum ada data obat</h2>
+              <p>Tekan Sinkronkan untuk mengambil data obat terbaru.</p>
+            </div>
+            <div class="results-list" id="resultsList"></div>
+          </div>
+        </section>
+      </div>
 
       <div class="scanner-panel" id="scannerPanel" hidden>
         <div class="scanner-head">
@@ -183,24 +208,11 @@
       </div>
     </section>
 
-    <section class="results-area" aria-live="polite">
-      <div class="empty-state" id="emptyState">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path>
-          <path d="M9.5 8h5"></path>
-          <path d="M9.5 12h5"></path>
-          <path d="M9.5 16h3"></path>
-        </svg>
-        <h2>Belum ada data obat</h2>
-        <p>Tekan Sinkronkan untuk mengambil data obat terbaru ke cache lokal pengguna.</p>
-      </div>
-      <div class="results-list" id="resultsList"></div>
-    </section>
   </main>
 
   <footer class="footer">
     <span>Nadhira Farma Digital</span>
-    <span>Cache data tersimpan di browser masing-masing pengguna</span>
+    <span>Created by Yolan Alfarel</span>
   </footer>
 </body>
 </html>

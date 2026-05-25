@@ -55,8 +55,9 @@
 
     const apiUrl = getApiUrl();
     const meta = readMeta();
-    const lastSync = meta.lastSync ? new Date(meta.lastSync).getTime() : 0;
-    const stale = Date.now() - lastSync > 5 * 60 * 1000;
+    const lastChecked = meta.lastChecked || meta.lastSync || meta.lastChanged;
+    const lastCheckTime = lastChecked ? new Date(lastChecked).getTime() : 0;
+    const stale = Date.now() - lastCheckTime > 5 * 60 * 1000;
 
     if (apiUrl && stale && navigator.onLine) {
       syncMedicines({ silent: true });
@@ -64,7 +65,8 @@
 
     window.addEventListener("focus", () => {
       const latestMeta = readMeta();
-      const latestSync = latestMeta.lastSync ? new Date(latestMeta.lastSync).getTime() : 0;
+      const latestChecked = latestMeta.lastChecked || latestMeta.lastSync || latestMeta.lastChanged;
+      const latestSync = latestChecked ? new Date(latestChecked).getTime() : 0;
       const needsRefresh = Date.now() - latestSync > 2 * 60 * 1000;
       if (getApiUrl() && needsRefresh && navigator.onLine) {
         syncMedicines({ silent: true });
@@ -78,6 +80,7 @@
     els.scanButton = document.getElementById("scanButton");
     els.filterButton = document.getElementById("filterButton");
     els.syncButton = document.getElementById("syncButton");
+    els.syncLabel = els.syncButton.querySelector(".sync-label");
     els.scannerPanel = document.getElementById("scannerPanel");
     els.barcodeVideo = document.getElementById("barcodeVideo");
     els.scannerStatus = document.getElementById("scannerStatus");
@@ -99,6 +102,8 @@
     els.clearCacheButton = document.getElementById("clearCacheButton");
     els.cacheStatus = document.getElementById("cacheStatus");
     els.medicineCount = document.getElementById("medicineCount");
+    els.resultsArea = document.getElementById("resultsArea");
+    els.closeResultsButton = document.getElementById("closeResultsButton");
     els.emptyState = document.getElementById("emptyState");
     els.resultsList = document.getElementById("resultsList");
     els.columnToggles = Array.from(document.querySelectorAll("[data-column]"));
@@ -112,6 +117,19 @@
       els.filtersPanel.hidden = !els.filtersPanel.hidden;
     });
     els.closeScannerButton.addEventListener("click", stopScanner);
+    els.closeResultsButton.addEventListener("click", () => {
+      els.resultsArea.hidden = true;
+    });
+    els.resultsArea.addEventListener("click", (event) => {
+      if (event.target === els.resultsArea) {
+        els.resultsArea.hidden = true;
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !els.resultsArea.hidden) {
+        els.resultsArea.hidden = true;
+      }
+    });
     els.syncButton.addEventListener("click", () => syncMedicines());
     window.addEventListener("beforeunload", stopScanner);
 
@@ -269,18 +287,31 @@
         throw new Error("Data obat kosong atau format kolom belum sesuai.");
       }
 
+      const previousMeta = readMeta();
+      const dataSignature = createMedicineSignature(medicines);
+      const previousSignature = previousMeta.dataSignature || createMedicineSignature(state.medicines);
+      const dataChanged = dataSignature !== previousSignature;
+      const now = new Date().toISOString();
+
       await replaceMedicines(medicines);
 
       state.medicines = medicines;
       populateFilterOptions();
       localStorage.setItem(META_KEY, JSON.stringify({
-        lastSync: new Date().toISOString(),
+        ...previousMeta,
+        lastChecked: now,
+        lastChanged: dataChanged ? now : previousMeta.lastChanged,
+        dataSignature,
         source: apiUrl,
         total: medicines.length
       }));
 
       renderResults();
       updateCacheSummary();
+
+      if (!options.silent && !dataChanged) {
+        setStatus("Data sudah terbaru. Belum ada perubahan di Google Sheet.", "success");
+      }
     } catch (error) {
       setStatus(`Sinkronisasi gagal: ${error.message}`, "error");
     } finally {
@@ -553,14 +584,28 @@
   }
 
   function renderResults() {
-    const query = els.searchInput.value.trim().toLowerCase();
+    const rawQuery = els.searchInput.value.trim();
+    const query = rawQuery.toLowerCase();
+    const shouldShowPopup = Boolean(query || hasActiveFilters());
     const searchFiltered = query
       ? state.medicines.filter((medicine) => medicine.searchable.includes(query))
       : state.medicines;
     const filtered = applyRowFilters(searchFiltered);
     const limited = sortMedicinesByName(filtered).slice(0, 60);
 
-    els.resultsList.innerHTML = limited.map(renderMedicineCard).join("");
+    if (!shouldShowPopup) {
+      els.resultsArea.hidden = true;
+      els.resultsList.hidden = true;
+      els.resultsList.innerHTML = "";
+      els.emptyState.hidden = true;
+      els.medicineCount.textContent = `${state.medicines.length} data`;
+      return;
+    }
+
+    els.resultsArea.hidden = false;
+    els.resultsList.innerHTML = limited
+      .map((medicine, index) => renderMedicineCard(medicine, index, rawQuery))
+      .join("");
     els.resultsList.hidden = !limited.length;
 
     if (!state.medicines.length) {
@@ -574,8 +619,19 @@
     els.medicineCount.textContent = `${filtered.length} dari ${state.medicines.length} data`;
   }
 
-  function renderMedicineCard(medicine) {
+  function hasActiveFilters() {
+    return Boolean(
+      els.filterStock.value ||
+      els.filterStatus.value.trim() ||
+      els.filterSupplier.value.trim() ||
+      els.filterSatuanBeli.value.trim() ||
+      els.filterExpired.value
+    );
+  }
+
+  function renderMedicineCard(medicine, index, query) {
     const stock = getStockState(medicine.stok);
+    const tone = getMedicineTone(medicine, index);
     const summary = [
       ["barcode", "Barcode", medicine.barcode],
       ["stock", "Stok", medicine.stok || "-"],
@@ -611,8 +667,8 @@
     return `
       <article class="medicine-card">
         <div class="medicine-main">
-          <div>
-            <h2>${escapeHtml(medicine.nama)}</h2>
+          <div class="medicine-title">
+            <h2><span class="medicine-name-chip name-tone-${tone}">${highlightMedicineName(medicine.nama, query)}</span></h2>
             ${medicine.barcode ? `<p>${escapeHtml(medicine.barcode)}</p>` : ""}
           </div>
           <span class="stock-pill ${stock.className}">${escapeHtml(stock.label)}</span>
@@ -630,6 +686,55 @@
         </div>
       </article>
     `;
+  }
+
+  function getMedicineTone(medicine, index) {
+    const seed = String(medicine.nama || medicine.barcode || index);
+    let hash = index + 1;
+
+    for (let position = 0; position < seed.length; position += 1) {
+      hash = (hash + seed.charCodeAt(position) * (position + 1)) % 997;
+    }
+
+    return (hash % 6) + 1;
+  }
+
+  function highlightMedicineName(value, query) {
+    const text = String(value || "");
+    const needle = String(query || "").trim();
+
+    if (!needle) return escapeHtml(text);
+
+    const matchIndex = text.toLowerCase().indexOf(needle.toLowerCase());
+
+    if (matchIndex === -1) return escapeHtml(text);
+
+    return [
+      escapeHtml(text.slice(0, matchIndex)),
+      `<mark>${escapeHtml(text.slice(matchIndex, matchIndex + needle.length))}</mark>`,
+      escapeHtml(text.slice(matchIndex + needle.length))
+    ].join("");
+  }
+
+  function createMedicineSignature(medicines) {
+    return sortMedicinesByName(medicines).map((medicine) => JSON.stringify({
+      barcode: medicine.barcode,
+      expired: medicine.expired,
+      harga1: medicine.harga1,
+      harga2: medicine.harga2,
+      harga3: medicine.harga3,
+      id: medicine.id,
+      lokasi: medicine.lokasi,
+      nama: medicine.nama,
+      satuan1: medicine.satuan1,
+      satuan2: medicine.satuan2,
+      satuan3: medicine.satuan3,
+      satuanBeli: medicine.satuanBeli,
+      status: medicine.status,
+      stok: medicine.stok,
+      suplier: medicine.suplier,
+      updated: medicine.updated
+    })).join("\n");
   }
 
   async function startScanner() {
@@ -813,13 +918,15 @@
       return;
     }
 
-    if (!meta.lastSync) {
+    const lastChanged = meta.lastChanged || meta.lastSync;
+
+    if (!lastChanged) {
       els.cacheStatus.textContent = "Data tersedia di cache lokal";
       delete els.cacheStatus.dataset.type;
       return;
     }
 
-    els.cacheStatus.textContent = formatLastUpdated(meta.lastSync);
+    els.cacheStatus.textContent = formatLastUpdated(lastChanged);
     els.cacheStatus.dataset.type = "success";
   }
 
@@ -853,7 +960,7 @@
   function setSyncState(isSyncing) {
     els.syncButton.disabled = isSyncing;
     els.syncButton.classList.toggle("is-loading", isSyncing);
-    els.syncButton.lastChild.textContent = isSyncing ? " Menyinkronkan" : " Sinkronkan";
+    els.syncLabel.textContent = isSyncing ? "Menyinkronkan" : "Sinkronkan";
   }
 
   function getApiUrl() {
