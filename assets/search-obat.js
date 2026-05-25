@@ -123,16 +123,16 @@
     els.closeScannerButton.addEventListener("click", stopScanner);
     els.flashButton.addEventListener("click", toggleFlash);
     els.closeResultsButton.addEventListener("click", () => {
-      els.resultsArea.hidden = true;
+      setResultsVisible(false);
     });
     els.resultsArea.addEventListener("click", (event) => {
       if (event.target === els.resultsArea) {
-        els.resultsArea.hidden = true;
+        setResultsVisible(false);
       }
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !els.resultsArea.hidden) {
-        els.resultsArea.hidden = true;
+        setResultsVisible(false);
       }
     });
     els.syncButton.addEventListener("click", () => syncMedicines());
@@ -599,7 +599,7 @@
     const limited = sortMedicinesByName(filtered).slice(0, 60);
 
     if (!shouldShowPopup) {
-      els.resultsArea.hidden = true;
+      setResultsVisible(false);
       els.resultsList.hidden = true;
       els.resultsList.innerHTML = "";
       els.emptyState.hidden = true;
@@ -607,7 +607,7 @@
       return;
     }
 
-    els.resultsArea.hidden = false;
+    setResultsVisible(true);
     els.resultsList.innerHTML = limited
       .map((medicine, index) => renderMedicineCard(medicine, index, rawQuery))
       .join("");
@@ -622,6 +622,11 @@
     }
 
     els.medicineCount.textContent = `${filtered.length} dari ${state.medicines.length} data`;
+  }
+
+  function setResultsVisible(isVisible) {
+    els.resultsArea.hidden = !isVisible;
+    document.body.classList.toggle("has-search-popover", isVisible);
   }
 
   function hasActiveFilters() {
@@ -672,7 +677,6 @@
     return `
       <article class="medicine-card">
         <div class="medicine-main">
-          <div class="medicine-thumb name-tone-${tone}" aria-hidden="true">${escapeHtml(getMedicineInitials(medicine.nama))}</div>
           <div class="medicine-title">
             <h2><span class="medicine-name-chip name-tone-${tone}">${highlightMedicineName(medicine.nama, query)}</span></h2>
             ${medicine.barcode ? `<p>${escapeHtml(medicine.barcode)}</p>` : ""}
@@ -704,16 +708,6 @@
 
     return (hash % 6) + 1;
   }
-
-  function getMedicineInitials(value) {
-    const words = String(value || "")
-      .replace(/[()]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean);
-
-    return (words[0] || "OBAT").slice(0, 10).toUpperCase();
-  }
-
   function highlightMedicineName(value, query) {
     const text = String(value || "");
     const needle = String(query || "").trim();
@@ -848,7 +842,17 @@
       stopScanner();
     };
 
-    const controls = await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
+    const constraints = {
+      audio: false,
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    };
+    const controls = state.zxingReader.decodeFromConstraints
+      ? await state.zxingReader.decodeFromConstraints(constraints, els.barcodeVideo, onResult)
+      : await state.zxingReader.decodeFromVideoDevice(undefined, els.barcodeVideo, onResult);
     state.zxingControls = controls || null;
     window.setTimeout(setupFlashButton, 500);
     setScannerStatus("Kamera aktif.", "success");
@@ -903,12 +907,31 @@
 
   async function toggleFlash() {
     const track = getScannerVideoTrack();
-    if (!track?.applyConstraints) return;
+    const nextTorchState = !state.torchOn;
+
+    if (state.zxingControls?.switchTorch) {
+      try {
+        await state.zxingControls.switchTorch(nextTorchState);
+        state.torchOn = nextTorchState;
+        els.flashButton.classList.toggle("is-active", state.torchOn);
+        setScannerStatus(state.torchOn ? "Flash aktif." : "Flash mati.", "success");
+        return;
+      } catch (error) {
+        state.torchOn = false;
+        els.flashButton.classList.remove("is-active");
+      }
+    }
+
+    if (!track?.applyConstraints) {
+      setScannerStatus("Flash tidak tersedia di browser ini.", "warning");
+      return;
+    }
 
     try {
-      state.torchOn = !state.torchOn;
-      await track.applyConstraints({ advanced: [{ torch: state.torchOn }] });
+      await track.applyConstraints({ advanced: [{ torch: nextTorchState }] });
+      state.torchOn = nextTorchState;
       els.flashButton.classList.toggle("is-active", state.torchOn);
+      setScannerStatus(state.torchOn ? "Flash aktif." : "Flash mati.", "success");
     } catch (error) {
       state.torchOn = false;
       els.flashButton.classList.remove("is-active");
@@ -919,13 +942,21 @@
   function setupFlashButton() {
     const track = getScannerVideoTrack();
     const capabilities = track?.getCapabilities ? track.getCapabilities() : {};
-    const hasTorch = Boolean(capabilities && "torch" in capabilities);
+    const hasTorch = Boolean(
+      state.zxingControls?.switchTorch ||
+      track ||
+      (capabilities && "torch" in capabilities)
+    );
 
     els.flashButton.hidden = !hasTorch;
     els.flashButton.classList.toggle("is-active", state.torchOn);
   }
 
   function getScannerVideoTrack() {
+    if (state.zxingControls?.streamVideoConstraintsGetTrack) {
+      return state.zxingControls.streamVideoConstraintsGetTrack();
+    }
+
     const stream = state.scannerStream || els.barcodeVideo?.srcObject;
     if (!stream?.getVideoTracks) return null;
     return stream.getVideoTracks()[0] || null;

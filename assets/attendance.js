@@ -362,6 +362,7 @@
     setStatus("Mengirim absensi...");
 
     const photo = capturePhoto();
+    const photoBase64 = extractBase64(photo);
     const displayName = formatName(label);
     const shift = getShiftLabel();
     const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=HADIR`;
@@ -376,11 +377,12 @@
       statusKehadiran: "HADIR",
       shift,
       SHIFT: shift,
-      foto: photo,
-      foto_absensi: photo,
-      fotoAbsensi: photo,
-      image: photo,
-      imageBase64: photo.replace(/^data:image\/jpeg;base64,/, ""),
+      foto: photoBase64,
+      foto_absensi: photoBase64,
+      fotoAbsensi: photoBase64,
+      photo: photoBase64,
+      image: photoBase64,
+      imageBase64: photoBase64,
       mimeType: "image/jpeg",
       fileName,
       folder: "foto_absensi",
@@ -434,6 +436,13 @@
     const context = els.captureCanvas.getContext("2d");
     context.drawImage(els.video, 0, 0, els.captureCanvas.width, els.captureCanvas.height);
     return els.captureCanvas.toDataURL("image/jpeg", 0.68);
+  }
+
+  function extractBase64(dataUrl) {
+    const value = String(dataUrl || "");
+    const commaIndex = value.indexOf(",");
+
+    return commaIndex >= 0 ? value.slice(commaIndex + 1) : value;
   }
 
   function drawFaceBox(box) {

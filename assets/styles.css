@@ -849,48 +849,6 @@ h1 {
   margin-bottom: 14px;
 }
 
-.medicine-thumb {
-  flex: 0 0 auto;
-  display: none;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  padding: 6px;
-  border: 1px solid rgba(207, 224, 244, 0.78);
-  border-radius: 8px;
-  background: var(--name-accent, var(--blue));
-  color: #fff;
-  font-size: 0.58rem;
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
-  overflow: hidden;
-}
-
-.medicine-thumb.name-tone-1 {
-  --name-accent: #1378ee;
-}
-
-.medicine-thumb.name-tone-2 {
-  --name-accent: #e81798;
-}
-
-.medicine-thumb.name-tone-3 {
-  --name-accent: #0fa968;
-}
-
-.medicine-thumb.name-tone-4 {
-  --name-accent: #d08a00;
-}
-
-.medicine-thumb.name-tone-5 {
-  --name-accent: #0095b8;
-}
-
-.medicine-thumb.name-tone-6 {
-  --name-accent: #6b52d9;
-}
-
 .medicine-title {
   flex: 1 1 auto;
   min-width: 0;
@@ -1114,8 +1072,17 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  body.has-search-popover .topbar,
+  body.has-search-popover .footer {
+    display: none;
+  }
+
+  body.has-search-popover .search-shell {
+    padding-top: 12px;
+  }
+
   .results-popover {
-    max-height: min(68vh, 620px);
+    max-height: min(74vh, 660px);
     padding: 10px;
   }
 
@@ -1135,21 +1102,16 @@ h1 {
 
   .medicine-main {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
     align-items: start;
     margin-bottom: 10px;
   }
 
-  .medicine-thumb {
-    display: grid;
-  }
-
   .medicine-name-chip {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
+    padding: 6px 8px 6px 10px;
+    border-radius: 7px;
+    box-shadow: inset 3px 0 0 var(--name-accent, var(--blue));
   }
 
   .medicine-main h2 {
