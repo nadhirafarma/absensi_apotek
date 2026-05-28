@@ -266,6 +266,16 @@
 
       const attendanceResult = await safeCheckAttendanceToday(label);
 
+      if (attendanceResult.checkFailed) {
+        setStatus("Tidak bisa mengecek data absensi di Google Sheet. Absensi dibatalkan agar tidak tercatat dobel.");
+        els.retryButton.hidden = false;
+        state.paused = true;
+        state.processing = false;
+        state.lastLabel = "";
+        state.matchStreak = 0;
+        return;
+      }
+
       if (attendanceResult.sudahAbsen) {
         showResult("Absen sudah ada", formatName(label), {
           primary: "Absensi hari ini sudah tercatat.",
@@ -274,7 +284,7 @@
         return;
       }
 
-      await sendAttendance(label, locationResult, attendanceResult);
+      await sendAttendance(label, locationResult);
     } catch (error) {
       setStatus(`Absensi gagal: ${error.message}`);
       els.retryButton.hidden = false;
@@ -420,7 +430,7 @@
     }
   }
 
-  async function sendAttendance(label, locationResult, attendanceCheck) {
+  async function sendAttendance(label, locationResult) {
     setStatus("Mengirim absensi...");
 
     const photo = capturePhoto();
@@ -457,16 +467,6 @@
     let responseText = "";
     let result = {};
 
-    if (attendanceCheck && attendanceCheck.checkFailed) {
-      setStatus("Server tidak mengizinkan pengecekan langsung. Mengirim mode aman...");
-      await sendAttendanceNoCors(submitUrl, payload);
-      showResult("Absen Berhasil", displayName, {
-        primary: "Absensi tersimpan",
-        secondary: "Bekerjalah dengan jujur dan tanggung jawab."
-      }, "success");
-      return;
-    }
-
     try {
       const response = await fetchWithTimeout(submitUrl, {
         method: "POST",
@@ -482,13 +482,7 @@
       result = responseText ? JSON.parse(responseText) : {};
     } catch (error) {
       if (!responseText && isFetchNetworkError(error)) {
-        setStatus("Server lambat merespons. Mengirim ulang mode aman...");
-        await sendAttendanceNoCors(submitUrl, payload);
-        showResult("Absen Berhasil", displayName, {
-          primary: "Absensi tersimpan",
-          secondary: "Bekerjalah dengan jujur dan tanggung jawab."
-        }, "success");
-        return;
+        throw new Error("Gagal menghubungi server absensi. Coba lagi setelah koneksi stabil.");
       }
 
       if (responseText) {
@@ -514,15 +508,6 @@
       primary: "Absensi tersimpan",
       secondary: "Bekerjalah dengan jujur dan tanggung jawab."
     }, "success");
-  }
-
-  function sendAttendanceNoCors(submitUrl, payload) {
-    return fetchWithTimeout(submitUrl, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify(payload),
-      cache: "no-store"
-    });
   }
 
   async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT_MS) {
