@@ -12,8 +12,8 @@
   <script defer src="assets/app.js"></script>
 </head>
 <body data-page="home">
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Nadhira Farma Digital">
+  <header class="topbar home-topbar">
+    <a class="brand home-brand" href="./" aria-label="Nadhira Farma Digital">
       <img class="brand-logo" src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
       <span>
         <strong>Nadhira Farma Digital</strong>
@@ -21,65 +21,147 @@
       </span>
     </a>
 
-    <div class="status-strip" aria-label="Status sistem">
+    <div class="status-strip home-status-strip" aria-label="Status sistem">
       <span class="online-pill" id="connectionStatus">
         <span class="status-dot" aria-hidden="true"></span>
         Online
       </span>
-      <span class="status-item" id="todayLabel"></span>
-      <span class="status-item" id="clockLabel"></span>
+      <span class="status-item">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 2v4"></path>
+          <path d="M16 2v4"></path>
+          <path d="M3 10h18"></path>
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+        </svg>
+        <span id="todayLabel"></span>
+      </span>
+      <span class="status-item">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 2"></path>
+        </svg>
+        <span id="clockLabel"></span>
+      </span>
+      <span class="profile-chip" aria-hidden="true">
+        <span class="profile-avatar">YA</span>
+        <svg viewBox="0 0 24 24">
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </span>
     </div>
   </header>
 
   <main class="shell home-shell">
-    <section class="menu-grid" aria-label="Menu utama">
+    <section class="home-hero" aria-labelledby="homeTitle">
+      <h1 id="homeTitle">Selamat Datang di <span>Nadhira Farma Digital</span></h1>
+      <p>Kelola sistem informasi apotek dengan mudah, cepat, dan terintegrasi.</p>
+    </section>
+
+    <section class="menu-grid home-menu-grid" aria-label="Menu utama">
       <article class="feature-card feature-attendance">
-        <div class="feature-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" role="img">
-            <path d="M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
-            <path d="M4.5 20.2a7.5 7.5 0 0 1 15 0"></path>
-            <path d="m16.5 14.8 1.4 1.4 2.9-3.2"></path>
-          </svg>
-        </div>
-        <div>
+        <div class="feature-content">
           <span class="menu-number">01</span>
           <h2>Absensi Face ID</h2>
+          <span class="title-line" aria-hidden="true"></span>
+          <p>Lakukan absensi menggunakan teknologi pengenalan wajah yang aman dan akurat.</p>
+          <a class="primary-action" href="absensi.html">
+            Buka Absensi
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+          </a>
         </div>
-        <a class="primary-action" href="absensi.html">
-          Buka Absensi
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 12h14"></path>
-            <path d="m13 6 6 6-6 6"></path>
-          </svg>
-        </a>
+        <div class="feature-visual face-visual" aria-hidden="true">
+          <span class="scan-frame"></span>
+          <span class="face-head"></span>
+          <span class="scan-line"></span>
+          <span class="shield-badge">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path>
+              <path d="m8.8 12.2 2.1 2.1 4.4-5"></path>
+            </svg>
+          </span>
+        </div>
+        <ul class="feature-points" aria-label="Keunggulan absensi">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path>
+            </svg>
+            <span><strong>Aman</strong><small>Validasi wajah</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8"></circle>
+              <path d="M12 8v4l3 2"></path>
+            </svg>
+            <span><strong>Akurat</strong><small>GPS terkendali</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path>
+            </svg>
+            <span><strong>Cepat</strong><small>Proses ringan</small></span>
+          </li>
+        </ul>
       </article>
 
       <article class="feature-card feature-medicine">
-        <div class="feature-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" role="img">
-            <circle cx="10.5" cy="10.5" r="6.5"></circle>
-            <path d="m15.2 15.2 4.8 4.8"></path>
-            <path d="M8.1 10.5h4.8"></path>
-            <path d="M10.5 8.1v4.8"></path>
-          </svg>
-        </div>
-        <div>
+        <div class="feature-content">
           <span class="menu-number">02</span>
           <h2>Cari Data Obat</h2>
+          <span class="title-line" aria-hidden="true"></span>
+          <p>Cari dan kelola data obat dengan cepat, lengkap, dan terstruktur.</p>
+          <a class="primary-action accent" href="cari-obat.html">
+            Cari Data Obat
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+          </a>
         </div>
-        <a class="primary-action accent" href="cari-obat.html">
-          Cari Data Obat
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 12h14"></path>
-            <path d="m13 6 6 6-6 6"></path>
-          </svg>
-        </a>
+        <div class="feature-visual medicine-visual" aria-hidden="true">
+          <span class="pill-capsule"></span>
+          <span class="lens"></span>
+          <span class="lens-handle"></span>
+          <span class="data-orbit"></span>
+        </div>
+        <ul class="feature-points" aria-label="Keunggulan data obat">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7c0-2 3.6-3.5 8-3.5S20 5 20 7s-3.6 3.5-8 3.5S4 9 4 7Z"></path>
+              <path d="M4 7v5c0 2 3.6 3.5 8 3.5s8-1.5 8-3.5V7"></path>
+              <path d="M4 12v5c0 2 3.6 3.5 8 3.5s8-1.5 8-3.5v-5"></path>
+            </svg>
+            <span><strong>Lengkap</strong><small>Stok & harga</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="m15.2 15.2 4.8 4.8"></path>
+            </svg>
+            <span><strong>Cepat</strong><small>Nama/barcode</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16v13H4z"></path>
+              <path d="M8 7V4h8v3"></path>
+            </svg>
+            <span><strong>Terstruktur</strong><small>Cache lokal</small></span>
+          </li>
+        </ul>
       </article>
     </section>
   </main>
 
-  <footer class="footer">
-    <span>Nadhira Farma Digital</span>
+  <footer class="footer home-footer">
+    <span>© 2026 Nadhira Farma Digital. All rights reserved.</span>
+    <span class="secure-pill">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path>
+      </svg>
+      Sistem Aman & Terintegrasi
+    </span>
     <span>Created by Yolan Alfarel</span>
   </footer>
 </body>
