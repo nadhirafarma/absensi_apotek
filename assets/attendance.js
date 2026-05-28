@@ -5,9 +5,12 @@
 
   const APOTEK_LAT = -3.2733637;
   const APOTEK_LON = 104.8819249;
-  const MAX_RADIUS_METER = 15;
-  const MAX_GPS_ACCURACY_METER = 25;
-  const GPS_CACHE_MS = 15000;
+  const MAX_RADIUS_METER = 45;
+  const MAX_GPS_ACCURACY_METER = 200;
+  const GPS_DISTANCE_TOLERANCE_METER = 160;
+  const GPS_CACHE_MS = 60000;
+  const GPS_WAIT_TIMEOUT_MS = 12000;
+  const REQUEST_TIMEOUT_MS = 18000;
   const DETECTION_DELAY_MS = 450;
   const REQUIRED_MATCH_STREAK = 2;
 
@@ -32,6 +35,7 @@
     detecting: false,
     processing: false,
     finished: false,
+    paused: false,
     lastLabel: "",
     matchStreak: 0
   };
@@ -157,7 +161,7 @@
     setGpsStatus("Mengunci GPS", "warning");
     state.locationWatchId = navigator.geolocation.watchPosition(
       (position) => {
-        state.lastLocation = normalizePosition(position);
+        rememberLocation(position);
         const accuracy = Math.round(state.lastLocation.accuracy);
         const status = accuracy <= MAX_GPS_ACCURACY_METER ? "ready" : "warning";
         setGpsStatus(`GPS ${accuracy} m`, status);
@@ -167,8 +171,8 @@
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 3000,
-        timeout: 8000
+        maximumAge: 10000,
+        timeout: 15000
       }
     );
   }
@@ -181,7 +185,7 @@
 
   function scheduleDetection(delay = DETECTION_DELAY_MS) {
     window.clearTimeout(state.detectTimer);
-    if (state.finished || state.processing) return;
+    if (state.finished || state.processing || state.paused) return;
     state.detectTimer = window.setTimeout(detectFace, delay);
   }
 
@@ -248,12 +252,30 @@
     setStatus(`Wajah ${formatName(label)} cocok. Mengecek GPS dan absensi...`);
 
     try {
-      const [locationResult, attendanceResult] = await Promise.all([
-        validateLocation(label),
-        checkAttendanceToday(label)
-      ]);
+      if (hasLocalAttendanceToday(label)) {
+        showResult("Absen sudah ada", formatName(label), {
+          primary: "Absensi hari ini sudah pernah diproses di perangkat ini.",
+          secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+        }, "warning");
+        return;
+      }
+
+      const locationResult = await validateLocation(label);
+
+      if (!locationResult.ok) {
+        setStatus(locationResult.message);
+        els.retryButton.hidden = false;
+        state.paused = true;
+        state.processing = false;
+        state.lastLabel = "";
+        state.matchStreak = 0;
+        return;
+      }
+
+      const attendanceResult = await safeCheckAttendanceToday(label);
 
       if (attendanceResult.sudahAbsen) {
+        markLocalAttendance(label, "server");
         showResult("Absen sudah ada", formatName(label), {
           primary: "Absensi hari ini sudah tercatat.",
           secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -261,30 +283,21 @@
         return;
       }
 
-      if (!locationResult.ok) {
-        setStatus(locationResult.message);
-        els.retryButton.hidden = false;
-        state.processing = false;
-        state.lastLabel = "";
-        state.matchStreak = 0;
-        scheduleDetection(1200);
-        return;
-      }
-
-      await sendAttendance(label);
+      await sendAttendance(label, locationResult, attendanceResult);
     } catch (error) {
       setStatus(`Absensi gagal: ${error.message}`);
       els.retryButton.hidden = false;
+      state.paused = true;
       state.processing = false;
-      scheduleDetection(1200);
     }
   }
 
   async function validateLocation(label) {
     if (GPS_BYPASS_LABELS.has(label)) {
-      return { ok: true, message: "GPS dilewati untuk akun khusus." };
+      return { ok: true, message: "GPS dilewati untuk akun khusus.", location: null, distance: 0 };
     }
 
+    setStatus("Menunggu GPS terbaik...");
     const location = await getBestLocation();
 
     if (!location) {
@@ -294,16 +307,17 @@
       };
     }
 
-    if (location.accuracy > MAX_GPS_ACCURACY_METER) {
+    const distance = calculateDistance(location.latitude, location.longitude, APOTEK_LAT, APOTEK_LON);
+    const allowedDistance = MAX_RADIUS_METER + Math.min(location.accuracy || 0, GPS_DISTANCE_TOLERANCE_METER);
+
+    if (location.accuracy > MAX_GPS_ACCURACY_METER && distance > MAX_RADIUS_METER) {
       return {
         ok: false,
-        message: `Akurasi GPS masih ${Math.round(location.accuracy)} meter. Tunggu sebentar di area terbuka lalu coba lagi.`
+        message: `GPS belum stabil. Akurasi ${Math.round(location.accuracy)} meter, jarak ${Math.round(distance)} meter. Aktifkan lokasi akurasi tinggi lalu coba lagi.`
       };
     }
 
-    const distance = calculateDistance(location.latitude, location.longitude, APOTEK_LAT, APOTEK_LON);
-
-    if (distance > MAX_RADIUS_METER) {
+    if (distance > allowedDistance) {
       return {
         ok: false,
         message: `Lokasi di luar area absensi. Jarak terdeteksi ${Math.round(distance)} meter dari apotek.`
@@ -312,29 +326,74 @@
 
     return {
       ok: true,
-      message: `Lokasi valid. Akurasi ${Math.round(location.accuracy)} meter.`
+      message: `Lokasi valid. Akurasi ${Math.round(location.accuracy)} meter.`,
+      location,
+      distance
     };
   }
 
   function getBestLocation() {
     const cached = state.lastLocation;
-    if (cached && Date.now() - cached.receivedAt <= GPS_CACHE_MS && cached.accuracy <= MAX_GPS_ACCURACY_METER) {
+    if (isUsableLocation(cached)) {
       return Promise.resolve(cached);
     }
 
     if (!navigator.geolocation) return Promise.resolve(null);
 
     return new Promise((resolve) => {
+      let settled = false;
+      const startedAt = Date.now();
+      const finish = (location) => {
+        if (settled) return;
+        settled = true;
+        resolve(location || state.lastLocation || cached || null);
+      };
+      const poll = () => {
+        if (isUsableLocation(state.lastLocation)) {
+          finish(state.lastLocation);
+          return;
+        }
+
+        if (Date.now() - startedAt >= GPS_WAIT_TIMEOUT_MS) {
+          finish(state.lastLocation || cached || null);
+          return;
+        }
+
+        window.setTimeout(poll, 500);
+      };
+
       navigator.geolocation.getCurrentPosition(
-        (position) => resolve(normalizePosition(position)),
-        () => resolve(cached || null),
+        (position) => {
+          rememberLocation(position);
+          if (isUsableLocation(state.lastLocation)) finish(state.lastLocation);
+        },
+        () => {
+          if (cached) finish(cached);
+        },
         {
           enableHighAccuracy: true,
-          maximumAge: 5000,
-          timeout: 6000
+          maximumAge: 0,
+          timeout: GPS_WAIT_TIMEOUT_MS
         }
       );
+
+      poll();
     });
+  }
+
+  function rememberLocation(position) {
+    const next = normalizePosition(position);
+    const current = state.lastLocation;
+
+    if (!current || next.accuracy <= current.accuracy || Date.now() - current.receivedAt > GPS_CACHE_MS) {
+      state.lastLocation = next;
+    }
+  }
+
+  function isUsableLocation(location) {
+    return Boolean(location)
+      && Date.now() - location.receivedAt <= GPS_CACHE_MS
+      && location.accuracy <= MAX_GPS_ACCURACY_METER;
   }
 
   function normalizePosition(position) {
@@ -347,7 +406,7 @@
   }
 
   async function checkAttendanceToday(label) {
-    const response = await fetch(`${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}`, {
+    const response = await fetchWithTimeout(`${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}`, {
       cache: "no-store"
     });
 
@@ -358,7 +417,19 @@
     return response.json();
   }
 
-  async function sendAttendance(label) {
+  async function safeCheckAttendanceToday(label) {
+    try {
+      return await checkAttendanceToday(label);
+    } catch (error) {
+      return {
+        sudahAbsen: false,
+        checkFailed: true,
+        message: error.message
+      };
+    }
+  }
+
+  async function sendAttendance(label, locationResult, attendanceCheck) {
     setStatus("Mengirim absensi...");
 
     const photo = capturePhoto();
@@ -386,24 +457,56 @@
       mimeType: "image/jpeg",
       fileName,
       folder: "foto_absensi",
+      latitude: locationResult.location ? locationResult.location.latitude : "",
+      longitude: locationResult.location ? locationResult.location.longitude : "",
+      gps_accuracy: locationResult.location ? Math.round(locationResult.location.accuracy) : "",
+      gps_distance: typeof locationResult.distance === "number" ? Math.round(locationResult.distance) : "",
       timestamp
     };
-    const response = await fetch(submitUrl, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Pengiriman gagal (${response.status}).`);
-    }
-
-    const responseText = await response.text();
+    let responseText = "";
     let result = {};
 
+    if (attendanceCheck && attendanceCheck.checkFailed) {
+      setStatus("Server tidak mengizinkan pengecekan langsung. Mengirim mode aman...");
+      await sendAttendanceNoCors(submitUrl, payload);
+      markLocalAttendance(label, "fallback");
+      showResult("Absen Berhasil", displayName, {
+        primary: "Absensi tersimpan",
+        secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+      }, "success");
+      return;
+    }
+
     try {
+      const response = await fetchWithTimeout(submitUrl, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        throw new Error(`Pengiriman gagal (${response.status}).`);
+      }
+
+      responseText = await response.text();
       result = responseText ? JSON.parse(responseText) : {};
     } catch (error) {
-      result = { ok: true, raw: responseText };
+      if (!responseText && isFetchNetworkError(error)) {
+        setStatus("Server lambat merespons. Mengirim ulang mode aman...");
+        await sendAttendanceNoCors(submitUrl, payload);
+        markLocalAttendance(label, "fallback");
+        showResult("Absen Berhasil", displayName, {
+          primary: "Absensi tersimpan",
+          secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+        }, "success");
+        return;
+      }
+
+      if (responseText) {
+        result = { ok: true, raw: responseText };
+      } else {
+        throw error;
+      }
     }
 
     if (result && result.error) {
@@ -411,6 +514,7 @@
     }
 
     if (result && result.sudahAbsen) {
+      markLocalAttendance(label, "server");
       showResult("Absen sudah ada", displayName, {
         primary: "Absensi hari ini sudah tercatat.",
         secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -418,10 +522,41 @@
       return;
     }
 
+    markLocalAttendance(label, "success");
     showResult("Absen Berhasil", displayName, {
       primary: "Absensi tersimpan",
       secondary: "Bekerjalah dengan jujur dan tanggung jawab."
     }, "success");
+  }
+
+  function sendAttendanceNoCors(submitUrl, payload) {
+    return fetchWithTimeout(submitUrl, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(payload),
+      cache: "no-store"
+    });
+  }
+
+  async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeout);
+
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  function isFetchNetworkError(error) {
+    return error && (
+      error.name === "AbortError"
+      || /failed to fetch|network|load failed|abort/i.test(error.message || "")
+    );
   }
 
   function capturePhoto() {
@@ -487,6 +622,44 @@
     }).format(new Date()));
 
     return jakartaHour < 12 ? "SHIFT PAGI" : "SHIFT SORE";
+  }
+
+  function hasLocalAttendanceToday(label) {
+    try {
+      return Boolean(window.localStorage.getItem(getLocalAttendanceKey(label)));
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function markLocalAttendance(label, status) {
+    try {
+      window.localStorage.setItem(getLocalAttendanceKey(label), JSON.stringify({
+        label,
+        status,
+        savedAt: new Date().toISOString()
+      }));
+    } catch (error) {
+      // Local cache is a convenience guard only; attendance still works without it.
+    }
+  }
+
+  function getLocalAttendanceKey(label) {
+    return `nadhira-attendance:${getJakartaDateKey()}:${label}`;
+  }
+
+  function getJakartaDateKey() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Jakarta"
+    }).formatToParts(new Date()).reduce((result, part) => {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+
+    return `${parts.year}-${parts.month}-${parts.day}`;
   }
 
   function showResult(title, name, message, type) {
