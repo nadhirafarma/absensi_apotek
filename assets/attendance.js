@@ -252,14 +252,6 @@
     setStatus(`Wajah ${formatName(label)} cocok. Mengecek GPS dan absensi...`);
 
     try {
-      if (hasLocalAttendanceToday(label)) {
-        showResult("Absen sudah ada", formatName(label), {
-          primary: "Absensi hari ini sudah pernah diproses di perangkat ini.",
-          secondary: "Bekerjalah dengan jujur dan tanggung jawab."
-        }, "warning");
-        return;
-      }
-
       const locationResult = await validateLocation(label);
 
       if (!locationResult.ok) {
@@ -275,7 +267,6 @@
       const attendanceResult = await safeCheckAttendanceToday(label);
 
       if (attendanceResult.sudahAbsen) {
-        markLocalAttendance(label, "server");
         showResult("Absen sudah ada", formatName(label), {
           primary: "Absensi hari ini sudah tercatat.",
           secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -469,7 +460,6 @@
     if (attendanceCheck && attendanceCheck.checkFailed) {
       setStatus("Server tidak mengizinkan pengecekan langsung. Mengirim mode aman...");
       await sendAttendanceNoCors(submitUrl, payload);
-      markLocalAttendance(label, "fallback");
       showResult("Absen Berhasil", displayName, {
         primary: "Absensi tersimpan",
         secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -494,7 +484,6 @@
       if (!responseText && isFetchNetworkError(error)) {
         setStatus("Server lambat merespons. Mengirim ulang mode aman...");
         await sendAttendanceNoCors(submitUrl, payload);
-        markLocalAttendance(label, "fallback");
         showResult("Absen Berhasil", displayName, {
           primary: "Absensi tersimpan",
           secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -514,7 +503,6 @@
     }
 
     if (result && result.sudahAbsen) {
-      markLocalAttendance(label, "server");
       showResult("Absen sudah ada", displayName, {
         primary: "Absensi hari ini sudah tercatat.",
         secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -522,7 +510,6 @@
       return;
     }
 
-    markLocalAttendance(label, "success");
     showResult("Absen Berhasil", displayName, {
       primary: "Absensi tersimpan",
       secondary: "Bekerjalah dengan jujur dan tanggung jawab."
@@ -622,44 +609,6 @@
     }).format(new Date()));
 
     return jakartaHour < 12 ? "SHIFT PAGI" : "SHIFT SORE";
-  }
-
-  function hasLocalAttendanceToday(label) {
-    try {
-      return Boolean(window.localStorage.getItem(getLocalAttendanceKey(label)));
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function markLocalAttendance(label, status) {
-    try {
-      window.localStorage.setItem(getLocalAttendanceKey(label), JSON.stringify({
-        label,
-        status,
-        savedAt: new Date().toISOString()
-      }));
-    } catch (error) {
-      // Local cache is a convenience guard only; attendance still works without it.
-    }
-  }
-
-  function getLocalAttendanceKey(label) {
-    return `nadhira-attendance:${getJakartaDateKey()}:${label}`;
-  }
-
-  function getJakartaDateKey() {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      timeZone: "Asia/Jakarta"
-    }).formatToParts(new Date()).reduce((result, part) => {
-      result[part.type] = part.value;
-      return result;
-    }, {});
-
-    return `${parts.year}-${parts.month}-${parts.day}`;
   }
 
   function showResult(title, name, message, type) {
