@@ -38,4 +38,78 @@ Nama kolom yang terbaca otomatis:
 
 Cache tersimpan di browser masing-masing pengguna. Kalau data di Google Sheet berubah, tekan `Sinkronkan` untuk mengambil data terbaru.
 
-Halaman pencarian juga menyediakan tombol `Scan` untuk membaca barcode lewat kamera browser yang mendukung Barcode Detector API.
+Halaman pencarian juga menyediakan tombol scanner di dalam kolom pencarian untuk membaca barcode/QR lewat kamera browser.
+
+## Backup Perubahan Terakhir
+
+Backup ini dibuat pada `26/05/2026` setelah deploy perbaikan terakhir.
+
+Live website:
+
+`https://nadhirafarma.github.io/absensi_apotek/`
+
+Commit deploy terakhir:
+
+`ab37ebec5027f4fd6f5a14a3860e72bc1aca19c3`
+
+Perubahan yang sudah masuk:
+
+- Menu utama tetap sederhana dengan dua pilihan: `Absensi Face ID` dan `Cari Data Obat`.
+- Halaman `cari-obat.html` memakai cache lokal pengguna melalui IndexedDB.
+- Tombol `Sinkronkan` dipindahkan ke header bersama tombol `Menu` dan `Absensi`.
+- Kolom pencarian obat dibuat lebih ringkas, dengan tombol scanner menyatu di sisi kanan input.
+- Hasil pencarian obat tampil sebagai pop-up di bawah kolom pencarian, sehingga tidak mengganggu pengetikan.
+- Saat pop-up hasil pencarian terbuka, teks/header/footer yang mengganggu layar mobile disembunyikan.
+- Nama obat diberi blok warna variatif sesuai panjang nama agar lebih mudah dibaca.
+- Review obat dibuat compact untuk mobile: nama obat, barcode, stok + satuan beli, expired, dan harga per level.
+- `batch` dan `kategori` tidak ditampilkan di review obat.
+- Filter kolom tetap tersedia agar data yang ditampilkan bisa dipilih.
+- Status stok kosong/menipis/tersedia dibuat terlihat jelas.
+- Last updated hanya dipakai sebagai keterangan update data obat dari Google Sheet.
+- Import Excel data obat sudah tersedia di header untuk upload perubahan database ke Google Sheet.
+- Scanner memakai beberapa lapis pembaca: `BarcodeDetector`, `ZXing`, `jsQR`, dan fallback `Quagga2`.
+- Flash scanner dicoba melalui beberapa metode browser agar peluang aktif lebih besar di Android/iPhone.
+
+Catatan penting:
+
+- Fitur import Excel membutuhkan dukungan Google Apps Script pada file `google-apps-script-import-data-obat.gs`.
+- Import Excel data obat sekarang wajib mendapat response JSON `ok: true` dari Apps Script, lalu website mengambil ulang data dari Google Sheet. Jika URL Web App salah atau Apps Script menulis ke spreadsheet lain, website akan menampilkan error dan tidak menimpa cache lokal.
+- Target import data obat di Apps Script: spreadsheet `1jdtxpAZ-G545QfvbktjAihy2xXJeD8GbUFUx7W1TPdk`, sheet `data_obat`.
+- Fitur share slip gaji otomatis awal bulan disiapkan pada file `google-apps-script-slip-gaji-bulanan.gs`.
+- Jika scanner/flash berbeda perilaku antar HP, penyebabnya biasanya batasan browser dan izin kamera perangkat.
+- Setelah deploy, browser mobile kadang masih memakai cache lama. Tutup-buka ulang browser atau hard refresh jika tampilan belum berubah.
+
+## Backup Apps Script Slip Gaji
+
+File backup:
+
+`google-apps-script-slip-gaji-bulanan.gs`
+
+Fungsi yang disiapkan:
+
+- Membaca data slip dari sheet `Slip_Gaji`.
+- Membaca email dan WhatsApp dari sheet `data_karyawan` jika kolom kontak tidak ada di `Slip_Gaji`.
+- Membuat PDF slip gaji per karyawan.
+- Menyimpan PDF ke folder Drive `slip_gaji_pdf`.
+- Mengirim PDF ke email.
+- Mengirim notifikasi atau link PDF ke WhatsApp.
+- Membuat trigger otomatis setiap tanggal 1 jam 08.00 WIB.
+
+Fungsi penting di Apps Script:
+
+- `setupMonthlySalarySlipAutomation()` untuk memasang trigger otomatis.
+- `setupMonthlySalarySlipAutomationWithWhatsapp()` untuk memasang trigger otomatis sekaligus mengaktifkan email, WhatsApp, dan link PDF.
+- `sendSalarySlipsNow()` untuk test manual.
+- `sendCurrentSalarySlipToYolanNow()` untuk test slip NIP yang sedang dipilih di `Slip_Gaji!E7` ke `yolanalfarel@gmail.com` dan WhatsApp `08128247474`.
+- `sendSalarySlipsForPeriod('Mei 2026')` untuk mengirim periode tertentu.
+
+Script Properties minimal:
+
+- `SLIP_EMAIL_ENABLED=true`
+- `SLIP_WA_ENABLED=true` jika WhatsApp dipakai.
+- `SLIP_SHARE_PDF_LINK=true` agar link PDF di WhatsApp bisa dibuka.
+- `WA_PROVIDER=fonnte` atau `wablas` atau `generic`.
+- `FONNTE_TOKEN=token_fonnte` jika memakai Fonnte.
+- `WABLAS_TOKEN=token_wablas`, `WABLAS_SECRET_KEY=secret_key_wablas`, dan `WABLAS_DOMAIN=https://domain-wablas` jika memakai Wablas.
+- `SLIP_PRINT_PORTRAIT=true` agar PDF slip lebih pas di kertas A4.
+- `SLIP_ENSURE_OUTER_BORDER=true` agar garis tepi slip ikut tercetak.

@@ -330,11 +330,28 @@
       renderResults();
       updateCacheSummary();
 
+      if (!options.silent && dataChanged) {
+        setStatus(`Data obat berhasil disinkronkan. ${medicines.length} data terbaru tersimpan.`, "success");
+      }
+
       if (!options.silent && !dataChanged) {
         setStatus("Data sudah terbaru. Belum ada perubahan di Google Sheet.", "success");
       }
+
+      return {
+        ok: true,
+        dataChanged,
+        total: medicines.length
+      };
     } catch (error) {
       setStatus(`Sinkronisasi gagal: ${error.message}`, "error");
+      if (options.throwOnError) {
+        throw error;
+      }
+      return {
+        ok: false,
+        error
+      };
     } finally {
       state.isSyncing = false;
       setSyncState(false);
@@ -508,28 +525,23 @@
       const text = await response.text();
       const result = parseImportResponse(text);
 
-      if (result && result.error) {
-        throw new Error(result.error);
+      if (!result || result.ok !== true) {
+        throw new Error(result?.error || "API belum mengonfirmasi import data obat.");
       }
 
-      const now = new Date().toISOString();
-      const previousMeta = readMeta();
-      const dataSignature = createMedicineSignature(state.importMedicines);
+      setImportStatus("Upload dikonfirmasi Google Sheet. Mengambil ulang data obat...", "info");
 
-      await replaceMedicines(state.importMedicines);
-      state.medicines = state.importMedicines;
-      populateFilterOptions();
-      localStorage.setItem(META_KEY, JSON.stringify({
-        ...previousMeta,
-        lastChecked: now,
-        lastChanged: now,
-        dataSignature,
-        source: getApiUrl(),
-        total: state.medicines.length
-      }));
-      renderResults();
-      updateCacheSummary();
-      setImportStatus(`Import selesai. ${state.importMedicines.length} data tersimpan.`, "success");
+      const syncResult = await syncMedicines({
+        silent: true,
+        throwOnError: true
+      });
+      const total = Number(result.total || syncResult.total || state.medicines.length || state.importMedicines.length);
+
+      if (els.importMode.value === "replace" && result.total && syncResult.total !== Number(result.total)) {
+        throw new Error(`Upload selesai, tetapi API masih membaca ${syncResult.total} data. Pastikan doGet dan doPost memakai spreadsheet data_obat yang sama.`);
+      }
+
+      setImportStatus(`Import selesai. ${total} data tersimpan di Google Sheet dan cache sudah diperbarui.`, "success");
     } catch (error) {
       setImportStatus(`Upload gagal: ${error.message}. Pastikan Apps Script sudah mendukung action import_data_obat.`, "error");
     } finally {
@@ -554,7 +566,7 @@
     try {
       return JSON.parse(value);
     } catch (error) {
-      return { ok: true, raw: value };
+      throw new Error("Response API bukan JSON valid. Cek URL Web App Apps Script dan akses deployment.");
     }
   }
 
