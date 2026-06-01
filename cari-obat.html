@@ -8,14 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260601-home-dashboard">
-  <script defer src="assets/auth-guard.js?v=20260601-home-dashboard"></script>
-  <script defer src="assets/app.js?v=20260601-home-dashboard"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v4">
+  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v4"></script>
+  <script defer src="assets/app.js?v=20260602-admin-dashboard-v4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/search-obat.js?v=20260601-home-dashboard"></script>
+  <script defer src="assets/search-obat.js?v=20260602-admin-dashboard-v4"></script>
 </head>
 <body data-page="medicine">
   <header class="topbar">
@@ -49,24 +48,6 @@
         </button>
       </nav>
 
-      <section class="import-panel import-panel-top" id="importPanel">
-        <div class="import-head">
-          <strong>Import Excel Data Obat</strong>
-          <span id="importSummary">Belum ada file</span>
-        </div>
-        <div class="import-row">
-          <label class="file-picker">
-            <input id="importFileInput" type="file" accept=".xlsx,.xls,.csv">
-            <span>Pilih file Excel</span>
-          </label>
-          <select id="importMode" aria-label="Mode import">
-            <option value="replace">Ganti seluruh data_obat</option>
-            <option value="append">Tambahkan ke data_obat</option>
-          </select>
-          <button class="secondary-action" id="importButton" type="button" disabled>Upload ke Google Sheet</button>
-        </div>
-        <p id="importStatus">File akan dicek dulu sebelum dikirim ke Google Sheet.</p>
-      </section>
     </div>
   </header>
 

@@ -8,10 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v3">
-  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v3"></script>
-  <script defer src="assets/app.js?v=20260602-admin-dashboard-v3"></script>
-  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v3"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v4">
+  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v4"></script>
+  <script defer src="assets/app.js?v=20260602-admin-dashboard-v4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v4"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <div class="app-layout">
@@ -98,6 +99,16 @@
           </svg>
           <span class="sidebar-label">Surat Pesanan Pembelian</span>
         </button>
+        <button class="sidebar-link" type="button" data-view-target="import-data-obat" title="Import Data Obat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12"></path>
+            <path d="m7 10 5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+            <path d="M4 5h5"></path>
+            <path d="M15 5h5"></path>
+          </svg>
+          <span class="sidebar-label">Import Data Obat</span>
+        </button>
 
         <span class="sidebar-section">Sistem</span>
         <button class="sidebar-link" type="button" data-view-target="akun-profil" title="Akun & Profil">
@@ -118,6 +129,7 @@
         </button>
       </nav>
     </aside>
+    <div class="sidebar-scrim" id="sidebarScrim" hidden></div>
 
     <div class="dashboard-main">
       <header class="dashboard-topbar">
@@ -465,9 +477,38 @@
           </div>
         </section>
 
+        <section class="dashboard-view" id="view-import-data-obat" data-view="import-data-obat">
+          <section class="import-page module-card" aria-labelledby="importDataObatTitle">
+            <div class="module-head">
+              <div>
+                <h2 id="importDataObatTitle">Import Data Obat</h2>
+                <p>Upload file Excel atau CSV ke Google Sheet data_obat tanpa mengganggu menu pencarian.</p>
+              </div>
+            </div>
+            <div class="import-page-grid">
+              <label class="file-picker import-file-picker">
+                <input id="importFileInput" type="file" accept=".xlsx,.xls,.csv">
+                <span>Pilih file Excel</span>
+              </label>
+              <label>
+                Mode Import
+                <select id="importMode" aria-label="Mode import data obat">
+                  <option value="replace">Ganti seluruh data_obat</option>
+                  <option value="append">Tambahkan ke data_obat</option>
+                </select>
+              </label>
+              <button class="secondary-action" id="importButton" type="button" disabled>Upload ke Google Sheet</button>
+            </div>
+            <div class="import-summary-card">
+              <strong id="importSummary">Belum ada file</strong>
+              <p id="importStatus" data-type="info">File akan dicek dulu sebelum dikirim ke Google Sheet.</p>
+            </div>
+          </section>
+        </section>
+
         <section class="dashboard-view" id="view-akun-profil" data-view="akun-profil">
-          <div class="profile-layout">
-            <aside class="profile-card">
+          <div class="profile-modern-layout">
+            <aside class="profile-card profile-overview-card">
               <span class="profile-avatar-large" id="profileLargeAvatar">AK</span>
               <h2 id="profileDisplayName">Akun</h2>
               <p id="profileDisplayRole">Operator</p>
@@ -477,30 +518,82 @@
                 <div><dt>Role</dt><dd id="profileRole">-</dd></div>
               </dl>
             </aside>
-            <form class="module-card" id="profileForm">
+            <section class="module-card profile-settings-card">
               <div class="module-head">
                 <div>
-                  <h2>Informasi Profil</h2>
-                  <p>Ubah informasi profil yang tampil di perangkat ini.</p>
+                  <h2>Akun & Profil</h2>
+                  <p>Kelola identitas, keamanan, riwayat, dan preferensi tampilan perangkat ini.</p>
                 </div>
               </div>
-              <div class="form-grid">
-                <label>Nama Lengkap<input id="profileNameInput" type="text"></label>
-                <label>Email<input id="profileEmailInput" type="email"></label>
-                <label>No. Telepon<input id="profilePhoneInput" type="tel"></label>
-                <label>Jabatan<input id="profileJobInput" type="text"></label>
-                <label class="span-2">Alamat<input id="profileAddressInput" type="text"></label>
+              <div class="profile-tabs" role="tablist" aria-label="Pengaturan akun">
+                <button class="profile-tab is-active" type="button" data-profile-tab="profil">Profil</button>
+                <button class="profile-tab" type="button" data-profile-tab="keamanan">Keamanan</button>
+                <button class="profile-tab" type="button" data-profile-tab="aktivitas">Aktivitas</button>
+                <button class="profile-tab" type="button" data-profile-tab="preferensi">Preferensi</button>
               </div>
-              <div class="form-actions">
-                <button class="secondary-action" type="submit">Simpan Perubahan</button>
-              </div>
-            </form>
-            <aside class="module-card security-card">
-              <h2>Keamanan Akun</h2>
-              <button type="button">Ubah Password</button>
-              <button type="button">Verifikasi 2 Langkah</button>
-              <button type="button">Riwayat Aktivitas</button>
-            </aside>
+              <p class="profile-status" id="profileStatusText" role="status" aria-live="polite"></p>
+
+              <form class="profile-panel is-active" id="profileForm" data-profile-panel="profil">
+                <div class="form-grid">
+                  <label>Nama Lengkap<input id="profileNameInput" type="text" autocomplete="name"></label>
+                  <label>Email<input id="profileEmailInput" type="email" autocomplete="email"></label>
+                  <label>No. Telepon<input id="profilePhoneInput" type="tel" autocomplete="tel"></label>
+                  <label>Jabatan<input id="profileJobInput" type="text"></label>
+                  <label class="span-2">Alamat<input id="profileAddressInput" type="text" autocomplete="street-address"></label>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-action" type="submit">Simpan Profil</button>
+                </div>
+              </form>
+
+              <section class="profile-panel" data-profile-panel="keamanan">
+                <form class="security-form" id="profilePasswordForm">
+                  <h3>Ubah Password</h3>
+                  <div class="form-grid">
+                    <label>Password Baru<input id="profileNewPasswordInput" type="password" autocomplete="new-password"></label>
+                    <label>Konfirmasi Password<input id="profileConfirmPasswordInput" type="password" autocomplete="new-password"></label>
+                  </div>
+                  <div class="form-actions">
+                    <button class="secondary-action" type="submit">Simpan Password Baru</button>
+                  </div>
+                </form>
+                <label class="setting-row">
+                  <span>
+                    <strong>Verifikasi 2 Langkah</strong>
+                    <small>Aktifkan penanda keamanan tambahan di perangkat ini.</small>
+                  </span>
+                  <input id="profileTwoFactorToggle" type="checkbox">
+                </label>
+              </section>
+
+              <section class="profile-panel" data-profile-panel="aktivitas">
+                <div class="module-head compact-head">
+                  <div>
+                    <h3>Riwayat Aktivitas</h3>
+                    <p>Catatan aktivitas akun pada perangkat ini.</p>
+                  </div>
+                  <button class="text-button" id="clearProfileActivityButton" type="button">Bersihkan</button>
+                </div>
+                <div class="activity-list" id="profileActivityList"></div>
+              </section>
+
+              <section class="profile-panel" data-profile-panel="preferensi">
+                <label class="setting-row">
+                  <span>
+                    <strong>Mode Ringkas</strong>
+                    <small>Padatkan jarak antar elemen agar lebih nyaman untuk layar kecil.</small>
+                  </span>
+                  <input id="profileCompactToggle" type="checkbox">
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Sidebar Ikon Saat Dibuka</strong>
+                    <small>Simpan sidebar dalam mode ikon ketika halaman dimuat ulang.</small>
+                  </span>
+                  <input id="profileSidebarCompactToggle" type="checkbox">
+                </label>
+              </section>
+            </section>
           </div>
         </section>
 

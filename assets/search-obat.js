@@ -173,9 +173,14 @@
         }
       });
     }
-    els.importFileInput.addEventListener("change", handleImportFileChange);
-    els.importButton.addEventListener("click", importExcelToGoogleSheet);
+    if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
+    if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     window.addEventListener("beforeunload", stopScanner);
+    window.addEventListener("resize", () => {
+      if (els.notificationPopover && !els.notificationPopover.hidden) {
+        positionNotificationPopup();
+      }
+    });
 
     [
       els.filterStock,
@@ -1924,6 +1929,7 @@
     }
 
     if (els.notificationPopover) {
+      positionNotificationPopup();
       els.notificationPopover.hidden = false;
       return;
     }
@@ -1935,6 +1941,16 @@
     if (els.notificationPopover) {
       els.notificationPopover.hidden = true;
     }
+  }
+
+  function positionNotificationPopup() {
+    if (!els.notificationPopover || !els.notificationButton) return;
+    const rect = els.notificationButton.getBoundingClientRect();
+    const width = Math.min(380, window.innerWidth - 24);
+    const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
+    els.notificationPopover.style.width = `${width}px`;
+    els.notificationPopover.style.left = `${left}px`;
+    els.notificationPopover.style.top = `${rect.bottom + 10}px`;
   }
 
   function setStatus(message, type) {

@@ -11,6 +11,9 @@
   const PO_KEY = "nadhira.purchaseOrders";
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
+  const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
+  const PROFILE_ACTIVITY_KEY = "nadhira.profileActivity";
+  const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
   const PAGE_SIZE = 10;
   const EXPIRING_DAYS = 90;
 
@@ -70,6 +73,7 @@
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
     "surat-pesanan": "Surat Pesanan Pembelian",
+    "import-data-obat": "Import Data Obat",
     "akun-profil": "Akun & Profil",
     "manajemen-pengguna": "Manajemen Pengguna"
   };
@@ -120,6 +124,8 @@
     suppliers: [],
     purchaseItems: [],
     purchaseOrders: [],
+    importHeaders: [],
+    importRows: [],
     activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
@@ -145,7 +151,10 @@
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
+    applyProfilePreferences();
     renderProfile();
+    renderProfileSecurity();
+    renderProfileActivity();
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
@@ -154,6 +163,7 @@
   function bindElements() {
     Object.assign(els, {
       sidebarToggle: document.getElementById("sidebarToggle"),
+      sidebarScrim: document.getElementById("sidebarScrim"),
       viewTitle: document.getElementById("dashboardViewTitle"),
       viewButtons: Array.from(document.querySelectorAll("[data-view-target]")),
       views: Array.from(document.querySelectorAll(".dashboard-view")),
@@ -223,6 +233,11 @@
       poItemsList: document.getElementById("poItemsList"),
       poSavedList: document.getElementById("poSavedList"),
       poNumber: document.getElementById("poNumber"),
+      importFileInput: document.getElementById("importFileInput"),
+      importMode: document.getElementById("importMode"),
+      importButton: document.getElementById("importButton"),
+      importSummary: document.getElementById("importSummary"),
+      importStatus: document.getElementById("importStatus"),
       profileForm: document.getElementById("profileForm"),
       profileLargeAvatar: document.getElementById("profileLargeAvatar"),
       profileDisplayName: document.getElementById("profileDisplayName"),
@@ -230,11 +245,22 @@
       profileUsername: document.getElementById("profileUsername"),
       profileEmail: document.getElementById("profileEmail"),
       profileRole: document.getElementById("profileRole"),
+      profileTabButtons: Array.from(document.querySelectorAll("[data-profile-tab]")),
+      profilePanels: Array.from(document.querySelectorAll("[data-profile-panel]")),
+      profileStatusText: document.getElementById("profileStatusText"),
       profileNameInput: document.getElementById("profileNameInput"),
       profileEmailInput: document.getElementById("profileEmailInput"),
       profilePhoneInput: document.getElementById("profilePhoneInput"),
       profileJobInput: document.getElementById("profileJobInput"),
       profileAddressInput: document.getElementById("profileAddressInput"),
+      profilePasswordForm: document.getElementById("profilePasswordForm"),
+      profileNewPasswordInput: document.getElementById("profileNewPasswordInput"),
+      profileConfirmPasswordInput: document.getElementById("profileConfirmPasswordInput"),
+      profileTwoFactorToggle: document.getElementById("profileTwoFactorToggle"),
+      profileActivityList: document.getElementById("profileActivityList"),
+      clearProfileActivityButton: document.getElementById("clearProfileActivityButton"),
+      profileCompactToggle: document.getElementById("profileCompactToggle"),
+      profileSidebarCompactToggle: document.getElementById("profileSidebarCompactToggle"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -251,6 +277,7 @@
 
   function bindEvents() {
     if (els.sidebarToggle) els.sidebarToggle.addEventListener("click", toggleSidebar);
+    if (els.sidebarScrim) els.sidebarScrim.addEventListener("click", () => setSidebarCollapsed(true));
 
     els.viewButtons.forEach((button) => {
       button.addEventListener("click", () => switchView(button.dataset.viewTarget));
@@ -316,7 +343,17 @@
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
     if (els.poForm) els.poForm.addEventListener("submit", savePurchaseOrder);
     if (els.printPoButton) els.printPoButton.addEventListener("click", () => window.print());
+    if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
+    if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     if (els.profileForm) els.profileForm.addEventListener("submit", saveProfile);
+    if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
+    if (els.profileTwoFactorToggle) els.profileTwoFactorToggle.addEventListener("change", saveProfileSecurity);
+    if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
+    if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
+    if (els.profileSidebarCompactToggle) els.profileSidebarCompactToggle.addEventListener("change", saveProfilePreferences);
+    els.profileTabButtons.forEach((button) => {
+      button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab));
+    });
 
     if (els.notificationButton) els.notificationButton.addEventListener("click", openNotification);
     [els.notificationCloseButton, els.notificationOkButton].forEach((button) => {
@@ -339,10 +376,16 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         closeNotification();
+        if (isMobileViewport()) setSidebarCollapsed(true);
         closeMedicineModal();
         closeRecordModal();
         closeDeleteModal();
       }
+    });
+    window.addEventListener("resize", () => {
+      const collapsed = document.body.classList.contains("sidebar-collapsed");
+      if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed || !isMobileViewport();
+      if (els.notificationPopover && !els.notificationPopover.hidden) positionNotificationPopover();
     });
   }
 
@@ -670,6 +713,190 @@
       : "Last updated upload Google Sheet belum tersedia";
   }
 
+  async function handleImportFileChange() {
+    const file = els.importFileInput?.files?.[0];
+    state.importHeaders = [];
+    state.importRows = [];
+    if (els.importButton) els.importButton.disabled = true;
+
+    if (!file) {
+      if (els.importSummary) els.importSummary.textContent = "Belum ada file";
+      setImportStatus("File akan dicek dulu sebelum dikirim ke Google Sheet.", "info");
+      return;
+    }
+
+    try {
+      const parsed = await parseImportFile(file);
+      const rows = parsed.rows.filter((row) => Object.values(row).some((value) => String(value || "").trim()));
+
+      if (!rows.length) {
+        throw new Error("File tidak memiliki baris data yang bisa diimport.");
+      }
+
+      state.importHeaders = parsed.headers;
+      state.importRows = rows;
+      if (els.importSummary) els.importSummary.textContent = `${formatNumber(rows.length)} data siap import`;
+      if (els.importButton) els.importButton.disabled = false;
+      setImportStatus(`File ${file.name} berhasil dibaca. Pilih mode import lalu upload ke Google Sheet.`, "success");
+      addProfileActivity("File import data obat dibaca", `${rows.length} baris dari ${file.name}`);
+    } catch (error) {
+      if (els.importSummary) els.importSummary.textContent = "File belum valid";
+      setImportStatus(`Import gagal dibaca: ${error.message}`, "error");
+    }
+  }
+
+  async function parseImportFile(file) {
+    const extension = String(file.name || "").split(".").pop().toLowerCase();
+
+    if (extension === "csv") {
+      return matrixToImportRows(parseCsvMatrix(await file.text()));
+    }
+
+    if (!window.XLSX) {
+      throw new Error("Library pembaca Excel belum termuat. Muat ulang halaman lalu coba lagi.");
+    }
+
+    const workbook = window.XLSX.read(await file.arrayBuffer(), {
+      type: "array",
+      cellDates: false
+    });
+    const firstSheetName = workbook.SheetNames[0];
+
+    if (!firstSheetName) {
+      throw new Error("Workbook tidak memiliki sheet.");
+    }
+
+    const matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      header: 1,
+      raw: false,
+      defval: ""
+    });
+
+    return matrixToImportRows(matrix);
+  }
+
+  function parseCsvMatrix(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let insideQuote = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      const nextChar = text[index + 1];
+
+      if (char === '"' && nextChar === '"') {
+        cell += '"';
+        index += 1;
+      } else if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (char === "," && !insideQuote) {
+        row.push(cell);
+        cell = "";
+      } else if ((char === "\n" || char === "\r") && !insideQuote) {
+        if (char === "\r" && nextChar === "\n") index += 1;
+        row.push(cell);
+        rows.push(row);
+        row = [];
+        cell = "";
+      } else {
+        cell += char;
+      }
+    }
+
+    row.push(cell);
+    rows.push(row);
+    return rows.filter((item) => item.some((value) => String(value || "").trim()));
+  }
+
+  function matrixToImportRows(matrix) {
+    if (!Array.isArray(matrix) || !matrix.length) {
+      throw new Error("File kosong.");
+    }
+
+    const rawHeaders = matrix[0].map((header) => String(header || "").trim());
+    const headers = rawHeaders.filter(Boolean);
+
+    if (!headers.length) {
+      throw new Error("Header kolom tidak ditemukan.");
+    }
+
+    const normalizedHeaders = rawHeaders.map(normalizeKey);
+    const rows = matrix.slice(1).map((row) => {
+      const item = {};
+      normalizedHeaders.forEach((header, index) => {
+        if (header) item[header] = row[index] || "";
+      });
+      return item;
+    });
+
+    return { headers, rows };
+  }
+
+  async function importExcelToGoogleSheet() {
+    if (!state.importRows.length) {
+      setImportStatus("Pilih file Excel terlebih dahulu.", "warning");
+      return;
+    }
+
+    if (els.importButton) els.importButton.disabled = true;
+    setImportStatus("Mengupload data obat ke Google Sheet...", "info");
+
+    try {
+      const response = await fetch(getImportApiUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "import_data_obat",
+          sheet: "data_obat",
+          mode: els.importMode?.value || "replace",
+          headers: state.importHeaders,
+          rows: state.importRows
+        })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const result = parseImportResponse(await response.text());
+      if (!result || (result.ok !== true && result.success !== true)) {
+        throw new Error(result?.message || result?.error || "API belum mengonfirmasi import data obat.");
+      }
+
+      setImportStatus("Upload dikonfirmasi. Memuat ulang data obat terbaru...", "info");
+      await fetchDataObat({ manual: true });
+      const total = Number(result.total || state.importRows.length || 0);
+      setImportStatus(`Import selesai. ${formatNumber(total)} data berhasil dikirim ke Google Sheet.`, "success");
+      addProfileActivity("Import data obat berhasil", `${formatNumber(total)} data dikirim ke Google Sheet`);
+    } catch (error) {
+      setImportStatus(`Upload gagal: ${error.message}.`, "error");
+    } finally {
+      if (els.importButton) els.importButton.disabled = !state.importRows.length;
+    }
+  }
+
+  function getImportApiUrl() {
+    const url = new URL(API_BASE, window.location.href);
+    url.searchParams.set("sheet", "data_obat");
+    url.searchParams.set("action", "import_data_obat");
+    return url.toString();
+  }
+
+  function parseImportResponse(text) {
+    const value = String(text || "").trim();
+    if (!value) return {};
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      throw new Error("Response API bukan JSON valid. Cek deployment Apps Script.");
+    }
+  }
+
+  function setImportStatus(message, type) {
+    if (!els.importStatus) return;
+    els.importStatus.textContent = message || "";
+    els.importStatus.dataset.type = type || "info";
+  }
+
   function updateNotificationState() {
     if (!els.notificationButton || !els.notificationDot) return;
 
@@ -694,11 +921,24 @@
       : "Belum ada informasi waktu upload sheet data_obat terakhir. Upload data Excel baru atau pastikan Apps Script terbaru sudah dipakai.";
 
     if (els.notificationMessage) els.notificationMessage.textContent = message;
-    if (els.notificationPopover) els.notificationPopover.hidden = false;
+    if (els.notificationPopover) {
+      positionNotificationPopover();
+      els.notificationPopover.hidden = false;
+    }
   }
 
   function closeNotification() {
     if (els.notificationPopover) els.notificationPopover.hidden = true;
+  }
+
+  function positionNotificationPopover() {
+    if (!els.notificationPopover || !els.notificationButton) return;
+    const rect = els.notificationButton.getBoundingClientRect();
+    const width = Math.min(380, window.innerWidth - 24);
+    const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
+    els.notificationPopover.style.width = `${width}px`;
+    els.notificationPopover.style.left = `${left}px`;
+    els.notificationPopover.style.top = `${rect.bottom + 10}px`;
   }
 
   function handleTableAction(event) {
@@ -1201,17 +1441,7 @@
   }
 
   function renderProfile() {
-    const session = readSession() || {};
-    const stored = readObject(PROFILE_KEY);
-    const profile = {
-      name: stored.name || session.name || session.username || "Akun",
-      email: stored.email || session.email || "",
-      phone: stored.phone || "",
-      job: stored.job || session.role || "Operator",
-      address: stored.address || "",
-      username: session.username || stored.username || "",
-      role: session.role || stored.job || "Operator"
-    };
+    const profile = getProfileData();
 
     if (els.profileLargeAvatar) els.profileLargeAvatar.textContent = getInitials(profile.name);
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
@@ -1226,6 +1456,20 @@
     if (els.profileAddressInput) els.profileAddressInput.value = profile.address || "";
   }
 
+  function getProfileData() {
+    const session = readSession() || {};
+    const stored = readObject(PROFILE_KEY);
+    return {
+      name: stored.name || session.name || session.username || "Akun",
+      email: stored.email || session.email || "",
+      phone: stored.phone || "",
+      job: stored.job || session.role || "Operator",
+      address: stored.address || "",
+      username: session.username || stored.username || "",
+      role: session.role || stored.job || "Operator"
+    };
+  }
+
   function saveProfile(event) {
     event.preventDefault();
     const profile = {
@@ -1238,6 +1482,137 @@
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     hydrateProfileName();
     renderProfile();
+    setProfileStatus("Profil berhasil disimpan di perangkat ini.", "success");
+    addProfileActivity("Profil diperbarui", "Informasi profil lokal disimpan");
+  }
+
+  async function saveProfilePassword(event) {
+    event.preventDefault();
+    const profile = getProfileData();
+    const password = String(els.profileNewPasswordInput?.value || "");
+    const confirmPassword = String(els.profileConfirmPasswordInput?.value || "");
+    const validationError = validateProfilePassword(password, confirmPassword);
+
+    if (!profile.email) {
+      setProfileStatus("Email akun belum tersedia, password belum bisa dikirim ke Google Sheet.", "error");
+      return;
+    }
+
+    if (validationError) {
+      setProfileStatus(validationError, "error");
+      return;
+    }
+
+    setProfileStatus("Menyimpan password baru ke Google Sheet...", "info");
+
+    try {
+      const result = await postToApi({
+        action: "updatePassword",
+        email: profile.email,
+        password,
+        confirmPassword
+      });
+
+      if (!result || (result.success !== true && result.ok !== true)) {
+        throw new Error(result?.message || "Password baru gagal disimpan.");
+      }
+
+      els.profileNewPasswordInput.value = "";
+      els.profileConfirmPasswordInput.value = "";
+      setProfileStatus("Password baru berhasil disimpan.", "success");
+      addProfileActivity("Password diperbarui", "Password akun berhasil disimpan ke Google Sheet");
+    } catch (error) {
+      setProfileStatus(`Password gagal disimpan: ${error.message}`, "error");
+    }
+  }
+
+  function validateProfilePassword(password, confirmPassword) {
+    if (!password) return "Password baru wajib diisi.";
+    if (password.length < 6) return "Password baru minimal 6 karakter.";
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return "Password baru wajib kombinasi huruf dan angka.";
+    if (password !== confirmPassword) return "Konfirmasi password tidak sama.";
+    return "";
+  }
+
+  function renderProfileSecurity() {
+    const security = readObject(PROFILE_SECURITY_KEY);
+    if (els.profileTwoFactorToggle) els.profileTwoFactorToggle.checked = security.twoFactor === true;
+  }
+
+  function saveProfileSecurity() {
+    const enabled = Boolean(els.profileTwoFactorToggle?.checked);
+    localStorage.setItem(PROFILE_SECURITY_KEY, JSON.stringify({ twoFactor: enabled, updatedAt: new Date().toISOString() }));
+    setProfileStatus(enabled ? "Verifikasi 2 langkah ditandai aktif di perangkat ini." : "Verifikasi 2 langkah dinonaktifkan di perangkat ini.", "success");
+    addProfileActivity(enabled ? "Verifikasi 2 langkah aktif" : "Verifikasi 2 langkah nonaktif", "Preferensi keamanan lokal diperbarui");
+  }
+
+  function switchProfileTab(tabName) {
+    if (!tabName) return;
+    els.profileTabButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.profileTab === tabName));
+    els.profilePanels.forEach((panel) => panel.classList.toggle("is-active", panel.dataset.profilePanel === tabName));
+    setProfileStatus("", "");
+  }
+
+  function renderProfileActivity() {
+    if (!els.profileActivityList) return;
+    const activity = readStoredArray(PROFILE_ACTIVITY_KEY).slice(0, 12);
+
+    if (!activity.length) {
+      els.profileActivityList.innerHTML = "<p>Belum ada aktivitas tersimpan di perangkat ini.</p>";
+      return;
+    }
+
+    els.profileActivityList.innerHTML = activity.map((item) => `
+      <article>
+        <span><strong>${escapeHtml(item.title || "Aktivitas")}</strong><small>${escapeHtml(item.detail || "")}</small></span>
+        <time>${escapeHtml(formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", ""))}</time>
+      </article>
+    `).join("");
+  }
+
+  function addProfileActivity(title, detail) {
+    const activity = readStoredArray(PROFILE_ACTIVITY_KEY);
+    activity.unshift({
+      title,
+      detail,
+      at: new Date().toISOString()
+    });
+    writeStoredArray(PROFILE_ACTIVITY_KEY, activity.slice(0, 30));
+    renderProfileActivity();
+  }
+
+  function clearProfileActivity() {
+    localStorage.removeItem(PROFILE_ACTIVITY_KEY);
+    renderProfileActivity();
+    setProfileStatus("Riwayat aktivitas perangkat ini sudah dibersihkan.", "success");
+  }
+
+  function applyProfilePreferences() {
+    const prefs = readObject(PROFILE_PREFS_KEY);
+    document.body.classList.toggle("compact-dashboard", prefs.compact === true);
+    if (els.profileCompactToggle) els.profileCompactToggle.checked = prefs.compact === true;
+    if (els.profileSidebarCompactToggle) els.profileSidebarCompactToggle.checked = prefs.sidebarCompact === true;
+    if (prefs.sidebarCompact === true && !isMobileViewport()) setSidebarCollapsed(true, { persist: false });
+  }
+
+  function saveProfilePreferences() {
+    const prefs = {
+      compact: Boolean(els.profileCompactToggle?.checked),
+      sidebarCompact: Boolean(els.profileSidebarCompactToggle?.checked),
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));
+    applyProfilePreferences();
+    if (prefs.sidebarCompact) setSidebarCollapsed(true);
+    setProfileStatus("Preferensi tampilan berhasil disimpan.", "success");
+    addProfileActivity("Preferensi tampilan diperbarui", prefs.compact ? "Mode ringkas aktif" : "Mode ringkas nonaktif");
+  }
+
+  function setProfileStatus(message, type) {
+    if (!els.profileStatusText) return;
+    els.profileStatusText.textContent = message || "";
+    if (type) els.profileStatusText.dataset.type = type;
+    else els.profileStatusText.removeAttribute("data-type");
   }
 
   function renderReports() {
@@ -1268,19 +1643,30 @@
       else button.removeAttribute("aria-current");
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
+    if (isMobileViewport()) setSidebarCollapsed(true, { persist: false });
   }
 
   function applySavedSidebarState() {
-    const collapsed = localStorage.getItem(SIDEBAR_KEY) === "1";
-    document.body.classList.toggle("sidebar-collapsed", collapsed);
-    if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
+    const stored = localStorage.getItem(SIDEBAR_KEY);
+    const collapsed = stored == null ? isMobileViewport() : stored === "1";
+    setSidebarCollapsed(collapsed, { persist: false });
   }
 
   function toggleSidebar() {
     const collapsed = !document.body.classList.contains("sidebar-collapsed");
+    setSidebarCollapsed(collapsed);
+  }
+
+  function setSidebarCollapsed(collapsed, options = {}) {
     document.body.classList.toggle("sidebar-collapsed", collapsed);
-    localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    document.body.classList.toggle("sidebar-open", !collapsed);
+    if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed || !isMobileViewport();
+    if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
     if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia("(max-width: 900px)").matches;
   }
 
   function persistMeta() {
