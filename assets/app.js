@@ -12,6 +12,7 @@
   const profileAccountName = document.getElementById("profileAccountName");
   const profileAccountMeta = document.getElementById("profileAccountMeta");
   const logoutButton = document.getElementById("logoutButton");
+  let isLoggingOut = false;
 
   const dateFormatter = new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
@@ -64,17 +65,21 @@
     profileMenuButton.title = `Akun ${accountName}`;
 
     if (logoutButton) {
-      logoutButton.setAttribute("href", `${LOGIN_PAGE}?logout=1&next=${encodeURIComponent(getCurrentPageName())}`);
-      logoutButton.addEventListener("click", logout);
+      logoutButton.setAttribute("href", getLogoutUrl());
+      ["pointerdown", "touchstart", "mousedown", "click"].forEach((eventName) => {
+        logoutButton.addEventListener(eventName, logout, true);
+      });
     }
 
-    document.addEventListener("click", function (event) {
+    ["pointerdown", "touchstart", "mousedown", "click"].forEach((eventName) => {
+      document.addEventListener(eventName, function (event) {
       const target = event.target.closest ? event.target.closest("#logoutButton") : null;
 
       if (target) {
         logout(event);
       }
-    }, true);
+      }, true);
+    });
 
     profileMenuButton.addEventListener("click", function (event) {
       event.stopPropagation();
@@ -120,8 +125,11 @@
       event.stopPropagation();
     }
 
+    if (isLoggingOut) return;
+
+    isLoggingOut = true;
     sessionStorage.removeItem(SESSION_KEY);
-    window.location.href = `${LOGIN_PAGE}?logout=1&next=${encodeURIComponent(getCurrentPageName())}`;
+    window.location.replace(getLogoutUrl());
   }
 
   function readSession() {
@@ -173,6 +181,10 @@
     const page = fileName.includes(".") ? fileName : "index.html";
 
     return `${page}${window.location.search || ""}${window.location.hash || ""}`;
+  }
+
+  function getLogoutUrl() {
+    return `${LOGIN_PAGE}?logout=1&t=${Date.now()}&next=${encodeURIComponent(getCurrentPageName())}`;
   }
 
   updateClock();

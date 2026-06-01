@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260601-deploy-login">
-  <script defer src="assets/auth-guard.js?v=20260601-deploy-login"></script>
-  <script defer src="assets/app.js?v=20260601-deploy-login"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260601-deploy-fixes">
+  <script defer src="assets/auth-guard.js?v=20260601-deploy-fixes"></script>
+  <script defer src="assets/app.js?v=20260601-deploy-fixes"></script>
 </head>
 <body data-page="home">
   <header class="topbar home-topbar">
@@ -59,7 +59,7 @@
               <small id="profileAccountMeta">Nadhira Farma Digital</small>
             </span>
           </div>
-          <a class="logout-button" id="logoutButton" href="login.html?logout=1&next=index.html" role="menuitem">
+          <a class="logout-button" id="logoutButton" href="login.html?logout=1&t=20260601&next=index.html" role="menuitem" onclick="sessionStorage.removeItem('nadhira.authSession'); return true;">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <path d="M16 17l5-5-5-5"></path>

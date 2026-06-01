@@ -60,6 +60,7 @@
       populateFilterOptions();
       renderResults();
       updateCacheSummary();
+      updateFilterButtonState();
     } catch (error) {
       setStatus(`Cache lokal tidak bisa dibuka: ${error.message}`, "error");
     }
@@ -117,6 +118,8 @@
     els.importButton = document.getElementById("importButton");
     els.importSummary = document.getElementById("importSummary");
     els.importStatus = document.getElementById("importStatus");
+    els.notificationButton = document.getElementById("notificationButton");
+    els.notificationDot = document.getElementById("notificationDot");
     els.cacheStatus = document.getElementById("cacheStatus");
     els.medicineCount = document.getElementById("medicineCount");
     els.resultsArea = document.getElementById("resultsArea");
@@ -150,6 +153,9 @@
       }
     });
     els.syncButton.addEventListener("click", () => syncMedicines());
+    if (els.notificationButton) {
+      els.notificationButton.addEventListener("click", acknowledgeUploadNotification);
+    }
     els.importFileInput.addEventListener("change", handleImportFileChange);
     els.importButton.addEventListener("click", importExcelToGoogleSheet);
     window.addEventListener("beforeunload", stopScanner);
@@ -160,13 +166,17 @@
       els.filterSupplier,
       els.filterSatuanBeli,
       els.filterExpired
-    ].forEach((control) => control.addEventListener("input", renderResults));
+    ].forEach((control) => {
+      control.addEventListener("input", renderResults);
+      control.addEventListener("change", renderResults);
+    });
 
     els.columnToggles.forEach((toggle) => {
       toggle.addEventListener("change", () => {
         state.visibleColumns[toggle.dataset.column] = toggle.checked;
         localStorage.setItem(COLUMN_VISIBILITY_KEY, JSON.stringify(state.visibleColumns));
         renderResults();
+        updateFilterButtonState();
       });
     });
 
@@ -180,6 +190,7 @@
       localStorage.removeItem(COLUMN_VISIBILITY_KEY);
       hydrateColumnControls();
       renderResults();
+      updateFilterButtonState();
     });
 
     els.settingsButton.addEventListener("click", () => {
@@ -294,7 +305,17 @@
       }
 
       const payload = await response.text();
-      const rows = parsePayload(payload);
+      const parsedPayload = parsePayload(payload);
+      const rows = parsedPayload.rows;
+      const sourceUploadedAt = normalizeTimestamp(
+        parsedPayload.meta.uploadedAt ||
+        parsedPayload.meta.lastUploadAt ||
+        parsedPayload.meta.uploadUpdatedAt ||
+        parsedPayload.meta.dataUpdatedAt ||
+        parsedPayload.meta.updatedAt ||
+        options.uploadedAt ||
+        ""
+      );
 
       if (looksLikeCredentialRows(rows)) {
         throw new Error("Endpoint ini berisi data akun, bukan data obat.");
@@ -312,6 +333,9 @@
       const dataSignature = createMedicineSignature(medicines);
       const previousSignature = previousMeta.dataSignature || createMedicineSignature(state.medicines);
       const dataChanged = dataSignature !== previousSignature;
+      const previousUploadedAt = normalizeTimestamp(previousMeta.uploadedAt || previousMeta.lastUploadAt || "");
+      const uploadChanged = sourceUploadedAt && sourceUploadedAt !== previousUploadedAt;
+      const uploadedAt = sourceUploadedAt || previousUploadedAt || "";
       const now = new Date().toISOString();
 
       await replaceMedicines(medicines);
@@ -321,7 +345,9 @@
       localStorage.setItem(META_KEY, JSON.stringify({
         ...previousMeta,
         lastChecked: now,
-        lastChanged: dataChanged ? now : previousMeta.lastChanged,
+        lastChanged: dataChanged ? (uploadedAt || now) : previousMeta.lastChanged,
+        uploadedAt,
+        hasUploadNotification: Boolean(previousMeta.hasUploadNotification || dataChanged || uploadChanged || options.forceUploadNotification),
         dataSignature,
         source: apiUrl,
         total: medicines.length
@@ -329,6 +355,7 @@
 
       renderResults();
       updateCacheSummary();
+      updateFilterButtonState();
 
       if (!options.silent && dataChanged) {
         setStatus(`Data obat berhasil disinkronkan. ${medicines.length} data terbaru tersimpan.`, "success");
@@ -341,7 +368,8 @@
       return {
         ok: true,
         dataChanged,
-        total: medicines.length
+        total: medicines.length,
+        uploadedAt
       };
     } catch (error) {
       setStatus(`Sinkronisasi gagal: ${error.message}`, "error");
@@ -533,7 +561,9 @@
 
       const syncResult = await syncMedicines({
         silent: true,
-        throwOnError: true
+        throwOnError: true,
+        uploadedAt: result.updatedAt || result.uploadedAt || "",
+        forceUploadNotification: true
       });
       const total = Number(result.total || syncResult.total || state.medicines.length || state.importMedicines.length);
 
@@ -578,24 +608,33 @@
   function parsePayload(payload) {
     const text = payload.trim();
 
-    if (!text) return [];
+    if (!text) return { rows: [], meta: {} };
 
     if (text.startsWith("{") || text.startsWith("[")) {
       const json = JSON.parse(text);
 
-      if (Array.isArray(json)) return json;
-      if (Array.isArray(json.data)) return json.data;
-      if (Array.isArray(json.obat)) return json.obat;
-      if (Array.isArray(json.records)) return json.records;
-      if (Array.isArray(json.values)) return matrixToObjects(json.values);
+      if (Array.isArray(json)) return { rows: json, meta: {} };
+
+      const meta = {
+        updatedAt: json.updatedAt || json.meta?.updatedAt || "",
+        uploadedAt: json.uploadedAt || json.meta?.uploadedAt || "",
+        lastUploadAt: json.lastUploadAt || json.meta?.lastUploadAt || "",
+        uploadUpdatedAt: json.uploadUpdatedAt || json.meta?.uploadUpdatedAt || "",
+        dataUpdatedAt: json.dataUpdatedAt || json.meta?.dataUpdatedAt || ""
+      };
+
+      if (Array.isArray(json.data)) return { rows: json.data, meta };
+      if (Array.isArray(json.obat)) return { rows: json.obat, meta };
+      if (Array.isArray(json.records)) return { rows: json.records, meta };
+      if (Array.isArray(json.values)) return { rows: matrixToObjects(json.values), meta };
 
       const values = Object.values(json);
       if (values.every((value) => value && typeof value === "object" && !Array.isArray(value))) {
-        return values;
+        return { rows: values, meta };
       }
     }
 
-    return parseCsv(text);
+    return { rows: parseCsv(text), meta: {} };
   }
 
   function parseCsv(text) {
@@ -904,7 +943,7 @@
   function renderResults() {
     const rawQuery = els.searchInput.value.trim();
     const query = rawQuery.toLowerCase();
-    const shouldShowPopup = Boolean(query || hasActiveFilters());
+    const shouldShowPopup = Boolean(query || hasActiveFilters() || hasColumnVisibilityChanged());
     const searchFiltered = query
       ? state.medicines.filter((medicine) => medicine.searchable.includes(query))
       : state.medicines;
@@ -917,6 +956,7 @@
       els.resultsList.innerHTML = "";
       els.emptyState.hidden = true;
       els.medicineCount.textContent = `${state.medicines.length} data`;
+      updateFilterButtonState();
       return;
     }
 
@@ -935,6 +975,7 @@
     }
 
     els.medicineCount.textContent = `${filtered.length} dari ${state.medicines.length} data`;
+    updateFilterButtonState();
   }
 
   function setResultsVisible(isVisible) {
@@ -950,6 +991,16 @@
       els.filterSatuanBeli.value.trim() ||
       els.filterExpired.value
     );
+  }
+
+  function hasColumnVisibilityChanged() {
+    return Object.keys(DEFAULT_VISIBLE_COLUMNS).some((key) => state.visibleColumns[key] !== DEFAULT_VISIBLE_COLUMNS[key]);
+  }
+
+  function updateFilterButtonState() {
+    if (!els.filterButton) return;
+
+    els.filterButton.classList.toggle("is-active", hasActiveFilters() || hasColumnVisibilityChanged());
   }
 
   function renderMedicineCard(medicine, index, query) {
@@ -1756,19 +1807,22 @@
       els.cacheStatus.textContent = "Cache lokal kosong";
       delete els.cacheStatus.dataset.type;
       els.medicineCount.textContent = "0 data";
+      updateUploadNotification();
       return;
     }
 
-    const lastChanged = meta.lastChanged || meta.lastSync;
+    const uploadedAt = getCachedUploadTimestamp(meta);
 
-    if (!lastChanged) {
-      els.cacheStatus.textContent = "Data tersedia di cache lokal";
-      delete els.cacheStatus.dataset.type;
+    if (!uploadedAt) {
+      els.cacheStatus.textContent = "Last updated upload Google Sheet belum tersedia";
+      els.cacheStatus.dataset.type = "warning";
+      updateUploadNotification();
       return;
     }
 
-    els.cacheStatus.textContent = formatLastUpdated(lastChanged);
+    els.cacheStatus.textContent = formatLastUpdated(uploadedAt);
     els.cacheStatus.dataset.type = "success";
+    updateUploadNotification();
   }
 
   function formatLastUpdated(value) {
@@ -1791,6 +1845,61 @@
     }, {});
 
     return `Last updated tanggal ${parts.day}/${parts.month}/${parts.year} Jam. ${parts.hour}.${parts.minute} WIB`;
+  }
+
+  function normalizeTimestamp(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+
+    const date = new Date(text);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toISOString();
+  }
+
+  function updateUploadNotification() {
+    if (!els.notificationButton || !els.notificationDot) return;
+
+    const meta = readMeta();
+    const uploadedAt = getCachedUploadTimestamp(meta);
+    const hasUnread = Boolean(meta.hasUploadNotification && uploadedAt);
+    const label = uploadedAt
+      ? `Data Google Sheet terakhir diupload ${formatLastUpdated(uploadedAt).replace("Last updated ", "")}`
+      : "Belum ada informasi upload data Google Sheet";
+
+    els.notificationButton.classList.toggle("has-unread", hasUnread);
+    els.notificationDot.hidden = !hasUnread;
+    els.notificationButton.title = label;
+    els.notificationButton.setAttribute("aria-label", hasUnread ? `Notifikasi baru. ${label}` : label);
+  }
+
+  function acknowledgeUploadNotification() {
+    const meta = readMeta();
+    const uploadedAt = getCachedUploadTimestamp(meta);
+
+    localStorage.setItem(META_KEY, JSON.stringify({
+      ...meta,
+      hasUploadNotification: false
+    }));
+
+    updateUploadNotification();
+
+    if (uploadedAt) {
+      setStatus(`Notifikasi dibaca. ${formatLastUpdated(uploadedAt)}`, "success");
+    } else {
+      setStatus("Belum ada informasi upload terbaru dari Google Sheet.", "warning");
+    }
+  }
+
+  function getCachedUploadTimestamp(meta) {
+    return normalizeTimestamp(
+      meta.uploadedAt ||
+      meta.lastUploadAt ||
+      meta.sourceUpdatedAt ||
+      meta.dataUpdatedAt ||
+      meta.lastChanged ||
+      ""
+    );
   }
 
   function setStatus(message, type) {
