@@ -782,6 +782,10 @@
 
     if (isDateLikeValue(raw)) return "";
 
+    const numericText = raw.replace(",", ".").replace(/[^0-9.-]/g, "");
+
+    if (!/[0-9]/.test(numericText)) return "";
+
     return raw;
   }
 
