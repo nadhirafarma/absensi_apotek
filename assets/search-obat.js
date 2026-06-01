@@ -649,49 +649,27 @@
 
   function normalizeMedicine(row, index) {
     const item = normalizeObjectKeys(row);
-    const nama = pick(item, ["nama", "namaobat", "name", "obat", "namabarang", "produk", "item"]);
-    const barcode = pick(item, ["barcode", "kodebarcode", "kode", "sku", "idobat", "id"]);
+    const nama = pick(item, ["nama", "namaobat"]);
+    const barcode = pick(item, ["kode", "barcode"]);
 
     if (!nama && !barcode) return null;
 
-    const stok = pickStockValue(item, [
-      "stok",
-      "stock",
-      "qty",
-      "quantity",
-      "jumlah",
-      "sisa",
-      "sisastok",
-      "stokreal",
-      "stokasli",
-      "stockreal",
-      "sisastokbox",
-      "stoktersedia",
-      "persediaan",
-      "stokakhir",
-      "stokgudang",
-      "stokapotek",
-      "totalstok",
-      "stokbox",
-      "sisabox",
-      "qtybox",
-      "jumlahbox"
-    ]);
+    const stok = pick(item, ["stok"]);
     const satuanBeli = pick(item, ["satuanbeli"]);
-    const satuan1 = pick(item, ["satuan1", "satuan", "satuanbeli", "unit", "kemasan"]);
+    const satuan1 = pick(item, ["satuan1"]);
     const satuan2 = pick(item, ["satuan2"]);
     const satuan3 = pick(item, ["satuan3"]);
-    const harga1 = pick(item, ["hargajual1", "harga1", "harga", "price", "hargajual", "jual", "hargaresep1"]);
-    const harga2 = pick(item, ["hargajual2", "harga2", "hargaresep2"]);
-    const harga3 = pick(item, ["hargajual3", "harga3", "hargaresep3"]);
+    const harga1 = pick(item, ["hargajual1"]);
+    const harga2 = pick(item, ["hargajual2"]);
+    const harga3 = pick(item, ["hargajual3"]);
     const usesCompactPrice = Boolean(item.hargajual1 || item.hargajual2 || item.hargajual3 || item.hargaresep1 || item.hargaresep2 || item.hargaresep3);
-    const kategori = pick(item, ["kategori", "category", "golongan", "jenis"]);
-    const lokasi = pick(item, ["lokasi", "lokasirak", "rak", "lemari", "posisi"]);
-    const expired = pick(item, ["expired", "exp", "kedaluwarsa", "kadaluarsa", "ed"]);
+    const kategori = pick(item, ["kategori"]);
+    const lokasi = pick(item, ["lokasi"]);
+    const expired = pick(item, ["expired"]);
     const updated = pick(item, ["updatedat", "updated", "lastupdate", "tanggalupdate", "terakhirupdate"]);
-    const suplier = pick(item, ["suplier", "supplier", "pemasok"]);
+    const suplier = pick(item, ["suplier", "supplier"]);
     const status = pick(item, ["status"]);
-    const noBatch = pick(item, ["nobatch", "batch", "nobat"]);
+    const noBatch = pick(item, ["nobatch"]);
     const id = String(barcode || slugify(nama) || `obat-${index}`);
 
     const medicine = {
@@ -756,16 +734,6 @@
     for (const key of keys) {
       if (object[key] !== undefined && object[key] !== null && String(object[key]).trim() !== "") {
         return object[key];
-      }
-    }
-    return "";
-  }
-
-  function pickStockValue(object, keys) {
-    for (const key of keys) {
-      if (object[key] !== undefined && object[key] !== null && String(object[key]).trim() !== "") {
-        const value = normalizeStockValue(object[key]);
-        if (value) return value;
       }
     }
     return "";
@@ -1763,9 +1731,8 @@
 
   function formatStockValue(medicine) {
     const stock = normalizeStockValue(medicine.stok) || "-";
-    const unit = formatDisplayText(medicine.satuanBeli);
 
-    return stock !== "-" && unit ? `${stock} ${unit}` : stock;
+    return stock;
   }
 
   function formatPrice(value) {

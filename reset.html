@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reset Password - Nadhira Farma Digital</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(145deg, #2800f6, #c400e8);
+    }
+
+    .card {
+      width: min(100%, 380px);
+      padding: 34px 30px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 70px rgba(20, 0, 110, 0.22);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 22px;
+      font-size: 1.45rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 74px 0 14px;
+      border: 0;
+      border-radius: 12px;
+      outline: 0;
+      background: #ffffff;
+      color: #1b1458;
+      font-size: 1rem;
+    }
+
+    .toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #514a82;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+
+    .toggle:hover {
+      background: #f0edff;
+    }
+
+    .toggle svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+    }
+
+    .field-status {
+      position: absolute;
+      top: 50%;
+      right: 42px;
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .field-status[hidden] {
+      display: none;
+    }
+
+    .field-status svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+    }
+
+    .field-status.is-valid {
+      background: #e8fff2;
+      color: #12a85e;
+    }
+
+    .field-status.is-invalid {
+      background: #fff0f2;
+      color: #e52d46;
+    }
+
+    .rules {
+      margin: 0 0 14px;
+      padding: 12px 14px 12px 30px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.10);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.78rem;
+      line-height: 1.45;
+      text-align: left;
+    }
+
+    .rules li + li {
+      margin-top: 4px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #3700dc;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:disabled {
+      cursor: wait;
+      opacity: 0.76;
+    }
+
+    .status {
+      min-height: 22px;
+      margin: 16px 0 0;
+      color: #ffffff;
+      font-size: 0.86rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .status[data-type="error"] {
+      color: #ffe1ef;
+    }
+
+    .status[data-type="success"] {
+      color: #dbffef;
+    }
+
+    .success-modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(18, 0, 90, 0.42);
+      backdrop-filter: blur(14px);
+    }
+
+    .success-modal[hidden] {
+      display: none;
+    }
+
+    .success-card {
+      width: min(100%, 390px);
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #1b1458;
+      box-shadow: 0 30px 80px rgba(20, 0, 110, 0.32);
+      text-align: center;
+    }
+
+    .success-card h2 {
+      margin: 0 0 10px;
+      color: #3700dc;
+      font-size: 1.25rem;
+    }
+
+    .success-card p {
+      margin: 0 0 14px;
+      color: #514a82;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .password-preview {
+      display: block;
+      width: 100%;
+      margin: 12px 0 16px;
+      padding: 12px;
+      border: 1px solid #d7d0ff;
+      border-radius: 14px;
+      background: #f5f2ff;
+      color: #1b1458;
+      font-family: Arial, sans-serif;
+      font-size: 1.08rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .modal-button {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(100deg, #2f49f5, #cc12cb);
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Reset Password</h1>
+
+    <form id="resetForm">
+      <input id="emailInput" type="hidden" value="<?= email ?>">
+
+      <div class="field">
+        <input id="passwordInput" type="password" placeholder="Password baru" autocomplete="new-password" required>
+        <button class="toggle" type="button" data-target="passwordInput" aria-label="Tampilkan password">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+            <path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+            <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
+            <path d="M3 3l18 18"></path>
+          </svg>
+        </button>
+        <span class="field-status" id="passwordStatusIcon" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        </span>
+      </div>
+
+      <div class="field">
+        <input id="confirmPasswordInput" type="password" placeholder="Ulangi password baru" autocomplete="new-password" required>
+        <button class="toggle" type="button" data-target="confirmPasswordInput" aria-label="Tampilkan password">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+            <path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+            <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path>
+            <path d="M3 3l18 18"></path>
+          </svg>
+        </button>
+        <span class="field-status" id="confirmPasswordStatusIcon" hidden>
+          <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+          <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" hidden>
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </span>
+      </div>
+
+      <ul class="rules">
+        <li>Password baru minimal 6 karakter.</li>
+        <li>Wajib ada huruf &amp; angka.</li>
+        <li>Password konfirmasi harus sama.</li>
+      </ul>
+
+      <button id="submitButton" type="submit">Simpan Password</button>
+      <p class="status" id="statusText" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <section class="success-modal" id="successModal" hidden>
+    <div class="success-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+      <h2 id="successTitle">Password berhasil dibuat</h2>
+      <p>Silakan screenshot password baru Anda agar tidak lupa. Simpan screenshot di tempat yang aman.</p>
+      <strong class="password-preview" id="passwordPreview"></strong>
+      <button class="modal-button" id="successButton" type="button">Selesai</button>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      var form = document.getElementById('resetForm');
+      var emailInput = document.getElementById('emailInput');
+      var passwordInput = document.getElementById('passwordInput');
+      var confirmPasswordInput = document.getElementById('confirmPasswordInput');
+      var passwordStatusIcon = document.getElementById('passwordStatusIcon');
+      var confirmPasswordStatusIcon = document.getElementById('confirmPasswordStatusIcon');
+      var submitButton = document.getElementById('submitButton');
+      var statusText = document.getElementById('statusText');
+      var successModal = document.getElementById('successModal');
+      var passwordPreview = document.getElementById('passwordPreview');
+      var successButton = document.getElementById('successButton');
+
+      Array.prototype.forEach.call(document.querySelectorAll('.toggle'), function(button) {
+        button.addEventListener('click', function() {
+          var input = document.getElementById(button.getAttribute('data-target'));
+
+          input.type = input.type === 'password' ? 'text' : 'password';
+          input.focus();
+        });
+      });
+
+      passwordInput.addEventListener('input', updateFieldIndicators);
+      confirmPasswordInput.addEventListener('input', updateFieldIndicators);
+      updateFieldIndicators();
+
+      form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        var email = String(emailInput.value || '').trim();
+        var password = passwordInput.value;
+        var confirmPassword = confirmPasswordInput.value;
+        var validationError = validatePassword(password, confirmPassword);
+
+        updateFieldIndicators();
+
+        if (!email) {
+          setStatus('Email reset tidak ditemukan. Silakan ulangi dari halaman login.', 'error');
+          return;
+        }
+
+        if (validationError) {
+          setStatus(validationError, 'error');
+          return;
+        }
+
+        setLoading(true);
+        setStatus('Menyimpan password...', 'success');
+
+        if (!window.google || !google.script || !google.script.run) {
+          setLoading(false);
+          setStatus('Halaman reset harus dibuka dari link Apps Script.', 'error');
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            setLoading(false);
+
+            if (!result || result.success !== true) {
+              setStatus((result && result.message) || 'Password baru gagal disimpan.', 'error');
+              return;
+            }
+
+            setStatus(result.message || 'Password baru berhasil disimpan. Silakan login kembali.', 'success');
+            showSuccessPopup(password);
+          })
+          .withFailureHandler(function(error) {
+            setLoading(false);
+            setStatus((error && error.message) || 'Password baru gagal disimpan.', 'error');
+          })
+          .updateResetPassword(email, password, confirmPassword);
+      });
+
+      successButton.addEventListener('click', function() {
+        successModal.hidden = true;
+        passwordInput.value = '';
+        confirmPasswordInput.value = '';
+        updateFieldIndicators();
+        passwordInput.focus();
+      });
+
+      function updateFieldIndicators() {
+        var password = passwordInput.value;
+        var confirmPassword = confirmPasswordInput.value;
+        var passwordValid = isPasswordStrong(password);
+
+        setIndicator(passwordStatusIcon, passwordValid ? 'valid' : 'hidden');
+
+        if (!confirmPassword) {
+          setIndicator(confirmPasswordStatusIcon, 'hidden');
+          return;
+        }
+
+        setIndicator(confirmPasswordStatusIcon, password && confirmPassword === password ? 'valid' : 'invalid');
+      }
+
+      function setIndicator(element, state) {
+        var checkIcon = element.querySelector('.icon-check');
+        var xIcon = element.querySelector('.icon-x');
+
+        element.className = 'field-status';
+
+        if (state === 'hidden') {
+          element.hidden = true;
+          return;
+        }
+
+        element.hidden = false;
+        element.classList.add(state === 'valid' ? 'is-valid' : 'is-invalid');
+
+        if (checkIcon && xIcon) {
+          checkIcon.hidden = state !== 'valid';
+          xIcon.hidden = state !== 'invalid';
+        }
+      }
+
+      function isPasswordStrong(password) {
+        return password.length >= 6 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+      }
+
+      function validatePassword(password, confirmPassword) {
+        if (!password) return 'Password baru wajib diisi.';
+        if (password.length < 6) return 'Password baru minimal 6 karakter.';
+        if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return 'Password baru wajib kombinasi huruf dan angka.';
+        if (password !== confirmPassword) return 'Konfirmasi password tidak sama.';
+
+        return '';
+      }
+
+      function setLoading(isLoading) {
+        submitButton.disabled = isLoading;
+        submitButton.textContent = isLoading ? 'Menyimpan...' : 'Simpan Password';
+      }
+
+      function setStatus(message, type) {
+        statusText.textContent = message || '';
+
+        if (type) {
+          statusText.setAttribute('data-type', type);
+        } else {
+          statusText.removeAttribute('data-type');
+        }
+      }
+
+      function showSuccessPopup(password) {
+        passwordPreview.textContent = password;
+        successModal.hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>

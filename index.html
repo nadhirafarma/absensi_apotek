@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css">
-  <script defer src="assets/app.js"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260601-deploy-login">
+  <script defer src="assets/auth-guard.js?v=20260601-deploy-login"></script>
+  <script defer src="assets/app.js?v=20260601-deploy-login"></script>
 </head>
 <body data-page="home">
   <header class="topbar home-topbar">
@@ -42,12 +43,32 @@
         </svg>
         <span id="clockLabel"></span>
       </span>
-      <span class="profile-chip" aria-hidden="true">
-        <span class="profile-avatar">YA</span>
-        <svg viewBox="0 0 24 24">
-          <path d="m6 9 6 6 6-6"></path>
-        </svg>
-      </span>
+      <div class="profile-menu" id="profileMenu">
+        <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="profile-avatar" id="profileAvatar">AK</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+
+        <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
+          <div class="profile-summary">
+            <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
+            <span>
+              <strong id="profileAccountName">Akun</strong>
+              <small id="profileAccountMeta">Nadhira Farma Digital</small>
+            </span>
+          </div>
+          <a class="logout-button" id="logoutButton" href="login.html?logout=1&next=index.html" role="menuitem">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="M16 17l5-5-5-5"></path>
+              <path d="M21 12H9"></path>
+            </svg>
+            Logout
+          </a>
+        </div>
+      </div>
     </div>
   </header>
 
