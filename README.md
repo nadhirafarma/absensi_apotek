@@ -77,7 +77,9 @@ Catatan penting:
 - Target import data obat di Apps Script: spreadsheet `1jdtxpAZ-G545QfvbktjAihy2xXJeD8GbUFUx7W1TPdk`, sheet `data_obat`.
 - Mapping data obat baru sudah didukung di pencarian: `kode` dibaca sebagai barcode, `nama` sebagai nama obat, `satuan_1` sampai `satuan_3` sebagai level satuan, dan `harga_jual_1` sampai `harga_jual_3` sebagai harga jual. Harga ringkas seperti `3`, `20`, `22`, atau `9.5` otomatis ditampilkan sebagai ribuan rupiah.
 - Jika kolom `stok` dari file baru berisi tanggal, nilai tersebut tidak lagi ditampilkan sebagai stok agar review obat tidak menyesatkan.
+- Perbaikan 01/06/2026: data stok dari file Excel baru dibaca dari alias `stok_real`, `stok_asli`, `sisa_stok`, atau `sisa_stok_box`. Paste `google-apps-script-api-search-box-final.gs` ke Apps Script `API Search Box`, deploy Web App versi baru, lalu tekan `Sinkronkan`.
 - Fitur share slip gaji otomatis awal bulan disiapkan pada file `google-apps-script-slip-gaji-bulanan.gs`.
+- Jika slip gaji tanggal 1 belum terkirim karena trigger belum aktif/terpasang setelah jam 08.00 WIB, jalankan `sendSalarySlipsThisMonthNow()` untuk catch-up manual. Untuk pemasangan rutin berikutnya jalankan `setupMonthlySalarySlipAutomationWithWhatsappAndCatchUp()`.
 - Jika scanner/flash berbeda perilaku antar HP, penyebabnya biasanya batasan browser dan izin kamera perangkat.
 - Setelah deploy, browser mobile kadang masih memakai cache lama. Tutup-buka ulang browser atau hard refresh jika tampilan belum berubah.
 

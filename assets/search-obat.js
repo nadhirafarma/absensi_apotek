@@ -654,18 +654,28 @@
 
     if (!nama && !barcode) return null;
 
-    const stok = pick(item, [
+    const stok = pickStockValue(item, [
       "stok",
       "stock",
       "qty",
       "quantity",
       "jumlah",
       "sisa",
+      "sisastok",
+      "stokreal",
+      "stokasli",
+      "stockreal",
+      "sisastokbox",
+      "stoktersedia",
       "persediaan",
       "stokakhir",
       "stokgudang",
       "stokapotek",
-      "totalstok"
+      "totalstok",
+      "stokbox",
+      "sisabox",
+      "qtybox",
+      "jumlahbox"
     ]);
     const satuanBeli = pick(item, ["satuanbeli"]);
     const satuan1 = pick(item, ["satuan1", "satuan", "satuanbeli", "unit", "kemasan"]);
@@ -746,6 +756,16 @@
     for (const key of keys) {
       if (object[key] !== undefined && object[key] !== null && String(object[key]).trim() !== "") {
         return object[key];
+      }
+    }
+    return "";
+  }
+
+  function pickStockValue(object, keys) {
+    for (const key of keys) {
+      if (object[key] !== undefined && object[key] !== null && String(object[key]).trim() !== "") {
+        const value = normalizeStockValue(object[key]);
+        if (value) return value;
       }
     }
     return "";
