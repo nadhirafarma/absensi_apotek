@@ -65,13 +65,13 @@
   ];
 
   const VIEW_TITLES = {
+    dashboard: "Dashboard",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
     "surat-pesanan": "Surat Pesanan Pembelian",
     "akun-profil": "Akun & Profil",
-    "manajemen-pengguna": "Manajemen Pengguna",
-    laporan: "Laporan"
+    "manajemen-pengguna": "Manajemen Pengguna"
   };
 
   const LOCAL_SCHEMAS = {
@@ -120,7 +120,7 @@
     suppliers: [],
     purchaseItems: [],
     purchaseOrders: [],
-    activeView: "data-obat",
+    activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
     unitCount: 4,
@@ -245,8 +245,7 @@
       reportExpired: document.getElementById("reportExpired"),
       reportEmpty: document.getElementById("reportEmpty"),
       reportLow: document.getElementById("reportLow"),
-      reportOut: document.getElementById("reportOut"),
-      reportPriorityList: document.getElementById("reportPriorityList")
+      reportOut: document.getElementById("reportOut")
     });
   }
 
@@ -1256,21 +1255,6 @@
     els.reportLow.textContent = formatNumber(low);
     els.reportOut.textContent = formatNumber(out);
 
-    const priority = state.rows
-      .filter((row) => isExpired(row) || isExpiringSoon(row) || isLowStock(row) || parseNumber(row.stok) <= 0)
-      .slice(0, 30);
-
-    if (!priority.length) {
-      els.reportPriorityList.innerHTML = "<p>Tidak ada data prioritas.</p>";
-      return;
-    }
-
-    els.reportPriorityList.innerHTML = priority.map((row) => `
-      <article>
-        <span><strong>${escapeHtml(row.nama || row.kode)}</strong><small>${escapeHtml(row.kode || "-")}</small></span>
-        <em>${escapeHtml(getReportLabel(row))}</em>
-      </article>
-    `).join("");
   }
 
   function switchView(viewName) {

@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - Nadhira Farma Digital</title>
-  <meta name="description" content="Dashboard internal Nadhira Farma Digital untuk data obat, karyawan, supplier, pembelian, profil, pengguna, dan laporan.">
+  <meta name="description" content="Dashboard internal Nadhira Farma Digital untuk data obat, karyawan, supplier, pembelian, profil, pengguna, dan ringkasan operasional.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260601-admin-dashboard-v2">
-  <script defer src="assets/auth-guard.js?v=20260601-admin-dashboard-v2"></script>
-  <script defer src="assets/app.js?v=20260601-admin-dashboard-v2"></script>
-  <script defer src="assets/home-dashboard.js?v=20260601-admin-dashboard-v2"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v3">
+  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v3"></script>
+  <script defer src="assets/app.js?v=20260602-admin-dashboard-v3"></script>
+  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v3"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <div class="app-layout">
@@ -34,6 +34,16 @@
       </div>
 
       <nav class="sidebar-nav">
+        <button class="sidebar-link is-active" type="button" data-view-target="dashboard" title="Dashboard" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 19V5"></path>
+            <path d="M4 19h16"></path>
+            <rect x="7" y="10" width="3" height="6"></rect>
+            <rect x="12" y="7" width="3" height="9"></rect>
+            <rect x="17" y="12" width="3" height="4"></rect>
+          </svg>
+          <span class="sidebar-label">Dashboard</span>
+        </button>
         <a class="sidebar-link" href="absensi.html" title="Absensi Face ID">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
@@ -53,7 +63,7 @@
         </a>
 
         <span class="sidebar-section">Master Data</span>
-        <button class="sidebar-link is-active" type="button" data-view-target="data-obat" title="Data Obat" aria-current="page">
+        <button class="sidebar-link" type="button" data-view-target="data-obat" title="Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
             <path d="M9 10h6"></path>
@@ -106,23 +116,13 @@
           </svg>
           <span class="sidebar-label">Manajemen Pengguna</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="laporan" title="Laporan">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 19V5"></path>
-            <path d="M4 19h16"></path>
-            <rect x="7" y="10" width="3" height="6"></rect>
-            <rect x="12" y="7" width="3" height="9"></rect>
-            <rect x="17" y="12" width="3" height="4"></rect>
-          </svg>
-          <span class="sidebar-label">Laporan</span>
-        </button>
       </nav>
     </aside>
 
     <div class="dashboard-main">
       <header class="dashboard-topbar">
         <div class="dashboard-title">
-          <h1 id="dashboardViewTitle">Data Obat</h1>
+          <h1 id="dashboardViewTitle">Dashboard</h1>
         </div>
 
         <div class="dashboard-status">
@@ -185,7 +185,18 @@
       </header>
 
       <main class="dashboard-content">
-        <section class="dashboard-view is-active" id="view-data-obat" data-view="data-obat">
+        <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
+          <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
+            <article class="stat-card"><span class="stat-icon stat-blue">Σ</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-pink">×</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-orange">↓</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
+          </section>
+        </section>
+
+        <section class="dashboard-view" id="view-data-obat" data-view="data-obat">
           <section class="dashboard-stats" aria-label="Ringkasan data obat">
             <article class="stat-card">
               <span class="stat-icon stat-blue">
@@ -518,38 +529,9 @@
                 </table>
               </div>
             </div>
-            <aside class="module-card role-card">
-              <h2>Role & Permission</h2>
-              <p>Kelola hak akses operator sesuai peran dan tanggung jawab.</p>
-              <ul>
-                <li><strong>Administrator</strong><span>Akses penuh ke semua fitur</span></li>
-                <li><strong>Apoteker</strong><span>Akses pengelolaan obat & resep</span></li>
-                <li><strong>Kasir</strong><span>Akses transaksi penjualan</span></li>
-                <li><strong>Staf Gudang</strong><span>Akses stok & inventori</span></li>
-              </ul>
-            </aside>
           </div>
         </section>
 
-        <section class="dashboard-view" id="view-laporan" data-view="laporan">
-          <section class="dashboard-stats report-stats" aria-label="Ringkasan laporan">
-            <article class="stat-card"><span class="stat-icon stat-blue">∑</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-pink">×</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-orange">↓</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
-          </section>
-          <div class="module-card">
-            <div class="module-head">
-              <div>
-                <h2>Daftar Prioritas</h2>
-                <p>Obat yang perlu perhatian berdasarkan stok dan expired.</p>
-              </div>
-            </div>
-            <div id="reportPriorityList" class="report-list"></div>
-          </div>
-        </section>
       </main>
     </div>
   </div>
