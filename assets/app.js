@@ -12,6 +12,7 @@
   const profileAccountName = document.getElementById("profileAccountName");
   const profileAccountMeta = document.getElementById("profileAccountMeta");
   const logoutButton = document.getElementById("logoutButton");
+  const logoutButtons = Array.from(document.querySelectorAll("#logoutButton, [data-logout-button]"));
   let isLoggingOut = false;
 
   const dateFormatter = new Intl.DateTimeFormat("id-ID", {
@@ -64,16 +65,20 @@
     profileMenuButton.setAttribute("aria-label", `Akun ${accountName}`);
     profileMenuButton.title = `Akun ${accountName}`;
 
-    if (logoutButton) {
-      logoutButton.setAttribute("href", getLogoutUrl());
+    logoutButtons.forEach((button) => {
+      const logoutUrl = getLogoutUrl();
+      if (button.tagName === "A") {
+        button.setAttribute("href", logoutUrl);
+      }
+      button.dataset.logoutUrl = logoutUrl;
       ["pointerdown", "touchstart", "mousedown", "click"].forEach((eventName) => {
-        logoutButton.addEventListener(eventName, logout, true);
+        button.addEventListener(eventName, logout, true);
       });
-    }
+    });
 
     ["pointerdown", "touchstart", "mousedown", "click"].forEach((eventName) => {
       document.addEventListener(eventName, function (event) {
-      const target = event.target.closest ? event.target.closest("#logoutButton") : null;
+      const target = event.target.closest ? event.target.closest("#logoutButton, [data-logout-button]") : null;
 
       if (target) {
         logout(event);
@@ -123,6 +128,9 @@
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (event.stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
     }
 
     if (isLoggingOut) return;

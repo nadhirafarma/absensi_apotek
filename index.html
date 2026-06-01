@@ -3,140 +3,265 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nadhira Farma Digital</title>
-  <meta name="description" content="Menu utama Nadhira Farma Digital untuk absensi Face ID dan pencarian data obat.">
+  <title>Data Obat - Nadhira Farma Digital</title>
+  <meta name="description" content="Homepage internal Nadhira Farma Digital untuk data obat, absensi, dan pencarian obat.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260601-deploy-fixes">
-  <script defer src="assets/auth-guard.js?v=20260601-deploy-fixes"></script>
-  <script defer src="assets/app.js?v=20260601-deploy-fixes"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260601-home-dashboard">
+  <script defer src="assets/auth-guard.js?v=20260601-home-dashboard"></script>
+  <script defer src="assets/app.js?v=20260601-home-dashboard"></script>
+  <script defer src="assets/home-dashboard.js?v=20260601-home-dashboard"></script>
 </head>
-<body data-page="home">
-  <header class="topbar home-topbar">
-    <a class="brand home-brand" href="./" aria-label="Nadhira Farma Digital">
-      <img class="brand-logo" src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
-      <span>
-        <strong>Nadhira Farma Digital</strong>
-        <small>Sistem Informasi Apotek</small>
-      </span>
-    </a>
+<body data-page="home" class="dashboard-page">
+  <div class="app-layout">
+    <aside class="app-sidebar" aria-label="Menu utama">
+      <a class="sidebar-brand" href="index.html" aria-label="Nadhira Farma Digital">
+        <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+        <span>
+          <strong>Nadhira Farma Digital</strong>
+          <small>Sistem Informasi Apotek</small>
+        </span>
+      </a>
 
-    <div class="status-strip home-status-strip" aria-label="Status sistem">
-      <span class="online-pill" id="connectionStatus">
-        <span class="status-dot" aria-hidden="true"></span>
-        Online
-      </span>
-      <span class="status-item">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8 2v4"></path>
-          <path d="M16 2v4"></path>
-          <path d="M3 10h18"></path>
-          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-        </svg>
-        <span id="todayLabel"></span>
-      </span>
-      <span class="status-item">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9"></circle>
-          <path d="M12 7v5l3 2"></path>
-        </svg>
-        <span id="clockLabel"></span>
-      </span>
-      <div class="profile-menu" id="profileMenu">
-        <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
-          <span class="profile-avatar" id="profileAvatar">AK</span>
+      <nav class="sidebar-nav">
+        <a class="sidebar-link" href="absensi.html">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m6 9 6 6 6-6"></path>
+            <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
+            <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
+            <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path>
+            <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
+            <circle cx="12" cy="12" r="3"></circle>
           </svg>
-        </button>
+          Absensi Face ID
+        </a>
+        <a class="sidebar-link" href="cari-obat.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+            <path d="m15.2 15.2 4.8 4.8"></path>
+          </svg>
+          Cari Data Obat
+        </a>
 
-        <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
-          <div class="profile-summary">
-            <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
-            <span>
-              <strong id="profileAccountName">Akun</strong>
-              <small id="profileAccountMeta">Nadhira Farma Digital</small>
-            </span>
-          </div>
-          <a class="logout-button" id="logoutButton" href="login.html?logout=1&t=20260601&next=index.html" role="menuitem" onclick="sessionStorage.removeItem('nadhira.authSession'); return true;">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <path d="M16 17l5-5-5-5"></path>
-              <path d="M21 12H9"></path>
-            </svg>
-            Logout
-          </a>
+        <span class="sidebar-section">Master Data</span>
+        <a class="sidebar-link is-active" href="index.html" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
+            <path d="M9 10h6"></path>
+            <path d="M9 14h6"></path>
+          </svg>
+          Data Obat
+        </a>
+      </nav>
+
+      <button class="sidebar-logout" type="button" data-logout-button>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <path d="M16 17l5-5-5-5"></path>
+          <path d="M21 12H9"></path>
+        </svg>
+        Keluar
+      </button>
+
+      <small class="sidebar-copy">© 2026 Nadhira Farma Digital</small>
+    </aside>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <div>
+          <h1>Data Obat</h1>
+          <p>Kelola data obat dan informasi inventori sesuai Google Sheet data_obat.</p>
         </div>
-      </div>
-    </div>
-  </header>
 
-  <main class="shell home-shell">
-    <section class="home-hero" aria-labelledby="homeTitle">
-      <h1 id="homeTitle">Selamat Datang di <span>Nadhira Farma Digital</span></h1>
-      <p>Kelola sistem informasi apotek dengan mudah, cepat, dan terintegrasi.</p>
-    </section>
-
-    <section class="menu-grid home-menu-grid" aria-label="Menu utama">
-      <article class="feature-card feature-attendance">
-        <div class="feature-content">
-          <span class="menu-number">01</span>
-          <h2>Absensi Face ID</h2>
-          <span class="title-line" aria-hidden="true"></span>
-          <a class="primary-action" href="absensi.html">
-            Buka Absensi
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14"></path>
-              <path d="m13 6 6 6-6 6"></path>
-            </svg>
-          </a>
-        </div>
-        <div class="feature-visual face-visual" aria-hidden="true">
-          <span class="scan-frame"></span>
-          <span class="face-head"></span>
-          <span class="scan-line"></span>
-          <span class="shield-badge">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path>
-              <path d="m8.8 12.2 2.1 2.1 4.4-5"></path>
-            </svg>
+        <div class="dashboard-status">
+          <span class="online-pill" id="connectionStatus">
+            <span class="status-dot" aria-hidden="true"></span>
+            Sistem Online
           </span>
-        </div>
-      </article>
-
-      <article class="feature-card feature-medicine">
-        <div class="feature-content">
-          <span class="menu-number">02</span>
-          <h2>Cari Data Obat</h2>
-          <span class="title-line" aria-hidden="true"></span>
-          <a class="primary-action accent" href="cari-obat.html">
-            Cari Data Obat
+          <span class="status-item">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14"></path>
-              <path d="m13 6 6 6-6 6"></path>
+              <path d="M8 2v4"></path>
+              <path d="M16 2v4"></path>
+              <path d="M3 10h18"></path>
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
             </svg>
-          </a>
-        </div>
-        <div class="feature-visual medicine-visual" aria-hidden="true">
-          <span class="pill-capsule"></span>
-          <span class="lens"></span>
-          <span class="lens-handle"></span>
-          <span class="data-orbit"></span>
-        </div>
-      </article>
-    </section>
-  </main>
+            <span id="todayLabel"></span>
+          </span>
+          <span class="status-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+            <span id="clockLabel"></span>
+          </span>
+          <button class="notification-action" id="homeNotificationButton" type="button" aria-label="Notifikasi data obat" title="Notifikasi data obat">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+              <path d="M10 21h4"></path>
+            </svg>
+            <span class="notification-dot" id="homeNotificationDot" hidden></span>
+          </button>
 
-  <footer class="footer home-footer">
-    <span>© 2026 Nadhira Farma Digital. All rights reserved.</span>
-    <span class="secure-pill">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path>
-      </svg>
-      Sistem Aman & Terintegrasi
-    </span>
-    <span>Created by Yolan Alfarel</span>
-  </footer>
+          <div class="profile-menu" id="profileMenu">
+            <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span class="profile-avatar" id="profileAvatar">AK</span>
+              <span class="profile-name" id="dashboardProfileName">Akun</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+
+            <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
+              <div class="profile-summary">
+                <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
+                <span>
+                  <strong id="profileAccountName">Akun</strong>
+                  <small id="profileAccountMeta">Nadhira Farma Digital</small>
+                </span>
+              </div>
+              <button class="logout-button" type="button" role="menuitem" data-logout-button>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <path d="M16 17l5-5-5-5"></path>
+                  <path d="M21 12H9"></path>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-content">
+        <section class="dashboard-stats" aria-label="Ringkasan data obat">
+          <article class="stat-card">
+            <span class="stat-icon stat-blue">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
+              </svg>
+            </span>
+            <span>
+              <small>Total Obat</small>
+              <strong id="statTotal">0</strong>
+              <em>Jenis Obat</em>
+            </span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-icon stat-purple">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="3" width="14" height="18" rx="2"></rect>
+                <path d="M9 8h6"></path>
+                <path d="M9 12h6"></path>
+                <path d="M9 16h3"></path>
+              </svg>
+            </span>
+            <span>
+              <small>Obat Aktif</small>
+              <strong id="statActive">0</strong>
+              <em id="statActivePercent">0% dari total</em>
+            </span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-icon stat-orange">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3 2 21h20L12 3Z"></path>
+                <path d="M12 9v5"></path>
+                <path d="M12 17h.01"></path>
+              </svg>
+            </span>
+            <span>
+              <small>Stok Menipis</small>
+              <strong id="statLowStock">0</strong>
+              <em>Perlu pemesanan</em>
+            </span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-icon stat-pink">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="m5.7 5.7 12.6 12.6"></path>
+              </svg>
+            </span>
+            <span>
+              <small>Obat Expired</small>
+              <strong id="statExpired">0</strong>
+              <em>Segera ditangani</em>
+            </span>
+          </article>
+        </section>
+
+        <section class="data-workspace" aria-labelledby="dataObatTitle">
+          <div class="data-toolbar">
+            <label class="dashboard-search">
+              <span class="sr-only">Cari data obat</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                <path d="m15.2 15.2 4.8 4.8"></path>
+              </svg>
+              <input id="dashboardSearchInput" type="search" placeholder="Cari obat, kode, kategori, supplier, atau kandungan...">
+            </label>
+            <button class="filter-action" id="dashboardRefreshButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"></path>
+                <path d="M3 21v-5h5"></path>
+                <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"></path>
+                <path d="M16 3h5v5"></path>
+              </svg>
+              Refresh Data
+            </button>
+            <a class="secondary-action dashboard-link-button" href="cari-obat.html">Buka Pencarian</a>
+          </div>
+
+          <div class="table-card">
+            <div class="table-headline">
+              <div>
+                <h2 id="dataObatTitle">Tabel Data Obat</h2>
+                <p id="dashboardStatusText">Memuat data obat dari Google Sheet...</p>
+              </div>
+              <span id="dashboardUpdatedText">Last updated belum tersedia</span>
+            </div>
+
+            <div class="dashboard-table-wrap">
+              <table class="dashboard-table" aria-describedby="dashboardStatusText">
+                <thead id="dashboardTableHead"></thead>
+                <tbody id="dashboardTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="dashboard-table-footer">
+              <span id="dashboardPageInfo">Menampilkan 0 data</span>
+              <div class="pagination-actions">
+                <button class="icon-button" id="dashboardPrevButton" type="button" aria-label="Halaman sebelumnya">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m15 18-6-6 6-6"></path>
+                  </svg>
+                </button>
+                <span id="dashboardPageNumber">1</span>
+                <button class="icon-button" id="dashboardNextButton" type="button" aria-label="Halaman berikutnya">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m9 18 6-6-6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <section class="notification-popover" id="homeNotificationPopover" hidden>
+    <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="homeNotificationTitle">
+      <button class="icon-button notification-close" id="homeNotificationCloseButton" type="button" aria-label="Tutup notifikasi" title="Tutup">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+      <h2 id="homeNotificationTitle">Update Data Obat</h2>
+      <p id="homeNotificationMessage">Memuat informasi upload data obat.</p>
+      <button class="secondary-action notification-confirm" id="homeNotificationOkButton" type="button">Mengerti</button>
+    </div>
+  </section>
 </body>
 </html>

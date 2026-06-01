@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260601-deploy-fixes">
-  <script defer src="assets/auth-guard.js?v=20260601-deploy-fixes"></script>
-  <script defer src="assets/app.js?v=20260601-deploy-fixes"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260601-home-dashboard">
+  <script defer src="assets/auth-guard.js?v=20260601-home-dashboard"></script>
+  <script defer src="assets/app.js?v=20260601-home-dashboard"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/search-obat.js"></script>
+  <script defer src="assets/search-obat.js?v=20260601-home-dashboard"></script>
 </head>
 <body data-page="medicine">
   <header class="topbar">
@@ -185,7 +185,11 @@
           </label>
           <label>
             Status
-            <input id="filterStatus" type="search" list="statusOptions" placeholder="Semua status">
+            <select id="filterStatus">
+              <option value="">Semua status</option>
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
           </label>
           <label>
             Supplier
@@ -205,7 +209,6 @@
           </label>
         </div>
 
-        <datalist id="statusOptions"></datalist>
         <datalist id="supplierOptions"></datalist>
         <datalist id="satuanBeliOptions"></datalist>
 
@@ -254,5 +257,19 @@
     <span>Nadhira Farma Digital</span>
     <span>Created by Yolan Alfarel</span>
   </footer>
+
+  <section class="notification-popover" id="notificationPopover" hidden>
+    <div class="notification-card" role="dialog" aria-modal="true" aria-labelledby="notificationTitle">
+      <button class="icon-button notification-close" id="notificationCloseButton" type="button" aria-label="Tutup notifikasi" title="Tutup">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+      <h2 id="notificationTitle">Update Data Obat</h2>
+      <p id="notificationMessage">Memuat informasi upload data obat.</p>
+      <button class="secondary-action notification-confirm" id="notificationOkButton" type="button">Mengerti</button>
+    </div>
+  </section>
 </body>
 </html>

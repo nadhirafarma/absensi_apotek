@@ -120,6 +120,10 @@
     els.importStatus = document.getElementById("importStatus");
     els.notificationButton = document.getElementById("notificationButton");
     els.notificationDot = document.getElementById("notificationDot");
+    els.notificationPopover = document.getElementById("notificationPopover");
+    els.notificationMessage = document.getElementById("notificationMessage");
+    els.notificationCloseButton = document.getElementById("notificationCloseButton");
+    els.notificationOkButton = document.getElementById("notificationOkButton");
     els.cacheStatus = document.getElementById("cacheStatus");
     els.medicineCount = document.getElementById("medicineCount");
     els.resultsArea = document.getElementById("resultsArea");
@@ -151,10 +155,23 @@
       if (event.key === "Escape" && !els.resultsArea.hidden) {
         setResultsVisible(false);
       }
+      if (event.key === "Escape" && els.notificationPopover && !els.notificationPopover.hidden) {
+        closeNotificationPopup();
+      }
     });
     els.syncButton.addEventListener("click", () => syncMedicines());
     if (els.notificationButton) {
       els.notificationButton.addEventListener("click", acknowledgeUploadNotification);
+    }
+    [els.notificationCloseButton, els.notificationOkButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeNotificationPopup);
+    });
+    if (els.notificationPopover) {
+      els.notificationPopover.addEventListener("click", (event) => {
+        if (event.target === els.notificationPopover) {
+          closeNotificationPopup();
+        }
+      });
     }
     els.importFileInput.addEventListener("change", handleImportFileChange);
     els.importButton.addEventListener("click", importExcelToGoogleSheet);
@@ -1043,9 +1060,9 @@
         <div class="medicine-main">
           <div class="medicine-title">
             <h2><span class="medicine-name-chip name-tone-${tone}">${highlightMedicineName(medicine.nama, query)}</span></h2>
-            ${medicine.barcode ? `<p>${escapeHtml(medicine.barcode)}</p>` : ""}
+            ${state.visibleColumns.barcode !== false && medicine.barcode ? `<p>${escapeHtml(medicine.barcode)}</p>` : ""}
           </div>
-          <span class="stock-pill ${stock.className}">${escapeHtml(stock.label)}</span>
+          ${state.visibleColumns.stock !== false ? `<span class="stock-pill ${stock.className}">${escapeHtml(stock.label)}</span>` : ""}
         </div>
         <div class="medicine-review ${priceRows.length ? "" : "single-column"}">
           <dl class="medicine-summary">
@@ -1883,23 +1900,41 @@
     }));
 
     updateUploadNotification();
-
-    if (uploadedAt) {
-      setStatus(`Notifikasi dibaca. ${formatLastUpdated(uploadedAt)}`, "success");
-    } else {
-      setStatus("Belum ada informasi upload terbaru dari Google Sheet.", "warning");
-    }
+    openNotificationPopup(uploadedAt);
   }
 
   function getCachedUploadTimestamp(meta) {
     return normalizeTimestamp(
       meta.uploadedAt ||
       meta.lastUploadAt ||
+      meta.uploadUpdatedAt ||
       meta.sourceUpdatedAt ||
       meta.dataUpdatedAt ||
-      meta.lastChanged ||
       ""
     );
+  }
+
+  function openNotificationPopup(uploadedAt) {
+    const message = uploadedAt
+      ? `${formatLastUpdated(uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
+      : "Belum ada informasi waktu upload sheet data_obat terakhir. Upload data Excel baru atau deploy Apps Script terbaru agar informasi ini tersimpan.";
+
+    if (els.notificationMessage) {
+      els.notificationMessage.textContent = message;
+    }
+
+    if (els.notificationPopover) {
+      els.notificationPopover.hidden = false;
+      return;
+    }
+
+    setStatus(message, uploadedAt ? "success" : "warning");
+  }
+
+  function closeNotificationPopup() {
+    if (els.notificationPopover) {
+      els.notificationPopover.hidden = true;
+    }
   }
 
   function setStatus(message, type) {
