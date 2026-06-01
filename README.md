@@ -75,6 +75,8 @@ Catatan penting:
 - Fitur import Excel membutuhkan dukungan Google Apps Script pada file `google-apps-script-import-data-obat.gs`.
 - Import Excel data obat sekarang wajib mendapat response JSON `ok: true` dari Apps Script, lalu website mengambil ulang data dari Google Sheet. Jika URL Web App salah atau Apps Script menulis ke spreadsheet lain, website akan menampilkan error dan tidak menimpa cache lokal.
 - Target import data obat di Apps Script: spreadsheet `1jdtxpAZ-G545QfvbktjAihy2xXJeD8GbUFUx7W1TPdk`, sheet `data_obat`.
+- Mapping data obat baru sudah didukung di pencarian: `kode` dibaca sebagai barcode, `nama` sebagai nama obat, `satuan_1` sampai `satuan_3` sebagai level satuan, dan `harga_jual_1` sampai `harga_jual_3` sebagai harga jual. Harga ringkas seperti `3`, `20`, `22`, atau `9.5` otomatis ditampilkan sebagai ribuan rupiah.
+- Jika kolom `stok` dari file baru berisi tanggal, nilai tersebut tidak lagi ditampilkan sebagai stok agar review obat tidak menyesatkan.
 - Fitur share slip gaji otomatis awal bulan disiapkan pada file `google-apps-script-slip-gaji-bulanan.gs`.
 - Jika scanner/flash berbeda perilaku antar HP, penyebabnya biasanya batasan browser dan izin kamera perangkat.
 - Setelah deploy, browser mobile kadang masih memakai cache lama. Tutup-buka ulang browser atau hard refresh jika tampilan belum berubah.

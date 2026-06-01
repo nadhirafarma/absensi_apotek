@@ -654,14 +654,27 @@
 
     if (!nama && !barcode) return null;
 
-    const stok = pick(item, ["stok", "stock", "qty", "jumlah", "sisa", "persediaan"]);
+    const stok = pick(item, [
+      "stok",
+      "stock",
+      "qty",
+      "quantity",
+      "jumlah",
+      "sisa",
+      "persediaan",
+      "stokakhir",
+      "stokgudang",
+      "stokapotek",
+      "totalstok"
+    ]);
     const satuanBeli = pick(item, ["satuanbeli"]);
     const satuan1 = pick(item, ["satuan1", "satuan", "satuanbeli", "unit", "kemasan"]);
     const satuan2 = pick(item, ["satuan2"]);
     const satuan3 = pick(item, ["satuan3"]);
-    const harga1 = pick(item, ["harga1", "harga", "price", "hargajual", "jual"]);
-    const harga2 = pick(item, ["harga2"]);
-    const harga3 = pick(item, ["harga3"]);
+    const harga1 = pick(item, ["hargajual1", "harga1", "harga", "price", "hargajual", "jual", "hargaresep1"]);
+    const harga2 = pick(item, ["hargajual2", "harga2", "hargaresep2"]);
+    const harga3 = pick(item, ["hargajual3", "harga3", "hargaresep3"]);
+    const usesCompactPrice = Boolean(item.hargajual1 || item.hargajual2 || item.hargajual3 || item.hargaresep1 || item.hargaresep2 || item.hargaresep3);
     const kategori = pick(item, ["kategori", "category", "golongan", "jenis"]);
     const lokasi = pick(item, ["lokasi", "lokasirak", "rak", "lemari", "posisi"]);
     const expired = pick(item, ["expired", "exp", "kedaluwarsa", "kadaluarsa", "ed"]);
@@ -675,16 +688,16 @@
       id,
       nama: cleanText(nama || barcode),
       barcode: cleanText(barcode),
-      stok: cleanText(stok),
+      stok: normalizeStockValue(stok),
       satuanBeli: cleanText(satuanBeli),
       satuan: cleanText(satuan1),
       satuan1: cleanText(satuan1),
       satuan2: cleanText(satuan2),
       satuan3: cleanText(satuan3),
-      harga: cleanText(harga1),
-      harga1: cleanText(harga1),
-      harga2: cleanText(harga2),
-      harga3: cleanText(harga3),
+      harga: normalizePriceValue(harga1, usesCompactPrice),
+      harga1: normalizePriceValue(harga1, usesCompactPrice),
+      harga2: normalizePriceValue(harga2, usesCompactPrice),
+      harga3: normalizePriceValue(harga3, usesCompactPrice),
       kategori: cleanText(kategori),
       lokasi: cleanText(lokasi),
       expired: cleanText(expired),
@@ -740,6 +753,64 @@
 
   function cleanText(value) {
     return String(value || "").trim();
+  }
+
+  function normalizeStockValue(value) {
+    const raw = cleanText(value);
+
+    if (!raw || raw === "-") return "";
+
+    if (isDateLikeValue(raw)) return "";
+
+    return raw;
+  }
+
+  function isDateLikeValue(value) {
+    const raw = String(value || "").trim();
+
+    if (!raw) return false;
+
+    if (/^\d{4}-\d{2}-\d{2}(?:t|\s|$)/i.test(raw)) return true;
+
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/i.test(raw)) return true;
+
+    return false;
+  }
+
+  function normalizePriceValue(value, compactThousands) {
+    const raw = cleanText(value);
+
+    if (!raw) return "";
+
+    const numeric = parseNumberValue(raw);
+
+    if (!Number.isFinite(numeric) || numeric <= 0) return raw;
+
+    if (compactThousands && numeric < 1000) {
+      return String(Math.round(numeric * 1000));
+    }
+
+    return String(Math.round(numeric));
+  }
+
+  function parseNumberValue(value) {
+    const raw = String(value || "").trim();
+
+    if (!raw) return NaN;
+
+    if (/rp/i.test(raw)) {
+      return Number(raw.replace(/[^0-9]/g, ""));
+    }
+
+    if (/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(raw)) {
+      return Number(raw.replace(/\./g, "").replace(",", "."));
+    }
+
+    if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(raw)) {
+      return Number(raw.replace(/,/g, ""));
+    }
+
+    return Number(raw.replace(",", ".").replace(/[^0-9.-]/g, ""));
   }
 
   function sortMedicinesByName(medicines) {
@@ -1667,7 +1738,7 @@
   }
 
   function formatStockValue(medicine) {
-    const stock = String(medicine.stok || "-").trim() || "-";
+    const stock = normalizeStockValue(medicine.stok) || "-";
     const unit = formatDisplayText(medicine.satuanBeli);
 
     return stock !== "-" && unit ? `${stock} ${unit}` : stock;
@@ -1677,7 +1748,7 @@
     const raw = String(value || "").trim();
     if (!raw) return "";
 
-    const numeric = Number(raw.replace(/[^0-9]/g, ""));
+    const numeric = parseNumberValue(raw);
     if (!Number.isFinite(numeric) || numeric <= 0) return raw;
 
     return new Intl.NumberFormat("id-ID", {
