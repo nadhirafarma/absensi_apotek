@@ -88,6 +88,13 @@
 
     profileMenuButton.addEventListener("click", function (event) {
       event.stopPropagation();
+
+      if (shouldOpenSidebarBeforeProfileMenu()) {
+        openSidebarForProfileMenu();
+        closeProfileMenu();
+        return;
+      }
+
       toggleProfileMenu();
     });
 
@@ -114,6 +121,24 @@
     profileDropdown.hidden = false;
     profileMenuButton.setAttribute("aria-expanded", "true");
     profileMenuButton.classList.add("is-open");
+  }
+
+  function shouldOpenSidebarBeforeProfileMenu() {
+    return document.body.classList.contains("dashboard-page") &&
+      document.body.classList.contains("sidebar-collapsed") &&
+      Boolean(profileMenu.closest(".app-sidebar"));
+  }
+
+  function openSidebarForProfileMenu() {
+    document.body.classList.remove("sidebar-collapsed");
+    document.body.classList.add("sidebar-open");
+    localStorage.setItem("nadhira.sidebarCollapsed", "0");
+
+    const sidebarScrim = document.getElementById("sidebarScrim");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const isMobile = window.matchMedia("(max-width: 900px)").matches;
+    if (sidebarScrim) sidebarScrim.hidden = !isMobile;
+    if (sidebarToggle) sidebarToggle.setAttribute("aria-label", "Tutup sidebar");
   }
 
   function closeProfileMenu() {

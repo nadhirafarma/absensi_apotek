@@ -3343,6 +3343,10 @@ td.col-actions {
   width: min(100%, 1060px);
 }
 
+.record-modal-card {
+  width: min(100%, 660px);
+}
+
 .modal-head {
   display: flex;
   align-items: flex-start;
@@ -4482,18 +4486,7 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-chip > svg {
 }
 
 body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown {
-  left: calc(100% + 10px);
-  top: 0;
-  width: 260px;
-}
-
-body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown::before {
-  top: 20px;
-  left: -7px;
-  right: auto;
-  border-left: 1px solid rgba(185, 207, 238, 0.92);
-  border-top: 0;
-  border-bottom: 1px solid rgba(185, 207, 238, 0.92);
+  display: none !important;
 }
 
 .data-workspace > .data-toolbar {
@@ -4582,39 +4575,45 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown::before {
 
 .record-access-field {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .record-access-field > span {
   color: #092965;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .access-picker {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 8px;
   border: 1px solid rgba(187, 214, 247, 0.85);
   border-radius: 8px;
   background: rgba(248, 251, 255, 0.86);
 }
 
 .access-picker label {
-  min-height: 38px;
+  min-height: 32px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
+  gap: 7px;
+  padding: 6px 8px;
   border: 1px solid rgba(207, 224, 244, 0.9);
   border-radius: 8px;
   background: #fff;
   color: #14336d;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .access-picker input {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  margin: 0;
   accent-color: var(--blue);
 }
 
@@ -4642,7 +4641,7 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown::before {
   }
 
   .access-picker {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -4651,12 +4650,14 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown::before {
     grid-template-columns: 1fr;
   }
 
-  body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown {
-    width: min(78vw, 260px);
-  }
-
   .scanner-preview,
   .scanner-preview video {
     min-height: 230px;
+  }
+}
+
+@media (max-width: 430px) {
+  .access-picker {
+    grid-template-columns: 1fr;
   }
 }

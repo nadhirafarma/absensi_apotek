@@ -1540,12 +1540,15 @@
     state.recordType = type;
     state.recordIndex = index;
     const record = getLocalArray(type)[index] || {};
+    const userRole = type === "user" ? String(record.role || "Operator").trim() || "Operator" : "";
 
     els.recordModalTitle.textContent = `${index >= 0 ? "Edit" : "Tambah"} ${schema.title}`;
     els.recordModalStatus.textContent = "Lengkapi field yang tersedia.";
     els.recordModalStatus.dataset.type = "info";
     els.recordFormFields.innerHTML = schema.fields.map((field) => {
-      const value = field.type === "access" ? record[field.key] || getDefaultAccessForRole(record.role) : record[field.key] || "";
+      const value = field.type === "access"
+        ? getInitialAccessValue(record, userRole)
+        : (field.key === "role" && type === "user" ? userRole : record[field.key] || "");
       if (field.type === "access") {
         return `
           <div class="span-2 record-access-field">
@@ -1571,6 +1574,19 @@
     }
 
     showModal(els.recordModal);
+  }
+
+  function getInitialAccessValue(record, role) {
+    const username = normalizeSearch(record.username || record.name || "");
+    const roleKey = normalizeSearch(role);
+
+    if (username === "admin" || roleKey === "admin" || roleKey === "administrator") {
+      return ACCESS_MENUS.map((item) => item.key);
+    }
+
+    return Array.isArray(record.access) && record.access.length
+      ? record.access
+      : getDefaultAccessForRole(role);
   }
 
   function renderRecordControl(field, value) {
@@ -1974,9 +1990,20 @@
   function setSidebarCollapsed(collapsed, options = {}) {
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     document.body.classList.toggle("sidebar-open", !collapsed);
+    if (collapsed) closeSidebarProfileDropdown();
     if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed || !isMobileViewport();
     if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
     if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
+  }
+
+  function closeSidebarProfileDropdown() {
+    const dropdown = document.getElementById("profileDropdown");
+    const button = document.getElementById("profileMenuButton");
+    if (dropdown) dropdown.hidden = true;
+    if (button) {
+      button.setAttribute("aria-expanded", "false");
+      button.classList.remove("is-open");
+    }
   }
 
   function isMobileViewport() {
