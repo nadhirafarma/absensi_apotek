@@ -136,8 +136,7 @@
 
     const sidebarScrim = document.getElementById("sidebarScrim");
     const sidebarToggle = document.getElementById("sidebarToggle");
-    const isMobile = window.matchMedia("(max-width: 900px)").matches;
-    if (sidebarScrim) sidebarScrim.hidden = !isMobile;
+    if (sidebarScrim) sidebarScrim.hidden = false;
     if (sidebarToggle) sidebarToggle.setAttribute("aria-label", "Tutup sidebar");
   }
 

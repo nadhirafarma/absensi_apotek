@@ -4727,3 +4727,224 @@ body.sidebar-collapsed .sidebar-link svg {
   flex: 0 0 21px;
   margin: 0;
 }
+
+.global-sidebar-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1400;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(173, 205, 244, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #06235f;
+  box-shadow: 0 12px 28px rgba(31, 82, 151, 0.14);
+  cursor: pointer;
+  transition: left 220ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.global-sidebar-toggle:hover {
+  border-color: rgba(31, 123, 234, 0.42);
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(31, 82, 151, 0.18);
+}
+
+.global-sidebar-toggle svg {
+  width: 22px;
+  height: 22px;
+}
+
+.global-sidebar-toggle path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.app-layout,
+body.sidebar-collapsed .app-layout {
+  display: block;
+  min-height: 100vh;
+}
+
+.dashboard-main,
+body.sidebar-collapsed .dashboard-main {
+  width: 100%;
+  margin-left: 0;
+  padding: 26px 28px 30px 92px;
+}
+
+.app-sidebar,
+body.sidebar-collapsed .app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1300;
+  width: min(86vw, 320px);
+  min-height: 100dvh;
+  padding: 24px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  transform: translateX(calc(-100% - 12px));
+  transition: transform 220ms ease, box-shadow 220ms ease;
+  border-right: 1px solid rgba(207, 224, 244, 0.95);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: none;
+}
+
+body.sidebar-open .app-sidebar {
+  transform: translateX(0);
+  box-shadow: 24px 0 70px rgba(36, 70, 121, 0.24);
+}
+
+body.sidebar-open .global-sidebar-toggle {
+  left: min(calc(86vw - 58px), 282px);
+}
+
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(8, 25, 58, 0.26);
+  backdrop-filter: blur(8px);
+}
+
+.sidebar-scrim[hidden] {
+  display: none;
+}
+
+.sidebar-brand-row,
+body.sidebar-collapsed .sidebar-brand-row {
+  width: 100%;
+  min-height: 48px;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.app-sidebar .sidebar-brand,
+body.sidebar-collapsed .sidebar-brand {
+  display: grid;
+}
+
+.app-sidebar .sidebar-brand-text,
+body.sidebar-collapsed .sidebar-brand-text {
+  display: block;
+}
+
+.app-sidebar .sidebar-toggle,
+body.sidebar-collapsed .sidebar-toggle {
+  display: none;
+}
+
+.app-sidebar .sidebar-nav,
+body.sidebar-collapsed .sidebar-nav {
+  justify-items: stretch;
+}
+
+.app-sidebar .sidebar-section,
+body.sidebar-collapsed .sidebar-section {
+  display: flex !important;
+}
+
+.app-sidebar .sidebar-label,
+body.sidebar-collapsed .sidebar-label {
+  display: inline;
+}
+
+.app-sidebar .sidebar-link,
+body.sidebar-collapsed .sidebar-link {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 44px;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 11px 12px;
+  overflow: visible;
+}
+
+.app-sidebar .sidebar-link svg,
+body.sidebar-collapsed .sidebar-link svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  margin: 0;
+}
+
+.app-sidebar .sidebar-profile-menu,
+body.sidebar-collapsed .sidebar-profile-menu {
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+}
+
+.app-sidebar .sidebar-profile-menu .profile-chip,
+body.sidebar-collapsed .app-sidebar .sidebar-profile-menu .profile-chip {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 54px;
+  height: auto;
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  overflow: visible;
+}
+
+.app-sidebar .sidebar-profile-menu .profile-avatar,
+body.sidebar-collapsed .sidebar-profile-menu .profile-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  margin: 0;
+}
+
+.app-sidebar .sidebar-profile-menu .profile-name,
+body.sidebar-collapsed .sidebar-profile-menu .profile-name,
+.app-sidebar .sidebar-profile-menu .profile-chip > svg,
+body.sidebar-collapsed .sidebar-profile-menu .profile-chip > svg {
+  display: inline-flex;
+}
+
+.app-sidebar .sidebar-profile-menu .profile-dropdown,
+body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown {
+  display: block;
+  left: 0;
+  right: auto;
+  width: 100%;
+  max-width: none;
+}
+
+.app-sidebar .sidebar-profile-menu .profile-dropdown[hidden],
+body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .global-sidebar-toggle {
+    top: 14px;
+    left: 14px;
+    width: 42px;
+    height: 42px;
+  }
+
+  body.sidebar-open .global-sidebar-toggle {
+    left: min(calc(88vw - 54px), 250px);
+  }
+
+  .app-sidebar,
+  body.sidebar-collapsed .app-sidebar {
+    width: min(88vw, 304px);
+    padding: 18px 16px;
+  }
+
+  .dashboard-main,
+  body.sidebar-collapsed .dashboard-main {
+    padding: 72px 14px 22px;
+  }
+}

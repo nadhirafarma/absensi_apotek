@@ -69,6 +69,7 @@
 
   const VIEW_TITLES = {
     dashboard: "Dashboard",
+    "cari-obat": "Cari Data Obat",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
@@ -417,7 +418,7 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         closeNotification();
-        if (isMobileViewport()) setSidebarCollapsed(true);
+        setSidebarCollapsed(true);
         closeMedicineModal();
         closeRecordModal();
         closeDeleteModal();
@@ -426,7 +427,7 @@
     });
     window.addEventListener("resize", () => {
       const collapsed = document.body.classList.contains("sidebar-collapsed");
-      if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed || !isMobileViewport();
+      if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
       if (els.notificationPopover && !els.notificationPopover.hidden) positionNotificationPopover();
     });
   }
@@ -1402,6 +1403,7 @@
   function canView(viewName, access) {
     const map = {
       dashboard: "dashboard",
+      "cari-obat": "cari_data_obat",
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
       "data-supplier": "data_supplier",
@@ -1415,6 +1417,7 @@
 
   function accessKeyToView(key) {
     const map = {
+      cari_data_obat: "cari-obat",
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
       data_supplier: "data-supplier",
@@ -1964,8 +1967,9 @@
 
   function switchView(viewName) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
+    const actualViewName = getActualViewName(viewName);
     state.activeView = viewName;
-    els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
+    els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === actualViewName));
     els.viewButtons.forEach((button) => {
       const active = button.dataset.viewTarget === viewName;
       button.classList.toggle("is-active", active);
@@ -1973,12 +1977,17 @@
       else button.removeAttribute("aria-current");
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
-    if (isMobileViewport()) setSidebarCollapsed(true, { persist: false });
+    setSidebarCollapsed(true);
+  }
+
+  function getActualViewName(viewName) {
+    if (viewName === "cari-obat") return "data-obat";
+    return viewName;
   }
 
   function applySavedSidebarState() {
     const stored = localStorage.getItem(SIDEBAR_KEY);
-    const collapsed = stored == null ? isMobileViewport() : stored === "1";
+    const collapsed = stored == null ? true : stored === "1";
     setSidebarCollapsed(collapsed, { persist: false });
   }
 
@@ -1991,7 +2000,7 @@
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     document.body.classList.toggle("sidebar-open", !collapsed);
     if (collapsed) closeSidebarProfileDropdown();
-    if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed || !isMobileViewport();
+    if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
     if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
     if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
   }

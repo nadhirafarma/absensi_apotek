@@ -8,13 +8,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v7">
-  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v7"></script>
-  <script defer src="assets/app.js?v=20260602-admin-dashboard-v7"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260603-sidebar-drawer-v8">
+  <script defer src="assets/auth-guard.js?v=20260603-sidebar-drawer-v8"></script>
+  <script defer src="assets/app.js?v=20260603-sidebar-drawer-v8"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v7"></script>
+  <script defer src="assets/home-dashboard.js?v=20260603-sidebar-drawer-v8"></script>
 </head>
 <body data-page="home" class="dashboard-page">
+  <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M4 12h16"></path>
+      <path d="M4 17h16"></path>
+    </svg>
+  </button>
+
   <div class="app-layout">
     <aside class="app-sidebar" aria-label="Menu utama">
       <div class="sidebar-brand-row">
@@ -25,13 +33,6 @@
             <small>Sistem Informasi Apotek</small>
           </span>
         </a>
-        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Tutup sidebar" title="Menu">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16"></path>
-            <path d="M4 12h16"></path>
-            <path d="M4 17h16"></path>
-          </svg>
-        </button>
       </div>
 
       <nav class="sidebar-nav">
@@ -83,13 +84,13 @@
           </svg>
           <span class="sidebar-label">Absensi Face ID</span>
         </a>
-        <a class="sidebar-link" href="cari-obat.html" data-access-key="cari_data_obat" title="Cari Data Obat">
+        <button class="sidebar-link" type="button" data-view-target="cari-obat" data-access-key="cari_data_obat" title="Cari Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="10.5" cy="10.5" r="6.5"></circle>
             <path d="m15.2 15.2 4.8 4.8"></path>
           </svg>
           <span class="sidebar-label">Cari Data Obat</span>
-        </a>
+        </button>
 
         <span class="sidebar-section">Master Data</span>
         <button class="sidebar-link" type="button" data-view-target="data-obat" data-access-key="data_obat" title="Data Obat">
