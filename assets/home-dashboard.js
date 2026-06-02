@@ -22,21 +22,21 @@
     { key: "nama", label: "Nama" },
     { key: "kategori", label: "Kategori" },
     { key: "stok", label: "Stok", type: "number" },
+    { key: "satuan_1", label: "Satuan 1" },
+    { key: "isi_1", label: "Isi 1" },
+    { key: "harga_jual_1", label: "Harga Jual 1" },
+    { key: "satuan_2", label: "Satuan 2" },
+    { key: "isi_2", label: "Isi 2" },
+    { key: "harga_jual_2", label: "Harga Jual 2" },
+    { key: "satuan_3", label: "Satuan 3" },
+    { key: "isi_3", label: "Isi 3" },
+    { key: "harga_jual_3", label: "Harga Jual 3" },
+    { key: "satuan_4", label: "Satuan 4" },
+    { key: "isi_4", label: "Isi 4" },
+    { key: "harga_jual_4", label: "Harga Jual 4" },
     { key: "satuan_beli", label: "Satuan Beli" },
     { key: "harga_beli", label: "Harga Beli" },
     { key: "stok_min", label: "Stok Min", type: "number" },
-    { key: "satuan_1", label: "Satuan 1" },
-    { key: "satuan_2", label: "Satuan 2" },
-    { key: "satuan_3", label: "Satuan 3" },
-    { key: "satuan_4", label: "Satuan 4" },
-    { key: "isi_1", label: "Isi 1" },
-    { key: "isi_2", label: "Isi 2" },
-    { key: "isi_3", label: "Isi 3" },
-    { key: "isi_4", label: "Isi 4" },
-    { key: "harga_jual_1", label: "Harga Jual 1" },
-    { key: "harga_jual_2", label: "Harga Jual 2" },
-    { key: "harga_jual_3", label: "Harga Jual 3" },
-    { key: "harga_jual_4", label: "Harga Jual 4" },
     { key: "harga_resep_1", label: "Harga Resep 1" },
     { key: "harga_resep_2", label: "Harga Resep 2" },
     { key: "harga_resep_3", label: "Harga Resep 3" },
@@ -56,11 +56,18 @@
     "nama",
     "kategori",
     "stok",
+    "satuan_1",
+    "isi_1",
+    "harga_jual_1",
+    "satuan_2",
+    "isi_2",
+    "harga_jual_2",
+    "satuan_3",
+    "isi_3",
+    "harga_jual_3",
     "satuan_beli",
     "harga_beli",
     "stok_min",
-    "satuan_1",
-    "satuan_2",
     "expired",
     "suplier",
     "lokasi",
@@ -302,6 +309,8 @@
       profilePhoneInput: document.getElementById("profilePhoneInput"),
       profileJobInput: document.getElementById("profileJobInput"),
       profileAddressInput: document.getElementById("profileAddressInput"),
+      profilePhotoInput: document.getElementById("profilePhotoInput"),
+      profileRemovePhotoButton: document.getElementById("profileRemovePhotoButton"),
       profilePasswordForm: document.getElementById("profilePasswordForm"),
       profileNewPasswordInput: document.getElementById("profileNewPasswordInput"),
       profileConfirmPasswordInput: document.getElementById("profileConfirmPasswordInput"),
@@ -407,6 +416,8 @@
     if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
     if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     if (els.profileForm) els.profileForm.addEventListener("submit", saveProfile);
+    if (els.profilePhotoInput) els.profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
+    if (els.profileRemovePhotoButton) els.profileRemovePhotoButton.addEventListener("click", removeProfilePhoto);
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
     if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
@@ -2118,7 +2129,7 @@
   function renderProfile() {
     const profile = getProfileData();
 
-    if (els.profileLargeAvatar) els.profileLargeAvatar.textContent = getInitials(profile.name);
+    renderProfileAvatars(profile);
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
@@ -2141,6 +2152,7 @@
       phone: stored.phone || "",
       job: session.role || stored.job || "Operator",
       address: stored.address || "",
+      photo: stored.photo || "",
       username: session.username || stored.username || "",
       role: session.role || stored.job || "Operator"
     };
@@ -2153,13 +2165,97 @@
       email: els.profileEmailInput.value.trim(),
       phone: els.profilePhoneInput.value.trim(),
       job: getProfileData().role || "Operator",
-      address: els.profileAddressInput.value.trim()
+      address: els.profileAddressInput.value.trim(),
+      photo: getProfileData().photo || ""
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     hydrateProfileName();
     renderProfile();
     setProfileStatus("Profil berhasil disimpan di perangkat ini.", "success");
     addProfileActivity("Profil diperbarui", "Informasi profil lokal disimpan");
+  }
+
+  async function handleProfilePhotoChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (!/^image\//.test(file.type || "")) {
+      setProfileStatus("File foto harus berupa gambar.", "error");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const photo = await resizeProfilePhoto(dataUrl);
+      const profile = { ...readObject(PROFILE_KEY), photo };
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      renderProfile();
+      hydrateProfileName();
+      setProfileStatus("Foto profil berhasil diperbarui di perangkat ini.", "success");
+      addProfileActivity("Foto profil diperbarui", "Foto profil lokal diganti");
+    } catch (error) {
+      setProfileStatus(`Foto profil gagal dibaca: ${error.message}`, "error");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function removeProfilePhoto() {
+    const profile = readObject(PROFILE_KEY);
+    delete profile.photo;
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    renderProfile();
+    hydrateProfileName();
+    setProfileStatus("Foto profil sudah dihapus dari perangkat ini.", "success");
+    addProfileActivity("Foto profil dihapus", "Avatar kembali memakai inisial akun");
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("File tidak dapat dibaca."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function resizeProfilePhoto(dataUrl) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 512;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.84));
+      };
+      image.onerror = () => resolve(dataUrl);
+      image.src = dataUrl;
+    });
+  }
+
+  function renderProfileAvatars(profile) {
+    setAvatarContent(document.getElementById("profileAvatar"), profile);
+    setAvatarContent(document.getElementById("profileMiniAvatar"), profile);
+    setAvatarContent(els.profileLargeAvatar, profile);
+  }
+
+  function setAvatarContent(element, profile) {
+    if (!element) return;
+    const photo = String(profile.photo || "").trim();
+
+    if (/^data:image\//.test(photo)) {
+      element.innerHTML = `<img src="${escapeHtml(photo)}" alt="">`;
+      element.classList.add("has-photo");
+      return;
+    }
+
+    element.classList.remove("has-photo");
+    element.textContent = getInitials(profile.name);
   }
 
   async function saveProfilePassword(event) {
@@ -2627,6 +2723,20 @@
   function loadVisibleColumns() {
     const stored = readStoredArray(COLUMN_KEY);
     const valid = stored.filter((key) => DATA_COLUMNS.some((column) => column.key === key));
+    const groupedPriceColumns = [
+      "satuan_1",
+      "isi_1",
+      "harga_jual_1",
+      "satuan_2",
+      "isi_2",
+      "harga_jual_2",
+      "satuan_3",
+      "isi_3",
+      "harga_jual_3"
+    ];
+    if (valid.length && !groupedPriceColumns.every((key) => valid.includes(key))) {
+      return DEFAULT_VISIBLE_COLUMNS.slice();
+    }
     return valid.length ? valid : DEFAULT_VISIBLE_COLUMNS.slice();
   }
 

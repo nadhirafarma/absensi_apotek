@@ -1,5 +1,6 @@
 (function () {
   const SESSION_KEY = "nadhira.authSession";
+  const PROFILE_KEY = "nadhira.localProfile";
   const LOGIN_PAGE = "login.html";
   const dateLabel = document.getElementById("todayLabel");
   const clockLabel = document.getElementById("clockLabel");
@@ -54,12 +55,13 @@
     if (!profileMenu || !profileMenuButton || !profileDropdown) return;
 
     const session = readSession();
+    const storedProfile = readObject(PROFILE_KEY);
     const accountName = getAccountName(session);
     const accountMeta = getAccountMeta(session);
     const initials = getInitials(accountName);
 
-    if (profileAvatar) profileAvatar.textContent = initials;
-    if (profileMiniAvatar) profileMiniAvatar.textContent = initials;
+    setAvatarContent(profileAvatar, storedProfile.photo, initials);
+    setAvatarContent(profileMiniAvatar, storedProfile.photo, initials);
     if (profileAccountName) profileAccountName.textContent = accountName;
     if (profileAccountMeta) profileAccountMeta.textContent = accountMeta;
 
@@ -206,6 +208,37 @@
     }
 
     return (parts[0] || "AK").slice(0, 2).toUpperCase();
+  }
+
+  function setAvatarContent(element, photo, initials) {
+    if (!element) return;
+
+    const image = String(photo || "").trim();
+    if (/^data:image\//.test(image)) {
+      element.innerHTML = `<img src="${escapeHtml(image)}" alt="">`;
+      element.classList.add("has-photo");
+      return;
+    }
+
+    element.classList.remove("has-photo");
+    element.textContent = initials;
+  }
+
+  function readObject(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key) || "{}") || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function getCurrentPageName() {
