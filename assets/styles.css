@@ -4661,3 +4661,69 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown {
     grid-template-columns: 1fr;
   }
 }
+
+body.sidebar-collapsed .app-sidebar {
+  overflow-x: hidden;
+}
+
+body.sidebar-collapsed .sidebar-brand-row {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar-brand {
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar-toggle {
+  position: static;
+  margin: 0 auto;
+}
+
+body.sidebar-collapsed .sidebar-nav {
+  justify-items: center;
+}
+
+body.sidebar-collapsed .sidebar-profile-menu {
+  width: 52px;
+  max-width: 52px;
+  justify-self: center;
+}
+
+body.sidebar-collapsed .app-sidebar .sidebar-profile-menu .profile-chip {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  min-height: 52px;
+  height: 52px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed .sidebar-profile-menu .profile-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  margin: 0;
+}
+
+body.sidebar-collapsed .sidebar-link {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  min-height: 48px;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed .sidebar-link svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  margin: 0;
+}
