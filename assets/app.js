@@ -16,8 +16,9 @@
   let isLoggingOut = false;
 
   const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
     timeZone: "Asia/Jakarta"
   });

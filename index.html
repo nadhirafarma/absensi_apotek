@@ -8,11 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260603-sidebar-drawer-v8">
-  <script defer src="assets/auth-guard.js?v=20260603-sidebar-drawer-v8"></script>
-  <script defer src="assets/app.js?v=20260603-sidebar-drawer-v8"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260603-mobile-profile-scanner-v9">
+  <script defer src="assets/auth-guard.js?v=20260603-mobile-profile-scanner-v9"></script>
+  <script defer src="assets/app.js?v=20260603-mobile-profile-scanner-v9"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260603-sidebar-drawer-v8"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+  <script defer src="assets/home-dashboard.js?v=20260603-mobile-profile-scanner-v9"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -21,6 +24,7 @@
       <path d="M4 12h16"></path>
       <path d="M4 17h16"></path>
     </svg>
+    <span>Menu</span>
   </button>
 
   <div class="app-layout">
@@ -36,34 +40,6 @@
       </div>
 
       <nav class="sidebar-nav">
-        <div class="profile-menu sidebar-profile-menu" id="profileMenu">
-          <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
-            <span class="profile-avatar" id="profileAvatar">AK</span>
-            <span class="profile-name" id="dashboardProfileName">Akun</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m6 9 6 6 6-6"></path>
-            </svg>
-          </button>
-
-          <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
-            <div class="profile-summary">
-              <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
-              <span>
-                <strong id="profileAccountName">Akun</strong>
-                <small id="profileAccountMeta">Nadhira Farma Digital</small>
-              </span>
-            </div>
-            <button class="logout-button" type="button" role="menuitem" data-logout-button>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <path d="M16 17l5-5-5-5"></path>
-                <path d="M21 12H9"></path>
-              </svg>
-              Logout
-            </button>
-          </div>
-        </div>
-
         <button class="sidebar-link is-active" type="button" data-view-target="dashboard" data-access-key="dashboard" title="Dashboard" aria-current="page">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 19V5"></path>
@@ -84,13 +60,6 @@
           </svg>
           <span class="sidebar-label">Absensi Face ID</span>
         </a>
-        <button class="sidebar-link" type="button" data-view-target="cari-obat" data-access-key="cari_data_obat" title="Cari Data Obat">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="10.5" cy="10.5" r="6.5"></circle>
-            <path d="m15.2 15.2 4.8 4.8"></path>
-          </svg>
-          <span class="sidebar-label">Cari Data Obat</span>
-        </button>
 
         <span class="sidebar-section">Master Data</span>
         <button class="sidebar-link" type="button" data-view-target="data-obat" data-access-key="data_obat" title="Data Obat">
@@ -195,6 +164,33 @@
             <span class="notification-dot" id="homeNotificationDot" hidden></span>
           </button>
 
+          <div class="profile-menu header-profile-menu" id="profileMenu">
+            <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span class="profile-avatar" id="profileAvatar">AK</span>
+              <span class="profile-name" id="dashboardProfileName">Akun</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+
+            <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
+              <div class="profile-summary">
+                <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
+                <span>
+                  <strong id="profileAccountName">Akun</strong>
+                  <small id="profileAccountMeta">Nadhira Farma Digital</small>
+                </span>
+              </div>
+              <button class="logout-button" type="button" role="menuitem" data-logout-button>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <path d="M16 17l5-5-5-5"></path>
+                  <path d="M21 12H9"></path>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -486,7 +482,7 @@
                   <label>Nama Lengkap<input id="profileNameInput" type="text" autocomplete="name"></label>
                   <label>Email<input id="profileEmailInput" type="email" autocomplete="email"></label>
                   <label>No. Telepon<input id="profilePhoneInput" type="tel" autocomplete="tel"></label>
-                  <label>Jabatan<input id="profileJobInput" type="text"></label>
+                  <label>Jabatan<input id="profileJobInput" type="text" readonly aria-readonly="true"></label>
                   <label class="span-2">Alamat<input id="profileAddressInput" type="text" autocomplete="street-address"></label>
                 </div>
                 <div class="form-actions">
@@ -495,23 +491,22 @@
               </form>
 
               <section class="profile-panel" data-profile-panel="keamanan">
-                <form class="security-form" id="profilePasswordForm">
+                <form class="security-form security-reset-card" id="profilePasswordForm">
                   <h3>Ubah Password</h3>
+                  <p>Password akan disimpan ke Google Sheet user sesuai email akun aktif.</p>
                   <div class="form-grid">
                     <label>Password Baru<input id="profileNewPasswordInput" type="password" autocomplete="new-password"></label>
                     <label>Konfirmasi Password<input id="profileConfirmPasswordInput" type="password" autocomplete="new-password"></label>
                   </div>
+                  <ul class="password-rules">
+                    <li>Password baru minimal 6 karakter.</li>
+                    <li>Wajib kombinasi huruf dan angka.</li>
+                    <li>Password konfirmasi harus sama.</li>
+                  </ul>
                   <div class="form-actions">
                     <button class="secondary-action" type="submit">Simpan Password Baru</button>
                   </div>
                 </form>
-                <label class="setting-row">
-                  <span>
-                    <strong>Verifikasi 2 Langkah</strong>
-                    <small>Aktifkan penanda keamanan tambahan di perangkat ini.</small>
-                  </span>
-                  <input id="profileTwoFactorToggle" type="checkbox">
-                </label>
               </section>
 
               <section class="profile-panel" data-profile-panel="aktivitas">
@@ -528,6 +523,16 @@
               <section class="profile-panel" data-profile-panel="preferensi">
                 <label class="setting-row">
                   <span>
+                    <strong>Tema Tampilan</strong>
+                    <small>Pilih mode terang atau gelap untuk perangkat ini.</small>
+                  </span>
+                  <select id="profileThemeSelect">
+                    <option value="light">Terang</option>
+                    <option value="dark">Gelap</option>
+                  </select>
+                </label>
+                <label class="setting-row">
+                  <span>
                     <strong>Mode Ringkas</strong>
                     <small>Padatkan jarak antar elemen agar lebih nyaman untuk layar kecil.</small>
                   </span>
@@ -535,10 +540,10 @@
                 </label>
                 <label class="setting-row">
                   <span>
-                    <strong>Sidebar Ikon Saat Dibuka</strong>
-                    <small>Simpan sidebar dalam mode ikon ketika halaman dimuat ulang.</small>
+                    <strong>Mulai Dari Dashboard</strong>
+                    <small>Setiap login diarahkan ke ringkasan dashboard terlebih dahulu.</small>
                   </span>
-                  <input id="profileSidebarCompactToggle" type="checkbox">
+                  <input id="profileStartDashboardToggle" type="checkbox">
                 </label>
               </section>
             </section>

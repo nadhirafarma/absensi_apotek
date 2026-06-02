@@ -4948,3 +4948,270 @@ body.sidebar-collapsed .sidebar-profile-menu .profile-dropdown[hidden] {
     padding: 72px 14px 22px;
   }
 }
+
+.global-sidebar-toggle {
+  width: auto;
+  min-width: 84px;
+  gap: 8px;
+  padding: 0 13px;
+  font-weight: 800;
+}
+
+.global-sidebar-toggle span {
+  font-size: 0.82rem;
+}
+
+.header-profile-menu {
+  position: relative;
+}
+
+.header-profile-menu .profile-chip {
+  min-width: 136px;
+}
+
+.header-profile-menu .profile-dropdown {
+  right: 0;
+  left: auto;
+}
+
+.header-profile-menu .profile-dropdown::before {
+  right: 24px;
+  left: auto;
+}
+
+.setting-row select {
+  min-height: 40px;
+  min-width: 150px;
+  padding: 0 12px;
+  border: 1px solid rgba(187, 214, 247, 0.95);
+  border-radius: 8px;
+  background: #fff;
+  color: #092965;
+  font: inherit;
+  font-weight: 800;
+}
+
+.security-reset-card {
+  display: grid;
+  gap: 14px;
+  background:
+    linear-gradient(145deg, rgba(31, 123, 234, 0.08), rgba(232, 23, 152, 0.08)),
+    rgba(248, 251, 255, 0.94);
+}
+
+.security-reset-card p {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.password-rules {
+  margin: 0;
+  padding: 12px 16px 12px 28px;
+  border: 1px solid rgba(187, 214, 247, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #14336d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+#profileJobInput[readonly] {
+  background: rgba(248, 251, 255, 0.76);
+  color: #516994;
+  cursor: not-allowed;
+}
+
+body.theme-dark {
+  --bg: #07152d;
+  --surface: #0f2142;
+  --surface-soft: #13294f;
+  --ink: #eef5ff;
+  --muted: #aac0df;
+  --line: #2a4670;
+  background:
+    linear-gradient(180deg, rgba(7, 21, 45, 0.94), rgba(12, 28, 58, 0.96)),
+    var(--bg);
+}
+
+body.theme-dark::before {
+  opacity: 0.24;
+}
+
+body.theme-dark .module-card,
+body.theme-dark .table-card,
+body.theme-dark .stat-card,
+body.theme-dark .profile-card,
+body.theme-dark .profile-settings-card,
+body.theme-dark .dashboard-search,
+body.theme-dark .dashboard-filter-panel,
+body.theme-dark .security-form,
+body.theme-dark .setting-row,
+body.theme-dark .activity-list article,
+body.theme-dark .import-summary-card,
+body.theme-dark .app-sidebar {
+  background: rgba(15, 33, 66, 0.9);
+  border-color: rgba(80, 113, 164, 0.9);
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea,
+body.theme-dark .compact-toolbar select,
+body.theme-dark .import-page-grid select,
+body.theme-dark .setting-row select {
+  background: rgba(9, 24, 50, 0.94);
+  border-color: rgba(80, 113, 164, 0.9);
+  color: #eef5ff;
+}
+
+body.theme-dark .dashboard-table th,
+body.theme-dark .dashboard-table td {
+  background: rgba(9, 24, 50, 0.72);
+  border-color: rgba(80, 113, 164, 0.72);
+}
+
+body.theme-dark .status-item,
+body.theme-dark .online-pill,
+body.theme-dark .notification-action,
+body.theme-dark .profile-chip,
+body.theme-dark .global-sidebar-toggle,
+body.theme-dark .filter-action,
+body.theme-dark .barcode-scan-button {
+  background: rgba(15, 33, 66, 0.95);
+  border-color: rgba(80, 113, 164, 0.9);
+  color: #eef5ff;
+}
+
+body.theme-dark .profile-dropdown,
+body.theme-dark .notification-card,
+body.theme-dark .modal-card {
+  background: rgba(15, 33, 66, 0.98);
+  border-color: rgba(80, 113, 164, 0.95);
+  color: #eef5ff;
+}
+
+body.theme-dark .sidebar-link,
+body.theme-dark .profile-summary strong,
+body.theme-dark .activity-list strong,
+body.theme-dark .security-form h3,
+body.theme-dark .setting-row strong,
+body.theme-dark .compact-head h3 {
+  color: #eef5ff;
+}
+
+body.theme-dark .password-rules {
+  background: rgba(9, 24, 50, 0.72);
+  border-color: rgba(80, 113, 164, 0.9);
+  color: #dbe9ff;
+}
+
+@media (max-width: 760px) {
+  .global-sidebar-toggle {
+    min-width: 76px;
+    height: 42px;
+    padding: 0 10px;
+  }
+
+  .global-sidebar-toggle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .global-sidebar-toggle span {
+    font-size: 0.76rem;
+  }
+
+  .dashboard-topbar {
+    display: grid;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .dashboard-title h1 {
+    margin-top: 6px;
+    font-size: 1.55rem;
+  }
+
+  .dashboard-status {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr) 42px;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .dashboard-status .online-pill {
+    display: none !important;
+  }
+
+  .dashboard-status .status-item {
+    min-height: 38px;
+    padding: 7px 8px;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .dashboard-status .status-item svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .dashboard-status .notification-action {
+    width: 42px;
+    min-height: 38px;
+  }
+
+  .header-profile-menu {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 1400;
+  }
+
+  .header-profile-menu .profile-chip {
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .header-profile-menu .profile-avatar {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    margin: 0;
+  }
+
+  .header-profile-menu .profile-name,
+  .header-profile-menu .profile-chip > svg {
+    display: none;
+  }
+
+  .header-profile-menu .profile-dropdown {
+    position: fixed;
+    top: 62px;
+    right: 14px;
+    left: auto;
+    width: min(290px, calc(100vw - 28px));
+  }
+
+  .header-profile-menu .profile-dropdown::before {
+    right: 18px;
+  }
+
+  .profile-modern-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-overview-card {
+    position: static;
+  }
+}

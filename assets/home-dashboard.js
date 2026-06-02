@@ -66,10 +66,20 @@
     "lokasi",
     "no_batch"
   ];
+  const PRICE_COLUMNS = new Set([
+    "harga_beli",
+    "harga_jual_1",
+    "harga_jual_2",
+    "harga_jual_3",
+    "harga_jual_4",
+    "harga_resep_1",
+    "harga_resep_2",
+    "harga_resep_3",
+    "harga_resep_4"
+  ]);
 
   const VIEW_TITLES = {
     dashboard: "Dashboard",
-    "cari-obat": "Cari Data Obat",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
@@ -82,7 +92,6 @@
   const ACCESS_MENUS = [
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi_face_id", label: "Absensi Face ID" },
-    { key: "cari_data_obat", label: "Cari Data Obat" },
     { key: "data_obat", label: "Data Obat" },
     { key: "edit_obat", label: "Tambah/Edit Obat" },
     { key: "hapus_obat", label: "Hapus Obat" },
@@ -97,10 +106,11 @@
   const ROLE_ACCESS = {
     administrator: ACCESS_MENUS.map((item) => item.key),
     admin: ACCESS_MENUS.map((item) => item.key),
-    apoteker: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    kasir: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    operator: ["dashboard", "absensi_face_id", "cari_data_obat", "akun_profil"]
+    owner: ACCESS_MENUS.map((item) => item.key),
+    apoteker: ["dashboard", "absensi_face_id", "data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    kasir: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    operator: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -131,7 +141,7 @@
       fields: [
         { key: "name", label: "Nama Operator", required: true },
         { key: "username", label: "Username", required: true },
-        { key: "role", label: "Role", type: "select", options: ["Administrator", "Apoteker", "Kasir", "Staf Gudang", "Operator"] },
+        { key: "role", label: "Role", type: "select", options: ["Owner", "Administrator", "Apoteker", "Kasir", "Staf Gudang", "Operator"] },
         { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
         { key: "email", label: "Email", type: "email" },
         { key: "access", label: "Akses Menu & Fungsi", type: "access", wide: true }
@@ -155,6 +165,14 @@
     scannerStream: null,
     scannerDetector: null,
     scannerAnimation: 0,
+    scannerTimer: null,
+    scannerCanvas: null,
+    scannerLocked: false,
+    barcodeDetector: null,
+    quaggaBusy: false,
+    lastQuaggaScanAt: 0,
+    zxingReader: null,
+    zxingControls: null,
     activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
@@ -287,11 +305,11 @@
       profilePasswordForm: document.getElementById("profilePasswordForm"),
       profileNewPasswordInput: document.getElementById("profileNewPasswordInput"),
       profileConfirmPasswordInput: document.getElementById("profileConfirmPasswordInput"),
-      profileTwoFactorToggle: document.getElementById("profileTwoFactorToggle"),
       profileActivityList: document.getElementById("profileActivityList"),
       clearProfileActivityButton: document.getElementById("clearProfileActivityButton"),
+      profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
-      profileSidebarCompactToggle: document.getElementById("profileSidebarCompactToggle"),
+      profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -341,6 +359,7 @@
     if (els.nextButton) els.nextButton.addEventListener("click", () => changePage(1));
     if (els.addMedicineButton) els.addMedicineButton.addEventListener("click", () => openMedicineModal("add"));
     if (els.barcodeButton) els.barcodeButton.addEventListener("click", startDashboardScanner);
+    if (els.scannerVideo) els.scannerVideo.addEventListener("click", tuneDashboardScannerTrack);
 
     els.tableBody.addEventListener("click", handleTableAction);
 
@@ -389,10 +408,10 @@
     if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     if (els.profileForm) els.profileForm.addEventListener("submit", saveProfile);
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
-    if (els.profileTwoFactorToggle) els.profileTwoFactorToggle.addEventListener("change", saveProfileSecurity);
     if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
+    if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
-    if (els.profileSidebarCompactToggle) els.profileSidebarCompactToggle.addEventListener("change", saveProfilePreferences);
+    if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
     els.profileTabButtons.forEach((button) => {
       button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab));
     });
@@ -707,7 +726,7 @@
       return `
         <tr>
           <td class="col-no">${start + index + 1}</td>
-          ${columns.map((column) => `<td data-column="${escapeHtml(column.key)}">${escapeHtml(formatCell(row[column.key]))}</td>`).join("")}
+          ${columns.map((column) => `<td data-column="${escapeHtml(column.key)}">${escapeHtml(formatCell(row[column.key], column.key))}</td>`).join("")}
           <td class="col-actions">
             <div class="row-actions">
               ${allowEdit ? `<button class="table-action table-action-edit" type="button" data-action="edit-medicine" data-index="${rowIndex}" aria-label="Edit ${escapeHtml(row.nama || row.kode || "obat")}">
@@ -753,59 +772,362 @@
     }
 
     if (!els.scannerModal || !els.scannerVideo) return;
-    showModal(els.scannerModal);
-    setScannerStatus("Menyiapkan kamera scanner...");
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showModal(els.scannerModal);
       setScannerStatus("Browser belum mendukung akses kamera. Gunakan input manual.");
       return;
     }
 
+    stopDashboardScanner({ keepModalOpen: true });
+    state.scannerLocked = false;
+    showModal(els.scannerModal);
+    setScannerStatus("Membuka kamera scanner...");
+
+    try {
+      state.scannerStream = await openDashboardScannerStream();
+      els.scannerVideo.srcObject = state.scannerStream;
+      await els.scannerVideo.play();
+      await tuneDashboardScannerTrack();
+      window.setTimeout(tuneDashboardScannerTrack, 700);
+      await setupDashboardNativeBarcodeDetector();
+      scanDashboardFrame();
+
+      if (await startDashboardZxingScanner(state.scannerStream)) {
+        setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.");
+        return;
+      }
+
+      if (!state.barcodeDetector && !window.jsQR && !(window.Quagga || window.Quagga2)) {
+        setScannerStatus("Scanner belum siap. Coba muat ulang halaman saat internet aktif, atau gunakan input manual.");
+        return;
+      }
+
+      setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.");
+    } catch (error) {
+      setScannerStatus(`Scanner belum bisa dibuka: ${error.message}. Gunakan input manual.`);
+      stopDashboardScanner({ keepModalOpen: true });
+    }
+  }
+
+  async function setupDashboardNativeBarcodeDetector() {
     if (!("BarcodeDetector" in window)) {
-      setScannerStatus("Browser ini belum mendukung scanner barcode otomatis. Gunakan input manual.");
+      state.barcodeDetector = null;
       return;
     }
 
     try {
-      const formats = ["code_128", "code_39", "code_93", "codabar", "ean_13", "ean_8", "itf", "upc_a", "upc_e", "qr_code"];
-      state.scannerDetector = new window.BarcodeDetector({ formats });
-      state.scannerStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-      els.scannerVideo.srcObject = state.scannerStream;
-      await els.scannerVideo.play();
-      setScannerStatus("Arahkan kamera ke barcode obat.");
-      scanDashboardFrame();
+      const supportedFormats = window.BarcodeDetector.getSupportedFormats
+        ? await window.BarcodeDetector.getSupportedFormats()
+        : [];
+      const wantedFormats = ["ean_13", "ean_8", "code_128", "code_39", "code_93", "codabar", "itf", "upc_a", "upc_e", "qr_code"];
+      const formats = supportedFormats.length
+        ? wantedFormats.filter((format) => supportedFormats.includes(format))
+        : wantedFormats;
+
+      state.barcodeDetector = formats.length
+        ? new window.BarcodeDetector({ formats })
+        : new window.BarcodeDetector();
     } catch (error) {
-      setScannerStatus(`Scanner belum bisa dibuka: ${error.message}. Gunakan input manual.`);
-      stopScannerStreamOnly();
+      state.barcodeDetector = null;
     }
   }
 
   async function scanDashboardFrame() {
-    if (!state.scannerDetector || !els.scannerVideo || els.scannerModal?.hidden) return;
+    if (state.scannerLocked || !els.scannerVideo || els.scannerModal?.hidden || !els.scannerVideo.srcObject) return;
 
     try {
-      const codes = await state.scannerDetector.detect(els.scannerVideo);
-      const value = codes && codes[0] ? String(codes[0].rawValue || "").trim() : "";
-      if (value) {
-        applyScannedBarcode(value);
-        return;
+      if (els.scannerVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        const scanCanvas = getDashboardScannerCanvas();
+        const scanContext = scanCanvas.getContext("2d", { willReadFrequently: true });
+        const crop = getDashboardScanCrop();
+
+        scanCanvas.width = crop.targetWidth;
+        scanCanvas.height = crop.targetHeight;
+        scanContext.drawImage(
+          els.scannerVideo,
+          crop.sourceX,
+          crop.sourceY,
+          crop.sourceWidth,
+          crop.sourceHeight,
+          0,
+          0,
+          crop.targetWidth,
+          crop.targetHeight
+        );
+
+        const nativeValue = state.barcodeDetector ? await detectDashboardNativeBarcode(scanCanvas) : "";
+        const qrValue = nativeValue || detectDashboardJsQr(scanContext, scanCanvas.width, scanCanvas.height);
+        const quaggaValue = nativeValue || qrValue ? "" : await detectDashboardQuagga(scanCanvas);
+        const value = (nativeValue || qrValue || quaggaValue || "").trim();
+
+        if (value) {
+          applyScannedBarcode(value);
+          return;
+        }
       }
     } catch (error) {
       setScannerStatus("Barcode belum terbaca. Coba dekatkan kamera dan pastikan cahaya cukup.");
     }
 
-    state.scannerAnimation = window.requestAnimationFrame(scanDashboardFrame);
+    state.scannerTimer = window.setTimeout(scanDashboardFrame, 260);
+  }
+
+  async function detectDashboardNativeBarcode(scanCanvas) {
+    try {
+      const barcodes = await state.barcodeDetector.detect(scanCanvas);
+      return barcodes[0]?.rawValue?.trim() || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function detectDashboardJsQr(scanContext, width, height) {
+    if (!window.jsQR) return "";
+
+    try {
+      const imageData = scanContext.getImageData(0, 0, width, height);
+      const result = window.jsQR(imageData.data, width, height, { inversionAttempts: "attemptBoth" });
+      return result?.data?.trim() || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function detectDashboardQuagga(scanCanvas) {
+    const quagga = window.Quagga || window.Quagga2;
+    const now = Date.now();
+
+    if (!quagga?.decodeSingle || state.quaggaBusy || now - state.lastQuaggaScanAt < 450) {
+      return Promise.resolve("");
+    }
+
+    state.quaggaBusy = true;
+    state.lastQuaggaScanAt = now;
+
+    return new Promise((resolve) => {
+      try {
+        quagga.decodeSingle({
+          src: scanCanvas.toDataURL("image/png"),
+          locate: true,
+          inputStream: {
+            size: 960,
+            singleChannel: false
+          },
+          locator: {
+            patchSize: "medium",
+            halfSample: false
+          },
+          decoder: {
+            readers: [
+              "code_128_reader",
+              "code_39_reader",
+              "code_93_reader",
+              "codabar_reader",
+              "ean_reader",
+              "ean_8_reader",
+              "i2of5_reader",
+              "upc_reader",
+              "upc_e_reader"
+            ],
+            multiple: false
+          }
+        }, (result) => {
+          state.quaggaBusy = false;
+          resolve(result?.codeResult?.code?.trim() || "");
+        });
+      } catch (error) {
+        state.quaggaBusy = false;
+        resolve("");
+      }
+    });
+  }
+
+  function getDashboardScannerCanvas() {
+    if (!state.scannerCanvas) {
+      state.scannerCanvas = document.createElement("canvas");
+    }
+    return state.scannerCanvas;
+  }
+
+  function getDashboardScanCrop() {
+    const sourceWidth = els.scannerVideo.videoWidth || 1280;
+    const sourceHeight = els.scannerVideo.videoHeight || 720;
+    const cropWidth = Math.round(sourceWidth * 0.84);
+    const cropHeight = Math.round(sourceHeight * 0.58);
+
+    return {
+      sourceX: Math.round((sourceWidth - cropWidth) / 2),
+      sourceY: Math.round((sourceHeight - cropHeight) / 2),
+      sourceWidth: cropWidth,
+      sourceHeight: cropHeight,
+      targetWidth: Math.min(1280, cropWidth),
+      targetHeight: Math.min(720, cropHeight)
+    };
+  }
+
+  async function startDashboardZxingScanner(stream) {
+    const Reader = window.ZXingBrowser?.BrowserMultiFormatReader || window.ZXing?.BrowserMultiFormatReader;
+    if (!Reader) return false;
+
+    state.zxingReader = createDashboardZxingReader(Reader);
+    if (!state.zxingReader) return false;
+
+    const onResult = (result) => {
+      const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
+      if (!rawValue || state.scannerLocked) return;
+      applyScannedBarcode(rawValue);
+    };
+
+    const controls = state.zxingReader.decodeFromStream
+      ? await state.zxingReader.decodeFromStream(stream, els.scannerVideo, onResult)
+      : await state.zxingReader.decodeFromVideoDevice(undefined, els.scannerVideo, onResult);
+    state.zxingControls = controls || null;
+    return true;
+  }
+
+  function createDashboardZxingReader(Reader) {
+    const formats = getDashboardZxingFormats();
+    const hints = getDashboardZxingHints(formats);
+
+    try {
+      return new Reader(hints, {
+        delayBetweenScanAttempts: 260,
+        delayBetweenScanSuccess: 900,
+        tryPlayVideoTimeout: 5000
+      });
+    } catch (error) {
+      return new Reader(undefined, {
+        delayBetweenScanAttempts: 260,
+        delayBetweenScanSuccess: 900,
+        tryPlayVideoTimeout: 5000
+      });
+    }
+  }
+
+  function getDashboardZxingFormats() {
+    const BarcodeFormat = window.ZXingBrowser?.BarcodeFormat || window.ZXing?.BarcodeFormat;
+    if (!BarcodeFormat) return null;
+
+    return [
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.CODE_93,
+      BarcodeFormat.CODABAR,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.ITF,
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E
+    ].filter((format) => format !== undefined);
+  }
+
+  function getDashboardZxingHints(formats) {
+    const DecodeHintType = window.ZXingBrowser?.DecodeHintType || window.ZXing?.DecodeHintType;
+    if (!DecodeHintType) return undefined;
+
+    const hints = new Map();
+    if (formats?.length) hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+    if (DecodeHintType.TRY_HARDER !== undefined) hints.set(DecodeHintType.TRY_HARDER, true);
+    return hints;
+  }
+
+  async function openDashboardScannerStream() {
+    const initialStream = await getDashboardScannerStreamWithFallbacks();
+    const selectedTrack = initialStream.getVideoTracks()[0];
+    const rearDevice = await findDashboardRearCameraDevice(selectedTrack?.label);
+
+    if (!rearDevice || selectedTrack?.label === rearDevice.label) {
+      return initialStream;
+    }
+
+    initialStream.getTracks().forEach((track) => track.stop());
+
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildDashboardScannerVideoConstraints(rearDevice.deviceId)
+      });
+    } catch (error) {
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildDashboardScannerVideoConstraints()
+      });
+    }
+  }
+
+  async function getDashboardScannerStreamWithFallbacks() {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildDashboardScannerVideoConstraints(null, true)
+      });
+    } catch (error) {
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildDashboardScannerVideoConstraints()
+      });
+    }
+  }
+
+  function buildDashboardScannerVideoConstraints(deviceId, exactFacingMode = false) {
+    return {
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      ...(!deviceId ? { facingMode: exactFacingMode ? { exact: "environment" } : { ideal: "environment" } } : {}),
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, max: 30 },
+      advanced: [
+        { focusMode: "continuous" },
+        { exposureMode: "continuous" },
+        { whiteBalanceMode: "continuous" }
+      ]
+    };
+  }
+
+  async function findDashboardRearCameraDevice(currentLabel) {
+    if (!navigator.mediaDevices?.enumerateDevices) return null;
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((device) => device.kind === "videoinput");
+      const rearPattern = /(back|rear|environment|belakang|kamera belakang|0)/i;
+      return videoInputs.find((device) => rearPattern.test(device.label)) ||
+        videoInputs.find((device) => device.label && device.label !== currentLabel) ||
+        null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function tuneDashboardScannerTrack() {
+    const track = state.scannerStream?.getVideoTracks?.()[0] || els.scannerVideo?.srcObject?.getVideoTracks?.()[0];
+    if (!track?.applyConstraints) return;
+
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    const constraints = {};
+
+    if (Array.isArray(capabilities.focusMode) && capabilities.focusMode.includes("continuous")) {
+      constraints.focusMode = "continuous";
+    }
+    if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes("continuous")) {
+      constraints.exposureMode = "continuous";
+    }
+
+    if (Object.keys(constraints).length) {
+      try {
+        await track.applyConstraints({ advanced: [constraints] });
+      } catch (error) {
+        // Kamera tetap bisa dipakai meski fokus otomatis tidak didukung.
+      }
+    }
   }
 
   function applyScannedBarcode(value) {
     if (!value) return;
+    if (state.scannerLocked) return;
+    state.scannerLocked = true;
     if (els.searchInput) {
       els.searchInput.value = value;
       state.page = 1;
@@ -820,21 +1142,32 @@
     if (String(value || "").trim()) applyScannedBarcode(String(value).trim());
   }
 
-  function stopDashboardScanner() {
+  function stopDashboardScanner(options = {}) {
     if (state.scannerAnimation) {
       window.cancelAnimationFrame(state.scannerAnimation);
       state.scannerAnimation = 0;
     }
-    stopScannerStreamOnly();
-    hideModal(els.scannerModal);
-  }
-
-  function stopScannerStreamOnly() {
+    if (state.scannerTimer) {
+      window.clearTimeout(state.scannerTimer);
+      state.scannerTimer = null;
+    }
     if (state.scannerStream) {
       state.scannerStream.getTracks().forEach((track) => track.stop());
       state.scannerStream = null;
     }
+    if (state.zxingControls?.stop) {
+      state.zxingControls.stop();
+      state.zxingControls = null;
+    }
+    if (state.zxingReader?.reset) {
+      state.zxingReader.reset();
+      state.zxingReader = null;
+    }
+    state.scannerLocked = false;
+    state.barcodeDetector = null;
+    state.scannerDetector = null;
     if (els.scannerVideo) els.scannerVideo.srcObject = null;
+    if (!options.keepModalOpen) hideModal(els.scannerModal);
   }
 
   function setScannerStatus(message) {
@@ -953,12 +1286,17 @@
     const rows = matrix.slice(1).map((row) => {
       const item = {};
       normalizedHeaders.forEach((header, index) => {
-        if (header) item[header] = row[index] || "";
+        if (header) item[header] = normalizeImportValue(header, row[index] || "");
       });
       return item;
     });
 
     return { headers, rows };
+  }
+
+  function normalizeImportValue(header, value) {
+    if (!PRICE_COLUMNS.has(header)) return value;
+    return normalizePriceValue(value);
   }
 
   async function importExcelToGoogleSheet() {
@@ -1032,7 +1370,7 @@
     const hasUnread = Boolean(state.uploadedAt && state.uploadedAt !== seenAt);
     const label = state.uploadedAt
       ? `${formatLastUpdated(state.uploadedAt)} berdasarkan upload sheet data_obat terakhir`
-      : "Belum ada informasi upload sheet data_obat terakhir";
+      : "Tidak ada notifikasi terbaru";
 
     els.notificationDot.hidden = !hasUnread;
     els.notificationButton.classList.toggle("has-unread", hasUnread);
@@ -1046,7 +1384,7 @@
 
     const message = state.uploadedAt
       ? `${formatLastUpdated(state.uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
-      : "Belum ada informasi waktu upload sheet data_obat terakhir. Upload data Excel baru atau pastikan Apps Script terbaru sudah dipakai.";
+      : "Tidak ada notifikasi terbaru. Belum ada info upload terbaru dari Google Sheet data_obat.";
 
     if (els.notificationMessage) els.notificationMessage.textContent = message;
     if (els.notificationPopover) {
@@ -1193,6 +1531,7 @@
       if (!result || result.success !== true) throw new Error(result?.message || "Apps Script belum menerima perubahan data_obat.");
 
       setMedicineStatus(result.message || "Data obat berhasil disimpan.", "success");
+      addProfileActivity(mode === "add" ? "Tambah data obat" : "Edit data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
       await fetchDataObat({ manual: true });
       closeMedicineModal();
     } catch (error) {
@@ -1238,6 +1577,7 @@
       try {
         const result = await postToApi({ action: "delete_data_obat", rowNumber: row._row, kode: row.kode });
         if (!result || result.success !== true) throw new Error(result?.message || "Apps Script belum menerima hapus data_obat.");
+        addProfileActivity("Hapus data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
         closeDeleteModal();
         await fetchDataObat({ manual: true });
       } catch (error) {
@@ -1403,7 +1743,6 @@
   function canView(viewName, access) {
     const map = {
       dashboard: "dashboard",
-      "cari-obat": "cari_data_obat",
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
       "data-supplier": "data_supplier",
@@ -1417,7 +1756,6 @@
 
   function accessKeyToView(key) {
     const map = {
-      cari_data_obat: "cari-obat",
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
       data_supplier: "data-supplier",
@@ -1432,7 +1770,7 @@
   function isAdminUser(user) {
     const role = normalizeSearch(user?.role);
     const username = normalizeSearch(user?.username || user?.name || "");
-    return role === "admin" || role === "administrator" || username === "admin";
+    return role === "admin" || role === "administrator" || role === "owner" || username === "admin" || username === "owner";
   }
 
   function renderEmployees() {
@@ -1649,13 +1987,15 @@
     }
 
     const target = getLocalArray(state.recordType);
-    if (state.recordIndex >= 0) {
+    const isEdit = state.recordIndex >= 0;
+    if (isEdit) {
       target[state.recordIndex] = record;
     } else {
       target.push(record);
     }
 
     persistLocalArray(state.recordType, target);
+    addProfileActivity(isEdit ? `Edit ${schema.title}` : `Tambah ${schema.title}`, record.name || record.username || schema.title);
     closeRecordModal();
     renderEmployees();
     renderSuppliers();
@@ -1667,8 +2007,11 @@
 
   function deleteLocalRecord(type, index) {
     const target = getLocalArray(type);
+    const deleted = target[index] || {};
     target.splice(index, 1);
     persistLocalArray(type, target);
+    const schema = LOCAL_SCHEMAS[type];
+    addProfileActivity(`Hapus ${schema?.title || "Data"}`, deleted.name || deleted.username || "Data lokal");
     renderEmployees();
     renderSuppliers();
     renderUserRoleOptions();
@@ -1725,6 +2068,7 @@
     state.purchaseOrders.unshift(order);
     state.purchaseItems = [];
     writeStoredArray(PO_KEY, state.purchaseOrders);
+    addProfileActivity("Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
     renderPurchaseItems();
     renderPurchaseOrders();
   }
@@ -1783,8 +2127,9 @@
     if (els.profileNameInput) els.profileNameInput.value = profile.name || "";
     if (els.profileEmailInput) els.profileEmailInput.value = profile.email || "";
     if (els.profilePhoneInput) els.profilePhoneInput.value = profile.phone || "";
-    if (els.profileJobInput) els.profileJobInput.value = profile.job || "";
+    if (els.profileJobInput) els.profileJobInput.value = profile.role || profile.job || "";
     if (els.profileAddressInput) els.profileAddressInput.value = profile.address || "";
+    syncProfileActivityAccess();
   }
 
   function getProfileData() {
@@ -1794,7 +2139,7 @@
       name: stored.name || session.name || session.username || "Akun",
       email: stored.email || session.email || "",
       phone: stored.phone || "",
-      job: stored.job || session.role || "Operator",
+      job: session.role || stored.job || "Operator",
       address: stored.address || "",
       username: session.username || stored.username || "",
       role: session.role || stored.job || "Operator"
@@ -1807,7 +2152,7 @@
       name: els.profileNameInput.value.trim(),
       email: els.profileEmailInput.value.trim(),
       phone: els.profilePhoneInput.value.trim(),
-      job: els.profileJobInput.value.trim(),
+      job: getProfileData().role || "Operator",
       address: els.profileAddressInput.value.trim()
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -1866,15 +2211,11 @@
   }
 
   function renderProfileSecurity() {
-    const security = readObject(PROFILE_SECURITY_KEY);
-    if (els.profileTwoFactorToggle) els.profileTwoFactorToggle.checked = security.twoFactor === true;
+    return readObject(PROFILE_SECURITY_KEY);
   }
 
   function saveProfileSecurity() {
-    const enabled = Boolean(els.profileTwoFactorToggle?.checked);
-    localStorage.setItem(PROFILE_SECURITY_KEY, JSON.stringify({ twoFactor: enabled, updatedAt: new Date().toISOString() }));
-    setProfileStatus(enabled ? "Verifikasi 2 langkah ditandai aktif di perangkat ini." : "Verifikasi 2 langkah dinonaktifkan di perangkat ini.", "success");
-    addProfileActivity(enabled ? "Verifikasi 2 langkah aktif" : "Verifikasi 2 langkah nonaktif", "Preferensi keamanan lokal diperbarui");
+    return false;
   }
 
   function switchProfileTab(tabName) {
@@ -1886,16 +2227,23 @@
 
   function renderProfileActivity() {
     if (!els.profileActivityList) return;
+    const user = getCurrentUserRecord();
+    if (!isAdminUser(user)) {
+      els.profileActivityList.innerHTML = "<p>Riwayat aktivitas hanya tersedia untuk role admin atau owner.</p>";
+      syncProfileActivityAccess();
+      return;
+    }
+
     const activity = readStoredArray(PROFILE_ACTIVITY_KEY).slice(0, 12);
 
     if (!activity.length) {
-      els.profileActivityList.innerHTML = "<p>Belum ada aktivitas tersimpan di perangkat ini.</p>";
+      els.profileActivityList.innerHTML = "<p>Belum ada aktivitas operator/kasir yang tersimpan di perangkat ini.</p>";
       return;
     }
 
     els.profileActivityList.innerHTML = activity.map((item) => `
       <article>
-        <span><strong>${escapeHtml(item.title || "Aktivitas")}</strong><small>${escapeHtml(item.detail || "")}</small></span>
+        <span><strong>${escapeHtml(item.title || "Aktivitas")}</strong><small>${escapeHtml(item.detail || "")}</small><small>${escapeHtml(item.actor || "")}</small></span>
         <time>${escapeHtml(formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", ""))}</time>
       </article>
     `).join("");
@@ -1903,9 +2251,11 @@
 
   function addProfileActivity(title, detail) {
     const activity = readStoredArray(PROFILE_ACTIVITY_KEY);
+    const profile = getProfileData();
     activity.unshift({
       title,
       detail,
+      actor: `${profile.name || profile.username || "Akun"} - ${profile.role || "Operator"}`,
       at: new Date().toISOString()
     });
     writeStoredArray(PROFILE_ACTIVITY_KEY, activity.slice(0, 30));
@@ -1920,23 +2270,39 @@
 
   function applyProfilePreferences() {
     const prefs = readObject(PROFILE_PREFS_KEY);
+    const theme = prefs.theme === "dark" ? "dark" : "light";
+    document.body.classList.toggle("theme-dark", theme === "dark");
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
+    if (els.profileThemeSelect) els.profileThemeSelect.value = theme;
     if (els.profileCompactToggle) els.profileCompactToggle.checked = prefs.compact === true;
-    if (els.profileSidebarCompactToggle) els.profileSidebarCompactToggle.checked = prefs.sidebarCompact === true;
-    if (prefs.sidebarCompact === true && !isMobileViewport()) setSidebarCollapsed(true, { persist: false });
+    if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.checked = prefs.startDashboard !== false;
   }
 
   function saveProfilePreferences() {
     const prefs = {
+      theme: els.profileThemeSelect?.value === "dark" ? "dark" : "light",
       compact: Boolean(els.profileCompactToggle?.checked),
-      sidebarCompact: Boolean(els.profileSidebarCompactToggle?.checked),
+      startDashboard: els.profileStartDashboardToggle ? Boolean(els.profileStartDashboardToggle.checked) : true,
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));
     applyProfilePreferences();
-    if (prefs.sidebarCompact) setSidebarCollapsed(true);
     setProfileStatus("Preferensi tampilan berhasil disimpan.", "success");
-    addProfileActivity("Preferensi tampilan diperbarui", prefs.compact ? "Mode ringkas aktif" : "Mode ringkas nonaktif");
+    addProfileActivity("Preferensi tampilan diperbarui", `${prefs.theme === "dark" ? "Tema gelap" : "Tema terang"}, ${prefs.compact ? "mode ringkas aktif" : "mode ringkas nonaktif"}`);
+  }
+
+  function syncProfileActivityAccess() {
+    const user = getCurrentUserRecord();
+    const isAllowed = isAdminUser(user);
+    const activityTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "aktivitas");
+    const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
+
+    if (activityTab) activityTab.hidden = !isAllowed;
+    if (activityPanel) activityPanel.hidden = !isAllowed;
+
+    if (!isAllowed && activityTab?.classList.contains("is-active")) {
+      switchProfileTab("profil");
+    }
   }
 
   function setProfileStatus(message, type) {
@@ -1967,9 +2333,8 @@
 
   function switchView(viewName) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
-    const actualViewName = getActualViewName(viewName);
     state.activeView = viewName;
-    els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === actualViewName));
+    els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
     els.viewButtons.forEach((button) => {
       const active = button.dataset.viewTarget === viewName;
       button.classList.toggle("is-active", active);
@@ -1978,11 +2343,6 @@
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
     setSidebarCollapsed(true);
-  }
-
-  function getActualViewName(viewName) {
-    if (viewName === "cari-obat") return "data-obat";
-    return viewName;
   }
 
   function applySavedSidebarState() {
@@ -2172,6 +2532,7 @@
   }
 
   function formatControlValue(key, value) {
+    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value);
     if (key !== "expired") return String(value ?? "");
     const date = parseDateValue(value);
     if (!date) return "";
@@ -2180,9 +2541,31 @@
     return `${date.getFullYear()}-${month}-${day}`;
   }
 
-  function formatCell(value) {
+  function formatCell(value, key = "") {
+    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value) || "-";
     const text = String(value ?? "").trim();
     return text || "-";
+  }
+
+  function normalizePriceValue(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+
+    if (/^\d+,\d{1,2}$/.test(text)) {
+      const parts = text.split(",");
+      return `${parts[0]}.${parts[1].padEnd(3, "0")}`;
+    }
+
+    if (/^\d+\.\d{1,2}$/.test(text)) {
+      const parts = text.split(".");
+      return `${parts[0]}.${parts[1].padEnd(3, "0")}`;
+    }
+
+    if (/^\d+\.\d$/.test(text)) {
+      return text.replace(/\.(\d)$/, ".$100");
+    }
+
+    return text;
   }
 
   function formatNumber(value) {
