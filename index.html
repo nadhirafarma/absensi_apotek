@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v4">
-  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v4"></script>
-  <script defer src="assets/app.js?v=20260602-admin-dashboard-v4"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260602-admin-dashboard-v5">
+  <script defer src="assets/auth-guard.js?v=20260602-admin-dashboard-v5"></script>
+  <script defer src="assets/app.js?v=20260602-admin-dashboard-v5"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v4"></script>
+  <script defer src="assets/home-dashboard.js?v=20260602-admin-dashboard-v5"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <div class="app-layout">
@@ -35,7 +35,35 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button class="sidebar-link is-active" type="button" data-view-target="dashboard" title="Dashboard" aria-current="page">
+        <div class="profile-menu sidebar-profile-menu" id="profileMenu">
+          <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
+            <span class="profile-avatar" id="profileAvatar">AK</span>
+            <span class="profile-name" id="dashboardProfileName">Akun</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"></path>
+            </svg>
+          </button>
+
+          <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
+            <div class="profile-summary">
+              <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
+              <span>
+                <strong id="profileAccountName">Akun</strong>
+                <small id="profileAccountMeta">Nadhira Farma Digital</small>
+              </span>
+            </div>
+            <button class="logout-button" type="button" role="menuitem" data-logout-button>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <path d="M16 17l5-5-5-5"></path>
+                <path d="M21 12H9"></path>
+              </svg>
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <button class="sidebar-link is-active" type="button" data-view-target="dashboard" data-access-key="dashboard" title="Dashboard" aria-current="page">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 19V5"></path>
             <path d="M4 19h16"></path>
@@ -45,7 +73,7 @@
           </svg>
           <span class="sidebar-label">Dashboard</span>
         </button>
-        <a class="sidebar-link" href="absensi.html" title="Absensi Face ID">
+        <a class="sidebar-link" href="absensi.html" data-access-key="absensi_face_id" title="Absensi Face ID">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
             <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
@@ -55,7 +83,7 @@
           </svg>
           <span class="sidebar-label">Absensi Face ID</span>
         </a>
-        <a class="sidebar-link" href="cari-obat.html" title="Cari Data Obat">
+        <a class="sidebar-link" href="cari-obat.html" data-access-key="cari_data_obat" title="Cari Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="10.5" cy="10.5" r="6.5"></circle>
             <path d="m15.2 15.2 4.8 4.8"></path>
@@ -64,7 +92,7 @@
         </a>
 
         <span class="sidebar-section">Master Data</span>
-        <button class="sidebar-link" type="button" data-view-target="data-obat" title="Data Obat">
+        <button class="sidebar-link" type="button" data-view-target="data-obat" data-access-key="data_obat" title="Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
             <path d="M9 10h6"></path>
@@ -72,7 +100,7 @@
           </svg>
           <span class="sidebar-label">Data Obat</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="data-karyawan" title="Data Karyawan">
+        <button class="sidebar-link" type="button" data-view-target="data-karyawan" data-access-key="data_karyawan" title="Data Karyawan">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
             <circle cx="9.5" cy="7" r="4"></circle>
@@ -80,7 +108,7 @@
           </svg>
           <span class="sidebar-label">Data Karyawan</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="data-supplier" title="Data Supplier">
+        <button class="sidebar-link" type="button" data-view-target="data-supplier" data-access-key="data_supplier" title="Data Supplier">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 7h11v10H3z"></path>
             <path d="M14 10h4l3 3v4h-7z"></path>
@@ -89,7 +117,7 @@
           </svg>
           <span class="sidebar-label">Data Supplier</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="surat-pesanan" title="Surat Pesanan Pembelian">
+        <button class="sidebar-link" type="button" data-view-target="surat-pesanan" data-access-key="surat_pesanan" title="Surat Pesanan Pembelian">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M8 2v4"></path>
             <path d="M16 2v4"></path>
@@ -99,7 +127,7 @@
           </svg>
           <span class="sidebar-label">Surat Pesanan Pembelian</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="import-data-obat" title="Import Data Obat">
+        <button class="sidebar-link" type="button" data-view-target="import-data-obat" data-access-key="import_data_obat" title="Import Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v12"></path>
             <path d="m7 10 5 5 5-5"></path>
@@ -111,14 +139,14 @@
         </button>
 
         <span class="sidebar-section">Sistem</span>
-        <button class="sidebar-link" type="button" data-view-target="akun-profil" title="Akun & Profil">
+        <button class="sidebar-link" type="button" data-view-target="akun-profil" data-access-key="akun_profil" title="Akun & Profil">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="7" r="4"></circle>
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path>
           </svg>
           <span class="sidebar-label">Akun & Profil</span>
         </button>
-        <button class="sidebar-link" type="button" data-view-target="manajemen-pengguna" title="Manajemen Pengguna">
+        <button class="sidebar-link" type="button" data-view-target="manajemen-pengguna" data-access-key="manajemen_pengguna" title="Manajemen Pengguna">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
@@ -166,106 +194,23 @@
             <span class="notification-dot" id="homeNotificationDot" hidden></span>
           </button>
 
-          <div class="profile-menu" id="profileMenu">
-            <button class="profile-chip" id="profileMenuButton" type="button" aria-haspopup="menu" aria-expanded="false">
-              <span class="profile-avatar" id="profileAvatar">AK</span>
-              <span class="profile-name" id="dashboardProfileName">Akun</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 9 6 6 6-6"></path>
-              </svg>
-            </button>
-
-            <div class="profile-dropdown" id="profileDropdown" role="menu" hidden>
-              <div class="profile-summary">
-                <span class="profile-mini-avatar" id="profileMiniAvatar">AK</span>
-                <span>
-                  <strong id="profileAccountName">Akun</strong>
-                  <small id="profileAccountMeta">Nadhira Farma Digital</small>
-                </span>
-              </div>
-              <button class="logout-button" type="button" role="menuitem" data-logout-button>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <path d="M16 17l5-5-5-5"></path>
-                  <path d="M21 12H9"></path>
-                </svg>
-                Logout
-              </button>
-            </div>
-          </div>
         </div>
       </header>
 
       <main class="dashboard-content">
         <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
           <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
-            <article class="stat-card"><span class="stat-icon stat-blue">Σ</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
             <article class="stat-card"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-pink">×</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-pink">X</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
             <article class="stat-card"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-orange">↓</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
+            <article class="stat-card"><span class="stat-icon stat-orange">S</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
             <article class="stat-card"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
           </section>
         </section>
 
         <section class="dashboard-view" id="view-data-obat" data-view="data-obat">
-          <section class="dashboard-stats" aria-label="Ringkasan data obat">
-            <article class="stat-card">
-              <span class="stat-icon stat-blue">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
-                </svg>
-              </span>
-              <span>
-                <small>Total Obat</small>
-                <strong id="statTotal">0</strong>
-                <em>Jenis Obat</em>
-              </span>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon stat-purple">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="5" y="3" width="14" height="18" rx="2"></rect>
-                  <path d="M9 8h6"></path>
-                  <path d="M9 12h6"></path>
-                  <path d="M9 16h3"></path>
-                </svg>
-              </span>
-              <span>
-                <small>Obat Aktif</small>
-                <strong id="statActive">0</strong>
-                <em id="statActivePercent">0% dari total</em>
-              </span>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon stat-orange">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 3 2 21h20L12 3Z"></path>
-                  <path d="M12 9v5"></path>
-                  <path d="M12 17h.01"></path>
-                </svg>
-              </span>
-              <span>
-                <small>Stok Menipis</small>
-                <strong id="statLowStock">0</strong>
-                <em>Perlu pemesanan</em>
-              </span>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon stat-pink">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="m5.7 5.7 12.6 12.6"></path>
-                </svg>
-              </span>
-              <span>
-                <small>Obat Expired</small>
-                <strong id="statExpired">0</strong>
-                <em>Segera ditangani</em>
-              </span>
-            </article>
-          </section>
-
           <section class="data-workspace" aria-labelledby="dataObatTitle">
             <div class="data-toolbar">
               <label class="dashboard-search">
@@ -275,16 +220,18 @@
                   <path d="m15.2 15.2 4.8 4.8"></path>
                 </svg>
                 <input id="dashboardSearchInput" type="search" placeholder="Cari obat, kode, kategori, supplier, atau kandungan...">
-                <svg class="barcode-search-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
-                  <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
-                  <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path>
-                  <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
-                  <path d="M7 8v8"></path>
-                  <path d="M11 8v8"></path>
-                  <path d="M14 8v8"></path>
-                  <path d="M17 8v8"></path>
-                </svg>
+                <button class="barcode-scan-button" id="dashboardBarcodeButton" type="button" aria-label="Scan barcode obat" title="Scan barcode obat">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
+                    <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
+                    <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path>
+                    <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
+                    <path d="M7 8v8"></path>
+                    <path d="M11 8v8"></path>
+                    <path d="M14 8v8"></path>
+                    <path d="M17 8v8"></path>
+                  </svg>
+                </button>
               </label>
               <button class="filter-action" id="dashboardFilterButton" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -617,7 +564,7 @@
               </div>
               <div class="simple-table-wrap">
                 <table class="simple-table">
-                  <thead><tr><th>No</th><th>Nama Operator</th><th>Username</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
+                  <thead><tr><th>No</th><th>Nama Operator</th><th>Username</th><th>Role</th><th>Status</th><th>Akses</th><th>Aksi</th></tr></thead>
                   <tbody id="userTableBody"></tbody>
                 </table>
               </div>
@@ -681,6 +628,28 @@
       <div class="form-actions">
         <button class="text-button" id="cancelDeleteButton" type="button">Batal</button>
         <button class="danger-action" id="confirmDeleteButton" type="button">Hapus</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-modal scanner-modal" id="dashboardScannerModal" hidden>
+    <div class="modal-card scanner-modal-card">
+      <div class="modal-head">
+        <div>
+          <h2>Scan Barcode Obat</h2>
+          <p id="dashboardScannerStatus">Arahkan kamera ke barcode obat.</p>
+        </div>
+        <button class="icon-button" id="closeDashboardScannerButton" type="button" aria-label="Tutup scanner">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+      <div class="scanner-preview">
+        <video id="dashboardScannerVideo" playsinline muted></video>
+        <span class="scanner-frame" aria-hidden="true"></span>
+      </div>
+      <div class="form-actions">
+        <button class="text-button" id="manualBarcodeButton" type="button">Input Manual</button>
+        <button class="secondary-action" id="stopDashboardScannerButton" type="button">Selesai</button>
       </div>
     </div>
   </section>

@@ -78,6 +78,30 @@
     "manajemen-pengguna": "Manajemen Pengguna"
   };
 
+  const ACCESS_MENUS = [
+    { key: "dashboard", label: "Dashboard" },
+    { key: "absensi_face_id", label: "Absensi Face ID" },
+    { key: "cari_data_obat", label: "Cari Data Obat" },
+    { key: "data_obat", label: "Data Obat" },
+    { key: "edit_obat", label: "Tambah/Edit Obat" },
+    { key: "hapus_obat", label: "Hapus Obat" },
+    { key: "data_karyawan", label: "Data Karyawan" },
+    { key: "data_supplier", label: "Data Supplier" },
+    { key: "surat_pesanan", label: "Surat Pesanan Pembelian" },
+    { key: "import_data_obat", label: "Import Data Obat" },
+    { key: "akun_profil", label: "Akun & Profil" },
+    { key: "manajemen_pengguna", label: "Manajemen Pengguna" }
+  ];
+
+  const ROLE_ACCESS = {
+    administrator: ACCESS_MENUS.map((item) => item.key),
+    admin: ACCESS_MENUS.map((item) => item.key),
+    apoteker: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    kasir: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    operator: ["dashboard", "absensi_face_id", "cari_data_obat", "akun_profil"]
+  };
+
   const LOCAL_SCHEMAS = {
     employee: {
       title: "Karyawan",
@@ -108,7 +132,8 @@
         { key: "username", label: "Username", required: true },
         { key: "role", label: "Role", type: "select", options: ["Administrator", "Apoteker", "Kasir", "Staf Gudang", "Operator"] },
         { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
-        { key: "email", label: "Email", type: "email" }
+        { key: "email", label: "Email", type: "email" },
+        { key: "access", label: "Akses Menu & Fungsi", type: "access", wide: true }
       ]
     }
   };
@@ -126,6 +151,9 @@
     purchaseOrders: [],
     importHeaders: [],
     importRows: [],
+    scannerStream: null,
+    scannerDetector: null,
+    scannerAnimation: 0,
     activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
@@ -178,6 +206,7 @@
       columnOptions: document.getElementById("dashboardColumnOptions"),
       refreshButton: document.getElementById("dashboardRefreshButton"),
       addMedicineButton: document.getElementById("addMedicineButton"),
+      barcodeButton: document.getElementById("dashboardBarcodeButton"),
       tableHead: document.getElementById("dashboardTableHead"),
       tableBody: document.getElementById("dashboardTableBody"),
       statusText: document.getElementById("dashboardStatusText"),
@@ -186,11 +215,6 @@
       pageNumber: document.getElementById("dashboardPageNumber"),
       prevButton: document.getElementById("dashboardPrevButton"),
       nextButton: document.getElementById("dashboardNextButton"),
-      statTotal: document.getElementById("statTotal"),
-      statActive: document.getElementById("statActive"),
-      statActivePercent: document.getElementById("statActivePercent"),
-      statLowStock: document.getElementById("statLowStock"),
-      statExpired: document.getElementById("statExpired"),
       profileName: document.getElementById("dashboardProfileName"),
       notificationButton: document.getElementById("homeNotificationButton"),
       notificationDot: document.getElementById("homeNotificationDot"),
@@ -218,6 +242,12 @@
       deleteModalText: document.getElementById("deleteModalText"),
       cancelDeleteButton: document.getElementById("cancelDeleteButton"),
       confirmDeleteButton: document.getElementById("confirmDeleteButton"),
+      scannerModal: document.getElementById("dashboardScannerModal"),
+      scannerVideo: document.getElementById("dashboardScannerVideo"),
+      scannerStatus: document.getElementById("dashboardScannerStatus"),
+      closeScannerButton: document.getElementById("closeDashboardScannerButton"),
+      stopScannerButton: document.getElementById("stopDashboardScannerButton"),
+      manualBarcodeButton: document.getElementById("manualBarcodeButton"),
       employeeTableBody: document.getElementById("employeeTableBody"),
       addEmployeeButton: document.getElementById("addEmployeeButton"),
       supplierTableBody: document.getElementById("supplierTableBody"),
@@ -267,6 +297,7 @@
       userRoleFilter: document.getElementById("userRoleFilter"),
       userStatusFilter: document.getElementById("userStatusFilter"),
       reportTotal: document.getElementById("reportTotal"),
+      reportActive: document.getElementById("reportActive"),
       reportExpiring: document.getElementById("reportExpiring"),
       reportExpired: document.getElementById("reportExpired"),
       reportEmpty: document.getElementById("reportEmpty"),
@@ -308,6 +339,7 @@
     if (els.prevButton) els.prevButton.addEventListener("click", () => changePage(-1));
     if (els.nextButton) els.nextButton.addEventListener("click", () => changePage(1));
     if (els.addMedicineButton) els.addMedicineButton.addEventListener("click", () => openMedicineModal("add"));
+    if (els.barcodeButton) els.barcodeButton.addEventListener("click", startDashboardScanner);
 
     els.tableBody.addEventListener("click", handleTableAction);
 
@@ -326,6 +358,15 @@
     if (els.recordForm) els.recordForm.addEventListener("submit", saveRecord);
     if (els.cancelDeleteButton) els.cancelDeleteButton.addEventListener("click", closeDeleteModal);
     if (els.confirmDeleteButton) els.confirmDeleteButton.addEventListener("click", confirmDelete);
+    [els.closeScannerButton, els.stopScannerButton].forEach((button) => {
+      if (button) button.addEventListener("click", stopDashboardScanner);
+    });
+    if (els.manualBarcodeButton) els.manualBarcodeButton.addEventListener("click", useManualBarcodeInput);
+    if (els.scannerModal) {
+      els.scannerModal.addEventListener("click", (event) => {
+        if (event.target === els.scannerModal) stopDashboardScanner();
+      });
+    }
 
     if (els.addEmployeeButton) els.addEmployeeButton.addEventListener("click", () => openRecordModal("employee", -1));
     if (els.addSupplierButton) els.addSupplierButton.addEventListener("click", () => openRecordModal("supplier", -1));
@@ -380,6 +421,7 @@
         closeMedicineModal();
         closeRecordModal();
         closeDeleteModal();
+        stopDashboardScanner();
       }
     });
     window.addEventListener("resize", () => {
@@ -413,7 +455,6 @@
       populateFilterOptions();
       populateMedicineOptions();
       applyFilters();
-      renderStats();
       renderUploadInfo();
       updateNotificationState();
       renderSuppliers();
@@ -424,7 +465,6 @@
       if (els.statusText) els.statusText.dataset.type = "error";
       state.rows = [];
       applyFilters();
-      renderStats();
       renderUploadInfo();
       updateNotificationState();
       renderReports();
@@ -442,7 +482,8 @@
         username: String(user.username || user.name || "").trim(),
         role: String(user.role || "Operator").trim() || "Operator",
         status: String(user.status || "Aktif").trim() || "Aktif",
-        email: String(user.email || "").trim()
+        email: String(user.email || "").trim(),
+        access: getDefaultAccessForRole(user.role || "Operator")
       })).filter((user) => user.name || user.username);
 
       syncEmployeeSeed();
@@ -450,11 +491,13 @@
       renderEmployees();
       renderUsers();
       renderProfile();
+      applyCurrentUserAccess();
     } catch (error) {
       syncEmployeeSeed();
       syncUserSeed();
       renderEmployees();
       renderUsers();
+      applyCurrentUserAccess();
     }
   }
 
@@ -644,6 +687,8 @@
     if (state.page < 1) state.page = 1;
 
     const columns = getVisibleColumnDefs();
+    const allowEdit = canAccess("edit_obat");
+    const allowDelete = canAccess("hapus_obat");
     const start = (state.page - 1) * PAGE_SIZE;
     const rows = state.filtered.slice(start, start + PAGE_SIZE);
 
@@ -664,12 +709,13 @@
           ${columns.map((column) => `<td data-column="${escapeHtml(column.key)}">${escapeHtml(formatCell(row[column.key]))}</td>`).join("")}
           <td class="col-actions">
             <div class="row-actions">
-              <button class="table-action table-action-edit" type="button" data-action="edit-medicine" data-index="${rowIndex}" aria-label="Edit ${escapeHtml(row.nama || row.kode || "obat")}">
+              ${allowEdit ? `<button class="table-action table-action-edit" type="button" data-action="edit-medicine" data-index="${rowIndex}" aria-label="Edit ${escapeHtml(row.nama || row.kode || "obat")}">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
-              </button>
-              <button class="table-action table-action-delete" type="button" data-action="delete-medicine" data-index="${rowIndex}" aria-label="Hapus ${escapeHtml(row.nama || row.kode || "obat")}">
+              </button>` : ""}
+              ${allowDelete ? `<button class="table-action table-action-delete" type="button" data-action="delete-medicine" data-index="${rowIndex}" aria-label="Hapus ${escapeHtml(row.nama || row.kode || "obat")}">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
-              </button>
+              </button>` : ""}
+              ${!allowEdit && !allowDelete ? `<span class="muted-action">-</span>` : ""}
             </div>
           </td>
         </tr>
@@ -692,25 +738,106 @@
     if (els.nextButton) els.nextButton.disabled = state.page >= totalPages;
   }
 
-  function renderStats() {
-    const total = state.rows.length;
-    const active = state.rows.filter((row) => getStatusValue(row) !== "nonaktif").length || total;
-    const lowStock = state.rows.filter(isLowStock).length;
-    const expired = state.rows.filter(isExpired).length;
-    const percent = total ? Math.round((active / total) * 1000) / 10 : 0;
-
-    if (els.statTotal) els.statTotal.textContent = formatNumber(total);
-    if (els.statActive) els.statActive.textContent = formatNumber(active);
-    if (els.statActivePercent) els.statActivePercent.textContent = `${percent}% dari total`;
-    if (els.statLowStock) els.statLowStock.textContent = formatNumber(lowStock);
-    if (els.statExpired) els.statExpired.textContent = formatNumber(expired);
-  }
-
   function renderUploadInfo() {
     if (!els.updatedText) return;
     els.updatedText.textContent = state.uploadedAt
       ? formatLastUpdated(state.uploadedAt)
       : "Last updated upload Google Sheet belum tersedia";
+  }
+
+  async function startDashboardScanner(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (!els.scannerModal || !els.scannerVideo) return;
+    showModal(els.scannerModal);
+    setScannerStatus("Menyiapkan kamera scanner...");
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setScannerStatus("Browser belum mendukung akses kamera. Gunakan input manual.");
+      return;
+    }
+
+    if (!("BarcodeDetector" in window)) {
+      setScannerStatus("Browser ini belum mendukung scanner barcode otomatis. Gunakan input manual.");
+      return;
+    }
+
+    try {
+      const formats = ["code_128", "code_39", "code_93", "codabar", "ean_13", "ean_8", "itf", "upc_a", "upc_e", "qr_code"];
+      state.scannerDetector = new window.BarcodeDetector({ formats });
+      state.scannerStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+      els.scannerVideo.srcObject = state.scannerStream;
+      await els.scannerVideo.play();
+      setScannerStatus("Arahkan kamera ke barcode obat.");
+      scanDashboardFrame();
+    } catch (error) {
+      setScannerStatus(`Scanner belum bisa dibuka: ${error.message}. Gunakan input manual.`);
+      stopScannerStreamOnly();
+    }
+  }
+
+  async function scanDashboardFrame() {
+    if (!state.scannerDetector || !els.scannerVideo || els.scannerModal?.hidden) return;
+
+    try {
+      const codes = await state.scannerDetector.detect(els.scannerVideo);
+      const value = codes && codes[0] ? String(codes[0].rawValue || "").trim() : "";
+      if (value) {
+        applyScannedBarcode(value);
+        return;
+      }
+    } catch (error) {
+      setScannerStatus("Barcode belum terbaca. Coba dekatkan kamera dan pastikan cahaya cukup.");
+    }
+
+    state.scannerAnimation = window.requestAnimationFrame(scanDashboardFrame);
+  }
+
+  function applyScannedBarcode(value) {
+    if (!value) return;
+    if (els.searchInput) {
+      els.searchInput.value = value;
+      state.page = 1;
+      applyFilters();
+    }
+    setScannerStatus(`Barcode terbaca: ${value}`);
+    stopDashboardScanner();
+  }
+
+  function useManualBarcodeInput() {
+    const value = window.prompt("Masukkan barcode obat:");
+    if (String(value || "").trim()) applyScannedBarcode(String(value).trim());
+  }
+
+  function stopDashboardScanner() {
+    if (state.scannerAnimation) {
+      window.cancelAnimationFrame(state.scannerAnimation);
+      state.scannerAnimation = 0;
+    }
+    stopScannerStreamOnly();
+    hideModal(els.scannerModal);
+  }
+
+  function stopScannerStreamOnly() {
+    if (state.scannerStream) {
+      state.scannerStream.getTracks().forEach((track) => track.stop());
+      state.scannerStream = null;
+    }
+    if (els.scannerVideo) els.scannerVideo.srcObject = null;
+  }
+
+  function setScannerStatus(message) {
+    if (els.scannerStatus) els.scannerStatus.textContent = message;
   }
 
   async function handleImportFileChange() {
@@ -949,8 +1076,8 @@
     const row = state.rows[index];
     if (!row) return;
 
-    if (button.dataset.action === "edit-medicine") openMedicineModal("edit", row, index);
-    if (button.dataset.action === "delete-medicine") openDeleteModal("medicine", index, row.nama || row.kode || "obat ini");
+    if (button.dataset.action === "edit-medicine" && canAccess("edit_obat")) openMedicineModal("edit", row, index);
+    if (button.dataset.action === "delete-medicine" && canAccess("hapus_obat")) openDeleteModal("medicine", index, row.nama || row.kode || "obat ini");
   }
 
   function renderMedicineForm() {
@@ -1125,12 +1252,13 @@
   function loadStoredModules() {
     state.employees = readStoredArray(EMPLOYEE_KEY);
     state.suppliers = readStoredArray(SUPPLIER_KEY);
-    state.users = readStoredArray(USER_KEY);
+    state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
     state.purchaseOrders = readStoredArray(PO_KEY);
     renderEmployees();
     renderSuppliers();
     renderUsers();
     renderPurchaseOrders();
+    applyCurrentUserAccess();
   }
 
   function syncEmployeeSeed() {
@@ -1166,17 +1294,142 @@
   }
 
   function syncUserSeed() {
-    const stored = readStoredArray(USER_KEY);
+    const stored = readStoredArray(USER_KEY).map(normalizeUserRecord);
     const byUsername = new Map(stored.map((item) => [normalizeSearch(item.username || item.name), item]));
 
     state.users.forEach((user) => {
       const key = normalizeSearch(user.username || user.name);
-      if (!byUsername.has(key)) byUsername.set(key, user);
+      if (!byUsername.has(key)) byUsername.set(key, normalizeUserRecord(user));
     });
 
-    state.users = Array.from(byUsername.values());
+    state.users = Array.from(byUsername.values()).map(normalizeUserRecord);
     writeStoredArray(USER_KEY, state.users);
     renderUserRoleOptions();
+  }
+
+  function normalizeUserRecord(user) {
+    const role = String(user?.role || "Operator").trim() || "Operator";
+    return {
+      name: String(user?.name || user?.username || "").trim(),
+      username: String(user?.username || user?.name || "").trim(),
+      role,
+      status: String(user?.status || "Aktif").trim() || "Aktif",
+      email: String(user?.email || "").trim(),
+      access: normalizeAccessList(user?.access, role)
+    };
+  }
+
+  function normalizeAccessList(access, role) {
+    const allowed = new Set(ACCESS_MENUS.map((item) => item.key));
+    const alias = new Map();
+    ACCESS_MENUS.forEach((item) => {
+      alias.set(normalizeSearch(item.key), item.key);
+      alias.set(normalizeSearch(item.label), item.key);
+    });
+    const values = Array.isArray(access)
+      ? access
+      : String(access || "").split(/[,;|]/);
+    const normalized = values
+      .map((item) => alias.get(normalizeSearch(item)) || String(item || "").trim())
+      .filter((item) => allowed.has(item));
+    return normalized.length ? normalized : getDefaultAccessForRole(role);
+  }
+
+  function getDefaultAccessForRole(role) {
+    const key = normalizeSearch(role || "operator");
+    return (ROLE_ACCESS[key] || ROLE_ACCESS.operator).slice();
+  }
+
+  function getCurrentUserRecord() {
+    const session = readSession() || {};
+    const sessionKey = normalizeSearch(session.username || session.email || session.name || "");
+    const found = state.users.find((user) => {
+      return [user.username, user.email, user.name].some((value) => normalizeSearch(value) === sessionKey);
+    });
+
+    if (!found) {
+      return normalizeUserRecord({
+        name: session.name || session.username || "Akun",
+        username: session.username || "",
+        role: session.role || "Operator",
+        email: session.email || "",
+        access: session.menu || ""
+      });
+    }
+
+    const sessionRole = String(session.role || "").trim();
+    const roleChangedBySession = sessionRole && normalizeSearch(found.role) !== normalizeSearch(sessionRole);
+    const sessionMenu = session.menu || "";
+
+    return normalizeUserRecord({
+      ...found,
+      name: found.name || session.name || session.username || "Akun",
+      username: found.username || session.username || "",
+      role: roleChangedBySession ? sessionRole : found.role,
+      email: found.email || session.email || "",
+      access: roleChangedBySession
+        ? (sessionMenu || getDefaultAccessForRole(sessionRole))
+        : found.access
+    });
+  }
+
+  function canAccess(key) {
+    const user = getCurrentUserRecord();
+    if (isAdminUser(user)) return true;
+    return user.access.includes(key);
+  }
+
+  function applyCurrentUserAccess() {
+    const user = getCurrentUserRecord();
+    const access = new Set(user.access);
+    if (isAdminUser(user)) {
+      ACCESS_MENUS.forEach((item) => access.add(item.key));
+    }
+
+    document.querySelectorAll("[data-access-key]").forEach((element) => {
+      element.hidden = !access.has(element.dataset.accessKey);
+    });
+
+    if (els.addMedicineButton) els.addMedicineButton.hidden = !access.has("edit_obat");
+    renderTableBody();
+
+    if (state.activeView && !canView(state.activeView, access)) {
+      const firstAllowed = ACCESS_MENUS.find((item) => access.has(item.key)) || ACCESS_MENUS[0];
+      switchView(access.has("dashboard") ? "dashboard" : accessKeyToView(firstAllowed.key));
+    }
+  }
+
+  function canView(viewName, access) {
+    const map = {
+      dashboard: "dashboard",
+      "data-obat": "data_obat",
+      "data-karyawan": "data_karyawan",
+      "data-supplier": "data_supplier",
+      "surat-pesanan": "surat_pesanan",
+      "import-data-obat": "import_data_obat",
+      "akun-profil": "akun_profil",
+      "manajemen-pengguna": "manajemen_pengguna"
+    };
+    return access.has(map[viewName] || viewName);
+  }
+
+  function accessKeyToView(key) {
+    const map = {
+      data_obat: "data-obat",
+      data_karyawan: "data-karyawan",
+      data_supplier: "data-supplier",
+      surat_pesanan: "surat-pesanan",
+      import_data_obat: "import-data-obat",
+      akun_profil: "akun-profil",
+      manajemen_pengguna: "manajemen-pengguna"
+    };
+    return map[key] || "dashboard";
+  }
+
+  function isAdminUser(user) {
+    const role = normalizeSearch(user?.role);
+    const username = normalizeSearch(user?.username || user?.name || "");
+    return role === "admin" || role === "administrator" || username === "admin";
   }
 
   function renderEmployees() {
@@ -1225,7 +1478,7 @@
     });
 
     if (!users.length) {
-      els.userTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="6">Belum ada operator.</td></tr>`;
+      els.userTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="7">Belum ada operator.</td></tr>`;
       return;
     }
 
@@ -1238,6 +1491,7 @@
           <td>${escapeHtml(formatCell(user.username))}</td>
           <td><span class="pill-tag">${escapeHtml(formatCell(user.role))}</span></td>
           <td><span class="status-badge ${normalizeSearch(user.status) === "non aktif" || normalizeSearch(user.status) === "nonaktif" ? "is-inactive" : ""}">${escapeHtml(user.status || "Aktif")}</span></td>
+          <td><span class="access-summary">${escapeHtml(formatAccessSummary(user))}</span></td>
           <td>
             <div class="row-actions">
               <button class="table-action table-action-edit" type="button" data-local-action="edit" data-type="user" data-index="${index}" aria-label="Edit user">
@@ -1251,6 +1505,14 @@
         </tr>
       `;
     }).join("");
+  }
+
+  function formatAccessSummary(user) {
+    if (isAdminUser(user)) return "Semua akses";
+    const list = normalizeAccessList(user?.access, user?.role || "Operator");
+    if (list.length >= ACCESS_MENUS.length) return "Semua akses";
+    if (!list.length) return "Tanpa akses";
+    return `${list.length} akses: ${list.slice(0, 3).map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ")}${list.length > 3 ? "..." : ""}`;
   }
 
   function renderUserRoleOptions() {
@@ -1282,17 +1544,50 @@
     els.recordModalTitle.textContent = `${index >= 0 ? "Edit" : "Tambah"} ${schema.title}`;
     els.recordModalStatus.textContent = "Lengkapi field yang tersedia.";
     els.recordModalStatus.dataset.type = "info";
-    els.recordFormFields.innerHTML = schema.fields.map((field) => `
-      <label class="${field.wide ? "span-2" : ""}">
-        ${escapeHtml(field.label)}
-        ${renderRecordControl(field, record[field.key] || "")}
-      </label>
-    `).join("");
+    els.recordFormFields.innerHTML = schema.fields.map((field) => {
+      const value = field.type === "access" ? record[field.key] || getDefaultAccessForRole(record.role) : record[field.key] || "";
+      if (field.type === "access") {
+        return `
+          <div class="span-2 record-access-field">
+            <span>${escapeHtml(field.label)}</span>
+            ${renderRecordControl(field, value)}
+          </div>
+        `;
+      }
+
+      return `
+        <label class="${field.wide ? "span-2" : ""}">
+          ${escapeHtml(field.label)}
+          ${renderRecordControl(field, value)}
+        </label>
+      `;
+    }).join("");
+
+    if (type === "user") {
+      const roleSelect = els.recordFormFields.querySelector('select[name="role"]');
+      if (roleSelect) {
+        roleSelect.addEventListener("change", () => setAccessCheckboxes(getDefaultAccessForRole(roleSelect.value)));
+      }
+    }
 
     showModal(els.recordModal);
   }
 
   function renderRecordControl(field, value) {
+    if (field.type === "access") {
+      const selected = new Set(normalizeAccessList(value, "Operator"));
+      return `
+        <div class="access-picker">
+          ${ACCESS_MENUS.map((item) => `
+            <label>
+              <input type="checkbox" name="${escapeHtml(field.key)}" value="${escapeHtml(item.key)}" ${selected.has(item.key) ? "checked" : ""}>
+              <span>${escapeHtml(item.label)}</span>
+            </label>
+          `).join("")}
+        </div>
+      `;
+    }
+
     if (field.type === "select") {
       return `
         <select name="${escapeHtml(field.key)}" ${field.required ? "required" : ""}>
@@ -1302,6 +1597,13 @@
     }
 
     return `<input name="${escapeHtml(field.key)}" type="${escapeHtml(field.type || "text")}" value="${escapeHtml(value)}" ${field.required ? "required" : ""}>`;
+  }
+
+  function setAccessCheckboxes(access) {
+    const selected = new Set(normalizeAccessList(access, "Operator"));
+    els.recordFormFields.querySelectorAll('input[name="access"]').forEach((input) => {
+      input.checked = selected.has(input.value);
+    });
   }
 
   function closeRecordModal() {
@@ -1316,8 +1618,16 @@
     const formData = new FormData(els.recordForm);
     const record = {};
     schema.fields.forEach((field) => {
+      if (field.type === "access") {
+        record[field.key] = formData.getAll(field.key).map((value) => String(value || "").trim()).filter(Boolean);
+        return;
+      }
       record[field.key] = String(formData.get(field.key) || "").trim();
     });
+
+    if (state.recordType === "user") {
+      Object.assign(record, normalizeUserRecord(record));
+    }
 
     const target = getLocalArray(state.recordType);
     if (state.recordIndex >= 0) {
@@ -1332,6 +1642,7 @@
     renderSuppliers();
     renderUserRoleOptions();
     renderUsers();
+    applyCurrentUserAccess();
     populateMedicineOptions();
   }
 
@@ -1343,6 +1654,7 @@
     renderSuppliers();
     renderUserRoleOptions();
     renderUsers();
+    applyCurrentUserAccess();
   }
 
   function getLocalArray(type) {
@@ -1617,6 +1929,7 @@
 
   function renderReports() {
     if (!els.reportTotal) return;
+    const active = state.rows.filter((row) => getStatusValue(row) !== "nonaktif").length;
     const expiring = state.rows.filter(isExpiringSoon).length;
     const expired = state.rows.filter(isExpired).length;
     const empty = state.rows.filter((row) => parseNumber(row.stok) <= 0).length;
@@ -1624,6 +1937,7 @@
     const out = state.rows.filter((row) => parseNumber(row.stok) === 0).length;
 
     els.reportTotal.textContent = formatNumber(state.rows.length);
+    if (els.reportActive) els.reportActive.textContent = formatNumber(active);
     els.reportExpiring.textContent = formatNumber(expiring);
     els.reportExpired.textContent = formatNumber(expired);
     els.reportEmpty.textContent = formatNumber(empty);
