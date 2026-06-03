@@ -84,6 +84,10 @@
     "harga_resep_3",
     "harga_resep_4"
   ]);
+  const QUANTITY_COLUMNS = new Set([
+    "stok",
+    "stok_min"
+  ]);
 
   const VIEW_TITLES = {
     dashboard: "Dashboard",
@@ -593,7 +597,7 @@
 
   function normalizeSheetRow(row) {
     const result = DATA_COLUMNS.reduce((acc, column) => {
-      acc[column.key] = pickColumnValue(row, column.key);
+      acc[column.key] = normalizeRowValue(column.key, pickColumnValue(row, column.key));
       return acc;
     }, {});
 
@@ -1332,8 +1336,9 @@
   }
 
   function normalizeImportValue(header, value) {
-    if (!PRICE_COLUMNS.has(header)) return value;
-    return normalizePriceValue(value);
+    if (PRICE_COLUMNS.has(header)) return normalizePriceValue(value, header);
+    if (QUANTITY_COLUMNS.has(header)) return normalizeQuantityValue(value);
+    return value;
   }
 
   async function importExcelToGoogleSheet() {
@@ -2947,7 +2952,8 @@
   }
 
   function formatControlValue(key, value) {
-    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value);
+    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value, key);
+    if (QUANTITY_COLUMNS.has(key)) return normalizeQuantityValue(value);
     if (key !== "expired") return String(value ?? "");
     const date = parseDateValue(value);
     if (!date) return "";
@@ -2957,15 +2963,33 @@
   }
 
   function formatCell(value, key = "") {
-    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value) || "-";
+    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value, key) || "-";
+    if (QUANTITY_COLUMNS.has(key)) return normalizeQuantityValue(value) || "-";
     const text = String(value ?? "").trim();
     return text || "-";
   }
 
-  function normalizePriceValue(value) {
+  function normalizeRowValue(key, value) {
+    if (PRICE_COLUMNS.has(key)) return normalizePriceValue(value, key);
+    if (QUANTITY_COLUMNS.has(key)) return normalizeQuantityValue(value);
+    return value;
+  }
+
+  function normalizePriceValue(value, key = "") {
     const text = String(value ?? "").trim();
     if (!text) return "";
     const cleaned = text.replace(/[^\d,.-]/g, "");
+    const digitsOnly = cleaned.replace(/[^\d-]/g, "");
+
+    if (key === "harga_beli" && shouldTrimCorruptedHargaBeli(digitsOnly)) {
+      return formatIntegerPrice(digitsOnly.slice(0, -3));
+    }
+
+    if (key === "harga_beli" && /^-?\d{1,3}(?:\.\d{3}){2,}$/.test(cleaned)) {
+      const dotParts = cleaned.split(".");
+      const lastPart = dotParts[dotParts.length - 1] || "";
+      if (lastPart !== "000") return formatIntegerPrice(dotParts.slice(0, -1).join(""));
+    }
 
     if (/^-?\d{1,3}(?:\.\d{3})+,\d{3}$/.test(cleaned)) {
       return formatIntegerPrice(cleaned.replace(/,\d{3}$/, ""));
@@ -2998,6 +3022,39 @@
     }
 
     return text;
+  }
+
+  function shouldTrimCorruptedHargaBeli(digitsOnly) {
+    const text = String(digitsOnly || "");
+    return /^-?\d{7,}$/.test(text) && !/000$/.test(text);
+  }
+
+  function normalizeQuantityValue(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    const cleaned = text.replace(/[^\d,.-]/g, "");
+
+    if (/^-?\d+,\d{3}$/.test(cleaned)) {
+      return cleanDecimalText(cleaned.replace(/,\d{3}$/, ""));
+    }
+
+    if (/^-?\d+\.\d{3}$/.test(cleaned)) {
+      const parts = cleaned.split(".");
+      const tail = parts[parts.length - 1] || "";
+      if (tail !== "000") return cleanDecimalText(parts.slice(0, -1).join("."));
+    }
+
+    if (/^-?\d+,\d{1,2}$/.test(cleaned)) {
+      return cleanDecimalText(cleaned.replace(",", "."));
+    }
+
+    return text;
+  }
+
+  function cleanDecimalText(value) {
+    const numeric = Number(String(value || "").replace(/[^\d.-]/g, ""));
+    if (!Number.isFinite(numeric)) return String(value || "");
+    return String(numeric);
   }
 
   function formatIntegerPrice(value) {
