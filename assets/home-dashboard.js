@@ -2396,6 +2396,14 @@
     try {
       const dataUrl = await readFileAsDataUrl(file);
       const photo = await resizeProfilePhoto(dataUrl);
+
+      if (photo.length > 42000) {
+        state.pendingProfilePhoto = null;
+        state.pendingProfilePhotoName = "";
+        setProfileStatus("Foto masih terlalu besar untuk database. Coba foto lain yang lebih kecil.", "error");
+        return;
+      }
+
       state.pendingProfilePhoto = photo;
       state.pendingProfilePhotoName = file.name || "foto profil";
       renderProfile();
@@ -2456,14 +2464,14 @@
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
-        const maxSize = 256;
+        const maxSize = 128;
         const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(image.width * scale));
         canvas.height = Math.max(1, Math.round(image.height * scale));
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.76));
+        resolve(canvas.toDataURL("image/jpeg", 0.62));
       };
       image.onerror = () => resolve(dataUrl);
       image.src = dataUrl;
