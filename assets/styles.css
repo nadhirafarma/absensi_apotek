@@ -6315,3 +6315,86 @@ body.sidebar-open #view-data-obat.is-active .data-workspace > .data-toolbar {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Scanner and menu polish */
+.global-sidebar-toggle svg path {
+  transition: d 0.18s ease, transform 0.18s ease;
+}
+
+.dashboard-modal.scanner-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: clamp(14px, 3vw, 28px) !important;
+  background: rgba(13, 24, 52, 0.52) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.dashboard-modal.scanner-modal[hidden] {
+  display: none !important;
+}
+
+.scanner-modal-card {
+  position: relative !important;
+  z-index: 2147483001 !important;
+  width: min(94vw, 520px) !important;
+  max-height: min(90dvh, 760px) !important;
+  overflow: auto !important;
+}
+
+.scanner-preview {
+  position: relative !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 8px !important;
+  background: #061532 !important;
+  aspect-ratio: 4 / 3 !important;
+}
+
+.scanner-preview video {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: block !important;
+  object-fit: cover !important;
+}
+
+.scanner-preview .scanner-frame {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: min(78%, 360px) !important;
+  height: auto !important;
+  aspect-ratio: 3.2 / 1 !important;
+  inset: auto !important;
+  transform: translate(-50%, -50%) !important;
+  border: 2px solid rgba(20, 198, 112, 0.96) !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 0 0 999px rgba(4, 13, 32, 0.22),
+    0 0 22px rgba(20, 198, 112, 0.26) !important;
+  background: rgba(8, 28, 62, 0.05) !important;
+  pointer-events: none !important;
+}
+
+.scanner-preview .scanner-frame::before,
+.scanner-preview .scanner-frame::after {
+  content: none !important;
+}
+
+@media (max-width: 760px) {
+  .scanner-modal-card {
+    width: min(92vw, 430px) !important;
+    max-height: calc(100dvh - 28px) !important;
+  }
+
+  .scanner-preview {
+    aspect-ratio: 3 / 4 !important;
+  }
+
+  .scanner-preview .scanner-frame {
+    width: min(82%, 340px) !important;
+  }
+}

@@ -991,8 +991,19 @@
   function getDashboardScanCrop() {
     const sourceWidth = els.scannerVideo.videoWidth || 1280;
     const sourceHeight = els.scannerVideo.videoHeight || 720;
-    const cropWidth = Math.round(sourceWidth * 0.76);
-    const cropHeight = Math.round(sourceHeight * 0.28);
+    const frameRatio = 3.2;
+    const maxWidth = sourceWidth * 0.78;
+    const maxHeight = sourceHeight * 0.48;
+    let cropWidth = Math.min(maxWidth, maxHeight * frameRatio);
+    let cropHeight = cropWidth / frameRatio;
+
+    if (cropHeight > maxHeight) {
+      cropHeight = maxHeight;
+      cropWidth = cropHeight * frameRatio;
+    }
+
+    cropWidth = Math.round(cropWidth);
+    cropHeight = Math.round(cropHeight);
 
     return {
       sourceX: Math.round((sourceWidth - cropWidth) / 2),
@@ -2708,6 +2719,20 @@
     if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
     if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
     if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
+    updateSidebarToggleIcon(collapsed);
+  }
+
+  function updateSidebarToggleIcon(collapsed) {
+    if (!els.sidebarToggle) return;
+
+    const paths = Array.from(els.sidebarToggle.querySelectorAll("svg path"));
+    const lines = collapsed
+      ? ["M7 4v16", "M12 4v16", "M17 4v16"]
+      : ["M4 7h16", "M4 12h16", "M4 17h16"];
+
+    paths.forEach((path, index) => {
+      if (lines[index]) path.setAttribute("d", lines[index]);
+    });
   }
 
   function closeSidebarProfileDropdown() {
