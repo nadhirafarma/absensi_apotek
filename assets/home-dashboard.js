@@ -534,7 +534,10 @@
         role: String(user.role || "Operator").trim() || "Operator",
         status: String(user.status || "Aktif").trim() || "Aktif",
         email: String(user.email || "").trim(),
-        access: getDefaultAccessForRole(user.role || "Operator")
+        phone: String(user.phone || user.noHp || "").trim(),
+        address: String(user.address || user.alamat || "").trim(),
+        photo: String(user.profilePhoto || user.photo || "").trim(),
+        access: normalizeAccessList(user.access || user.menu, user.role || "Operator")
       })).filter((user) => user.name || user.username);
 
       syncEmployeeSeed();
@@ -1622,6 +1625,19 @@
       return;
     }
 
+    if (type === "user") {
+      const record = state.users[index] || {};
+      try {
+        const result = await postToApi({ action: "deleteLoginUser", username: record.username || record.name, email: record.email || "" });
+        if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Apps Script belum menerima hapus operator.");
+        deleteLocalRecord(type, index);
+        closeDeleteModal();
+      } catch (error) {
+        if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
+      }
+      return;
+    }
+
     deleteLocalRecord(type, index);
     closeDeleteModal();
   }
@@ -1676,12 +1692,41 @@
 
     state.users.forEach((user) => {
       const key = normalizeSearch(user.username || user.name);
-      if (!byUsername.has(key)) byUsername.set(key, normalizeUserRecord(user));
+      if (key) byUsername.set(key, normalizeUserRecord(user));
     });
 
     state.users = Array.from(byUsername.values()).map(normalizeUserRecord);
     writeStoredArray(USER_KEY, state.users);
     renderUserRoleOptions();
+  }
+
+  function upsertUserRecord(record, previousRecord = {}) {
+    const nextRecord = normalizeUserRecord(record);
+    const matchKeys = [
+      nextRecord.username,
+      nextRecord.email,
+      nextRecord.name,
+      previousRecord.username,
+      previousRecord.email,
+      previousRecord.name
+    ].map(normalizeSearch).filter(Boolean);
+    const targetIndex = state.users.findIndex((user) => {
+      return [user.username, user.email, user.name]
+        .map(normalizeSearch)
+        .filter(Boolean)
+        .some((key) => matchKeys.includes(key));
+    });
+
+    if (targetIndex >= 0) {
+      state.users[targetIndex] = { ...state.users[targetIndex], ...nextRecord };
+    } else {
+      state.users.push(nextRecord);
+    }
+
+    writeStoredArray(USER_KEY, state.users);
+    renderUserRoleOptions();
+
+    return nextRecord;
   }
 
   function normalizeUserRecord(user) {
@@ -1692,7 +1737,10 @@
       role,
       status: String(user?.status || "Aktif").trim() || "Aktif",
       email: String(user?.email || "").trim(),
-      access: normalizeAccessList(user?.access, role)
+      phone: String(user?.phone || user?.noHp || "").trim(),
+      address: String(user?.address || user?.alamat || "").trim(),
+      photo: String(user?.photo || user?.profilePhoto || "").trim(),
+      access: normalizeAccessList(user?.access || user?.menu, role)
     };
   }
 
@@ -1733,6 +1781,9 @@
         username: session.username || "",
         role: session.role || "Operator",
         email: session.email || "",
+        phone: session.phone || "",
+        address: session.address || "",
+        photo: session.profilePhoto || session.photo || "",
         access: session.menu || ""
       });
     }
@@ -2015,13 +2066,13 @@
     hideModal(els.recordModal);
   }
 
-  function saveRecord(event) {
+  async function saveRecord(event) {
     event.preventDefault();
     const schema = LOCAL_SCHEMAS[state.recordType];
     if (!schema) return;
 
     const formData = new FormData(els.recordForm);
-    const record = {};
+    let record = {};
     schema.fields.forEach((field) => {
       if (field.type === "access") {
         record[field.key] = formData.getAll(field.key).map((value) => String(value || "").trim()).filter(Boolean);
@@ -2040,13 +2091,47 @@
 
     const target = getLocalArray(state.recordType);
     const isEdit = state.recordIndex >= 0;
-    if (isEdit) {
-      target[state.recordIndex] = record;
-    } else {
-      target.push(record);
+    const previousRecord = isEdit ? target[state.recordIndex] || {} : {};
+
+    if (state.recordType === "user") {
+      if (els.recordModalStatus) {
+        els.recordModalStatus.textContent = "Menyimpan hak akses ke Google Sheet...";
+        els.recordModalStatus.dataset.type = "info";
+      }
+
+      try {
+        const result = await postToApi({
+          action: "saveLoginUser",
+          user: record,
+          originalUsername: previousRecord.username || "",
+          originalEmail: previousRecord.email || ""
+        });
+
+        if (!result || (result.success !== true && result.ok !== true)) {
+          throw new Error(result?.message || "Hak akses belum tersimpan ke Google Sheet.");
+        }
+
+        record = normalizeUserRecord(result.user || record);
+        upsertUserRecord(record, previousRecord);
+      } catch (error) {
+        if (els.recordModalStatus) {
+          els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
+          els.recordModalStatus.dataset.type = "error";
+        }
+        return;
+      }
     }
 
-    persistLocalArray(state.recordType, target);
+    if (state.recordType !== "user") {
+      if (isEdit) {
+        target[state.recordIndex] = record;
+      } else {
+        target.push(record);
+      }
+
+      persistLocalArray(state.recordType, target);
+    }
+
     addProfileActivity(isEdit ? `Edit ${schema.title}` : `Tambah ${schema.title}`, record.name || record.username || schema.title);
     closeRecordModal();
     renderEmployees();
@@ -2197,10 +2282,10 @@
     return {
       name: user?.name || stored.name || session.name || session.username || "Akun",
       email: user?.email || stored.email || session.email || "",
-      phone: stored.phone || "",
+      phone: user?.phone || stored.phone || session.phone || "",
       job: formatRoleLabel(role),
-      address: stored.address || "",
-      photo: stored.photo || session.profilePhoto || session.photo || "",
+      address: user?.address || stored.address || session.address || "",
+      photo: user?.photo || user?.profilePhoto || stored.photo || session.profilePhoto || session.photo || "",
       username: user?.username || session.username || stored.username || "",
       role: formatRoleLabel(role)
     };
@@ -2233,6 +2318,7 @@
     const loadingToken = startAppLoading("Menyimpan profil...");
     try {
       const currentProfile = getProfileData();
+      const currentUser = getCurrentUserRecord();
       const hasPendingPhotoChange = state.pendingProfilePhoto !== null;
       const profile = {
         name: els.profileNameInput.value.trim(),
@@ -2243,6 +2329,42 @@
         photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || "",
         profileKey: getProfileStorageIdentity()
       };
+      const userPayload = {
+        ...currentUser,
+        name: profile.name,
+        username: currentUser.username || profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.address,
+        role: currentUser.role || currentProfile.role || "Operator",
+        status: currentUser.status || "Aktif",
+        access: currentUser.access || [],
+        profilePhoto: profile.photo,
+        photo: profile.photo
+      };
+      const result = await postToApi({
+        action: "saveLoginUser",
+        user: userPayload,
+        originalUsername: currentUser.username || currentProfile.username || "",
+        originalEmail: currentUser.email || currentProfile.email || ""
+      });
+
+      if (!result || (result.success !== true && result.ok !== true)) {
+        throw new Error(result?.message || "Google Sheet belum menerima perubahan profil.");
+      }
+
+      const savedUser = upsertUserRecord(result.user || userPayload, currentUser);
+      const session = readSession() || {};
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        ...session,
+        name: savedUser.name || profile.name,
+        email: savedUser.email || profile.email,
+        phone: savedUser.phone || profile.phone,
+        address: savedUser.address || profile.address,
+        role: savedUser.role || session.role,
+        menu: (savedUser.access || []).join(","),
+        profilePhoto: savedUser.photo || profile.photo
+      }));
       localStorage.setItem(getScopedProfileKey(), JSON.stringify(profile));
       localStorage.removeItem(PROFILE_KEY);
       await delay(hasPendingPhotoChange ? 650 : 540);
@@ -2251,8 +2373,8 @@
       syncCurrentUserName(profile.name, profile.email);
       hydrateProfileName();
       renderProfile();
-      setProfileStatus("Profil berhasil disimpan di perangkat ini.", "success");
-      addProfileActivity("Profil diperbarui", "Informasi profil lokal disimpan");
+      setProfileStatus("Profil berhasil disimpan ke Google Sheet.", "success");
+      addProfileActivity("Profil diperbarui", "Informasi profil disimpan ke Google Sheet");
     } catch (error) {
       setProfileStatus(`Profil gagal disimpan: ${error.message}`, "error");
     } finally {
@@ -2334,14 +2456,14 @@
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
-        const maxSize = 512;
+        const maxSize = 256;
         const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(image.width * scale));
         canvas.height = Math.max(1, Math.round(image.height * scale));
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.84));
+        resolve(canvas.toDataURL("image/jpeg", 0.76));
       };
       image.onerror = () => resolve(dataUrl);
       image.src = dataUrl;
