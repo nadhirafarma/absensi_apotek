@@ -2190,7 +2190,7 @@
 
   function getProfileData() {
     const session = readSession() || {};
-    const stored = readObject(PROFILE_KEY);
+    const stored = readScopedProfileData();
     const user = state.users.length ? getCurrentUserRecord() : null;
     const role = user?.role || session.role || stored.job || "Operator";
 
@@ -2206,6 +2206,28 @@
     };
   }
 
+  function getProfileStorageIdentity() {
+    const session = readSession() || {};
+    const user = state.users.length ? getCurrentUserRecord() : null;
+    const rawIdentity = user?.email || session.email || user?.username || session.username || user?.name || session.name || "akun";
+    return normalizeKey(rawIdentity) || "akun";
+  }
+
+  function getScopedProfileKey() {
+    return `${PROFILE_KEY}.${getProfileStorageIdentity()}`;
+  }
+
+  function readScopedProfileData() {
+    const scoped = readObject(getScopedProfileKey());
+    if (Object.keys(scoped).length) return scoped;
+
+    const legacy = readObject(PROFILE_KEY);
+    const legacyIdentity = normalizeKey(legacy.profileKey || legacy.email || legacy.username || "");
+    return legacyIdentity && legacyIdentity === getProfileStorageIdentity()
+      ? legacy
+      : {};
+  }
+
   async function saveProfile(event) {
     event.preventDefault();
     const loadingToken = startAppLoading("Menyimpan profil...");
@@ -2218,9 +2240,11 @@
         phone: els.profilePhoneInput.value.trim(),
         job: currentProfile.role || "Operator",
         address: els.profileAddressInput.value.trim(),
-        photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || ""
+        photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || "",
+        profileKey: getProfileStorageIdentity()
       };
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      localStorage.setItem(getScopedProfileKey(), JSON.stringify(profile));
+      localStorage.removeItem(PROFILE_KEY);
       await delay(hasPendingPhotoChange ? 650 : 540);
       state.pendingProfilePhoto = null;
       state.pendingProfilePhotoName = "";
@@ -2860,9 +2884,8 @@
 
   function hydrateProfileHeader(profile) {
     const session = readSession();
-    const stored = readObject(PROFILE_KEY);
-    const name = String(profile?.name || stored.name || session?.name || session?.username || session?.email || "Akun").trim() || "Akun";
-    const role = formatRoleLabel(profile?.role || session?.role || stored.job || "Operator");
+    const name = String(profile?.name || session?.name || session?.username || session?.email || "Akun").trim() || "Akun";
+    const role = formatRoleLabel(profile?.role || session?.role || "Operator");
     const accountName = document.getElementById("profileAccountName");
     const accountMeta = document.getElementById("profileAccountMeta");
 
