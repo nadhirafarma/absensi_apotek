@@ -480,7 +480,7 @@
   }
 
   async function fetchDataObat(options = {}) {
-    const loadingToken = startAppLoading(options.manual ? "Menyinkronkan data obat..." : "Memuat data obat...");
+    const loadingToken = options.manual ? startAppLoading("Menyinkronkan data obat...") : 0;
     setLoading(true, options.manual ? "Memperbarui data obat..." : "Memuat data obat dari Google Sheet...");
 
     try {
@@ -1738,18 +1738,18 @@
     }
 
     const sessionRole = String(session.role || "").trim();
-    const roleChangedBySession = sessionRole && normalizeSearch(found.role) !== normalizeSearch(sessionRole);
+    const role = found.role || sessionRole || "Operator";
     const sessionMenu = session.menu || "";
 
     return normalizeUserRecord({
       ...found,
       name: found.name || session.name || session.username || "Akun",
       username: found.username || session.username || "",
-      role: roleChangedBySession ? sessionRole : found.role,
+      role,
       email: found.email || session.email || "",
-      access: roleChangedBySession
-        ? (sessionMenu || getDefaultAccessForRole(sessionRole))
-        : found.access
+      access: found.access && found.access.length
+        ? found.access
+        : (sessionMenu || getDefaultAccessForRole(role))
     });
   }
 
@@ -2174,6 +2174,7 @@
       : profile;
 
     renderProfileAvatars(previewProfile);
+    hydrateProfileHeader(profile);
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
@@ -2190,15 +2191,18 @@
   function getProfileData() {
     const session = readSession() || {};
     const stored = readObject(PROFILE_KEY);
+    const user = state.users.length ? getCurrentUserRecord() : null;
+    const role = user?.role || session.role || stored.job || "Operator";
+
     return {
-      name: stored.name || session.name || session.username || "Akun",
-      email: stored.email || session.email || "",
+      name: user?.name || stored.name || session.name || session.username || "Akun",
+      email: user?.email || stored.email || session.email || "",
       phone: stored.phone || "",
-      job: session.role || stored.job || "Operator",
+      job: formatRoleLabel(role),
       address: stored.address || "",
       photo: stored.photo || session.profilePhoto || session.photo || "",
-      username: session.username || stored.username || "",
-      role: session.role || stored.job || "Operator"
+      username: user?.username || session.username || stored.username || "",
+      role: formatRoleLabel(role)
     };
   }
 
@@ -2850,11 +2854,35 @@
   }
 
   function hydrateProfileName() {
-    if (!els.profileName) return;
+    const profile = getProfileData();
+    hydrateProfileHeader(profile);
+  }
+
+  function hydrateProfileHeader(profile) {
     const session = readSession();
     const stored = readObject(PROFILE_KEY);
-    const name = String(stored.name || session?.name || session?.username || session?.email || "Akun").trim() || "Akun";
-    els.profileName.textContent = name;
+    const name = String(profile?.name || stored.name || session?.name || session?.username || session?.email || "Akun").trim() || "Akun";
+    const role = formatRoleLabel(profile?.role || session?.role || stored.job || "Operator");
+    const accountName = document.getElementById("profileAccountName");
+    const accountMeta = document.getElementById("profileAccountMeta");
+
+    if (els.profileName) els.profileName.textContent = name;
+    if (accountName) accountName.textContent = name;
+    if (accountMeta) accountMeta.textContent = role;
+  }
+
+  function formatRoleLabel(value) {
+    const role = normalizeSearch(value || "operator");
+    const labels = {
+      owner: "Owner",
+      admin: "Administrator",
+      administrator: "Administrator",
+      operator: "Operator",
+      kasir: "Kasir",
+      apoteker: "Apoteker",
+      "staf gudang": "Staf Gudang"
+    };
+    return labels[role] || String(value || "Operator").trim() || "Operator";
   }
 
   function getInitials(value) {
