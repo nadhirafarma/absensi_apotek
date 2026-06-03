@@ -5589,7 +5589,7 @@ body.sidebar-collapsed .app-sidebar {
 }
 
 .security-reset-card {
-  width: min(100%, 680px);
+  width: min(100%, 560px);
   margin-inline: auto;
 }
 

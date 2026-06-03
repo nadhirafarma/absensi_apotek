@@ -2373,7 +2373,7 @@
       syncCurrentUserName(profile.name, profile.email);
       hydrateProfileName();
       renderProfile();
-      setProfileStatus("Profil berhasil disimpan ke Google Sheet.", "success");
+      setProfileStatus("Profil berhasil disimpan", "success");
       addProfileActivity("Profil diperbarui", "Informasi profil disimpan ke Google Sheet");
     } catch (error) {
       setProfileStatus(`Profil gagal disimpan: ${error.message}`, "error");
@@ -2965,6 +2965,19 @@
   function normalizePriceValue(value) {
     const text = String(value ?? "").trim();
     if (!text) return "";
+    const cleaned = text.replace(/[^\d,.-]/g, "");
+
+    if (/^-?\d{1,3}(?:\.\d{3})+,\d{3}$/.test(cleaned)) {
+      return formatIntegerPrice(cleaned.replace(/,\d{3}$/, ""));
+    }
+
+    if (/^-?\d+,\d{3}$/.test(cleaned)) {
+      return formatIntegerPrice(cleaned.replace(/,\d{3}$/, ""));
+    }
+
+    if (/^-?\d{4,}\.\d{1,3}$/.test(cleaned)) {
+      return formatIntegerPrice(cleaned.replace(/\.\d{1,3}$/, ""));
+    }
 
     if (/^\d+,\d{1,2}$/.test(text)) {
       const parts = text.split(",");
@@ -2985,6 +2998,13 @@
     }
 
     return text;
+  }
+
+  function formatIntegerPrice(value) {
+    const text = String(value ?? "").replace(/[^\d-]/g, "");
+    if (!text || text === "-") return "";
+    const numeric = Number(text);
+    return Number.isFinite(numeric) ? new Intl.NumberFormat("id-ID").format(numeric) : String(value || "");
   }
 
   function formatNumber(value) {
