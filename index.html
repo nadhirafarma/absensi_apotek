@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260603-profile-photo-menu-v10">
-  <script defer src="assets/auth-guard.js?v=20260603-profile-photo-menu-v10"></script>
-  <script defer src="assets/app.js?v=20260603-profile-photo-menu-v10"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260603-security-access-mobile-v11">
+  <script defer src="assets/auth-guard.js?v=20260603-security-access-mobile-v11"></script>
+  <script defer src="assets/app.js?v=20260603-security-access-mobile-v11"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260603-profile-photo-menu-v10"></script>
+  <script defer src="assets/home-dashboard.js?v=20260603-security-access-mobile-v11"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -495,9 +495,23 @@
                 <form class="security-form security-reset-card" id="profilePasswordForm">
                   <h3>Ubah Password</h3>
                   <p>Password akan disimpan ke Google Sheet user sesuai email akun aktif.</p>
-                  <div class="form-grid">
-                    <label>Password Baru<input id="profileNewPasswordInput" type="password" autocomplete="new-password"></label>
-                    <label>Konfirmasi Password<input id="profileConfirmPasswordInput" type="password" autocomplete="new-password"></label>
+                  <div class="security-password-stack">
+                    <label class="password-field">
+                      <span>Password Baru</span>
+                      <input id="profileNewPasswordInput" type="password" autocomplete="new-password">
+                      <button class="password-visibility-toggle" type="button" data-password-target="profileNewPasswordInput" aria-label="Tampilkan password baru">
+                        <svg class="eye-off-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path><path d="M3 3l18 18"></path></svg>
+                      </button>
+                      <span class="password-validity-icon" id="profilePasswordStrengthIcon" hidden></span>
+                    </label>
+                    <label class="password-field">
+                      <span>Konfirmasi Password</span>
+                      <input id="profileConfirmPasswordInput" type="password" autocomplete="new-password">
+                      <button class="password-visibility-toggle" type="button" data-password-target="profileConfirmPasswordInput" aria-label="Tampilkan konfirmasi password">
+                        <svg class="eye-off-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path><path d="M3 3l18 18"></path></svg>
+                      </button>
+                      <span class="password-validity-icon" id="profilePasswordMatchIcon" hidden></span>
+                    </label>
                   </div>
                   <ul class="password-rules">
                     <li>Password baru minimal 6 karakter.</li>
@@ -672,6 +686,15 @@
       <h2 id="homeNotificationTitle">Update Data Obat</h2>
       <p id="homeNotificationMessage">Memuat informasi upload data obat.</p>
       <button class="secondary-action notification-confirm" id="homeNotificationOkButton" type="button">Mengerti</button>
+    </div>
+  </section>
+
+  <section class="app-loading-overlay" id="appLoadingOverlay" hidden aria-live="polite" aria-busy="true">
+    <div class="app-loading-card">
+      <span class="app-loading-orbit">
+        <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+      </span>
+      <strong id="appLoadingText">Memproses...</strong>
     </div>
   </section>
 </body>

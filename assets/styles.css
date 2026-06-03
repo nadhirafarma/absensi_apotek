@@ -5308,6 +5308,177 @@ body.theme-dark .profile-photo-picker input {
   color: #dbe9ff;
 }
 
+body::before {
+  display: none !important;
+}
+
+.security-password-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.password-field {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  color: #092965;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.password-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 82px 0 14px;
+  border: 1px solid rgba(187, 214, 247, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #092965;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  right: 12px;
+  bottom: 7px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #516994;
+}
+
+.password-visibility-toggle:hover {
+  background: #eef6ff;
+  color: var(--blue);
+}
+
+.password-visibility-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.password-validity-icon {
+  position: absolute;
+  right: 48px;
+  bottom: 10px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.password-validity-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.password-validity-icon.is-valid {
+  background: #e8fff2;
+  color: #12a85e;
+}
+
+.password-validity-icon.is-invalid {
+  background: #fff0f2;
+  color: #e52d46;
+}
+
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 25, 58, 0.34);
+  backdrop-filter: blur(12px);
+}
+
+.app-loading-overlay[hidden] {
+  display: none;
+}
+
+.app-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  min-width: 220px;
+  padding: 24px;
+  border: 1px solid rgba(187, 214, 247, 0.55);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #092965;
+  box-shadow: 0 28px 80px rgba(17, 69, 134, 0.26);
+}
+
+.app-loading-orbit {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+}
+
+.app-loading-orbit::before,
+.app-loading-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--blue);
+  border-right-color: var(--pink);
+  animation: nadhiraSpin 1.15s linear infinite;
+}
+
+.app-loading-orbit::after {
+  inset: 9px;
+  animation-duration: 0.82s;
+  animation-direction: reverse;
+  border-top-color: rgba(15, 169, 104, 0.95);
+  border-right-color: rgba(19, 120, 238, 0.8);
+}
+
+.app-loading-orbit img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(19, 120, 238, 0.24));
+}
+
+@keyframes nadhiraSpin {
+  to { transform: rotate(360deg); }
+}
+
+.scanner-frame {
+  inset: 38% 12%;
+  border: 2px solid rgba(18, 185, 102, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(3, 15, 38, 0.18), 0 0 22px rgba(18, 185, 102, 0.34);
+  background: transparent;
+}
+
+body.theme-dark .password-field,
+body.theme-dark .password-field input {
+  color: #eef5ff;
+}
+
+body.theme-dark .password-field input {
+  background: rgba(9, 24, 50, 0.94);
+  border-color: rgba(80, 113, 164, 0.9);
+}
+
+body.theme-dark .app-loading-card {
+  background: rgba(15, 33, 66, 0.96);
+  border-color: rgba(80, 113, 164, 0.95);
+  color: #eef5ff;
+}
+
 @media (max-width: 760px) {
   .global-sidebar-toggle {
     top: 14px;
@@ -5325,5 +5496,42 @@ body.theme-dark .profile-photo-picker input {
 
   .dashboard-title h1 {
     margin-top: 0;
+  }
+
+  .header-profile-menu {
+    left: auto !important;
+    right: 14px !important;
+    top: 14px !important;
+  }
+
+  .dashboard-status {
+    grid-template-columns: minmax(0, 1.35fr) minmax(80px, 0.8fr) 42px;
+  }
+
+  .report-stats,
+  .dashboard-stats.report-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .report-stats .stat-card {
+    min-height: 112px;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .report-stats .stat-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+
+  .report-stats .stat-card strong {
+    font-size: 1.35rem;
+  }
+
+  .report-stats .stat-card small,
+  .report-stats .stat-card em {
+    font-size: 0.72rem;
   }
 }

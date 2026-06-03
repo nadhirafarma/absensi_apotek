@@ -22,6 +22,8 @@
     { key: "nama", label: "Nama" },
     { key: "kategori", label: "Kategori" },
     { key: "stok", label: "Stok", type: "number" },
+    { key: "satuan_beli", label: "Satuan Beli" },
+    { key: "harga_beli", label: "Harga Beli" },
     { key: "satuan_1", label: "Satuan 1" },
     { key: "isi_1", label: "Isi 1" },
     { key: "harga_jual_1", label: "Harga Jual 1" },
@@ -34,8 +36,6 @@
     { key: "satuan_4", label: "Satuan 4" },
     { key: "isi_4", label: "Isi 4" },
     { key: "harga_jual_4", label: "Harga Jual 4" },
-    { key: "satuan_beli", label: "Satuan Beli" },
-    { key: "harga_beli", label: "Harga Beli" },
     { key: "stok_min", label: "Stok Min", type: "number" },
     { key: "harga_resep_1", label: "Harga Resep 1" },
     { key: "harga_resep_2", label: "Harga Resep 2" },
@@ -56,6 +56,8 @@
     "nama",
     "kategori",
     "stok",
+    "satuan_beli",
+    "harga_beli",
     "satuan_1",
     "isi_1",
     "harga_jual_1",
@@ -65,8 +67,6 @@
     "satuan_3",
     "isi_3",
     "harga_jual_3",
-    "satuan_beli",
-    "harga_beli",
     "stok_min",
     "expired",
     "suplier",
@@ -100,6 +100,7 @@
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi_face_id", label: "Absensi Face ID" },
     { key: "data_obat", label: "Data Obat" },
+    { key: "filter_data_obat", label: "Filter Data Obat" },
     { key: "edit_obat", label: "Tambah/Edit Obat" },
     { key: "hapus_obat", label: "Hapus Obat" },
     { key: "data_karyawan", label: "Data Karyawan" },
@@ -107,16 +108,17 @@
     { key: "surat_pesanan", label: "Surat Pesanan Pembelian" },
     { key: "import_data_obat", label: "Import Data Obat" },
     { key: "akun_profil", label: "Akun & Profil" },
-    { key: "manajemen_pengguna", label: "Manajemen Pengguna" }
+    { key: "manajemen_pengguna", label: "Manajemen Pengguna" },
+    { key: "akses_semua_data", label: "Akses Semua Data (Owner)" }
   ];
 
   const ROLE_ACCESS = {
-    administrator: ACCESS_MENUS.map((item) => item.key),
-    admin: ACCESS_MENUS.map((item) => item.key),
     owner: ACCESS_MENUS.map((item) => item.key),
-    apoteker: ["dashboard", "absensi_face_id", "data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    administrator: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    admin: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    apoteker: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
     kasir: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
     operator: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"]
   };
 
@@ -186,7 +188,11 @@
     unitCount: 4,
     recordType: "",
     recordIndex: -1,
-    pendingDelete: null
+    pendingDelete: null,
+    pendingProfilePhoto: null,
+    pendingProfilePhotoName: "",
+    appLoadingTimer: null,
+    appLoadingToken: 0
   };
 
   const els = {};
@@ -218,6 +224,8 @@
     Object.assign(els, {
       sidebarToggle: document.getElementById("sidebarToggle"),
       sidebarScrim: document.getElementById("sidebarScrim"),
+      appLoadingOverlay: document.getElementById("appLoadingOverlay"),
+      appLoadingText: document.getElementById("appLoadingText"),
       viewTitle: document.getElementById("dashboardViewTitle"),
       viewButtons: Array.from(document.querySelectorAll("[data-view-target]")),
       views: Array.from(document.querySelectorAll(".dashboard-view")),
@@ -314,6 +322,9 @@
       profilePasswordForm: document.getElementById("profilePasswordForm"),
       profileNewPasswordInput: document.getElementById("profileNewPasswordInput"),
       profileConfirmPasswordInput: document.getElementById("profileConfirmPasswordInput"),
+      profilePasswordStrengthIcon: document.getElementById("profilePasswordStrengthIcon"),
+      profilePasswordMatchIcon: document.getElementById("profilePasswordMatchIcon"),
+      profilePasswordToggleButtons: Array.from(document.querySelectorAll("[data-password-target]")),
       profileActivityList: document.getElementById("profileActivityList"),
       clearProfileActivityButton: document.getElementById("clearProfileActivityButton"),
       profileThemeSelect: document.getElementById("profileThemeSelect"),
@@ -419,6 +430,12 @@
     if (els.profilePhotoInput) els.profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
     if (els.profileRemovePhotoButton) els.profileRemovePhotoButton.addEventListener("click", removeProfilePhoto);
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
+    [els.profileNewPasswordInput, els.profileConfirmPasswordInput].forEach((input) => {
+      if (input) input.addEventListener("input", updateProfilePasswordIndicators);
+    });
+    els.profilePasswordToggleButtons.forEach((button) => {
+      button.addEventListener("click", togglePasswordVisibility);
+    });
     if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
@@ -463,6 +480,7 @@
   }
 
   async function fetchDataObat(options = {}) {
+    const loadingToken = startAppLoading(options.manual ? "Menyinkronkan data obat..." : "Memuat data obat...");
     setLoading(true, options.manual ? "Memperbarui data obat..." : "Memuat data obat dari Google Sheet...");
 
     try {
@@ -499,6 +517,8 @@
       renderUploadInfo();
       updateNotificationState();
       renderReports();
+    } finally {
+      endAppLoading(loadingToken);
     }
   }
 
@@ -964,8 +984,8 @@
   function getDashboardScanCrop() {
     const sourceWidth = els.scannerVideo.videoWidth || 1280;
     const sourceHeight = els.scannerVideo.videoHeight || 720;
-    const cropWidth = Math.round(sourceWidth * 0.84);
-    const cropHeight = Math.round(sourceHeight * 0.58);
+    const cropWidth = Math.round(sourceWidth * 0.76);
+    const cropHeight = Math.round(sourceHeight * 0.28);
 
     return {
       sourceX: Math.round((sourceWidth - cropWidth) / 2),
@@ -1197,6 +1217,7 @@
       return;
     }
 
+    const loadingToken = startAppLoading("Membaca file import...");
     try {
       const parsed = await parseImportFile(file);
       const rows = parsed.rows.filter((row) => Object.values(row).some((value) => String(value || "").trim()));
@@ -1214,6 +1235,8 @@
     } catch (error) {
       if (els.importSummary) els.importSummary.textContent = "File belum valid";
       setImportStatus(`Import gagal dibaca: ${error.message}`, "error");
+    } finally {
+      endAppLoading(loadingToken);
     }
   }
 
@@ -1317,6 +1340,7 @@
     }
 
     if (els.importButton) els.importButton.disabled = true;
+    const loadingToken = startAppLoading("Mengupload data obat...");
     setImportStatus("Mengupload data obat ke Google Sheet...", "info");
 
     try {
@@ -1348,6 +1372,7 @@
       setImportStatus(`Upload gagal: ${error.message}.`, "error");
     } finally {
       if (els.importButton) els.importButton.disabled = !state.importRows.length;
+      endAppLoading(loadingToken);
     }
   }
 
@@ -1684,7 +1709,10 @@
     const normalized = values
       .map((item) => alias.get(normalizeSearch(item)) || String(item || "").trim())
       .filter((item) => allowed.has(item));
-    return normalized.length ? normalized : getDefaultAccessForRole(role);
+    const result = normalized.length ? normalized : getDefaultAccessForRole(role);
+    return normalizeSearch(role) === "owner"
+      ? result
+      : result.filter((item) => item !== "akses_semua_data");
   }
 
   function getDefaultAccessForRole(role) {
@@ -1727,14 +1755,14 @@
 
   function canAccess(key) {
     const user = getCurrentUserRecord();
-    if (isAdminUser(user)) return true;
+    if (isOwnerUser(user)) return true;
     return user.access.includes(key);
   }
 
   function applyCurrentUserAccess() {
     const user = getCurrentUserRecord();
     const access = new Set(user.access);
-    if (isAdminUser(user)) {
+    if (isOwnerUser(user)) {
       ACCESS_MENUS.forEach((item) => access.add(item.key));
     }
 
@@ -1742,6 +1770,10 @@
       element.hidden = !access.has(element.dataset.accessKey);
     });
 
+    if (els.filterButton) {
+      els.filterButton.hidden = !access.has("filter_data_obat");
+      if (!access.has("filter_data_obat") && els.filterPanel) els.filterPanel.hidden = true;
+    }
     if (els.addMedicineButton) els.addMedicineButton.hidden = !access.has("edit_obat");
     renderTableBody();
 
@@ -1782,6 +1814,12 @@
     const role = normalizeSearch(user?.role);
     const username = normalizeSearch(user?.username || user?.name || "");
     return role === "admin" || role === "administrator" || role === "owner" || username === "admin" || username === "owner";
+  }
+
+  function isOwnerUser(user) {
+    const role = normalizeSearch(user?.role);
+    const username = normalizeSearch(user?.username || user?.name || "");
+    return role === "owner" || username === "owner";
   }
 
   function renderEmployees() {
@@ -1860,9 +1898,8 @@
   }
 
   function formatAccessSummary(user) {
-    if (isAdminUser(user)) return "Semua akses";
+    if (isOwnerUser(user)) return "Semua akses";
     const list = normalizeAccessList(user?.access, user?.role || "Operator");
-    if (list.length >= ACCESS_MENUS.length) return "Semua akses";
     if (!list.length) return "Tanpa akses";
     return `${list.length} akses: ${list.slice(0, 3).map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ")}${list.length > 3 ? "..." : ""}`;
   }
@@ -1905,7 +1942,7 @@
         return `
           <div class="span-2 record-access-field">
             <span>${escapeHtml(field.label)}</span>
-            ${renderRecordControl(field, value)}
+            ${renderRecordControl(field, value, userRole)}
           </div>
         `;
       }
@@ -1932,7 +1969,7 @@
     const username = normalizeSearch(record.username || record.name || "");
     const roleKey = normalizeSearch(role);
 
-    if (username === "admin" || roleKey === "admin" || roleKey === "administrator") {
+    if (username === "owner" || roleKey === "owner") {
       return ACCESS_MENUS.map((item) => item.key);
     }
 
@@ -1941,9 +1978,9 @@
       : getDefaultAccessForRole(role);
   }
 
-  function renderRecordControl(field, value) {
+  function renderRecordControl(field, value, role = "Operator") {
     if (field.type === "access") {
-      const selected = new Set(normalizeAccessList(value, "Operator"));
+      const selected = new Set(normalizeAccessList(value, role));
       return `
         <div class="access-picker">
           ${ACCESS_MENUS.map((item) => `
@@ -1994,6 +2031,10 @@
     });
 
     if (state.recordType === "user") {
+      const roleKey = normalizeSearch(record.role || "");
+      record.access = roleKey === "owner"
+        ? ACCESS_MENUS.map((item) => item.key)
+        : normalizeAccessList(record.access, record.role).filter((key) => key !== "akses_semua_data");
       Object.assign(record, normalizeUserRecord(record));
     }
 
@@ -2128,8 +2169,11 @@
 
   function renderProfile() {
     const profile = getProfileData();
+    const previewProfile = state.pendingProfilePhoto !== null
+      ? { ...profile, photo: state.pendingProfilePhoto }
+      : profile;
 
-    renderProfileAvatars(profile);
+    renderProfileAvatars(previewProfile);
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
@@ -2158,21 +2202,36 @@
     };
   }
 
-  function saveProfile(event) {
+  async function saveProfile(event) {
     event.preventDefault();
-    const profile = {
-      name: els.profileNameInput.value.trim(),
-      email: els.profileEmailInput.value.trim(),
-      phone: els.profilePhoneInput.value.trim(),
-      job: getProfileData().role || "Operator",
-      address: els.profileAddressInput.value.trim(),
-      photo: getProfileData().photo || ""
-    };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    hydrateProfileName();
-    renderProfile();
-    setProfileStatus("Profil berhasil disimpan di perangkat ini.", "success");
-    addProfileActivity("Profil diperbarui", "Informasi profil lokal disimpan");
+    const loadingToken = startAppLoading("Menyimpan profil...");
+    try {
+      const currentProfile = getProfileData();
+      const hasPendingPhotoChange = state.pendingProfilePhoto !== null;
+      const profile = {
+        name: els.profileNameInput.value.trim(),
+        email: els.profileEmailInput.value.trim(),
+        phone: els.profilePhoneInput.value.trim(),
+        job: currentProfile.role || "Operator",
+        address: els.profileAddressInput.value.trim(),
+        photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || ""
+      };
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      if (hasPendingPhotoChange) {
+        await delay(650);
+      }
+      state.pendingProfilePhoto = null;
+      state.pendingProfilePhotoName = "";
+      syncCurrentUserName(profile.name, profile.email);
+      hydrateProfileName();
+      renderProfile();
+      setProfileStatus("Profil berhasil disimpan di perangkat ini.", "success");
+      addProfileActivity("Profil diperbarui", "Informasi profil lokal disimpan");
+    } catch (error) {
+      setProfileStatus(`Profil gagal disimpan: ${error.message}`, "error");
+    } finally {
+      endAppLoading(loadingToken);
+    }
   }
 
   async function handleProfilePhotoChange(event) {
@@ -2185,30 +2244,55 @@
       return;
     }
 
+    const loadingToken = startAppLoading("Menyiapkan foto profil...");
     try {
       const dataUrl = await readFileAsDataUrl(file);
       const photo = await resizeProfilePhoto(dataUrl);
-      const profile = { ...readObject(PROFILE_KEY), photo };
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      state.pendingProfilePhoto = photo;
+      state.pendingProfilePhotoName = file.name || "foto profil";
       renderProfile();
-      hydrateProfileName();
-      setProfileStatus("Foto profil berhasil diperbarui di perangkat ini.", "success");
-      addProfileActivity("Foto profil diperbarui", "Foto profil lokal diganti");
+      setProfileStatus("Foto profil siap disimpan. Klik Simpan Profil untuk menerapkan perubahan.", "info");
     } catch (error) {
       setProfileStatus(`Foto profil gagal dibaca: ${error.message}`, "error");
     } finally {
+      endAppLoading(loadingToken);
       event.target.value = "";
     }
   }
 
   function removeProfilePhoto() {
-    const profile = readObject(PROFILE_KEY);
-    delete profile.photo;
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    state.pendingProfilePhoto = "";
+    state.pendingProfilePhotoName = "";
     renderProfile();
-    hydrateProfileName();
-    setProfileStatus("Foto profil sudah dihapus dari perangkat ini.", "success");
-    addProfileActivity("Foto profil dihapus", "Avatar kembali memakai inisial akun");
+    setProfileStatus("Foto profil akan dihapus setelah tombol Simpan Profil diklik.", "info");
+  }
+
+  function syncCurrentUserName(name, email) {
+    const nextName = String(name || "").trim();
+    if (!nextName) return;
+
+    const session = readSession() || {};
+    const matchKeys = [
+      session.username,
+      session.email,
+      session.name,
+      email
+    ].map(normalizeSearch).filter(Boolean);
+
+    if (!matchKeys.length) return;
+
+    let changed = false;
+    state.users = state.users.map((user) => {
+      const userKeys = [user.username, user.email, user.name].map(normalizeSearch).filter(Boolean);
+      if (!userKeys.some((key) => matchKeys.includes(key))) return user;
+      changed = true;
+      return { ...user, name: nextName };
+    });
+
+    if (changed) {
+      writeStoredArray(USER_KEY, state.users);
+      renderUsers();
+    }
   }
 
   function readFileAsDataUrl(file) {
@@ -2276,6 +2360,7 @@
     }
 
     setProfileStatus("Menyimpan password baru ke Google Sheet...", "info");
+    const loadingToken = startAppLoading("Menyimpan password baru...");
 
     try {
       const result = await postToApi({
@@ -2291,10 +2376,13 @@
 
       els.profileNewPasswordInput.value = "";
       els.profileConfirmPasswordInput.value = "";
+      updateProfilePasswordIndicators();
       setProfileStatus("Password baru berhasil disimpan.", "success");
       addProfileActivity("Password diperbarui", "Password akun berhasil disimpan ke Google Sheet");
     } catch (error) {
       setProfileStatus(`Password gagal disimpan: ${error.message}`, "error");
+    } finally {
+      endAppLoading(loadingToken);
     }
   }
 
@@ -2517,6 +2605,81 @@
     }
   }
 
+  function startAppLoading(message) {
+    const token = Date.now() + Math.random();
+    state.appLoadingToken = token;
+    window.clearTimeout(state.appLoadingTimer);
+    state.appLoadingTimer = window.setTimeout(() => {
+      if (state.appLoadingToken !== token || !els.appLoadingOverlay) return;
+      if (els.appLoadingText) els.appLoadingText.textContent = message || "Memproses...";
+      els.appLoadingOverlay.hidden = false;
+    }, 500);
+    return token;
+  }
+
+  function endAppLoading(token) {
+    if (token && state.appLoadingToken !== token) return;
+    window.clearTimeout(state.appLoadingTimer);
+    state.appLoadingTimer = null;
+    state.appLoadingToken = 0;
+    if (els.appLoadingOverlay) els.appLoadingOverlay.hidden = true;
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function togglePasswordVisibility(event) {
+    const button = event.currentTarget;
+    const input = document.getElementById(button.dataset.passwordTarget || "");
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+    button.classList.toggle("is-visible", input.type === "text");
+    button.innerHTML = input.type === "text" ? getEyeIcon() : getEyeOffIcon();
+    button.setAttribute("aria-label", input.type === "text" ? "Sembunyikan password" : "Tampilkan password");
+    input.focus();
+  }
+
+  function getEyeIcon() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  }
+
+  function getEyeOffIcon() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path><path d="M3 3l18 18"></path></svg>';
+  }
+
+  function updateProfilePasswordIndicators() {
+    const password = String(els.profileNewPasswordInput?.value || "");
+    const confirmPassword = String(els.profileConfirmPasswordInput?.value || "");
+    const isStrong = isPasswordStrong(password);
+
+    setPasswordValidityIcon(els.profilePasswordStrengthIcon, password ? (isStrong ? "valid" : "invalid") : "");
+    setPasswordValidityIcon(
+      els.profilePasswordMatchIcon,
+      confirmPassword ? (password && confirmPassword === password ? "valid" : "invalid") : ""
+    );
+  }
+
+  function setPasswordValidityIcon(element, stateName) {
+    if (!element) return;
+    if (!stateName) {
+      element.hidden = true;
+      element.className = "password-validity-icon";
+      element.innerHTML = "";
+      return;
+    }
+
+    element.hidden = false;
+    element.className = `password-validity-icon is-${stateName}`;
+    element.innerHTML = stateName === "valid"
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>';
+  }
+
+  function isPasswordStrong(password) {
+    return password.length >= 6 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+  }
+
   function isLowStock(row) {
     const stock = parseNumber(row.stok);
     const minimum = parseNumber(row.stok_min);
@@ -2661,6 +2824,10 @@
       return text.replace(/\.(\d)$/, ".$100");
     }
 
+    if (/^-?\d{4,}$/.test(text)) {
+      return new Intl.NumberFormat("id-ID").format(Number(text));
+    }
+
     return text;
   }
 
@@ -2724,6 +2891,8 @@
     const stored = readStoredArray(COLUMN_KEY);
     const valid = stored.filter((key) => DATA_COLUMNS.some((column) => column.key === key));
     const groupedPriceColumns = [
+      "satuan_beli",
+      "harga_beli",
       "satuan_1",
       "isi_1",
       "harga_jual_1",
