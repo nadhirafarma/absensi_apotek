@@ -3208,11 +3208,20 @@
   }
 
   function showModal(modal) {
-    if (modal) modal.hidden = false;
+    if (!modal) return;
+    modal.hidden = false;
+    syncModalOpenState();
   }
 
   function hideModal(modal) {
-    if (modal) modal.hidden = true;
+    if (!modal) return;
+    modal.hidden = true;
+    syncModalOpenState();
+  }
+
+  function syncModalOpenState() {
+    const hasOpenModal = Boolean(document.querySelector(".dashboard-modal:not([hidden])"));
+    document.body.classList.toggle("dashboard-modal-open", hasOpenModal);
   }
 
   function escapeHtml(value) {
