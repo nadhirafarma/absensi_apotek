@@ -5957,3 +5957,148 @@ body.sidebar-collapsed .app-sidebar {
     z-index: 1210;
   }
 }
+
+:root {
+  --desktop-dashboard-header-height: 86px;
+  --desktop-sidebar-width: 292px;
+}
+
+.dashboard-topbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1320;
+  min-height: var(--desktop-dashboard-header-height);
+  margin: 0 !important;
+  padding: 18px 28px 12px 126px !important;
+  border-bottom: 1px solid rgba(187, 214, 247, 0.56);
+  background:
+    radial-gradient(circle at 14% 22%, rgba(19, 120, 238, 0.11), transparent 32%),
+    radial-gradient(circle at 86% 24%, rgba(232, 23, 152, 0.11), transparent 36%),
+    linear-gradient(135deg, rgba(248, 251, 255, 0.96) 0%, rgba(255, 255, 255, 0.93) 48%, rgba(255, 242, 251, 0.96) 100%) !important;
+  box-shadow: 0 10px 24px rgba(17, 69, 134, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-main,
+body.sidebar-collapsed .dashboard-main {
+  padding-top: calc(var(--desktop-dashboard-header-height) + 24px) !important;
+}
+
+.data-workspace > .data-toolbar {
+  top: var(--desktop-dashboard-header-height) !important;
+}
+
+@media (min-width: 901px) {
+  .app-layout,
+  body.sidebar-collapsed .app-layout {
+    display: block !important;
+  }
+
+  .global-sidebar-toggle,
+  body.sidebar-open .global-sidebar-toggle {
+    top: 18px !important;
+    left: 20px !important;
+    z-index: 1510 !important;
+    min-width: 96px !important;
+    height: 46px !important;
+    border-radius: 8px !important;
+  }
+
+  .app-sidebar,
+  body.sidebar-collapsed .app-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 1300;
+    width: var(--desktop-sidebar-width) !important;
+    max-width: var(--desktop-sidebar-width) !important;
+    padding: 82px 18px 24px !important;
+    transform: translateX(calc(-100% - 18px));
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+
+  body.sidebar-open .app-sidebar {
+    transform: translateX(0) !important;
+    box-shadow: 24px 0 70px rgba(36, 70, 121, 0.18);
+  }
+
+  .dashboard-main,
+  body.sidebar-collapsed .dashboard-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding-right: 28px !important;
+    padding-left: 112px !important;
+    transition: margin-left 220ms ease, width 220ms ease, padding-left 220ms ease;
+  }
+
+  body.sidebar-open .dashboard-main {
+    width: calc(100% - var(--desktop-sidebar-width)) !important;
+    margin-left: var(--desktop-sidebar-width) !important;
+    padding-left: 28px !important;
+  }
+
+  body.sidebar-open .dashboard-topbar {
+    left: var(--desktop-sidebar-width) !important;
+    padding-left: 28px !important;
+  }
+
+  body.sidebar-collapsed .dashboard-topbar {
+    left: 0 !important;
+    padding-left: 126px !important;
+  }
+
+  .sidebar-scrim {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --mobile-dashboard-header-height: 126px;
+  }
+
+  .dashboard-main,
+  body.sidebar-collapsed .dashboard-main {
+    padding-top: calc(var(--mobile-dashboard-header-height) + 16px) !important;
+  }
+
+  .dashboard-topbar {
+    min-height: var(--mobile-dashboard-header-height) !important;
+    padding: 12px 14px 10px !important;
+  }
+
+  .dashboard-title {
+    min-height: 42px !important;
+    padding: 0 52px 0 108px !important;
+  }
+
+  .dashboard-title h1 {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    white-space: normal !important;
+    text-overflow: ellipsis !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: clamp(0.98rem, 4.5vw, 1.28rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  .dashboard-status {
+    grid-template-columns: minmax(0, 1.4fr) minmax(92px, 0.62fr) 42px !important;
+  }
+
+  .dashboard-status .status-item {
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 0.66rem;
+  }
+
+  .dashboard-status .status-time {
+    line-height: 1.1;
+  }
+
+  .data-workspace > .data-toolbar {
+    top: var(--mobile-dashboard-header-height) !important;
+  }
+}
