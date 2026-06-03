@@ -2196,7 +2196,7 @@
       phone: stored.phone || "",
       job: session.role || stored.job || "Operator",
       address: stored.address || "",
-      photo: stored.photo || "",
+      photo: stored.photo || session.profilePhoto || session.photo || "",
       username: session.username || stored.username || "",
       role: session.role || stored.job || "Operator"
     };
@@ -2217,9 +2217,7 @@
         photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || ""
       };
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      if (hasPendingPhotoChange) {
-        await delay(650);
-      }
+      await delay(hasPendingPhotoChange ? 650 : 540);
       state.pendingProfilePhoto = null;
       state.pendingProfilePhotoName = "";
       syncCurrentUserName(profile.name, profile.email);

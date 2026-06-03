@@ -24,6 +24,7 @@
   const resetSubmitButton = document.getElementById("resetSubmitButton");
 
   let loginUsers = [];
+  let routeLoadingOverlay = null;
 
   if (new URLSearchParams(window.location.search).get("logout") === "1") {
     sessionStorage.removeItem(SESSION_KEY);
@@ -111,6 +112,7 @@
 
     setLoading(true);
     setStatus("Memeriksa akun...", "success");
+    showRouteLoading("Memeriksa akun...");
 
     try {
       const result = await login(username, password);
@@ -124,6 +126,10 @@
         email: result.email || "",
         role: result.role || "",
         menu: result.menu || "",
+        name: result.name || result.nama || result.fullName || result.username || username,
+        phone: result.phone || result.noHp || "",
+        address: result.address || result.alamat || "",
+        profilePhoto: result.profilePhoto || result.photo || "",
         loginAt: Date.now(),
         expiresAt: Date.now() + SESSION_DURATION_MS
       };
@@ -141,9 +147,12 @@
       }
 
       setStatus("Login berhasil. Membuka menu...", "success");
+      showRouteLoading("Membuka dashboard...");
+      await delay(360);
       window.location.assign(getSafeNextUrl());
     } catch (error) {
       setStatus(error.message || "Login gagal. Coba lagi.", "error");
+      hideRouteLoading();
       setLoading(false);
     }
   });
@@ -370,5 +379,31 @@
     resetUsernameInput.disabled = isLoading;
     resetEmailInput.disabled = isLoading;
     resetSubmitButton.textContent = isLoading ? "Mengirim..." : "Kirim Link";
+  }
+
+  function showRouteLoading(message) {
+    if (!routeLoadingOverlay) {
+      routeLoadingOverlay = document.createElement("section");
+      routeLoadingOverlay.className = "login-loading-overlay";
+      routeLoadingOverlay.innerHTML = [
+        '<div class="login-loading-card" role="status" aria-live="polite">',
+        '<span class="login-loading-orbit"><img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt=""></span>',
+        '<strong id="loginLoadingText">Memproses...</strong>',
+        '</div>'
+      ].join("");
+      document.body.appendChild(routeLoadingOverlay);
+    }
+
+    const text = routeLoadingOverlay.querySelector("#loginLoadingText");
+    if (text) text.textContent = message || "Memproses...";
+    routeLoadingOverlay.hidden = false;
+  }
+
+  function hideRouteLoading() {
+    if (routeLoadingOverlay) routeLoadingOverlay.hidden = true;
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
 })();

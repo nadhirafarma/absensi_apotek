@@ -651,6 +651,72 @@ svg {
   min-height: 44px;
 }
 
+.login-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 27, 65, 0.34);
+  backdrop-filter: blur(14px);
+}
+
+.login-loading-overlay[hidden] {
+  display: none;
+}
+
+.login-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  min-width: 220px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  box-shadow: 0 28px 80px rgba(26, 62, 137, 0.22);
+}
+
+.login-loading-orbit {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+}
+
+.login-loading-orbit::before,
+.login-loading-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-top-color: var(--blue);
+  border-right-color: var(--pink);
+  border-radius: 999px;
+  animation: loginSpin 1.08s linear infinite;
+}
+
+.login-loading-orbit::after {
+  inset: 9px;
+  animation-duration: 0.78s;
+  animation-direction: reverse;
+  border-top-color: var(--green);
+  border-right-color: rgba(20, 103, 242, 0.72);
+}
+
+.login-loading-orbit img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+@keyframes loginSpin {
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 1180px) {
   .login-layout {
     gap: 34px;

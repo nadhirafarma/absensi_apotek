@@ -5535,3 +5535,137 @@ body.theme-dark .app-loading-card {
     font-size: 0.72rem;
   }
 }
+
+body.dashboard-page {
+  background:
+    radial-gradient(circle at 14% 20%, rgba(19, 120, 238, 0.12), transparent 30%),
+    radial-gradient(circle at 86% 28%, rgba(232, 23, 152, 0.13), transparent 34%),
+    linear-gradient(135deg, #f6fbff 0%, #ffffff 48%, #fff2fb 100%) !important;
+  background-size: auto !important;
+}
+
+body.dashboard-page::before,
+body.dashboard-page::after {
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+}
+
+.global-sidebar-toggle,
+body.sidebar-open .global-sidebar-toggle {
+  left: 20px !important;
+}
+
+.app-sidebar,
+body.sidebar-collapsed .app-sidebar {
+  padding-top: 86px !important;
+}
+
+.header-profile-menu {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  z-index: 1500 !important;
+  width: auto !important;
+}
+
+.dashboard-status .header-profile-menu,
+.dashboard-status .header-profile-menu .profile-chip {
+  width: auto !important;
+}
+
+.dashboard-status .status-item {
+  white-space: nowrap;
+}
+
+.dashboard-status .status-time {
+  min-width: 124px;
+  justify-content: center;
+}
+
+.dashboard-status .status-time span {
+  white-space: nowrap;
+}
+
+.security-reset-card {
+  width: min(100%, 680px);
+  margin-inline: auto;
+}
+
+.security-reset-card .form-actions {
+  justify-content: end;
+}
+
+@media (max-width: 760px) {
+  .global-sidebar-toggle,
+  body.sidebar-open .global-sidebar-toggle {
+    left: 14px !important;
+    top: 14px !important;
+  }
+
+  .app-sidebar,
+  body.sidebar-collapsed .app-sidebar {
+    padding-top: 76px !important;
+  }
+
+  .dashboard-main,
+  body.sidebar-collapsed .dashboard-main {
+    padding-top: 116px !important;
+  }
+
+  .header-profile-menu {
+    top: 14px !important;
+    right: 14px !important;
+    left: auto !important;
+  }
+
+  .header-profile-menu .profile-chip {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .header-profile-menu .profile-name,
+  .header-profile-menu .profile-chip > svg {
+    display: none !important;
+  }
+
+  .dashboard-title h1 {
+    margin-top: 0;
+  }
+
+  .dashboard-status {
+    grid-template-columns: minmax(0, 1fr) minmax(106px, 0.52fr) 42px !important;
+    align-items: stretch;
+  }
+
+  .dashboard-status .status-item {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .dashboard-status .status-date {
+    overflow: hidden;
+  }
+
+  .dashboard-status .status-date span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-status .status-time {
+    min-width: 0;
+    padding-inline: 7px;
+    font-size: 0.68rem;
+  }
+
+  .security-reset-card {
+    width: 100%;
+  }
+}

@@ -15,6 +15,7 @@
   const logoutButton = document.getElementById("logoutButton");
   const logoutButtons = Array.from(document.querySelectorAll("#logoutButton, [data-logout-button]"));
   let isLoggingOut = false;
+  let routeLoadingOverlay = null;
 
   const dateFormatter = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
@@ -59,9 +60,11 @@
     const accountName = getAccountName(session);
     const accountMeta = getAccountMeta(session);
     const initials = getInitials(accountName);
+    const sessionPhoto = session?.profilePhoto || session?.photo || "";
+    const profilePhoto = storedProfile.photo || sessionPhoto;
 
-    setAvatarContent(profileAvatar, storedProfile.photo, initials);
-    setAvatarContent(profileMiniAvatar, storedProfile.photo, initials);
+    setAvatarContent(profileAvatar, profilePhoto, initials);
+    setAvatarContent(profileMiniAvatar, profilePhoto, initials);
     if (profileAccountName) profileAccountName.textContent = accountName;
     if (profileAccountMeta) profileAccountMeta.textContent = accountMeta;
 
@@ -163,8 +166,29 @@
     if (isLoggingOut) return;
 
     isLoggingOut = true;
-    sessionStorage.removeItem(SESSION_KEY);
-    window.location.replace(getLogoutUrl());
+    showRouteLoading("Keluar dari sistem...");
+    window.setTimeout(function () {
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.replace(getLogoutUrl());
+    }, 420);
+  }
+
+  function showRouteLoading(message) {
+    if (!routeLoadingOverlay) {
+      routeLoadingOverlay = document.createElement("section");
+      routeLoadingOverlay.className = "app-loading-overlay route-loading-overlay";
+      routeLoadingOverlay.innerHTML = [
+        '<div class="app-loading-card" role="status" aria-live="polite">',
+        '<span class="app-loading-orbit"><img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt=""></span>',
+        '<strong id="routeLoadingText">Memproses...</strong>',
+        '</div>'
+      ].join("");
+      document.body.appendChild(routeLoadingOverlay);
+    }
+
+    const text = routeLoadingOverlay.querySelector("#routeLoadingText");
+    if (text) text.textContent = message || "Memproses...";
+    routeLoadingOverlay.hidden = false;
   }
 
   function readSession() {
