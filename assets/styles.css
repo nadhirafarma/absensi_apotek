@@ -7067,3 +7067,255 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
     font-size: 1.8rem;
   }
 }
+
+/* Mobile home grid migration */
+.mobile-home-shell,
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  body.dashboard-page {
+    padding-bottom: 98px;
+  }
+
+  .mobile-home-shell {
+    display: grid;
+    gap: 20px;
+    width: min(100%, 720px);
+    margin: 0 auto 22px;
+  }
+
+  .mobile-home-brand {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 4px 4px 0;
+    color: #08245c;
+  }
+
+  .mobile-home-brand img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  .mobile-home-brand strong,
+  .mobile-home-brand small {
+    display: block;
+  }
+
+  .mobile-home-brand strong {
+    font-size: clamp(1.08rem, 4.7vw, 1.32rem);
+    line-height: 1.16;
+  }
+
+  .mobile-home-brand small {
+    margin-top: 2px;
+    color: #6b7fa4;
+    font-size: clamp(0.76rem, 3.4vw, 0.9rem);
+    font-weight: 600;
+  }
+
+  .mobile-home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .mobile-home-card {
+    min-height: 174px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 12px;
+    padding: 18px 12px 16px;
+    border: 1px solid rgba(210, 225, 245, 0.94);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #08245c;
+    font-family: inherit;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 0 18px 42px rgba(18, 54, 112, 0.08);
+    cursor: pointer;
+  }
+
+  .mobile-home-card.is-active {
+    border-color: rgba(39, 123, 244, 0.36);
+    box-shadow: 0 20px 42px rgba(19, 120, 238, 0.12);
+  }
+
+  .mobile-home-card strong {
+    font-size: clamp(0.9rem, 4.1vw, 1.02rem);
+    line-height: 1.2;
+  }
+
+  .mobile-home-icon {
+    width: 94px;
+    height: 94px;
+    display: grid;
+    place-items: center;
+    border-radius: 28px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.55), transparent 22%),
+      linear-gradient(140deg, #157cf1 0%, #7a4df6 50%, #e81798 100%);
+    box-shadow:
+      0 16px 30px rgba(75, 100, 245, 0.22),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+  }
+
+  .mobile-home-icon svg {
+    width: 46px;
+    height: 46px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 5px 10px rgba(0, 31, 114, 0.2));
+  }
+
+  .mobile-home-icon.icon-face {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #24b5ff 0%, #5f59ff 48%, #c52bef 100%);
+  }
+
+  .mobile-home-icon.icon-medicine {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #2bb8ff 0%, #8755ff 44%, #f317a0 100%);
+  }
+
+  .mobile-home-icon.icon-people {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #2dd8ff 0%, #8856fb 50%, #d829ed 100%);
+  }
+
+  .mobile-home-icon.icon-supplier {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #1a8bf4 0%, #415ff4 45%, #b92cf0 100%);
+  }
+
+  .mobile-home-icon.icon-order {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #319aff 0%, #704ef6 45%, #f03fb2 100%);
+  }
+
+  .mobile-home-icon.icon-import {
+    background:
+      radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.62), transparent 26%),
+      linear-gradient(140deg, #00bff3 0%, #2d68f8 46%, #aa38f3 100%);
+  }
+
+  #view-dashboard .dashboard-stats {
+    margin-top: 8px;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 1480;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    align-items: center;
+    gap: 6px;
+    min-height: 66px;
+    padding: 8px 10px;
+    border: 1px solid rgba(218, 230, 248, 0.95);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.93);
+    box-shadow: 0 18px 48px rgba(31, 58, 110, 0.18);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-bottom-nav button {
+    position: relative;
+    min-width: 0;
+    min-height: 48px;
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: #60759d;
+    font-family: inherit;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobile-bottom-nav button svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mobile-bottom-nav button.is-active {
+    color: #1478ee;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    margin-top: -30px;
+    min-height: 72px;
+    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(140deg, #187ef0 0%, #7d4df7 54%, #e81798 100%);
+    box-shadow: 0 18px 36px rgba(85, 89, 238, 0.28);
+  }
+
+  .mobile-bottom-nav .is-featured svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .mobile-bottom-nav .is-featured span {
+    position: absolute;
+    top: calc(100% + 2px);
+    color: #60759d;
+    white-space: nowrap;
+  }
+
+  body.sidebar-open .mobile-bottom-nav,
+  body.dashboard-modal-open .mobile-bottom-nav {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-home-grid {
+    gap: 12px;
+  }
+
+  .mobile-home-card {
+    min-height: 150px;
+    padding: 15px 10px;
+    border-radius: 16px;
+  }
+
+  .mobile-home-icon {
+    width: 78px;
+    height: 78px;
+    border-radius: 23px;
+  }
+
+  .mobile-home-icon svg {
+    width: 38px;
+    height: 38px;
+  }
+}

@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260604-price-format-v29">
+  <link rel="stylesheet" href="assets/styles.css?v=20260604-mobile-grid-v30">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260604-price-format-v29"></script>
+  <script defer src="assets/app.js?v=20260604-mobile-grid-v30"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260604-price-format-v29"></script>
+  <script defer src="assets/home-dashboard.js?v=20260604-mobile-grid-v30"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -199,6 +199,95 @@
 
       <main class="dashboard-content">
         <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
+          <section class="mobile-home-shell" aria-label="Menu home mobile">
+            <div class="mobile-home-brand">
+              <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+              <span>
+                <strong>Nadhira Farma Digital</strong>
+                <small>Sistem Informasi Apotek</small>
+              </span>
+            </div>
+
+            <div class="mobile-home-grid">
+              <button class="mobile-home-card" type="button" data-view-target="dashboard" data-access-key="dashboard">
+                <span class="mobile-home-icon icon-dashboard">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 19V5"></path>
+                    <path d="M4 19h16"></path>
+                    <rect x="7" y="10" width="3" height="6"></rect>
+                    <rect x="12" y="7" width="3" height="9"></rect>
+                    <rect x="17" y="12" width="3" height="4"></rect>
+                  </svg>
+                </span>
+                <strong>Dashboard</strong>
+              </button>
+              <a class="mobile-home-card" href="absensi.html" data-access-key="absensi_face_id">
+                <span class="mobile-home-icon icon-face">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
+                    <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
+                    <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path>
+                    <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </span>
+                <strong>Absensi<br>Face ID</strong>
+              </a>
+              <button class="mobile-home-card" type="button" data-view-target="data-obat" data-access-key="data_obat">
+                <span class="mobile-home-icon icon-medicine">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m10 21 10-10a5 5 0 0 0-7-7L3 14a5 5 0 0 0 7 7Z"></path>
+                    <path d="m8.5 8.5 7 7"></path>
+                  </svg>
+                </span>
+                <strong>Data Obat</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="data-karyawan" data-access-key="data_karyawan">
+                <span class="mobile-home-icon icon-people">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9.5" cy="7" r="4"></circle>
+                    <path d="M17 11l2 2 4-4"></path>
+                  </svg>
+                </span>
+                <strong>Data<br>Karyawan</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="data-supplier" data-access-key="data_supplier">
+                <span class="mobile-home-icon icon-supplier">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 7h11v10H3z"></path>
+                    <path d="M14 10h4l3 3v4h-7z"></path>
+                    <circle cx="7" cy="19" r="2"></circle>
+                    <circle cx="18" cy="19" r="2"></circle>
+                  </svg>
+                </span>
+                <strong>Data<br>Supplier</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="surat-pesanan" data-access-key="surat_pesanan">
+                <span class="mobile-home-icon icon-order">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 2v4"></path>
+                    <path d="M16 2v4"></path>
+                    <rect x="4" y="4" width="16" height="18" rx="2"></rect>
+                    <path d="M8 11h8"></path>
+                    <path d="M8 15h5"></path>
+                  </svg>
+                </span>
+                <strong>Surat Pesanan<br>Pembelian</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="import-data-obat" data-access-key="import_data_obat">
+                <span class="mobile-home-icon icon-import">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v12"></path>
+                    <path d="m7 10 5 5 5-5"></path>
+                    <path d="M5 21h14"></path>
+                  </svg>
+                </span>
+                <strong>Import Data<br>Obat</strong>
+              </button>
+            </div>
+          </section>
+
           <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
             <article class="stat-card"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
             <article class="stat-card"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
@@ -735,6 +824,30 @@
       <button class="secondary-action notification-confirm" id="homeNotificationOkButton" type="button">Mengerti</button>
     </div>
   </section>
+
+  <nav class="mobile-bottom-nav" aria-label="Navigasi cepat mobile">
+    <button type="button" data-view-target="dashboard" data-access-key="dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 11 12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+      <span>Home</span>
+    </button>
+    <button class="is-featured" type="button" data-view-target="cari-data-obat" data-access-key="cari_data_obat">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5"></circle>
+        <path d="m15.2 15.2 4.8 4.8"></path>
+      </svg>
+      <span>Cari Data Obat</span>
+    </button>
+    <button type="button" data-view-target="akun-profil" data-access-key="akun_profil">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.9l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 10.4 2.9V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.22.38.6.64 1 .6h.1a2 2 0 1 1 0 4h-.1a1.65 1.65 0 0 0-1 .4Z"></path>
+      </svg>
+      <span>Setting</span>
+    </button>
+  </nav>
 
   <section class="app-loading-overlay" id="appLoadingOverlay" hidden aria-live="polite" aria-busy="true">
     <div class="app-loading-card">
