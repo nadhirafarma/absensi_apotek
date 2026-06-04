@@ -3481,7 +3481,7 @@
 
   function formatQuickPrice(value, key = "") {
     let text = formatCell(value, key);
-    if (/^harga_(jual|resep)/.test(key) && /^-?\d{1,2}$/.test(text) && Number(text) > 0) {
+    if (shouldExpandCompactPrice(text, key)) {
       text = formatIntegerPrice(String(Number(text) * 1000));
     }
     return text === "-" ? "-" : `Rp ${text}`;
@@ -3517,11 +3517,15 @@
       if (lastPart !== "000") return formatIntegerPrice(dotParts.slice(0, -1).join(""));
     }
 
+    if (/^-?\d{1,3}(?:,\d{3})+$/.test(cleaned)) {
+      return formatIntegerPrice(cleaned.replace(/,/g, ""));
+    }
+
     if (/^-?\d{1,3}(?:\.\d{3})+,\d{3}$/.test(cleaned)) {
       return formatIntegerPrice(cleaned.replace(/,\d{3}$/, ""));
     }
 
-    if (/^-?\d+,\d{3}$/.test(cleaned)) {
+    if (/^-?\d{4,},\d{3}$/.test(cleaned)) {
       return formatIntegerPrice(cleaned.replace(/,\d{3}$/, ""));
     }
 
@@ -3547,7 +3551,19 @@
       return new Intl.NumberFormat("id-ID").format(Number(text));
     }
 
+    if (shouldExpandCompactPrice(text, key)) {
+      return formatIntegerPrice(String(Number(text) * 1000));
+    }
+
     return text;
+  }
+
+  function shouldExpandCompactPrice(value, key = "") {
+    if (!PRICE_COLUMNS.has(key)) return false;
+    const text = String(value ?? "").trim();
+    if (!/^-?\d{1,3}$/.test(text)) return false;
+    const number = Number(text);
+    return Number.isFinite(number) && number > 0 && Math.abs(number) < 500;
   }
 
   function shouldTrimCorruptedHargaBeli(digitsOnly) {
