@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260604-mobile-grid-v30">
+  <link rel="stylesheet" href="assets/styles.css?v=20260604-mobile-home-v32">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260604-mobile-grid-v30"></script>
+  <script defer src="assets/app.js?v=20260604-mobile-home-v32"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260604-mobile-grid-v30"></script>
+  <script defer src="assets/home-dashboard.js?v=20260604-mobile-home-v32"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -198,7 +198,7 @@
       </header>
 
       <main class="dashboard-content">
-        <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
+        <section class="dashboard-view mobile-home-view" id="view-home" data-view="home">
           <section class="mobile-home-shell" aria-label="Menu home mobile">
             <div class="mobile-home-brand">
               <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
@@ -288,6 +288,9 @@
             </div>
           </section>
 
+        </section>
+
+        <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
           <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
             <article class="stat-card"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
             <article class="stat-card"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
@@ -826,7 +829,7 @@
   </section>
 
   <nav class="mobile-bottom-nav" aria-label="Navigasi cepat mobile">
-    <button type="button" data-view-target="dashboard" data-access-key="dashboard">
+    <button type="button" data-view-target="home">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 11 12 3l9 8"></path>
         <path d="M5 10v10h14V10"></path>

@@ -92,6 +92,7 @@
   ]);
 
   const VIEW_TITLES = {
+    home: "Home",
     dashboard: "Dashboard",
     "cari-data-obat": "Cari Data Obat",
     "data-obat": "Data Obat",
@@ -225,6 +226,7 @@
     applySavedSidebarState();
     hydrateProfileName();
     bindEvents();
+    if (isMobileViewport()) switchView("home");
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
@@ -372,6 +374,7 @@
   function bindEvents() {
     if (els.sidebarToggle) els.sidebarToggle.addEventListener("click", toggleSidebar);
     if (els.sidebarScrim) els.sidebarScrim.addEventListener("click", () => setSidebarCollapsed(true));
+    window.addEventListener("resize", handleViewportRoute);
 
     els.viewButtons.forEach((button) => {
       button.addEventListener("click", () => switchView(button.dataset.viewTarget));
@@ -569,7 +572,7 @@
     window.setInterval(() => {
       fetchUsers({ silent: true });
       fetchOwnerActivityLog({ silent: true });
-    }, 45000);
+    }, 15000);
   }
 
   async function fetchUsers(options = {}) {
@@ -587,7 +590,8 @@
         phone: String(user.phone || user.noHp || "").trim(),
         address: String(user.address || user.alamat || "").trim(),
         photo: String(user.profilePhoto || user.photo || "").trim(),
-        access: normalizeAccessList(user.access || user.menu, user.role || "Operator")
+        access: normalizeAccessList(user.access || user.menu, user.role || "Operator"),
+        preferences: normalizeProfilePreferences(user.preferences || user.profilePreferences || user.profile_preferences)
       })).filter((user) => user.name || user.username);
 
       syncEmployeeSeed();
@@ -2203,7 +2207,28 @@
       phone: String(user?.phone || user?.noHp || "").trim(),
       address: String(user?.address || user?.alamat || "").trim(),
       photo: String(user?.photo || user?.profilePhoto || "").trim(),
-      access: normalizeAccessList(user?.access || user?.menu, role)
+      access: normalizeAccessList(user?.access || user?.menu, role),
+      preferences: normalizeProfilePreferences(user?.preferences || user?.profilePreferences || user?.profile_preferences)
+    };
+  }
+
+  function normalizeProfilePreferences(value) {
+    if (value === undefined || value === null || value === "") return {};
+    let prefs = value;
+    if (typeof prefs === "string") {
+      try {
+        prefs = prefs.trim() ? JSON.parse(prefs) : {};
+      } catch (error) {
+        prefs = {};
+      }
+    }
+    prefs = prefs && typeof prefs === "object" ? prefs : {};
+    if (!Object.keys(prefs).length) return {};
+    return {
+      theme: prefs.theme === "dark" ? "dark" : "light",
+      compact: prefs.compact === true || prefs.compact === "true",
+      startDashboard: prefs.startDashboard === false || prefs.startDashboard === "false" ? false : true,
+      updatedAt: String(prefs.updatedAt || "")
     };
   }
 
@@ -2298,6 +2323,7 @@
   }
 
   function canView(viewName, access) {
+    if (viewName === "home") return true;
     const map = {
       dashboard: "dashboard",
       "cari-data-obat": "cari_data_obat",
@@ -2800,6 +2826,9 @@
         photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || "",
         profileKey: getProfileStorageIdentity()
       };
+      const currentPreferences = Object.keys(currentUser.preferences || {}).length
+        ? currentUser.preferences
+        : normalizeProfilePreferences(readObject(PROFILE_PREFS_KEY));
       const userPayload = {
         ...currentUser,
         name: profile.name,
@@ -2810,6 +2839,8 @@
         role: currentUser.role || currentProfile.role || "Operator",
         status: currentUser.status || "Aktif",
         access: currentUser.access || [],
+        preferences: currentPreferences,
+        profilePreferences: currentPreferences,
         profilePhoto: profile.photo,
         photo: profile.photo
       };
@@ -2834,7 +2865,8 @@
         address: savedUser.address || profile.address,
         role: savedUser.role || session.role,
         menu: (savedUser.access || []).join(","),
-        profilePhoto: savedUser.photo || profile.photo
+        profilePhoto: savedUser.photo || profile.photo,
+        preferences: savedUser.preferences || userPayload.preferences
       }));
       localStorage.setItem(getScopedProfileKey(), JSON.stringify(profile));
       localStorage.removeItem(PROFILE_KEY);
@@ -3102,7 +3134,9 @@
   }
 
   function applyProfilePreferences() {
-    const prefs = readObject(PROFILE_PREFS_KEY);
+    const userPrefs = getCurrentUserRecord()?.preferences || {};
+    const localPrefs = readObject(PROFILE_PREFS_KEY);
+    const prefs = Object.keys(userPrefs).length ? userPrefs : localPrefs;
     const theme = prefs.theme === "dark" ? "dark" : "light";
     document.body.classList.toggle("theme-dark", theme === "dark");
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
@@ -3111,7 +3145,7 @@
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.checked = prefs.startDashboard !== false;
   }
 
-  function saveProfilePreferences() {
+  async function saveProfilePreferences() {
     const prefs = {
       theme: els.profileThemeSelect?.value === "dark" ? "dark" : "light",
       compact: Boolean(els.profileCompactToggle?.checked),
@@ -3119,6 +3153,27 @@
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));
+    const currentUser = getCurrentUserRecord();
+    if (currentUser) {
+      currentUser.preferences = prefs;
+      upsertUserRecord(currentUser, currentUser);
+      postToApi({
+        action: "saveLoginUser",
+        user: {
+          ...currentUser,
+          profilePreferences: prefs,
+          preferences: prefs
+        },
+        originalUsername: currentUser.username || "",
+        originalEmail: currentUser.email || ""
+      }).then((result) => {
+        if (result && (result.success === true || result.ok === true)) {
+          upsertUserRecord({ ...(result.user || currentUser), preferences: prefs }, currentUser);
+        }
+      }).catch((error) => {
+        console.warn("Preferensi profil belum tersinkron ke Google Sheet:", error);
+      });
+    }
     applyProfilePreferences();
     setProfileStatus("Preferensi tampilan berhasil disimpan.", "success");
     addProfileActivity("Preferensi tampilan diperbarui", `${prefs.theme === "dark" ? "Tema gelap" : "Tema terang"}, ${prefs.compact ? "mode ringkas aktif" : "mode ringkas nonaktif"}`);
@@ -3177,6 +3232,12 @@
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
     if (viewName === "cari-data-obat") renderQuickSearchResults();
     setSidebarCollapsed(true);
+  }
+
+  function handleViewportRoute() {
+    if (!isMobileViewport() && state.activeView === "home") {
+      switchView("dashboard");
+    }
   }
 
   function applySavedSidebarState() {
