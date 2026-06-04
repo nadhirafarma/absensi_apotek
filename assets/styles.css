@@ -6745,3 +6745,257 @@ body.dashboard-modal-open #view-data-obat.is-active .data-workspace > .data-tool
     font-size: 0.88rem;
   }
 }
+
+/* Compact one-column medicine lookup */
+#view-cari-data-obat.is-active .quick-search-workspace {
+  width: min(100%, 720px);
+  padding-top: 66px;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar {
+  position: fixed !important;
+  top: var(--desktop-dashboard-header-height, 86px) !important;
+  left: calc(var(--desktop-sidebar-rail-width, 76px) + 28px) !important;
+  right: 28px !important;
+  z-index: 1310;
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(187, 214, 247, 0.58);
+  background:
+    radial-gradient(circle at 14% 22%, rgba(19, 120, 238, 0.10), transparent 32%),
+    radial-gradient(circle at 86% 24%, rgba(232, 23, 152, 0.10), transparent 36%),
+    linear-gradient(135deg, rgba(248, 251, 255, 0.97) 0%, rgba(255, 255, 255, 0.94) 48%, rgba(255, 242, 251, 0.97) 100%) !important;
+  box-shadow: 0 10px 24px rgba(17, 69, 134, 0.05);
+  backdrop-filter: blur(18px);
+}
+
+body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
+  left: calc(var(--desktop-sidebar-width, 292px) + 28px) !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 42px;
+}
+
+#view-cari-data-obat.is-active .quick-search-head {
+  width: min(100%, 720px);
+  margin: -2px auto 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#view-cari-data-obat.is-active .quick-search-head h2 {
+  display: none;
+}
+
+#view-cari-data-obat.is-active .quick-search-head p {
+  font-size: 0.76rem;
+}
+
+#view-cari-data-obat.is-active .quick-results-list {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  gap: 14px;
+}
+
+.quick-medicine-card {
+  position: relative;
+  padding: 14px 46px 14px 16px;
+  border-color: rgba(208, 225, 244, 0.96);
+  border-radius: 16px;
+  background: rgba(250, 253, 255, 0.88);
+  box-shadow: 0 16px 36px rgba(19, 58, 110, 0.08);
+}
+
+.quick-medicine-name {
+  position: relative;
+  min-height: 40px;
+  padding: 10px 12px 10px 32px;
+  border: 1px solid rgba(181, 207, 237, 0.94);
+  border-radius: 13px;
+  background: #eaf3ff;
+  color: #081d50;
+}
+
+.quick-tone-2 .quick-medicine-name {
+  background: #fff3ef;
+  border-color: rgba(239, 202, 179, 0.95);
+}
+
+.quick-tone-3 .quick-medicine-name {
+  background: #e9fbfb;
+  border-color: rgba(165, 226, 225, 0.95);
+}
+
+.quick-tone-4 .quick-medicine-name {
+  background: #f0efff;
+  border-color: rgba(200, 194, 251, 0.95);
+}
+
+.quick-name-accent {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 14px;
+  width: 5px;
+  border-radius: 999px;
+  background: #1f7df0;
+}
+
+.quick-tone-2 .quick-name-accent {
+  background: #f44578;
+}
+
+.quick-tone-3 .quick-name-accent {
+  background: #15a7d6;
+}
+
+.quick-tone-4 .quick-name-accent {
+  background: #7a47f5;
+}
+
+.quick-medicine-name strong {
+  color: #071d4f;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.22;
+}
+
+.quick-medicine-list {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0 0;
+}
+
+.quick-medicine-list div {
+  display: grid;
+  grid-template-columns: minmax(78px, 0.34fr) 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.quick-medicine-list dt,
+.quick-medicine-list dd {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+
+.quick-medicine-list dt {
+  color: #64728a;
+  font-weight: 800;
+}
+
+.quick-medicine-list dd {
+  color: #1c2b41;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.quick-card-arrow {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  color: #9aa9ba;
+  font-size: 2.5rem;
+  font-weight: 500;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 900px) {
+  #view-cari-data-obat.is-active .quick-search-workspace {
+    width: 100%;
+    padding-top: 74px;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar {
+    top: var(--mobile-dashboard-header-height, 126px) !important;
+    left: 14px !important;
+    right: 14px !important;
+    padding: 8px 0 !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search,
+  #view-cari-data-obat.is-active .quick-search-head,
+  #view-cari-data-obat.is-active .quick-results-list {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  #view-cari-data-obat.is-active .quick-search-workspace {
+    padding-top: 70px;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar {
+    left: 10px !important;
+    right: 10px !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+    min-height: 40px;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+    font-size: 0.74rem;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-head p {
+    font-size: 0.62rem;
+  }
+
+  #view-cari-data-obat.is-active .quick-results-list {
+    gap: 10px;
+  }
+
+  .quick-medicine-card {
+    padding: 10px 34px 10px 10px;
+    border-radius: 13px;
+  }
+
+  .quick-medicine-name {
+    min-height: 34px;
+    padding: 8px 9px 8px 25px;
+    border-radius: 10px;
+  }
+
+  .quick-name-accent {
+    top: 9px;
+    bottom: 9px;
+    left: 11px;
+    width: 4px;
+  }
+
+  .quick-medicine-name strong {
+    font-size: 0.69rem;
+    line-height: 1.18;
+  }
+
+  .quick-medicine-list {
+    margin-top: 8px;
+    gap: 1px;
+  }
+
+  .quick-medicine-list div {
+    grid-template-columns: 72px 1fr;
+    gap: 7px;
+  }
+
+  .quick-medicine-list dt,
+  .quick-medicine-list dd {
+    font-size: 0.64rem;
+    line-height: 1.22;
+  }
+
+  .quick-card-arrow {
+    right: 10px;
+    font-size: 1.8rem;
+  }
+}

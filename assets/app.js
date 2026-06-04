@@ -1,4 +1,5 @@
 (function () {
+  const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
   const PROFILE_KEY = "nadhira.localProfile";
   const LOGIN_PAGE = "login.html";
@@ -166,6 +167,7 @@
     if (isLoggingOut) return;
 
     isLoggingOut = true;
+    logLogoutActivity(readSession());
     showRouteLoading("Keluar dari sistem...");
     window.setTimeout(function () {
       sessionStorage.removeItem(SESSION_KEY);
@@ -189,6 +191,27 @@
     const text = routeLoadingOverlay.querySelector("#routeLoadingText");
     if (text) text.textContent = message || "Memproses...";
     routeLoadingOverlay.hidden = false;
+  }
+
+  function logLogoutActivity(session) {
+    if (!session) return;
+    fetch(AUTH_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "saveActivityLog",
+        activity: {
+          title: "Logout aplikasi",
+          detail: "Akun keluar dari dashboard",
+          actor: `${session.name || session.username || "Akun"} - ${session.role || "Operator"}`,
+          role: session.role || "",
+          at: new Date().toISOString()
+        }
+      }),
+      keepalive: true
+    }).catch(function () {});
   }
 
   function readSession() {

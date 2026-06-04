@@ -4,6 +4,7 @@
   const SESSION_KEY = "nadhira.authSession";
   const META_KEY = "nadhira.obatCacheMeta";
   const HOME_UPLOAD_ACK_KEY = "nadhira.homeUploadNotificationSeenAt";
+  const OWNER_ACTIVITY_ACK_KEY = "nadhira.ownerActivityNotificationSeenAt";
   const COLUMN_KEY = "nadhira.dashboardVisibleColumns";
   const DATA_OBAT_FILTER_KEY = "nadhira.dataObatGlobalFilter";
   const EMPLOYEE_KEY = "nadhira.employeeRecords";
@@ -206,6 +207,7 @@
     pendingDelete: null,
     pendingProfilePhoto: null,
     pendingProfilePhotoName: "",
+    ownerActivities: [],
     appLoadingTimer: null,
     appLoadingToken: 0
   };
@@ -233,6 +235,7 @@
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
+    fetchOwnerActivityLog();
     bindUserAccessSync();
   }
 
@@ -553,11 +556,20 @@
   }
 
   function bindUserAccessSync() {
-    window.addEventListener("focus", () => fetchUsers({ silent: true }));
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) fetchUsers({ silent: true });
+    window.addEventListener("focus", () => {
+      fetchUsers({ silent: true });
+      fetchOwnerActivityLog({ silent: true });
     });
-    window.setInterval(() => fetchUsers({ silent: true }), 45000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        fetchUsers({ silent: true });
+        fetchOwnerActivityLog({ silent: true });
+      }
+    });
+    window.setInterval(() => {
+      fetchUsers({ silent: true });
+      fetchOwnerActivityLog({ silent: true });
+    }, 45000);
   }
 
   async function fetchUsers(options = {}) {
@@ -977,18 +989,20 @@
       return;
     }
 
-    els.quickResultsList.innerHTML = rows.map((row) => `
-      <article class="quick-medicine-card">
+    els.quickResultsList.innerHTML = rows.map((row, index) => `
+      <article class="quick-medicine-card quick-tone-${(index % 4) + 1}">
         <div class="quick-medicine-name">
-          <small>${escapeHtml(row.kode || "Tanpa kode")}</small>
+          <span class="quick-name-accent" aria-hidden="true"></span>
           <strong>${escapeHtml(formatCell(row.nama))}</strong>
         </div>
-        <dl class="quick-medicine-grid">
-          <div><dt>Stok / Satuan Beli</dt><dd>${escapeHtml(formatCell(row.stok, "stok"))} / ${escapeHtml(formatCell(row.satuan_beli))}</dd></div>
-          <div><dt>Harga Jual 1 / Satuan 1</dt><dd>${escapeHtml(formatCell(row.harga_jual_1, "harga_jual_1"))} / ${escapeHtml(formatCell(row.satuan_1))}</dd></div>
-          <div><dt>Harga Jual 2 / Satuan 2</dt><dd>${escapeHtml(formatCell(row.harga_jual_2, "harga_jual_2"))} / ${escapeHtml(formatCell(row.satuan_2))}</dd></div>
-          <div><dt>Harga Jual 3 / Satuan 3</dt><dd>${escapeHtml(formatCell(row.harga_jual_3, "harga_jual_3"))} / ${escapeHtml(formatCell(row.satuan_3))}</dd></div>
+        <dl class="quick-medicine-list">
+          <div><dt>Stok</dt><dd>${escapeHtml(formatCell(row.stok, "stok"))} / ${escapeHtml(formatCell(row.satuan_beli))}</dd></div>
+          <div><dt>Harga 1</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_1, "harga_jual_1"))} / ${escapeHtml(formatCell(row.satuan_1))}</dd></div>
+          <div><dt>Harga 2</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_2, "harga_jual_2"))} / ${escapeHtml(formatCell(row.satuan_2))}</dd></div>
+          <div><dt>Harga 3</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_3, "harga_jual_3"))} / ${escapeHtml(formatCell(row.satuan_3))}</dd></div>
+          <div><dt>Expired</dt><dd>${escapeHtml(formatQuickDate(row.expired))}</dd></div>
         </dl>
+        <span class="quick-card-arrow" aria-hidden="true">›</span>
       </article>
     `).join("");
   }
@@ -1774,14 +1788,50 @@
     els.importStatus.dataset.type = type || "info";
   }
 
+  async function fetchOwnerActivityLog(options = {}) {
+    const user = getCurrentUserRecord();
+    if (!isAdminUser(user)) return;
+
+    try {
+      const result = await postToApi({ action: "listActivityLog", limit: 20 });
+      if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
+      state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
+      renderProfileActivity();
+      updateNotificationState();
+    } catch (error) {
+      if (!options.silent) console.warn("Gagal membaca aktivitas owner:", error);
+    }
+  }
+
+  function normalizeActivityRecord(item) {
+    return {
+      title: String(item?.title || "Aktivitas").trim(),
+      detail: String(item?.detail || "").trim(),
+      actor: String(item?.actor || "").trim(),
+      role: String(item?.role || "").trim(),
+      at: String(item?.at || item?.createdAt || new Date().toISOString()).trim()
+    };
+  }
+
+  function getLatestOwnerActivityAt() {
+    const latest = state.ownerActivities[0] || readStoredArray(PROFILE_ACTIVITY_KEY)[0] || null;
+    return normalizeTimestamp(latest?.at || "");
+  }
+
   function updateNotificationState() {
     if (!els.notificationButton || !els.notificationDot) return;
 
     const seenAt = normalizeTimestamp(localStorage.getItem(HOME_UPLOAD_ACK_KEY) || "");
-    const hasUnread = Boolean(state.uploadedAt && state.uploadedAt !== seenAt);
-    const label = state.uploadedAt
-      ? `${formatLastUpdated(state.uploadedAt)} berdasarkan upload sheet data_obat terakhir`
-      : "Tidak ada notifikasi terbaru";
+    const latestActivityAt = getLatestOwnerActivityAt();
+    const seenActivityAt = normalizeTimestamp(localStorage.getItem(OWNER_ACTIVITY_ACK_KEY) || "");
+    const hasUploadUnread = Boolean(state.uploadedAt && state.uploadedAt !== seenAt);
+    const hasActivityUnread = isAdminUser(getCurrentUserRecord()) && Boolean(latestActivityAt && latestActivityAt !== seenActivityAt);
+    const hasUnread = hasUploadUnread || hasActivityUnread;
+    const label = hasActivityUnread
+      ? "Ada aktivitas operator/kasir terbaru"
+      : state.uploadedAt
+        ? `${formatLastUpdated(state.uploadedAt)} berdasarkan upload sheet data_obat terakhir`
+        : "Tidak ada notifikasi terbaru";
 
     els.notificationDot.hidden = !hasUnread;
     els.notificationButton.classList.toggle("has-unread", hasUnread);
@@ -1791,11 +1841,17 @@
 
   function openNotification() {
     if (state.uploadedAt) localStorage.setItem(HOME_UPLOAD_ACK_KEY, state.uploadedAt);
+    const latestActivityAt = getLatestOwnerActivityAt();
+    if (latestActivityAt) localStorage.setItem(OWNER_ACTIVITY_ACK_KEY, latestActivityAt);
     updateNotificationState();
 
-    const message = state.uploadedAt
+    const activityMessage = buildOwnerActivityNotification();
+    const uploadMessage = state.uploadedAt
       ? `${formatLastUpdated(state.uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
-      : "Tidak ada notifikasi terbaru. Belum ada info upload terbaru dari Google Sheet data_obat.";
+      : "Belum ada info upload terbaru dari Google Sheet data_obat.";
+    const message = activityMessage
+      ? `${activityMessage}\n\n${uploadMessage}`
+      : `Tidak ada notifikasi aktivitas terbaru.\n\n${uploadMessage}`;
 
     if (els.notificationMessage) els.notificationMessage.textContent = message;
     if (els.notificationPopover) {
@@ -1806,6 +1862,20 @@
 
   function closeNotification() {
     if (els.notificationPopover) els.notificationPopover.hidden = true;
+  }
+
+  function buildOwnerActivityNotification() {
+    const user = getCurrentUserRecord();
+    if (!isAdminUser(user)) return "";
+    const activities = (state.ownerActivities.length ? state.ownerActivities : readStoredArray(PROFILE_ACTIVITY_KEY))
+      .slice(0, 5)
+      .map(normalizeActivityRecord);
+    if (!activities.length) return "";
+    return activities.map((item) => {
+      const time = formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", "");
+      const actor = item.actor ? ` oleh ${item.actor}` : "";
+      return `${time} - ${item.title}${actor}${item.detail ? `: ${item.detail}` : ""}`;
+    }).join("\n");
   }
 
   function positionNotificationPopover() {
@@ -2953,7 +3023,15 @@
       return;
     }
 
-    const activity = readStoredArray(PROFILE_ACTIVITY_KEY).slice(0, 12);
+    const remoteActivity = state.ownerActivities.length ? state.ownerActivities : [];
+    const localActivity = readStoredArray(PROFILE_ACTIVITY_KEY);
+    const activity = remoteActivity.concat(localActivity)
+      .map(normalizeActivityRecord)
+      .filter((item, index, list) => {
+        const key = `${item.at}|${item.title}|${item.actor}|${item.detail}`;
+        return list.findIndex((entry) => `${entry.at}|${entry.title}|${entry.actor}|${entry.detail}` === key) === index;
+      })
+      .slice(0, 12);
 
     if (!activity.length) {
       els.profileActivityList.innerHTML = "<p>Belum ada aktivitas operator/kasir yang tersimpan di perangkat ini.</p>";
@@ -2971,14 +3049,28 @@
   function addProfileActivity(title, detail) {
     const activity = readStoredArray(PROFILE_ACTIVITY_KEY);
     const profile = getProfileData();
-    activity.unshift({
+    const entry = {
       title,
       detail,
       actor: `${profile.name || profile.username || "Akun"} - ${profile.role || "Operator"}`,
+      role: profile.role || "Operator",
       at: new Date().toISOString()
-    });
+    };
+    activity.unshift(entry);
     writeStoredArray(PROFILE_ACTIVITY_KEY, activity.slice(0, 30));
+    sendActivityLog(entry);
     renderProfileActivity();
+  }
+
+  async function sendActivityLog(entry) {
+    try {
+      await postToApi({
+        action: "saveActivityLog",
+        activity: normalizeActivityRecord(entry)
+      });
+    } catch (error) {
+      // Audit tetap tersimpan lokal jika backend Apps Script belum diperbarui.
+    }
   }
 
   function clearProfileActivity() {
@@ -3363,6 +3455,19 @@
     if (QUANTITY_COLUMNS.has(key)) return normalizeQuantityValue(value) || "-";
     const text = String(value ?? "").trim();
     return text || "-";
+  }
+
+  function formatQuickPrice(value, key = "") {
+    const text = formatCell(value, key);
+    return text === "-" ? "-" : `Rp ${text}`;
+  }
+
+  function formatQuickDate(value) {
+    const date = parseDateValue(value);
+    if (!date) return formatCell(value);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${date.getFullYear()}`;
   }
 
   function normalizeRowValue(key, value) {

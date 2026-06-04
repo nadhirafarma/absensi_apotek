@@ -135,6 +135,7 @@
       };
 
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      logLoginActivity(session);
 
       if (rememberInput.checked) {
         localStorage.setItem(REMEMBER_ENABLED_KEY, "true");
@@ -181,6 +182,26 @@
     } catch (error) {
       throw new Error("Response login bukan JSON valid. Cek deployment Apps Script.");
     }
+  }
+
+  function logLoginActivity(session) {
+    fetch(AUTH_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "saveActivityLog",
+        activity: {
+          title: "Login aplikasi",
+          detail: "Akun berhasil masuk ke dashboard",
+          actor: `${session.name || session.username || "Akun"} - ${session.role || "Operator"}`,
+          role: session.role || "",
+          at: new Date().toISOString()
+        }
+      }),
+      keepalive: true
+    }).catch(() => {});
   }
 
   async function fetchLoginUsers() {
