@@ -233,6 +233,7 @@
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
+    bindUserAccessSync();
   }
 
   function bindElements() {
@@ -551,7 +552,15 @@
     }
   }
 
-  async function fetchUsers() {
+  function bindUserAccessSync() {
+    window.addEventListener("focus", () => fetchUsers({ silent: true }));
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) fetchUsers({ silent: true });
+    });
+    window.setInterval(() => fetchUsers({ silent: true }), 45000);
+  }
+
+  async function fetchUsers(options = {}) {
     try {
       const payload = await postToApi({ action: "listLoginUsers" });
       if (!payload || payload.success !== true || !Array.isArray(payload.users)) return;
@@ -576,6 +585,9 @@
       renderProfile();
       applyCurrentUserAccess();
     } catch (error) {
+      if (!options.silent) {
+        console.warn("Gagal menyinkronkan data user:", error);
+      }
       syncEmployeeSeed();
       syncUserSeed();
       renderEmployees();
@@ -2461,6 +2473,8 @@
         els.recordModalStatus.dataset.type = "info";
       }
 
+      const loadingToken = startAppLoading("Menyimpan akses pengguna...", 0);
+
       try {
         const result = await postToApi({
           action: "saveLoginUser",
@@ -2475,12 +2489,15 @@
 
         record = normalizeUserRecord(result.user || record);
         upsertUserRecord(record, previousRecord);
+        await fetchUsers({ silent: true });
       } catch (error) {
         if (els.recordModalStatus) {
           els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
           els.recordModalStatus.dataset.type = "error";
         }
         return;
+      } finally {
+        endAppLoading(loadingToken);
       }
     }
 
@@ -3138,14 +3155,21 @@
     }
   }
 
-  function startAppLoading(message) {
+  function startAppLoading(message, delayMs) {
     const token = Date.now() + Math.random();
     state.appLoadingToken = token;
     window.clearTimeout(state.appLoadingTimer);
-    state.appLoadingTimer = window.setTimeout(() => {
+    const show = () => {
       if (state.appLoadingToken !== token || !els.appLoadingOverlay) return;
       if (els.appLoadingText) els.appLoadingText.textContent = message || "Memproses...";
       els.appLoadingOverlay.hidden = false;
+    };
+    if (Number(delayMs) <= 0) {
+      show();
+      return token;
+    }
+    state.appLoadingTimer = window.setTimeout(() => {
+      show();
     }, 500);
     return token;
   }
