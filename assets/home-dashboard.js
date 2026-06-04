@@ -5,6 +5,7 @@
   const META_KEY = "nadhira.obatCacheMeta";
   const HOME_UPLOAD_ACK_KEY = "nadhira.homeUploadNotificationSeenAt";
   const COLUMN_KEY = "nadhira.dashboardVisibleColumns";
+  const DATA_OBAT_FILTER_KEY = "nadhira.dataObatGlobalFilter";
   const EMPLOYEE_KEY = "nadhira.employeeRecords";
   const SUPPLIER_KEY = "nadhira.supplierRecords";
   const USER_KEY = "nadhira.userRecords";
@@ -91,6 +92,7 @@
 
   const VIEW_TITLES = {
     dashboard: "Dashboard",
+    "cari-data-obat": "Cari Data Obat",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
@@ -103,6 +105,7 @@
   const ACCESS_MENUS = [
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi_face_id", label: "Absensi Face ID" },
+    { key: "cari_data_obat", label: "Cari Data Obat" },
     { key: "data_obat", label: "Data Obat" },
     { key: "filter_data_obat", label: "Filter Data Obat" },
     { key: "edit_obat", label: "Tambah/Edit Obat" },
@@ -118,12 +121,12 @@
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    admin: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    apoteker: ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    kasir: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    operator: ["dashboard", "absensi_face_id", "data_obat", "akun_profil"]
+    administrator: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    admin: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    apoteker: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    kasir: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    operator: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -168,6 +171,9 @@
     page: 1,
     uploadedAt: "",
     visibleColumns: loadVisibleColumns(),
+    globalFilterLoaded: false,
+    applyingGlobalFilter: false,
+    filterSaveTimer: null,
     users: [],
     employees: [],
     suppliers: [],
@@ -238,6 +244,10 @@
       viewTitle: document.getElementById("dashboardViewTitle"),
       viewButtons: Array.from(document.querySelectorAll("[data-view-target]")),
       views: Array.from(document.querySelectorAll(".dashboard-view")),
+      quickSearchInput: document.getElementById("quickSearchInput"),
+      quickBarcodeButton: document.getElementById("quickBarcodeButton"),
+      quickResultsList: document.getElementById("quickResultsList"),
+      quickSearchStatus: document.getElementById("quickSearchStatus"),
       searchInput: document.getElementById("dashboardSearchInput"),
       filterButton: document.getElementById("dashboardFilterButton"),
       filterPanel: document.getElementById("dashboardFilterPanel"),
@@ -370,10 +380,15 @@
       });
     }
 
+    if (els.quickSearchInput) {
+      els.quickSearchInput.addEventListener("input", renderQuickSearchResults);
+    }
+
     [els.filterCategory, els.filterSupplier, els.filterStockLevel, els.filterExpiredLevel].forEach((control) => {
       if (control) control.addEventListener("change", () => {
         state.page = 1;
         applyFilters();
+        scheduleSaveDataObatFilter();
       });
     });
 
@@ -389,6 +404,7 @@
     if (els.nextButton) els.nextButton.addEventListener("click", () => changePage(1));
     if (els.addMedicineButton) els.addMedicineButton.addEventListener("click", () => openMedicineModal("add"));
     if (els.barcodeButton) els.barcodeButton.addEventListener("click", startDashboardScanner);
+    if (els.quickBarcodeButton) els.quickBarcodeButton.addEventListener("click", startDashboardScanner);
     if (els.scannerVideo) els.scannerVideo.addEventListener("click", tuneDashboardScannerTrack);
 
     els.tableBody.addEventListener("click", handleTableAction);
@@ -513,6 +529,7 @@
       persistMeta();
       syncSupplierSeed();
       populateFilterOptions();
+      await loadDataObatFilterState();
       populateMedicineOptions();
       applyFilters();
       renderUploadInfo();
@@ -525,6 +542,7 @@
       if (els.statusText) els.statusText.dataset.type = "error";
       state.rows = [];
       applyFilters();
+      renderQuickSearchResults();
       renderUploadInfo();
       updateNotificationState();
       renderReports();
@@ -674,6 +692,115 @@
     if (values.includes(current)) select.value = current;
   }
 
+  async function loadDataObatFilterState() {
+    state.globalFilterLoaded = true;
+
+    let filter = readDataObatFilterState();
+
+    try {
+      const result = await postToApi({ action: "getDataObatFilter" });
+      if (result && result.success === true && result.filter && typeof result.filter === "object") {
+        filter = normalizeDataObatFilterState(result.filter);
+        localStorage.setItem(DATA_OBAT_FILTER_KEY, JSON.stringify(filter));
+      }
+    } catch (error) {
+      // Keep the last local copy when the deployed Apps Script has not been updated yet.
+    }
+
+    applyDataObatFilterState(filter);
+  }
+
+  function readDataObatFilterState() {
+    return normalizeDataObatFilterState(readObject(DATA_OBAT_FILTER_KEY));
+  }
+
+  function normalizeDataObatFilterState(filter) {
+    const source = filter && typeof filter === "object" ? filter : {};
+    const visibleColumns = Array.isArray(source.visibleColumns)
+      ? source.visibleColumns.filter((key) => DATA_COLUMNS.some((column) => column.key === key))
+      : [];
+
+    return {
+      category: String(source.category || "").trim(),
+      supplier: String(source.supplier || "").trim(),
+      stockLevel: ["", "empty", "low", "ready"].includes(source.stockLevel) ? source.stockLevel : "",
+      expiredLevel: ["", "expired", "soon", "safe", "blank"].includes(source.expiredLevel) ? source.expiredLevel : "",
+      visibleColumns: visibleColumns.length ? visibleColumns : DEFAULT_VISIBLE_COLUMNS.slice(),
+      updatedAt: String(source.updatedAt || "").trim(),
+      updatedBy: String(source.updatedBy || "").trim()
+    };
+  }
+
+  function applyDataObatFilterState(filter) {
+    state.applyingGlobalFilter = true;
+    const normalized = normalizeDataObatFilterState(filter);
+
+    setSelectValueIfExists(els.filterCategory, normalized.category);
+    setSelectValueIfExists(els.filterSupplier, normalized.supplier);
+    setSelectValueIfExists(els.filterStockLevel, normalized.stockLevel);
+    setSelectValueIfExists(els.filterExpiredLevel, normalized.expiredLevel);
+    state.visibleColumns = normalized.visibleColumns.length
+      ? normalized.visibleColumns.slice()
+      : DEFAULT_VISIBLE_COLUMNS.slice();
+    saveVisibleColumns();
+    renderColumnOptions();
+    renderTableHead();
+
+    state.applyingGlobalFilter = false;
+  }
+
+  function setSelectValueIfExists(select, value) {
+    if (!select) return;
+    const text = String(value || "").trim();
+    const exists = !text || Array.from(select.options).some((option) => option.value === text);
+    select.value = exists ? text : "";
+  }
+
+  function scheduleSaveDataObatFilter(options = {}) {
+    if (state.applyingGlobalFilter || !canManageDataObatGlobalFilter()) return;
+    window.clearTimeout(state.filterSaveTimer);
+
+    if (options.immediate) {
+      saveDataObatFilterState();
+      return;
+    }
+
+    state.filterSaveTimer = window.setTimeout(saveDataObatFilterState, 500);
+  }
+
+  async function saveDataObatFilterState() {
+    if (!canManageDataObatGlobalFilter()) return;
+    const user = getCurrentUserRecord();
+    const filter = {
+      category: els.filterCategory ? els.filterCategory.value : "",
+      supplier: els.filterSupplier ? els.filterSupplier.value : "",
+      stockLevel: els.filterStockLevel ? els.filterStockLevel.value : "",
+      expiredLevel: els.filterExpiredLevel ? els.filterExpiredLevel.value : "",
+      visibleColumns: state.visibleColumns.slice(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: user.name || user.username || user.email || "Owner/Admin"
+    };
+
+    localStorage.setItem(DATA_OBAT_FILTER_KEY, JSON.stringify(filter));
+
+    try {
+      await postToApi({
+        action: "saveDataObatFilter",
+        username: user.username || user.name || "",
+        role: user.role || "",
+        filter
+      });
+    } catch (error) {
+      // The UI stays usable even before the Apps Script action is deployed.
+    }
+  }
+
+  function canManageDataObatGlobalFilter() {
+    const user = getCurrentUserRecord();
+    const role = normalizeSearch(user.role);
+    return role === "owner" || role === "admin" || role === "administrator";
+  }
+
   function uniqueValues(key) {
     return unique(state.rows.map((row) => row[key]).filter((value) => String(value || "").trim()))
       .sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
@@ -681,23 +808,13 @@
 
   function applyFilters() {
     const query = normalizeSearch(els.searchInput ? els.searchInput.value : "");
-    const category = normalizeSearch(els.filterCategory ? els.filterCategory.value : "");
-    const supplier = normalizeSearch(els.filterSupplier ? els.filterSupplier.value : "");
-    const stockLevel = els.filterStockLevel ? els.filterStockLevel.value : "";
-    const expiredLevel = els.filterExpiredLevel ? els.filterExpiredLevel.value : "";
+    const filters = getDataObatFilterValues();
 
-    state.filtered = state.rows.filter((row) => {
-      const searchMatch = !query || DATA_COLUMNS.some((column) => normalizeSearch(row[column.key]).includes(query));
-      const categoryMatch = !category || normalizeSearch(row.kategori) === category;
-      const supplierMatch = !supplier || normalizeSearch(row.suplier) === supplier;
-      const stockMatch = !stockLevel || getStockStatus(row) === stockLevel;
-      const expiredMatch = !expiredLevel || getExpiredStatus(row) === expiredLevel;
-
-      return searchMatch && categoryMatch && supplierMatch && stockMatch && expiredMatch;
-    });
+    state.filtered = state.rows.filter((row) => matchesDataObatFilters(row, query, filters));
 
     renderTableBody();
     renderFooter();
+    renderQuickSearchResults();
   }
 
   function resetDashboardFilters() {
@@ -710,6 +827,26 @@
     renderColumnOptions();
     renderTableHead();
     applyFilters();
+    scheduleSaveDataObatFilter({ immediate: true });
+  }
+
+  function getDataObatFilterValues() {
+    return {
+      category: normalizeSearch(els.filterCategory ? els.filterCategory.value : ""),
+      supplier: normalizeSearch(els.filterSupplier ? els.filterSupplier.value : ""),
+      stockLevel: els.filterStockLevel ? els.filterStockLevel.value : "",
+      expiredLevel: els.filterExpiredLevel ? els.filterExpiredLevel.value : ""
+    };
+  }
+
+  function matchesDataObatFilters(row, query, filters = getDataObatFilterValues()) {
+    const searchMatch = !query || DATA_COLUMNS.some((column) => normalizeSearch(row[column.key]).includes(query));
+    const categoryMatch = !filters.category || normalizeSearch(row.kategori) === filters.category;
+    const supplierMatch = !filters.supplier || normalizeSearch(row.suplier) === filters.supplier;
+    const stockMatch = !filters.stockLevel || getStockStatus(row) === filters.stockLevel;
+    const expiredMatch = !filters.expiredLevel || getExpiredStatus(row) === filters.expiredLevel;
+
+    return searchMatch && categoryMatch && supplierMatch && stockMatch && expiredMatch;
   }
 
   function renderColumnOptions() {
@@ -730,6 +867,7 @@
         renderTableHead();
         renderTableBody();
         renderFooter();
+        scheduleSaveDataObatFilter();
       });
     });
   }
@@ -801,6 +939,46 @@
     if (els.pageNumber) els.pageNumber.textContent = String(state.page);
     if (els.prevButton) els.prevButton.disabled = state.page <= 1;
     if (els.nextButton) els.nextButton.disabled = state.page >= totalPages;
+  }
+
+  function renderQuickSearchResults() {
+    if (!els.quickResultsList) return;
+
+    const query = normalizeSearch(els.quickSearchInput ? els.quickSearchInput.value : "");
+    const filters = getDataObatFilterValues();
+    const rows = state.rows
+      .filter((row) => matchesDataObatFilters(row, query, filters))
+      .slice(0, 40);
+
+    if (els.quickSearchStatus) {
+      if (!state.rows.length) {
+        els.quickSearchStatus.textContent = "Data obat belum termuat.";
+      } else if (!rows.length) {
+        els.quickSearchStatus.textContent = "Obat tidak ditemukan. Coba kata kunci atau barcode lain.";
+      } else {
+        els.quickSearchStatus.textContent = `${formatNumber(rows.length)} hasil ditampilkan dari ${formatNumber(state.rows.length)} data obat.`;
+      }
+    }
+
+    if (!rows.length) {
+      els.quickResultsList.innerHTML = `<div class="quick-empty-state">Tidak ada data obat yang cocok.</div>`;
+      return;
+    }
+
+    els.quickResultsList.innerHTML = rows.map((row) => `
+      <article class="quick-medicine-card">
+        <div class="quick-medicine-name">
+          <small>${escapeHtml(row.kode || "Tanpa kode")}</small>
+          <strong>${escapeHtml(formatCell(row.nama))}</strong>
+        </div>
+        <dl class="quick-medicine-grid">
+          <div><dt>Stok / Satuan Beli</dt><dd>${escapeHtml(formatCell(row.stok, "stok"))} / ${escapeHtml(formatCell(row.satuan_beli))}</dd></div>
+          <div><dt>Harga Jual 1 / Satuan 1</dt><dd>${escapeHtml(formatCell(row.harga_jual_1, "harga_jual_1"))} / ${escapeHtml(formatCell(row.satuan_1))}</dd></div>
+          <div><dt>Harga Jual 2 / Satuan 2</dt><dd>${escapeHtml(formatCell(row.harga_jual_2, "harga_jual_2"))} / ${escapeHtml(formatCell(row.satuan_2))}</dd></div>
+          <div><dt>Harga Jual 3 / Satuan 3</dt><dd>${escapeHtml(formatCell(row.harga_jual_3, "harga_jual_3"))} / ${escapeHtml(formatCell(row.satuan_3))}</dd></div>
+        </dl>
+      </article>
+    `).join("");
   }
 
   function renderUploadInfo() {
@@ -1329,10 +1507,18 @@
     if (state.scannerLocked) return;
     state.scannerLocked = true;
     resetDashboardScanCandidate();
-    if (els.searchInput) {
-      els.searchInput.value = value;
+    const targetInput = state.activeView === "cari-data-obat" && els.quickSearchInput
+      ? els.quickSearchInput
+      : els.searchInput;
+
+    if (targetInput) {
+      targetInput.value = value;
       state.page = 1;
-      applyFilters();
+      if (targetInput === els.quickSearchInput) {
+        renderQuickSearchResults();
+      } else {
+        applyFilters();
+      }
     }
     setScannerStatus(`Barcode terbaca: ${value}`);
     stopDashboardScanner();
@@ -2011,6 +2197,7 @@
   function canView(viewName, access) {
     const map = {
       dashboard: "dashboard",
+      "cari-data-obat": "cari_data_obat",
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
       "data-supplier": "data_supplier",
@@ -2024,6 +2211,7 @@
 
   function accessKeyToView(key) {
     const map = {
+      cari_data_obat: "cari-data-obat",
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
       data_supplier: "data-supplier",
@@ -2856,6 +3044,7 @@
       else button.removeAttribute("aria-current");
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
+    if (viewName === "cari-data-obat") renderQuickSearchResults();
     setSidebarCollapsed(true);
   }
 
