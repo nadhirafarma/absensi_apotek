@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260604-mobile-home-v32">
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-central-access-v33">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260604-mobile-home-v32"></script>
+  <script defer src="assets/app.js?v=20260605-central-access-v33"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260604-mobile-home-v32"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-central-access-v33"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -292,13 +292,14 @@
 
         <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
           <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
-            <article class="stat-card"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-pink">X</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-orange">S</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
-            <article class="stat-card"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="all"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="active"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="inactive"><span class="stat-icon stat-pink">N</span><span><small>Obat Nonaktif</small><strong id="reportInactive">0</strong><em>Stok kosong</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="expiring"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="expired"><span class="stat-icon stat-pink">X</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="empty"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="low"><span class="stat-icon stat-orange">S</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="out"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
           </section>
         </section>
 
@@ -332,6 +333,7 @@
                 <p id="quickSearchStatus">Ketik nama obat atau scan barcode untuk mencari data.</p>
               </div>
             </div>
+            <div class="quick-filter-chips" id="quickFilterChips" hidden></div>
             <div class="quick-results-list" id="quickResultsList"></div>
           </section>
         </section>
@@ -474,11 +476,7 @@
               <table class="simple-table">
                 <thead>
                   <tr>
-                    <th>Nama Lengkap</th>
-                    <th>No. HP</th>
-                    <th>Alamat</th>
-                    <th>Jabatan</th>
-                    <th>Email</th>
+                    <th>Nama Karyawan</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>
@@ -493,7 +491,6 @@
             <div class="module-head">
               <div>
                 <h2>Data Supplier</h2>
-                <p>Nama supplier diambil dari data obat, detail kontak bisa diedit dan disimpan lokal.</p>
               </div>
               <button class="secondary-action" id="addSupplierButton" type="button">Tambah Supplier</button>
             </div>
@@ -502,9 +499,6 @@
                 <thead>
                   <tr>
                     <th>Nama Supplier</th>
-                    <th>Alamat</th>
-                    <th>No HP</th>
-                    <th>PIC/Sales</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>

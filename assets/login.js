@@ -129,6 +129,7 @@
         name: result.name || result.nama || result.fullName || result.username || username,
         phone: result.phone || result.noHp || "",
         address: result.address || result.alamat || "",
+        preferences: result.preferences || result.profilePreferences || "",
         profilePhoto: result.profilePhoto || result.photo || "",
         loginAt: Date.now(),
         expiresAt: Date.now() + SESSION_DURATION_MS
@@ -197,6 +198,9 @@
           detail: "Akun berhasil masuk ke dashboard",
           actor: `${session.name || session.username || "Akun"} - ${session.role || "Operator"}`,
           role: session.role || "",
+          username: session.username || "",
+          email: session.email || "",
+          scope: "account",
           at: new Date().toISOString()
         }
       }),

@@ -209,6 +209,7 @@
     pendingProfilePhoto: null,
     pendingProfilePhotoName: "",
     ownerActivities: [],
+    quickFilter: { type: "all", days: EXPIRING_DAYS },
     appLoadingTimer: null,
     appLoadingToken: 0
   };
@@ -254,6 +255,7 @@
       quickBarcodeButton: document.getElementById("quickBarcodeButton"),
       quickResultsList: document.getElementById("quickResultsList"),
       quickSearchStatus: document.getElementById("quickSearchStatus"),
+      quickFilterChips: document.getElementById("quickFilterChips"),
       searchInput: document.getElementById("dashboardSearchInput"),
       filterButton: document.getElementById("dashboardFilterButton"),
       filterPanel: document.getElementById("dashboardFilterPanel"),
@@ -363,6 +365,7 @@
       userStatusFilter: document.getElementById("userStatusFilter"),
       reportTotal: document.getElementById("reportTotal"),
       reportActive: document.getElementById("reportActive"),
+      reportInactive: document.getElementById("reportInactive"),
       reportExpiring: document.getElementById("reportExpiring"),
       reportExpired: document.getElementById("reportExpired"),
       reportEmpty: document.getElementById("reportEmpty"),
@@ -377,7 +380,10 @@
     window.addEventListener("resize", handleViewportRoute);
 
     els.viewButtons.forEach((button) => {
-      button.addEventListener("click", () => switchView(button.dataset.viewTarget));
+      button.addEventListener("click", () => {
+        if (button.dataset.viewTarget === "cari-data-obat") resetQuickReportFilter();
+        switchView(button.dataset.viewTarget);
+      });
     });
 
     if (els.searchInput) {
@@ -390,6 +396,17 @@
     if (els.quickSearchInput) {
       els.quickSearchInput.addEventListener("input", renderQuickSearchResults);
     }
+    if (els.quickFilterChips) els.quickFilterChips.addEventListener("click", handleQuickFilterChipClick);
+
+    document.querySelectorAll("[data-report-filter]").forEach((card) => {
+      card.addEventListener("click", () => applyReportQuickFilter(card.dataset.reportFilter));
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          applyReportQuickFilter(card.dataset.reportFilter);
+        }
+      });
+    });
 
     [els.filterCategory, els.filterSupplier, els.filterStockLevel, els.filterExpiredLevel].forEach((control) => {
       if (control) control.addEventListener("change", () => {
@@ -587,7 +604,7 @@
         role: String(user.role || "Operator").trim() || "Operator",
         status: String(user.status || "Aktif").trim() || "Aktif",
         email: String(user.email || "").trim(),
-        phone: String(user.phone || user.noHp || "").trim(),
+        phone: normalizePhoneNumber(user.phone || user.noHp || ""),
         address: String(user.address || user.alamat || "").trim(),
         photo: String(user.profilePhoto || user.photo || "").trim(),
         access: normalizeAccessList(user.access || user.menu, user.role || "Operator"),
@@ -798,7 +815,7 @@
 
   async function saveDataObatFilterState() {
     if (!canManageDataObatGlobalFilter()) return;
-    const user = getCurrentUserRecord();
+    const user = getCurrentUserRecord() || {};
     const filter = {
       category: els.filterCategory ? els.filterCategory.value : "",
       supplier: els.filterSupplier ? els.filterSupplier.value : "",
@@ -824,7 +841,7 @@
   }
 
   function canManageDataObatGlobalFilter() {
-    const user = getCurrentUserRecord();
+    const user = getCurrentUserRecord() || {};
     const role = normalizeSearch(user.role);
     return role === "owner" || role === "admin" || role === "administrator";
   }
@@ -976,15 +993,20 @@
     const filters = getDataObatFilterValues();
     const rows = state.rows
       .filter((row) => matchesDataObatFilters(row, query, filters))
+      .filter((row) => matchesQuickReportFilter(row, state.quickFilter))
       .slice(0, 40);
+    const quickFilterLabel = getQuickFilterLabel(state.quickFilter);
+    renderQuickFilterChips();
 
     if (els.quickSearchStatus) {
       if (!state.rows.length) {
         els.quickSearchStatus.textContent = "Data obat belum termuat.";
       } else if (!rows.length) {
-        els.quickSearchStatus.textContent = "Obat tidak ditemukan. Coba kata kunci atau barcode lain.";
+        els.quickSearchStatus.textContent = quickFilterLabel
+          ? `Tidak ada obat untuk filter ${quickFilterLabel}.`
+          : "Obat tidak ditemukan. Coba kata kunci atau barcode lain.";
       } else {
-        els.quickSearchStatus.textContent = `${formatNumber(rows.length)} hasil ditampilkan dari ${formatNumber(state.rows.length)} data obat.`;
+        els.quickSearchStatus.textContent = `${formatNumber(rows.length)} hasil ${quickFilterLabel ? `${quickFilterLabel} ` : ""}ditampilkan dari ${formatNumber(state.rows.length)} data obat.`;
       }
     }
 
@@ -1004,11 +1026,96 @@
           <div><dt>Harga 1</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_1, "harga_jual_1"))} / ${escapeHtml(formatCell(row.satuan_1))}</dd></div>
           <div><dt>Harga 2</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_2, "harga_jual_2"))} / ${escapeHtml(formatCell(row.satuan_2))}</dd></div>
           <div><dt>Harga 3</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_3, "harga_jual_3"))} / ${escapeHtml(formatCell(row.satuan_3))}</dd></div>
-          <div><dt>Expired</dt><dd>${escapeHtml(formatQuickDate(row.expired))}</dd></div>
+          <div><dt>Expired</dt><dd>${escapeHtml(formatQuickExpiry(row))}</dd></div>
         </dl>
         <span class="quick-card-arrow" aria-hidden="true">›</span>
       </article>
     `).join("");
+  }
+
+  function applyReportQuickFilter(type) {
+    state.quickFilter = {
+      type: type || "all",
+      days: type === "expiring" ? EXPIRING_DAYS : null
+    };
+    if (els.quickSearchInput) els.quickSearchInput.value = "";
+    switchView("cari-data-obat");
+    renderQuickSearchResults();
+  }
+
+  function resetQuickReportFilter() {
+    state.quickFilter = { type: "all", days: EXPIRING_DAYS };
+  }
+
+  function handleQuickFilterChipClick(event) {
+    const resetButton = event.target.closest("[data-quick-filter-reset]");
+    if (resetButton) {
+      resetQuickReportFilter();
+      renderQuickSearchResults();
+      return;
+    }
+
+    const expiryButton = event.target.closest("[data-expiry-days]");
+    if (!expiryButton) return;
+    state.quickFilter = {
+      type: "expiring",
+      days: Number(expiryButton.dataset.expiryDays) || EXPIRING_DAYS
+    };
+    renderQuickSearchResults();
+  }
+
+  function renderQuickFilterChips() {
+    if (!els.quickFilterChips) return;
+    const filter = state.quickFilter || {};
+    const label = getQuickFilterLabel(filter);
+
+    if (!label) {
+      els.quickFilterChips.hidden = true;
+      els.quickFilterChips.innerHTML = "";
+      return;
+    }
+
+    const expiryChips = filter.type === "expiring"
+      ? [30, 60, 90].map((days) => `<button type="button" data-expiry-days="${days}" class="${Number(filter.days) === days ? "is-active" : ""}">&lt; ${days} hari</button>`).join("")
+      : "";
+
+    els.quickFilterChips.hidden = false;
+    els.quickFilterChips.innerHTML = `
+      <span>${escapeHtml(label)}</span>
+      ${expiryChips}
+      <button type="button" data-quick-filter-reset>Semua data</button>
+    `;
+  }
+
+  function getQuickFilterLabel(filter) {
+    const type = filter?.type || "all";
+    const days = Number(filter?.days || EXPIRING_DAYS);
+    const labels = {
+      active: "obat aktif",
+      inactive: "obat nonaktif",
+      expired: "obat expired",
+      empty: "obat kosong",
+      low: "stok menipis",
+      out: "stok habis"
+    };
+
+    if (type === "expiring") return `akan expired < ${days} hari`;
+    return labels[type] || "";
+  }
+
+  function matchesQuickReportFilter(row, filter) {
+    const type = filter?.type || "all";
+    if (type === "all") return true;
+    if (type === "active") return getEffectiveMedicineStatus(row) === "aktif";
+    if (type === "inactive") return getEffectiveMedicineStatus(row) === "nonaktif";
+    if (type === "expired") return isExpired(row);
+    if (type === "empty" || type === "out") return parseNumber(row.stok) <= 0;
+    if (type === "low") return isLowStock(row);
+    if (type === "expiring") {
+      const daysLeft = getExpiryDaysLeft(row);
+      return daysLeft !== null && daysLeft >= 0 && daysLeft <= (Number(filter.days) || EXPIRING_DAYS);
+    }
+    return true;
   }
 
   function renderUploadInfo() {
@@ -1793,11 +1900,17 @@
   }
 
   async function fetchOwnerActivityLog(options = {}) {
-    const user = getCurrentUserRecord();
-    if (!isAdminUser(user)) return;
+    const user = getCurrentUserRecord() || {};
 
     try {
-      const result = await postToApi({ action: "listActivityLog", limit: 20 });
+      const result = await postToApi({
+        action: "listActivityLog",
+        limit: isOwnerUser(user) ? 40 : 12,
+        role: user.role || "",
+        username: user.username || "",
+        email: user.email || "",
+        actor: user.name || ""
+      });
       if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
       state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
       renderProfileActivity();
@@ -1813,12 +1926,15 @@
       detail: String(item?.detail || "").trim(),
       actor: String(item?.actor || "").trim(),
       role: String(item?.role || "").trim(),
+      username: String(item?.username || "").trim(),
+      email: String(item?.email || "").trim(),
+      scope: String(item?.scope || "").trim(),
       at: String(item?.at || item?.createdAt || new Date().toISOString()).trim()
     };
   }
 
   function getLatestOwnerActivityAt() {
-    const latest = state.ownerActivities[0] || readStoredArray(PROFILE_ACTIVITY_KEY)[0] || null;
+    const latest = getVisibleActivityNotificationItems()[0] || null;
     return normalizeTimestamp(latest?.at || "");
   }
 
@@ -1827,12 +1943,13 @@
 
     const seenAt = normalizeTimestamp(localStorage.getItem(HOME_UPLOAD_ACK_KEY) || "");
     const latestActivityAt = getLatestOwnerActivityAt();
-    const seenActivityAt = normalizeTimestamp(localStorage.getItem(OWNER_ACTIVITY_ACK_KEY) || "");
+    const seenActivityAt = normalizeTimestamp(localStorage.getItem(getActivityAckKey()) || "");
     const hasUploadUnread = Boolean(state.uploadedAt && state.uploadedAt !== seenAt);
-    const hasActivityUnread = isAdminUser(getCurrentUserRecord()) && Boolean(latestActivityAt && latestActivityAt !== seenActivityAt);
+    const hasActivityUnread = Boolean(latestActivityAt && latestActivityAt !== seenActivityAt);
     const hasUnread = hasUploadUnread || hasActivityUnread;
+    const isOwner = isOwnerUser(getCurrentUserRecord());
     const label = hasActivityUnread
-      ? "Ada aktivitas operator/kasir terbaru"
+      ? (isOwner ? "Ada aktivitas seluruh user terbaru" : "Ada aktivitas akun Anda terbaru")
       : state.uploadedAt
         ? `${formatLastUpdated(state.uploadedAt)} berdasarkan upload sheet data_obat terakhir`
         : "Tidak ada notifikasi terbaru";
@@ -1846,10 +1963,10 @@
   function openNotification() {
     if (state.uploadedAt) localStorage.setItem(HOME_UPLOAD_ACK_KEY, state.uploadedAt);
     const latestActivityAt = getLatestOwnerActivityAt();
-    if (latestActivityAt) localStorage.setItem(OWNER_ACTIVITY_ACK_KEY, latestActivityAt);
+    if (latestActivityAt) localStorage.setItem(getActivityAckKey(), latestActivityAt);
     updateNotificationState();
 
-    const activityItems = getOwnerActivityNotificationItems();
+    const activityItems = getVisibleActivityNotificationItems();
     const uploadMessage = state.uploadedAt
       ? `${formatLastUpdated(state.uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
       : "Belum ada info upload terbaru dari Google Sheet data_obat.";
@@ -1866,11 +1983,46 @@
   }
 
   function getOwnerActivityNotificationItems() {
+    return getVisibleActivityNotificationItems();
+  }
+
+  function getVisibleActivityNotificationItems() {
     const user = getCurrentUserRecord();
-    if (!isAdminUser(user)) return [];
-    return (state.ownerActivities.length ? state.ownerActivities : readStoredArray(PROFILE_ACTIVITY_KEY))
+    const remoteActivity = state.ownerActivities.length ? state.ownerActivities : [];
+    const localActivity = readStoredArray(PROFILE_ACTIVITY_KEY).map(normalizeActivityRecord);
+    const source = remoteActivity.concat(localActivity)
+      .map(normalizeActivityRecord)
+      .filter((item) => item.title || item.detail);
+    const visible = isOwnerUser(user)
+      ? source
+      : source.filter((item) => isOwnAccountActivity(item, user));
+
+    return visible
+      .filter((item, index, list) => {
+        const key = `${item.at}|${item.title}|${item.actor}|${item.detail}|${item.username}|${item.email}`;
+        return list.findIndex((entry) => `${entry.at}|${entry.title}|${entry.actor}|${entry.detail}|${entry.username}|${entry.email}` === key) === index;
+      })
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
       .slice(0, 5)
       .map(normalizeActivityRecord);
+  }
+
+  function isOwnAccountActivity(item, user) {
+    if (!item || !user) return false;
+    const accountText = normalizeSearch(`${item.title} ${item.detail} ${item.scope}`);
+    const isAccountEvent = /akun|profil|foto|password|preferensi|login|logout|email/.test(accountText);
+    if (!isAccountEvent) return false;
+
+    const identityText = normalizeSearch(`${item.actor} ${item.username} ${item.email}`);
+    const keys = [user.username, user.email, user.name]
+      .map(normalizeSearch)
+      .filter(Boolean);
+    return keys.some((key) => identityText.includes(key));
+  }
+
+  function getActivityAckKey() {
+    const user = getCurrentUserRecord();
+    return `${OWNER_ACTIVITY_ACK_KEY}.${isOwnerUser(user) ? "owner" : getProfileStorageIdentity()}`;
   }
 
   function buildNotificationHtml(activities, uploadMessage) {
@@ -2365,11 +2517,11 @@
   }
 
   function renderEmployees() {
-    renderSimpleRows(els.employeeTableBody, state.employees, "employee", ["name", "phone", "address", "job", "email"]);
+    renderSimpleRows(els.employeeTableBody, state.employees, "employee", ["name"]);
   }
 
   function renderSuppliers() {
-    renderSimpleRows(els.supplierTableBody, state.suppliers, "supplier", ["name", "address", "phone", "pic"]);
+    renderSimpleRows(els.supplierTableBody, state.suppliers, "supplier", ["name"]);
   }
 
   function renderSimpleRows(tbody, rows, type, keys) {
@@ -2380,9 +2532,16 @@
       return;
     }
 
-    tbody.innerHTML = rows.map((row, index) => `
+    tbody.innerHTML = rows.map((row, index) => {
+      const nameKey = keys[0] || "name";
+      const label = formatCell(row[nameKey]);
+      return `
       <tr>
-        ${keys.map((key) => `<td>${escapeHtml(formatCell(row[key]))}</td>`).join("")}
+        <td>
+          <button class="simple-name-button" type="button" data-local-action="edit" data-type="${type}" data-index="${index}">
+            ${escapeHtml(label)}
+          </button>
+        </td>
         <td>
           <div class="row-actions">
             <button class="table-action table-action-edit" type="button" data-local-action="edit" data-type="${type}" data-index="${index}" aria-label="Edit">
@@ -2394,7 +2553,8 @@
           </div>
         </td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
   }
 
   function renderUsers() {
@@ -2543,7 +2703,9 @@
       `;
     }
 
-    return `<input name="${escapeHtml(field.key)}" type="${escapeHtml(field.type || "text")}" value="${escapeHtml(value)}" ${field.required ? "required" : ""}>`;
+    const inputType = field.key === "phone" ? "tel" : (field.type || "text");
+    const inputMode = field.key === "phone" ? ' inputmode="tel" autocomplete="tel"' : "";
+    return `<input name="${escapeHtml(field.key)}" type="${escapeHtml(inputType)}" value="${escapeHtml(value)}"${inputMode} ${field.required ? "required" : ""}>`;
   }
 
   function setAccessCheckboxes(access) {
@@ -2569,7 +2731,9 @@
         record[field.key] = formData.getAll(field.key).map((value) => String(value || "").trim()).filter(Boolean);
         return;
       }
-      record[field.key] = String(formData.get(field.key) || "").trim();
+      record[field.key] = field.key === "phone"
+        ? normalizePhoneNumber(formData.get(field.key))
+        : String(formData.get(field.key) || "").trim();
     });
 
     if (state.recordType === "user") {
@@ -2820,7 +2984,7 @@
       const profile = {
         name: els.profileNameInput.value.trim(),
         email: els.profileEmailInput.value.trim(),
-        phone: els.profilePhoneInput.value.trim(),
+        phone: normalizePhoneNumber(els.profilePhoneInput.value),
         job: currentProfile.role || "Operator",
         address: els.profileAddressInput.value.trim(),
         photo: state.pendingProfilePhoto !== null ? state.pendingProfilePhoto : currentProfile.photo || "",
@@ -3071,8 +3235,8 @@
   function renderProfileActivity() {
     if (!els.profileActivityList) return;
     const user = getCurrentUserRecord();
-    if (!isAdminUser(user)) {
-      els.profileActivityList.innerHTML = "<p>Riwayat aktivitas hanya tersedia untuk role admin atau owner.</p>";
+    if (!isOwnerUser(user)) {
+      els.profileActivityList.innerHTML = "<p>Riwayat aktivitas seluruh user hanya tersedia untuk owner.</p>";
       syncProfileActivityAccess();
       return;
     }
@@ -3103,11 +3267,15 @@
   function addProfileActivity(title, detail) {
     const activity = readStoredArray(PROFILE_ACTIVITY_KEY);
     const profile = getProfileData();
+    const user = getCurrentUserRecord() || {};
     const entry = {
       title,
       detail,
       actor: `${profile.name || profile.username || "Akun"} - ${profile.role || "Operator"}`,
       role: profile.role || "Operator",
+      username: user.username || profile.username || "",
+      email: user.email || profile.email || "",
+      scope: "account",
       at: new Date().toISOString()
     };
     activity.unshift(entry);
@@ -3181,7 +3349,7 @@
 
   function syncProfileActivityAccess() {
     const user = getCurrentUserRecord();
-    const isAllowed = isAdminUser(user);
+    const isAllowed = isOwnerUser(user);
     const activityTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "aktivitas");
     const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
 
@@ -3202,7 +3370,8 @@
 
   function renderReports() {
     if (!els.reportTotal) return;
-    const active = state.rows.filter((row) => getStatusValue(row) !== "nonaktif").length;
+    const active = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "aktif").length;
+    const inactive = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "nonaktif").length;
     const expiring = state.rows.filter(isExpiringSoon).length;
     const expired = state.rows.filter(isExpired).length;
     const empty = state.rows.filter((row) => parseNumber(row.stok) <= 0).length;
@@ -3211,6 +3380,7 @@
 
     els.reportTotal.textContent = formatNumber(state.rows.length);
     if (els.reportActive) els.reportActive.textContent = formatNumber(active);
+    if (els.reportInactive) els.reportInactive.textContent = formatNumber(inactive);
     els.reportExpiring.textContent = formatNumber(expiring);
     els.reportExpired.textContent = formatNumber(expired);
     els.reportEmpty.textContent = formatNumber(empty);
@@ -3436,6 +3606,12 @@
     return date <= limit;
   }
 
+  function getExpiryDaysLeft(row) {
+    const date = parseDateValue(row.expired);
+    if (!date) return null;
+    return Math.ceil((date.getTime() - startOfToday().getTime()) / 86400000);
+  }
+
   function getStockStatus(row) {
     const stock = parseNumber(row.stok);
     if (stock <= 0) return "empty";
@@ -3452,7 +3628,11 @@
   }
 
   function getStatusValue(row) {
-    return normalizeSearch(row.status || row.aktif || row.keterangan || "aktif").replace(/\s+/g, "");
+    return getEffectiveMedicineStatus(row);
+  }
+
+  function getEffectiveMedicineStatus(row) {
+    return parseNumber(row.stok) <= 0 ? "nonaktif" : "aktif";
   }
 
   function getReportLabel(row) {
@@ -3554,6 +3734,15 @@
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}/${month}/${date.getFullYear()}`;
+  }
+
+  function formatQuickExpiry(row) {
+    const dateText = formatQuickDate(row.expired);
+    const days = getExpiryDaysLeft(row);
+    if (days === null) return dateText;
+    if (days < 0) return `${dateText} (lewat ${Math.abs(days)} hari)`;
+    if (days === 0) return `${dateText} (hari ini)`;
+    return `${dateText} (${days} hari lagi)`;
   }
 
   function normalizeRowValue(key, value) {
@@ -3665,6 +3854,15 @@
     if (!text || text === "-") return "";
     const numeric = Number(text);
     return Number.isFinite(numeric) ? new Intl.NumberFormat("id-ID").format(numeric) : String(value || "");
+  }
+
+  function normalizePhoneNumber(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    const cleaned = text.replace(/[^\d+]/g, "");
+    if (/^\+/.test(cleaned)) return cleaned;
+    if (/^8\d{7,}$/.test(cleaned)) return `0${cleaned}`;
+    return cleaned;
   }
 
   function formatNumber(value) {

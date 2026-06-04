@@ -207,6 +207,9 @@
           detail: "Akun keluar dari dashboard",
           actor: `${session.name || session.username || "Akun"} - ${session.role || "Operator"}`,
           role: session.role || "",
+          username: session.username || "",
+          email: session.email || "",
+          scope: "account",
           at: new Date().toISOString()
         }
       }),
