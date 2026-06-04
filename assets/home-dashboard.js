@@ -181,11 +181,16 @@
     scannerTimer: null,
     scannerCanvas: null,
     scannerLocked: false,
+    scannerCandidateValue: "",
+    scannerCandidateRaw: "",
+    scannerCandidateCount: 0,
+    scannerCandidateAt: 0,
     barcodeDetector: null,
     quaggaBusy: false,
     lastQuaggaScanAt: 0,
     zxingReader: null,
     zxingControls: null,
+    torchOn: false,
     activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
@@ -283,6 +288,7 @@
       scannerModal: document.getElementById("dashboardScannerModal"),
       scannerVideo: document.getElementById("dashboardScannerVideo"),
       scannerStatus: document.getElementById("dashboardScannerStatus"),
+      scannerFlashButton: document.getElementById("dashboardScannerFlashButton"),
       closeScannerButton: document.getElementById("closeDashboardScannerButton"),
       stopScannerButton: document.getElementById("stopDashboardScannerButton"),
       manualBarcodeButton: document.getElementById("manualBarcodeButton"),
@@ -405,6 +411,7 @@
     [els.closeScannerButton, els.stopScannerButton].forEach((button) => {
       if (button) button.addEventListener("click", stopDashboardScanner);
     });
+    if (els.scannerFlashButton) els.scannerFlashButton.addEventListener("click", toggleDashboardScannerFlash);
     if (els.manualBarcodeButton) els.manualBarcodeButton.addEventListener("click", useManualBarcodeInput);
     if (els.scannerModal) {
       els.scannerModal.addEventListener("click", (event) => {
@@ -819,6 +826,7 @@
 
     stopDashboardScanner({ keepModalOpen: true });
     state.scannerLocked = false;
+    resetDashboardScanCandidate();
     showModal(els.scannerModal);
     setScannerStatus("Membuka kamera scanner...");
 
@@ -828,10 +836,12 @@
       await els.scannerVideo.play();
       await tuneDashboardScannerTrack();
       window.setTimeout(tuneDashboardScannerTrack, 700);
+      setupDashboardScannerFlashButton();
       await setupDashboardNativeBarcodeDetector();
       scanDashboardFrame();
 
       if (await startDashboardZxingScanner(state.scannerStream)) {
+        window.setTimeout(setupDashboardScannerFlashButton, 500);
         setScannerStatus("Kamera aktif. Arahkan barcode atau QR ke dalam bingkai.");
         return;
       }
@@ -899,8 +909,7 @@
         const quaggaValue = nativeValue || qrValue ? "" : await detectDashboardQuagga(scanCanvas);
         const value = (nativeValue || qrValue || quaggaValue || "").trim();
 
-        if (value) {
-          applyScannedBarcode(value);
+        if (value && confirmDashboardScanCandidate(value)) {
           return;
         }
       }
@@ -908,7 +917,9 @@
       setScannerStatus("Barcode belum terbaca. Coba dekatkan kamera dan pastikan cahaya cukup.");
     }
 
-    state.scannerTimer = window.setTimeout(scanDashboardFrame, 260);
+    if (!state.scannerLocked && !els.scannerModal?.hidden) {
+      state.scannerTimer = window.setTimeout(scanDashboardFrame, 180);
+    }
   }
 
   async function detectDashboardNativeBarcode(scanCanvas) {
@@ -991,9 +1002,9 @@
   function getDashboardScanCrop() {
     const sourceWidth = els.scannerVideo.videoWidth || 1280;
     const sourceHeight = els.scannerVideo.videoHeight || 720;
-    const frameRatio = 3.2;
-    const maxWidth = sourceWidth * 0.78;
-    const maxHeight = sourceHeight * 0.48;
+    const frameRatio = 2.9;
+    const maxWidth = sourceWidth * 0.86;
+    const maxHeight = sourceHeight * 0.56;
     let cropWidth = Math.min(maxWidth, maxHeight * frameRatio);
     let cropHeight = cropWidth / frameRatio;
 
@@ -1025,7 +1036,7 @@
     const onResult = (result) => {
       const rawValue = (result?.getText ? result.getText() : result?.text || "").trim();
       if (!rawValue || state.scannerLocked) return;
-      applyScannedBarcode(rawValue);
+      confirmDashboardScanCandidate(rawValue);
     };
 
     const controls = state.zxingReader.decodeFromStream
@@ -1041,14 +1052,14 @@
 
     try {
       return new Reader(hints, {
-        delayBetweenScanAttempts: 260,
-        delayBetweenScanSuccess: 900,
+        delayBetweenScanAttempts: 160,
+        delayBetweenScanSuccess: 650,
         tryPlayVideoTimeout: 5000
       });
     } catch (error) {
       return new Reader(undefined, {
-        delayBetweenScanAttempts: 260,
-        delayBetweenScanSuccess: 900,
+        delayBetweenScanAttempts: 160,
+        delayBetweenScanSuccess: 650,
         tryPlayVideoTimeout: 5000
       });
     }
@@ -1151,7 +1162,7 @@
   }
 
   async function tuneDashboardScannerTrack() {
-    const track = state.scannerStream?.getVideoTracks?.()[0] || els.scannerVideo?.srcObject?.getVideoTracks?.()[0];
+    const track = getDashboardScannerVideoTrack();
     if (!track?.applyConstraints) return;
 
     const capabilities = track.getCapabilities ? track.getCapabilities() : {};
@@ -1171,12 +1182,153 @@
         // Kamera tetap bisa dipakai meski fokus otomatis tidak didukung.
       }
     }
+    setupDashboardScannerFlashButton();
+  }
+
+  function confirmDashboardScanCandidate(value) {
+    if (state.scannerLocked) return false;
+
+    const rawValue = String(value || "").trim();
+    const normalizedValue = rawValue.replace(/\s+/g, "");
+    if (normalizedValue.length < 4) return false;
+
+    const now = Date.now();
+    const withinWindow = now - state.scannerCandidateAt < 1300;
+
+    if (state.scannerCandidateValue === normalizedValue && withinWindow) {
+      state.scannerCandidateCount += 1;
+    } else {
+      state.scannerCandidateValue = normalizedValue;
+      state.scannerCandidateRaw = rawValue;
+      state.scannerCandidateCount = 1;
+    }
+
+    state.scannerCandidateAt = now;
+
+    const requiredReads = normalizedValue.length >= 8 ? 2 : 3;
+    if (state.scannerCandidateCount >= requiredReads) {
+      applyScannedBarcode(state.scannerCandidateRaw || rawValue);
+      return true;
+    }
+
+    setScannerStatus(`Barcode terdeteksi, tahan sebentar... (${state.scannerCandidateCount}/${requiredReads})`);
+    return false;
+  }
+
+  function resetDashboardScanCandidate() {
+    state.scannerCandidateValue = "";
+    state.scannerCandidateRaw = "";
+    state.scannerCandidateCount = 0;
+    state.scannerCandidateAt = 0;
+  }
+
+  async function toggleDashboardScannerFlash() {
+    const track = getDashboardScannerVideoTrack();
+    const nextTorchState = !state.torchOn;
+
+    if (state.zxingControls?.switchTorch) {
+      try {
+        await state.zxingControls.switchTorch(nextTorchState);
+        updateDashboardTorchState(nextTorchState);
+        return;
+      } catch (error) {
+        updateDashboardTorchState(false, true);
+      }
+    }
+
+    if (state.zxingControls?.streamVideoConstraintsApply) {
+      try {
+        await state.zxingControls.streamVideoConstraintsApply({ advanced: [{ torch: nextTorchState }] });
+        updateDashboardTorchState(nextTorchState);
+        return;
+      } catch (error) {
+        updateDashboardTorchState(false, true);
+      }
+    }
+
+    if (!track?.applyConstraints) {
+      setScannerStatus("Flash belum bisa dikontrol oleh browser ini.");
+      return;
+    }
+
+    try {
+      const changed = await applyDashboardTorchToTrack(track, nextTorchState);
+      if (!changed) throw new Error("Torch tidak didukung");
+      updateDashboardTorchState(nextTorchState);
+    } catch (error) {
+      updateDashboardTorchState(false, true);
+      setScannerStatus("Flash belum bisa dikontrol oleh browser ini.");
+    }
+  }
+
+  function updateDashboardTorchState(isOn, silent) {
+    state.torchOn = Boolean(isOn);
+    if (els.scannerFlashButton) {
+      els.scannerFlashButton.classList.toggle("is-active", state.torchOn);
+    }
+    if (!silent) {
+      setScannerStatus(state.torchOn ? "Flash aktif. Arahkan barcode ke dalam bingkai." : "Flash mati. Arahkan barcode ke dalam bingkai.");
+    }
+  }
+
+  async function applyDashboardTorchToTrack(track, nextTorchState) {
+    const attempts = [
+      { advanced: [{ torch: nextTorchState }] },
+      { torch: nextTorchState },
+      { advanced: [{ fillLightMode: nextTorchState ? "flash" : "off" }] }
+    ];
+
+    for (const constraints of attempts) {
+      try {
+        await track.applyConstraints(constraints);
+        return true;
+      } catch (error) {
+        // Android Chrome/WebView expose torch through different constraints.
+      }
+    }
+
+    if (window.ImageCapture) {
+      try {
+        const imageCapture = new window.ImageCapture(track);
+        if (imageCapture.setOptions) {
+          await imageCapture.setOptions({ fillLightMode: nextTorchState ? "flash" : "off" });
+          return true;
+        }
+      } catch (error) {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  function setupDashboardScannerFlashButton() {
+    if (!els.scannerFlashButton) return;
+
+    const track = getDashboardScannerVideoTrack();
+    const capabilities = track?.getCapabilities ? track.getCapabilities() : {};
+    const hasTorch = Boolean(
+      state.zxingControls?.switchTorch ||
+      state.zxingControls?.streamVideoConstraintsApply ||
+      track ||
+      (capabilities && "torch" in capabilities)
+    );
+
+    els.scannerFlashButton.hidden = !hasTorch;
+    els.scannerFlashButton.classList.toggle("is-active", state.torchOn);
+  }
+
+  function getDashboardScannerVideoTrack() {
+    const stream = state.scannerStream || els.scannerVideo?.srcObject;
+    if (!stream?.getVideoTracks) return null;
+    return stream.getVideoTracks()[0] || null;
   }
 
   function applyScannedBarcode(value) {
     if (!value) return;
     if (state.scannerLocked) return;
     state.scannerLocked = true;
+    resetDashboardScanCandidate();
     if (els.searchInput) {
       els.searchInput.value = value;
       state.page = 1;
@@ -1212,9 +1364,15 @@
       state.zxingReader.reset();
       state.zxingReader = null;
     }
+    state.torchOn = false;
     state.scannerLocked = false;
     state.barcodeDetector = null;
     state.scannerDetector = null;
+    resetDashboardScanCandidate();
+    if (els.scannerFlashButton) {
+      els.scannerFlashButton.hidden = true;
+      els.scannerFlashButton.classList.remove("is-active");
+    }
     if (els.scannerVideo) els.scannerVideo.srcObject = null;
     if (!options.keepModalOpen) hideModal(els.scannerModal);
   }

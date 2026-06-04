@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260603-scanner-modal-header-v23">
-  <script defer src="assets/auth-guard.js?v=20260603-scanner-modal-header-v23"></script>
-  <script defer src="assets/app.js?v=20260603-scanner-modal-header-v23"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260604-scanner-flash-toolbar-v24">
+  <script defer src="assets/auth-guard.js?v=20260604-scanner-flash-toolbar-v24"></script>
+  <script defer src="assets/app.js?v=20260604-scanner-flash-toolbar-v24"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260603-scanner-modal-header-v23"></script>
+  <script defer src="assets/home-dashboard.js?v=20260604-scanner-flash-toolbar-v24"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -659,9 +659,16 @@
           <h2>Scan Barcode Obat</h2>
           <p id="dashboardScannerStatus">Arahkan kamera ke barcode obat.</p>
         </div>
-        <button class="icon-button" id="closeDashboardScannerButton" type="button" aria-label="Tutup scanner">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-        </button>
+        <div class="scanner-modal-actions">
+          <button class="icon-button flash-button scanner-flash-button" id="dashboardScannerFlashButton" type="button" aria-label="Flash scanner" title="Flash scanner" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 2 4 14h7l-1 8 10-13h-7l1-7Z"></path>
+            </svg>
+          </button>
+          <button class="icon-button" id="closeDashboardScannerButton" type="button" aria-label="Tutup scanner">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+          </button>
+        </div>
       </div>
       <div class="scanner-preview">
         <video id="dashboardScannerVideo" playsinline muted></video>
