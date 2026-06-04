@@ -1845,15 +1845,12 @@
     if (latestActivityAt) localStorage.setItem(OWNER_ACTIVITY_ACK_KEY, latestActivityAt);
     updateNotificationState();
 
-    const activityMessage = buildOwnerActivityNotification();
+    const activityItems = getOwnerActivityNotificationItems();
     const uploadMessage = state.uploadedAt
       ? `${formatLastUpdated(state.uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
       : "Belum ada info upload terbaru dari Google Sheet data_obat.";
-    const message = activityMessage
-      ? `${activityMessage}\n\n${uploadMessage}`
-      : `Tidak ada notifikasi aktivitas terbaru.\n\n${uploadMessage}`;
 
-    if (els.notificationMessage) els.notificationMessage.textContent = message;
+    if (els.notificationMessage) els.notificationMessage.innerHTML = buildNotificationHtml(activityItems, uploadMessage);
     if (els.notificationPopover) {
       positionNotificationPopover();
       els.notificationPopover.hidden = false;
@@ -1864,12 +1861,36 @@
     if (els.notificationPopover) els.notificationPopover.hidden = true;
   }
 
-  function buildOwnerActivityNotification() {
+  function getOwnerActivityNotificationItems() {
     const user = getCurrentUserRecord();
-    if (!isAdminUser(user)) return "";
-    const activities = (state.ownerActivities.length ? state.ownerActivities : readStoredArray(PROFILE_ACTIVITY_KEY))
+    if (!isAdminUser(user)) return [];
+    return (state.ownerActivities.length ? state.ownerActivities : readStoredArray(PROFILE_ACTIVITY_KEY))
       .slice(0, 5)
       .map(normalizeActivityRecord);
+  }
+
+  function buildNotificationHtml(activities, uploadMessage) {
+    const activityHtml = activities.length
+      ? `<ol class="notification-list">${activities.map((item, index) => {
+          const time = formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", "");
+          const actor = item.actor ? ` oleh ${item.actor}` : "";
+          const detail = item.detail ? `<span class="notification-detail">${escapeHtml(item.detail)}</span>` : "";
+          return `<li class="notification-item">
+            <span class="notification-number">${index + 1}</span>
+            <span class="notification-body">
+              <strong>${escapeHtml(item.title || "Aktivitas")}</strong>
+              <small>${escapeHtml(time + actor)}</small>
+              ${detail}
+            </span>
+          </li>`;
+        }).join("")}</ol>`
+      : '<div class="notification-empty">Tidak ada notifikasi aktivitas terbaru.</div>';
+
+    return `${activityHtml}<div class="notification-upload-note">${escapeHtml(uploadMessage)}</div>`;
+  }
+
+  function buildOwnerActivityNotification() {
+    const activities = getOwnerActivityNotificationItems();
     if (!activities.length) return "";
     return activities.map((item) => {
       const time = formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", "");
@@ -2539,13 +2560,14 @@
 
     if (state.recordType === "user") {
       if (els.recordModalStatus) {
-        els.recordModalStatus.textContent = "Menyimpan hak akses ke Google Sheet...";
+        els.recordModalStatus.textContent = "Menyimpan hak akses...";
         els.recordModalStatus.dataset.type = "info";
       }
 
       const loadingToken = startAppLoading("Menyimpan akses pengguna...", 0);
 
       try {
+        await delay(50);
         const result = await postToApi({
           action: "saveLoginUser",
           user: record,
@@ -3458,7 +3480,10 @@
   }
 
   function formatQuickPrice(value, key = "") {
-    const text = formatCell(value, key);
+    let text = formatCell(value, key);
+    if (/^harga_(jual|resep)/.test(key) && /^-?\d{1,2}$/.test(text) && Number(text) > 0) {
+      text = formatIntegerPrice(String(Number(text) * 1000));
+    }
     return text === "-" ? "-" : `Rp ${text}`;
   }
 
