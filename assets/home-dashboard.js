@@ -2356,7 +2356,7 @@
       role,
       status: String(user?.status || "Aktif").trim() || "Aktif",
       email: String(user?.email || "").trim(),
-      phone: String(user?.phone || user?.noHp || "").trim(),
+      phone: normalizePhoneNumber(user?.phone || user?.noHp || ""),
       address: String(user?.address || user?.alamat || "").trim(),
       photo: String(user?.photo || user?.profilePhoto || "").trim(),
       access: normalizeAccessList(user?.access || user?.menu, role),
@@ -2421,7 +2421,7 @@
         username: session.username || "",
         role: session.role || "Operator",
         email: session.email || "",
-        phone: session.phone || "",
+        phone: normalizePhoneNumber(session.phone || ""),
         address: session.address || "",
         photo: session.profilePhoto || session.photo || "",
         access: session.menu || ""
@@ -2943,7 +2943,7 @@
     return {
       name: user?.name || stored.name || session.name || session.username || "Akun",
       email: user?.email || stored.email || session.email || "",
-      phone: user?.phone || stored.phone || session.phone || "",
+      phone: normalizePhoneNumber(user?.phone || stored.phone || session.phone || ""),
       job: formatRoleLabel(role),
       address: user?.address || stored.address || session.address || "",
       photo: user?.photo || user?.profilePhoto || stored.photo || session.profilePhoto || session.photo || "",
