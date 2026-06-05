@@ -8762,3 +8762,171 @@ body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-acti
     font-size: 0.56rem !important;
   }
 }
+
+/* 20260605 mobile v43: restore key icons, align brand tighter, tidy shift fields, X close. */
+.profile-panel-close {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  font-size: 0 !important;
+}
+
+.profile-panel-close svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 760px) {
+  .mobile-home-brand img {
+    left: clamp(34px, calc(50% - 128px), 112px) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard::before,
+  .mobile-home-icon.icon-face::before,
+  .mobile-home-icon.icon-medicine::before {
+    display: none !important;
+  }
+
+  .mobile-home-icon.icon-dashboard,
+  .mobile-home-icon.icon-face,
+  .mobile-home-icon.icon-medicine {
+    width: 54px !important;
+    height: 48px !important;
+    border-radius: 16px !important;
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.9), transparent 34%),
+      linear-gradient(135deg, rgba(39, 123, 244, 0.16), rgba(232, 23, 152, 0.12)) !important;
+    color: #2879ee !important;
+    box-shadow: 0 12px 28px rgba(73, 82, 166, 0.16) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard svg,
+  .mobile-home-icon.icon-face svg,
+  .mobile-home-icon.icon-medicine svg {
+    display: block !important;
+    width: 30px !important;
+    height: 30px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.4 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  .mobile-home-icon.icon-face {
+    color: #7b48f4 !important;
+  }
+
+  .mobile-home-icon.icon-medicine {
+    color: #e81798 !important;
+  }
+
+  .profile-panel-close {
+    position: sticky !important;
+    top: 0 !important;
+    justify-self: end !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.98)) padding-box,
+      linear-gradient(135deg, rgba(31, 123, 234, 0.42), rgba(232, 23, 152, 0.42)) border-box !important;
+    border: 1px solid transparent !important;
+    color: #2b55d8 !important;
+    box-shadow: 0 10px 24px rgba(38, 79, 159, 0.13) !important;
+  }
+
+  .profile-panel-close svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rules-form {
+    gap: 12px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rules-grid,
+  .profile-modern-layout.profile-panel-open .shift-day-group {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-day-group > div {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card legend {
+    max-width: calc(100% - 22px);
+    white-space: normal;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 5px !important;
+    align-items: stretch !important;
+    font-size: 0.74rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label span {
+    width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    padding: 6px 10px !important;
+    justify-self: stretch !important;
+    font-size: 0.86rem !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-home-brand img {
+    left: clamp(28px, calc(50% - 118px), 88px) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard,
+  .mobile-home-icon.icon-face,
+  .mobile-home-icon.icon-medicine {
+    width: 50px !important;
+    height: 44px !important;
+  }
+
+  .mobile-home-icon.icon-dashboard svg,
+  .mobile-home-icon.icon-face svg,
+  .mobile-home-icon.icon-medicine svg {
+    width: 27px !important;
+    height: 27px !important;
+  }
+}
