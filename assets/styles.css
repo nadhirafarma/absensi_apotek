@@ -8930,3 +8930,242 @@ body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-acti
     height: 27px !important;
   }
 }
+
+/* 20260605 mobile v44: final mobile polish for brand spacing, 3D icons, footer search, shift fields, preferences, and dark search names. */
+@media (max-width: 760px) {
+  .mobile-home-brand img {
+    left: clamp(18px, calc(50% - 136px), 70px) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard,
+  .mobile-home-icon.icon-face,
+  .mobile-home-icon.icon-medicine {
+    width: 62px !important;
+    height: 55px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+  }
+
+  .mobile-home-icon.icon-dashboard svg,
+  .mobile-home-icon.icon-face svg,
+  .mobile-home-icon.icon-medicine svg {
+    display: none !important;
+  }
+
+  .mobile-home-icon.icon-dashboard::before,
+  .mobile-home-icon.icon-face::before,
+  .mobile-home-icon.icon-medicine::before {
+    content: "" !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    filter: drop-shadow(0 12px 18px rgba(76, 86, 180, 0.15)) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard::before {
+    background-image: url("mobile-menu/dashboard.png") !important;
+  }
+
+  .mobile-home-icon.icon-face::before {
+    background-image: url("mobile-menu/absensi-face-id.png") !important;
+  }
+
+  .mobile-home-icon.icon-medicine::before {
+    background-image: url("mobile-menu/data-obat.png") !important;
+  }
+
+  .mobile-bottom-nav {
+    min-height: 78px !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: start !important;
+    padding: 7px 14px calc(9px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    display: grid !important;
+    place-items: center !important;
+    align-self: start !important;
+    justify-self: center !important;
+    margin-top: -18px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    grid-template-rows: 1fr !important;
+  }
+
+  .mobile-bottom-nav .is-featured svg {
+    width: 29px !important;
+    height: 29px !important;
+  }
+
+  .mobile-bottom-nav .is-featured span {
+    position: absolute !important;
+    top: calc(100% + 3px) !important;
+    left: 50% !important;
+    max-width: 96px !important;
+    min-height: 13px !important;
+    display: block !important;
+    color: #60749a !important;
+    font-size: 0.52rem !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
+    text-shadow: none !important;
+    transform: translateX(-50%) !important;
+    white-space: nowrap !important;
+  }
+
+  body.dashboard-page {
+    padding-bottom: 112px !important;
+  }
+
+  body.theme-dark .mobile-bottom-nav .is-featured span {
+    color: #e6eefc !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active {
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row {
+    gap: 9px !important;
+    padding: 11px 12px !important;
+    border-radius: 13px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row strong {
+    font-size: 0.94rem !important;
+    line-height: 1.18 !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row small {
+    font-size: 0.72rem !important;
+    line-height: 1.34 !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row select {
+    min-height: 36px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row input[type="checkbox"] {
+    width: 34px !important;
+    height: 22px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 11px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card legend {
+    max-width: calc(100% - 18px) !important;
+    font-size: 0.72rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+    font-size: 0.62rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label span {
+    min-height: 30px !important;
+    display: flex !important;
+    align-items: end !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card input {
+    min-height: 31px !important;
+    padding: 4px 7px !important;
+    font-size: 0.74rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-home-brand img {
+    left: clamp(18px, calc(50% - 136px), 62px) !important;
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .mobile-home-icon.icon-dashboard,
+  .mobile-home-icon.icon-face,
+  .mobile-home-icon.icon-medicine {
+    width: 56px !important;
+    height: 50px !important;
+  }
+
+  .mobile-bottom-nav {
+    left: 12px !important;
+    right: 12px !important;
+    min-height: 76px !important;
+    padding-inline: 11px !important;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    margin-top: -16px !important;
+  }
+
+  .mobile-bottom-nav .is-featured svg {
+    width: 27px !important;
+    height: 27px !important;
+  }
+
+  .mobile-bottom-nav .is-featured span {
+    font-size: 0.5rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active {
+    padding: 10px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="preferensi"].is-active .setting-row {
+    padding: 10px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card {
+    gap: 7px !important;
+    padding: 9px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label {
+    font-size: 0.58rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card label span {
+    min-height: 28px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open .shift-rule-card input {
+    min-height: 30px !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+body.theme-dark .quick-medicine-name,
+body.theme-dark .quick-medicine-name strong,
+body.theme-dark .medicine-name-chip,
+body.theme-dark .results-popover .medicine-name-chip {
+  color: #06142e !important;
+}
+
+body.theme-dark .quick-medicine-name small,
+body.theme-dark .quick-medicine-list dt,
+body.theme-dark .medicine-name-chip small {
+  color: #31415f !important;
+}

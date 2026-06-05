@@ -3722,11 +3722,11 @@
           <fieldset class="shift-rule-card">
             <legend>${escapeHtml(dayLabel)} - ${escapeHtml(shiftLabel)}</legend>
             <label>
-              <span>Jam Masuk</span>
+              <span>Jam Masuk (jam)</span>
               <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="start" value="${escapeHtml(shiftRules.start)}">
             </label>
             <label>
-              <span>Kompensasi Telat (menit)</span>
+              <span>Kompensasi Keterlambatan (menit)</span>
               <input type="number" min="0" max="240" step="1" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="lateMinutes" value="${escapeHtml(String(shiftRules.lateMinutes))}">
             </label>
             <label>
