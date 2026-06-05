@@ -9169,3 +9169,694 @@ body.theme-dark .quick-medicine-list dt,
 body.theme-dark .medicine-name-chip small {
   color: #31415f !important;
 }
+
+/* 20260605 online v45: landing sync polish, shift modal reference layout, dark mode contrast, compact/menu preference controls, and medicine editor grouping. */
+@media (max-width: 760px) {
+  .mobile-home-brand img {
+    left: clamp(2px, calc(50% - 166px), 42px) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard,
+  .mobile-home-icon.icon-face,
+  .mobile-home-icon.icon-medicine {
+    display: grid !important;
+    place-items: center !important;
+    width: 66px !important;
+    height: 58px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .mobile-home-icon.icon-dashboard svg,
+  .mobile-home-icon.icon-face svg,
+  .mobile-home-icon.icon-medicine svg {
+    display: none !important;
+  }
+
+  .mobile-home-icon.icon-dashboard::before,
+  .mobile-home-icon.icon-face::before,
+  .mobile-home-icon.icon-medicine::before {
+    content: "" !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    filter: drop-shadow(0 12px 20px rgba(76, 86, 180, 0.17)) !important;
+  }
+
+  .mobile-home-icon.icon-dashboard::before {
+    background-image: url("mobile-menu/dashboard.png") !important;
+  }
+
+  .mobile-home-icon.icon-face::before {
+    background-image: url("mobile-menu/absensi-face-id.png") !important;
+  }
+
+  .mobile-home-icon.icon-medicine::before {
+    background-image: url("mobile-menu/data-obat.png") !important;
+  }
+
+  body[data-menu-icon-size="small"] .mobile-home-card {
+    min-height: 126px !important;
+    padding-block: 10px !important;
+  }
+
+  body[data-menu-icon-size="large"] .mobile-home-card {
+    min-height: 166px !important;
+    padding-block: 18px !important;
+  }
+
+  body[data-menu-image-size="small"] .mobile-home-icon,
+  body[data-menu-image-size="small"] .mobile-home-icon::before {
+    width: 50px !important;
+    height: 44px !important;
+  }
+
+  body[data-menu-image-size="large"] .mobile-home-icon,
+  body[data-menu-image-size="large"] .mobile-home-icon::before {
+    width: 82px !important;
+    height: 72px !important;
+  }
+
+  body[data-menu-font-size="small"] .mobile-home-card strong {
+    font-size: 0.72rem !important;
+    line-height: 1.02 !important;
+  }
+
+  body[data-menu-font-size="large"] .mobile-home-card strong {
+    font-size: 0.98rem !important;
+    line-height: 1.04 !important;
+  }
+
+  .mobile-bottom-nav {
+    min-height: 80px !important;
+    align-items: center !important;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    width: 66px !important;
+    height: 66px !important;
+    min-width: 66px !important;
+    min-height: 66px !important;
+    border-radius: 999px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-home-brand img {
+    left: clamp(0px, calc(50% - 154px), 30px) !important;
+  }
+}
+
+body.compact-dashboard .dashboard-main {
+  padding-top: 14px !important;
+}
+
+body.compact-dashboard .module-card,
+body.compact-dashboard .profile-summary-card,
+body.compact-dashboard .profile-menu-list,
+body.compact-dashboard .quick-search-head,
+body.compact-dashboard .quick-results-list,
+body.compact-dashboard .data-toolbar {
+  padding: 12px !important;
+}
+
+body.compact-dashboard .mobile-home-grid {
+  gap: 10px !important;
+}
+
+body.compact-dashboard .mobile-home-card {
+  min-height: 116px !important;
+  padding: 10px !important;
+}
+
+body.compact-dashboard .mobile-home-icon {
+  transform: scale(0.88) !important;
+}
+
+body.theme-dark .mobile-bottom-nav {
+  background: #ffffff !important;
+  border-color: #d7e4ff !important;
+  box-shadow: 0 18px 46px rgba(10, 18, 38, 0.38) !important;
+}
+
+body.theme-dark .mobile-bottom-nav button,
+body.theme-dark .mobile-bottom-nav button span,
+body.theme-dark .mobile-bottom-nav button svg {
+  color: #06142e !important;
+  stroke: #06142e !important;
+}
+
+body.theme-dark .mobile-bottom-nav .is-featured {
+  color: #ffffff !important;
+}
+
+body.theme-dark .mobile-bottom-nav .is-featured svg {
+  stroke: #ffffff !important;
+}
+
+body.theme-dark .mobile-bottom-nav .is-featured span {
+  color: #06142e !important;
+}
+
+body.theme-dark .notification-card {
+  background: #050816 !important;
+  border-color: rgba(127, 143, 184, 0.45) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .notification-card::before {
+  background: #050816 !important;
+}
+
+body.theme-dark .notification-card h2,
+body.theme-dark .notification-card p,
+body.theme-dark .notification-card strong,
+body.theme-dark .notification-card small,
+body.theme-dark .notification-card span,
+body.theme-dark .notification-card button {
+  color: #ffffff !important;
+}
+
+body.theme-dark .notification-item,
+body.theme-dark .notification-list li {
+  background: #111827 !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark #view-data-obat .medicine-name-chip,
+body.theme-dark #view-data-obat .medicine-name-chip strong,
+body.theme-dark #view-data-obat .medicine-name-chip small,
+body.theme-dark #view-data-obat .simple-table td,
+body.theme-dark #view-data-obat .dashboard-table td {
+  color: #ffffff !important;
+}
+
+body.theme-dark #view-cari-data-obat .quick-medicine-name,
+body.theme-dark #view-cari-data-obat .quick-medicine-name strong,
+body.theme-dark #view-cari-data-obat .medicine-name-chip {
+  color: #06142e !important;
+}
+
+.profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active {
+  position: relative !important;
+  gap: 18px !important;
+  padding: clamp(18px, 3vw, 34px) !important;
+  border: 1px solid rgba(170, 174, 255, 0.5) !important;
+  border-radius: 28px !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  box-shadow: 0 28px 90px rgba(43, 52, 112, 0.22) !important;
+}
+
+.shift-rules-form .setting-row {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.shift-rules-form .setting-row strong {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  color: #07185a !important;
+  font-size: clamp(1.3rem, 2.4vw, 2rem) !important;
+  line-height: 1.08 !important;
+}
+
+.shift-rules-form .setting-row strong::before {
+  content: "" !important;
+  width: 56px !important;
+  height: 56px !important;
+  flex: 0 0 auto !important;
+  border-radius: 14px !important;
+  background: rgba(124, 72, 255, 0.11) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d39ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M4 10h16M16 15h-4v-4'/%3E%3C/svg%3E") center / 28px no-repeat !important;
+}
+
+.shift-rules-form .setting-row small {
+  margin-left: 70px !important;
+  color: #596b9a !important;
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+}
+
+.shift-rules-form .setting-row .text-button,
+.shift-rules-form #resetShiftRulesButton {
+  display: inline-flex !important;
+  width: max-content !important;
+  min-height: 42px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin: 14px 0 8px 70px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: #fff0f4 !important;
+  color: #f12e63 !important;
+  font-weight: 800 !important;
+}
+
+.shift-rules-form #resetShiftRulesButton::before {
+  content: "↻" !important;
+  font-size: 1.15rem !important;
+}
+
+.shift-rules-grid {
+  position: relative !important;
+  display: grid !important;
+  gap: 26px !important;
+  padding-top: 24px !important;
+}
+
+.shift-rules-grid::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, #d8def6 44%, transparent 44%, transparent 56%, #d8def6 56%, transparent) !important;
+}
+
+.shift-rules-grid::after {
+  content: "✦" !important;
+  position: absolute !important;
+  top: -12px !important;
+  left: 50% !important;
+  color: #8c66ff !important;
+  transform: translateX(-50%) !important;
+}
+
+.shift-day-group {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.shift-day-group h4 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  color: #144ed9 !important;
+  font-size: 1.18rem !important;
+  font-weight: 900 !important;
+}
+
+.shift-day-icon,
+.shift-mode-icon,
+.shift-input-icon {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+}
+
+.shift-day-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 9px !important;
+  background: #f1edff !important;
+  color: #5f35ff !important;
+}
+
+.shift-day-icon svg,
+.shift-mode-icon svg,
+.shift-input-icon svg {
+  width: 17px !important;
+  height: 17px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+}
+
+.shift-day-cards {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.shift-rule-card {
+  position: relative !important;
+  display: block !important;
+  padding: 24px 22px 18px !important;
+  border: 1px solid rgba(128, 102, 255, 0.34) !important;
+  border-left: 3px solid #4a53ff !important;
+  border-radius: 18px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.95)) !important;
+  box-shadow: 0 18px 45px rgba(34, 43, 108, 0.07) !important;
+}
+
+.shift-rule-card legend {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 10px !important;
+  color: #1431d6 !important;
+  font-size: 1rem !important;
+  font-weight: 900 !important;
+}
+
+.shift-mode-icon {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 9px !important;
+  background: #f8edff !important;
+  color: #cc23f4 !important;
+}
+
+.shift-mode-sore {
+  background: #edf5ff !important;
+  color: #3677ff !important;
+}
+
+.shift-rule-fields {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.shift-time-field {
+  display: grid !important;
+  gap: 9px !important;
+  color: #51618c !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+}
+
+.shift-input-shell {
+  min-height: 50px !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 14px !important;
+  border: 1px solid #d3dbef !important;
+  border-radius: 11px !important;
+  background: #ffffff !important;
+}
+
+.shift-input-icon {
+  color: #6f35ff !important;
+}
+
+.shift-input-shell input {
+  width: 100% !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #07185a !important;
+  font-size: 1rem !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+}
+
+.shift-rules-form > .form-actions {
+  position: sticky !important;
+  bottom: -1px !important;
+  z-index: 2 !important;
+  padding-top: 14px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 32%) !important;
+}
+
+.shift-save-button {
+  width: 100% !important;
+  min-height: 58px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  border: 0 !important;
+  border-radius: 15px !important;
+  background: linear-gradient(100deg, #2f86ff, #743cff 50%, #f20bb5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 18px 36px rgba(184, 34, 211, 0.24) !important;
+  font-weight: 900 !important;
+}
+
+.shift-save-button svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+}
+
+body.theme-dark .profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active,
+body.theme-dark .shift-rule-card,
+body.theme-dark .shift-rules-form > .form-actions {
+  background: #101828 !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .shift-rules-form .setting-row strong,
+body.theme-dark .shift-day-group h4,
+body.theme-dark .shift-rule-card legend,
+body.theme-dark .shift-time-field,
+body.theme-dark .shift-input-shell input {
+  color: #ffffff !important;
+}
+
+body.theme-dark .shift-rules-form .setting-row small {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark .shift-input-shell {
+  background: #182235 !important;
+  border-color: #334155 !important;
+}
+
+.medicine-form-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr) !important;
+  gap: 14px !important;
+}
+
+.medicine-section {
+  margin: 0 !important;
+  padding: 14px !important;
+  border: 1px solid #90a0b0 !important;
+  border-radius: 2px !important;
+  background: #eef4f0 !important;
+}
+
+.medicine-section legend {
+  padding: 0 8px !important;
+  color: #0b1f2f !important;
+  font-weight: 800 !important;
+}
+
+.medicine-section-grid {
+  display: grid !important;
+  grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr) !important;
+  gap: 9px 12px !important;
+  align-items: end !important;
+}
+
+.medicine-field {
+  display: grid !important;
+  gap: 5px !important;
+  color: #0b1f2f !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+}
+
+.medicine-field.is-wide {
+  grid-column: 1 / -1 !important;
+}
+
+.medicine-field input,
+.medicine-field select,
+.medicine-field textarea {
+  width: 100% !important;
+  min-height: 34px !important;
+  border: 1px solid #738da0 !important;
+  border-radius: 0 !important;
+  background: #f7faf8 !important;
+  color: #06142e !important;
+  font-size: 0.88rem !important;
+}
+
+.medicine-field textarea {
+  min-height: 70px !important;
+}
+
+.medicine-auto-label {
+  align-self: center !important;
+  color: #06142e !important;
+  font-weight: 800 !important;
+}
+
+.medicine-tabs {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+  color: #0b1f2f !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+}
+
+.medicine-section-jual {
+  grid-column: 1 / -1 !important;
+}
+
+.medicine-price-head {
+  display: grid !important;
+  grid-template-columns: 1.1fr 1fr 1fr !important;
+  gap: 12px !important;
+  margin-bottom: 7px !important;
+  color: #0b7b65 !important;
+  font-size: 0.84rem !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+}
+
+.medicine-sale-grid {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+.medicine-sale-row {
+  display: grid !important;
+  grid-template-columns: 0.55fr 0.75fr 1fr 1fr !important;
+  gap: 10px !important;
+  align-items: end !important;
+}
+
+.medicine-profit-field {
+  max-width: 220px !important;
+  margin-top: 12px !important;
+}
+
+.medicine-check-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+  color: #0b5e84 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-dark .medicine-section {
+  background: #111827 !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark .medicine-section legend,
+body.theme-dark .medicine-field,
+body.theme-dark .medicine-tabs,
+body.theme-dark .medicine-auto-label,
+body.theme-dark .medicine-check-row {
+  color: #ffffff !important;
+}
+
+body.theme-dark .medicine-field input,
+body.theme-dark .medicine-field select,
+body.theme-dark .medicine-field textarea {
+  background: #ffffff !important;
+  color: #06142e !important;
+}
+
+@media (max-width: 760px) {
+  .profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active {
+    padding: 18px 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .shift-rules-form .setting-row strong {
+    gap: 10px !important;
+    font-size: 1.08rem !important;
+  }
+
+  .shift-rules-form .setting-row strong::before {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    background-size: 23px !important;
+  }
+
+  .shift-rules-form .setting-row small {
+    margin-left: 0 !important;
+    font-size: 0.82rem !important;
+  }
+
+  .shift-rules-form #resetShiftRulesButton {
+    margin-left: 0 !important;
+    min-height: 36px !important;
+    padding-inline: 13px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .shift-rules-grid {
+    gap: 20px !important;
+  }
+
+  .shift-day-group {
+    gap: 10px !important;
+  }
+
+  .shift-day-group h4 {
+    font-size: 1rem !important;
+  }
+
+  .shift-rule-card {
+    padding: 18px 13px 13px !important;
+    border-radius: 15px !important;
+  }
+
+  .shift-rule-card legend {
+    font-size: 0.85rem !important;
+  }
+
+  .shift-rule-fields {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .shift-time-field {
+    gap: 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .shift-input-shell {
+    min-height: 42px !important;
+    grid-template-columns: 22px minmax(0, 1fr) !important;
+    padding-inline: 10px !important;
+  }
+
+  .shift-input-shell input {
+    min-height: 30px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .shift-save-button {
+    min-height: 48px !important;
+    border-radius: 13px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .medicine-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .medicine-section {
+    padding: 10px !important;
+  }
+
+  .medicine-section-grid,
+  .medicine-sale-row,
+  .medicine-price-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  .medicine-tabs,
+  .medicine-price-head {
+    display: none !important;
+  }
+}

@@ -1,0 +1,642 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --landing-ink: #060f69;
+  --landing-blue: #3356ff;
+  --landing-purple: #7448ff;
+  --landing-pink: #f018a7;
+  --landing-muted: #4457a6;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  color: var(--landing-ink);
+  font-family: Poppins, Arial, sans-serif;
+  background: #f7fbff;
+}
+
+button,
+select,
+a {
+  font: inherit;
+}
+
+.landing-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.86) 33%, rgba(255, 255, 255, 0.24) 60%),
+    url("landing-apotek.png") center / cover no-repeat;
+}
+
+.landing-header {
+  position: fixed;
+  z-index: 20;
+  top: 22px;
+  left: clamp(18px, 2.7vw, 34px);
+  right: clamp(18px, 2.7vw, 34px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing-brand img {
+  width: 68px;
+  height: 68px;
+  border: 1px solid rgba(118, 73, 255, 0.42);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 38px rgba(33, 70, 160, 0.12);
+}
+
+.landing-brand strong,
+.landing-brand small {
+  display: block;
+}
+
+.landing-brand strong {
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.landing-brand small {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-action,
+.language-picker {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--landing-ink);
+  box-shadow: 0 18px 36px rgba(36, 63, 146, 0.08);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nav-action svg,
+.language-picker svg,
+.mobile-menu-button svg,
+.feature-icon svg,
+.value-icon svg,
+.whatsapp-float svg,
+.landing-dialog-close svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.language-picker {
+  padding-right: 14px;
+}
+
+.language-picker select {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-menu-button {
+  display: none;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(203, 218, 247, 0.9);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--landing-ink);
+  font-weight: 800;
+}
+
+.landing-hero {
+  min-height: 100vh;
+  padding: 154px clamp(22px, 4vw, 64px) 26px;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(300px, 1fr);
+  grid-template-areas:
+    "copy ."
+    "features ."
+    "quote ."
+    "values quran"
+    "trust trust";
+  gap: 18px 34px;
+  align-content: end;
+}
+
+.hero-copy {
+  grid-area: copy;
+  max-width: 720px;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  max-width: 720px;
+  color: var(--landing-ink);
+  font-size: clamp(2.4rem, 5vw, 4.45rem);
+  line-height: 1.13;
+  letter-spacing: 0;
+}
+
+.hero-copy h1 span,
+.hero-copy h1 b {
+  color: var(--landing-pink);
+}
+
+.hero-copy p {
+  margin: 18px 0 0;
+  max-width: 660px;
+  color: #3e51ac;
+  font-size: clamp(1rem, 1.65vw, 1.32rem);
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.feature-strip {
+  grid-area: features;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  max-width: 760px;
+  padding: 20px 18px;
+  border: 1px solid rgba(218, 228, 249, 0.88);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 20px 50px rgba(42, 59, 133, 0.08);
+}
+
+.feature-strip article {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 0 16px;
+  border-right: 1px solid rgba(190, 199, 231, 0.88);
+}
+
+.feature-strip article:last-child {
+  border-right: 0;
+}
+
+.feature-icon,
+.value-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(116, 72, 255, 0.13), rgba(240, 24, 167, 0.08));
+  color: #6742ff;
+}
+
+.feature-strip strong,
+.value-grid strong,
+.trust-strip b,
+.quran-card strong {
+  color: var(--landing-ink);
+}
+
+.feature-strip strong {
+  font-size: 0.82rem;
+}
+
+.feature-strip small {
+  color: #182b85;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.hero-quote {
+  grid-area: quote;
+  max-width: 760px;
+  margin: 0;
+  padding: 15px 24px;
+  border: 1px solid rgba(228, 233, 250, 0.9);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #4054bd;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.hero-quote::before {
+  content: "\"";
+  margin-right: 8px;
+  color: #6648ff;
+  font-size: 1.8rem;
+  line-height: 0;
+}
+
+.value-grid {
+  grid-area: values;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 880px;
+}
+
+.value-grid article,
+.quran-card,
+.trust-strip {
+  border: 1px solid rgba(228, 233, 250, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 20px 52px rgba(42, 59, 133, 0.07);
+}
+
+.value-grid article {
+  min-height: 210px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 26px 28px;
+}
+
+.value-grid p {
+  margin: 0;
+  color: #0b247f;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.value-grid article::after {
+  content: "";
+  width: 34px;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--landing-blue), var(--landing-pink));
+}
+
+.quran-card {
+  grid-area: quran;
+  align-self: stretch;
+  padding: 30px 36px;
+}
+
+.quran-card .arabic {
+  margin: 18px 0 10px;
+  font-size: clamp(1.35rem, 2.1vw, 2.1rem);
+  line-height: 1.9;
+  text-align: right;
+  color: var(--landing-ink);
+  font-family: "Times New Roman", serif;
+}
+
+.quran-card p:not(.arabic) {
+  margin: 0;
+  color: #182b85;
+  line-height: 1.55;
+}
+
+.quran-card b {
+  display: block;
+  margin-top: 4px;
+  color: #7a38ff;
+}
+
+.trust-strip {
+  grid-area: trust;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 4px;
+  padding: 18px 22px;
+}
+
+.trust-strip span {
+  display: grid;
+  gap: 4px;
+  padding: 0 24px;
+  border-right: 1px solid rgba(190, 199, 231, 0.88);
+}
+
+.trust-strip span:last-child {
+  border-right: 0;
+}
+
+.trust-strip small {
+  color: #4054a7;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.whatsapp-float {
+  position: fixed;
+  right: 30px;
+  bottom: 28px;
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0b286c;
+  box-shadow: 0 16px 36px rgba(22, 55, 120, 0.16);
+  text-decoration: none;
+}
+
+.whatsapp-float svg {
+  width: 54px;
+  height: 54px;
+  padding: 10px;
+  border-radius: 999px;
+  background: #19c95f;
+  color: #fff;
+  stroke-width: 1.9;
+}
+
+.whatsapp-float b,
+.whatsapp-float small {
+  display: block;
+}
+
+.whatsapp-float b {
+  font-size: 0.78rem;
+}
+
+.whatsapp-float small {
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.landing-popup {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 20, 58, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.landing-popup[hidden] {
+  display: none;
+}
+
+.landing-dialog {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(69, 128, 255, 0.16), transparent 38%),
+    rgba(255, 255, 255, 0.96);
+  box-shadow: 0 32px 80px rgba(9, 22, 66, 0.28);
+}
+
+.landing-dialog h2 {
+  margin: 0 52px 10px 0;
+  color: var(--landing-ink);
+}
+
+.landing-dialog p {
+  margin: 0 0 18px;
+  color: #465a9d;
+  line-height: 1.6;
+}
+
+.landing-dialog-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(118, 73, 255, 0.28);
+  border-radius: 999px;
+  background: #fff;
+  color: #314cff;
+  cursor: pointer;
+}
+
+.landing-dialog-action {
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #2f80ff, #e81798);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 1180px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "features"
+      "quote"
+      "values"
+      "quran"
+      "trust";
+    align-content: start;
+    padding-top: 132px;
+  }
+
+  .hero-copy {
+    max-width: 680px;
+  }
+}
+
+@media (max-width: 820px) {
+  .landing-page {
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84) 58%, rgba(255, 255, 255, 0.94)),
+      url("landing-apotek.png") center top / auto 42vh no-repeat;
+  }
+
+  .landing-header {
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid rgba(218, 228, 249, 0.86);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(14px);
+  }
+
+  .landing-brand {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .landing-brand img {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .landing-brand strong {
+    font-size: 0.82rem;
+    line-height: 1.14;
+  }
+
+  .landing-brand small {
+    font-size: 0.62rem;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .landing-nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid rgba(218, 228, 249, 0.9);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 42px rgba(35, 63, 140, 0.13);
+  }
+
+  .landing-header.is-open .landing-nav {
+    display: grid;
+  }
+
+  .nav-action,
+  .language-picker {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 12px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .landing-hero {
+    min-height: auto;
+    padding: 112px 16px 110px;
+    gap: 14px;
+  }
+
+  .hero-copy {
+    padding-top: 24vh;
+  }
+
+  .hero-copy h1 {
+    font-size: 2rem;
+    line-height: 1.17;
+  }
+
+  .hero-copy p {
+    margin-top: 12px;
+    font-size: 0.92rem;
+  }
+
+  .feature-strip,
+  .value-grid,
+  .trust-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-strip {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .feature-strip article,
+  .trust-strip span {
+    border-right: 0;
+    border-bottom: 1px solid rgba(205, 214, 241, 0.88);
+    padding: 10px;
+  }
+
+  .feature-strip article:last-child,
+  .trust-strip span:last-child {
+    border-bottom: 0;
+  }
+
+  .value-grid {
+    gap: 12px;
+  }
+
+  .value-grid article {
+    min-height: auto;
+    padding: 18px;
+    gap: 12px;
+  }
+
+  .quran-card {
+    padding: 18px;
+  }
+
+  .quran-card .arabic {
+    font-size: 1.25rem;
+  }
+
+  .trust-strip {
+    padding: 10px;
+  }
+
+  .whatsapp-float {
+    right: 14px;
+    bottom: 14px;
+    padding: 8px;
+    border-radius: 999px;
+  }
+
+  .whatsapp-float svg {
+    width: 50px;
+    height: 50px;
+  }
+
+  .whatsapp-float span {
+    display: none;
+  }
+}

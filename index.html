@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260605-mobile-polish-v44">
-  <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260605-mobile-polish-v44"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-online-landing-v45">
+  <script defer src="assets/auth-guard.js?v=20260605-online-landing-v45"></script>
+  <script defer src="assets/app.js?v=20260605-online-landing-v45"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260605-mobile-polish-v44"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-online-landing-v45"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -725,6 +725,39 @@
                   </span>
                   <input id="profileStartDashboardToggle" type="checkbox">
                 </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Ukuran Icon Menu</strong>
+                    <small>Atur ukuran area icon menu di Home mobile.</small>
+                  </span>
+                  <select id="profileMenuIconSizeSelect">
+                    <option value="small">Kecil</option>
+                    <option value="normal">Normal</option>
+                    <option value="large">Besar</option>
+                  </select>
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Gambar 3D Menu</strong>
+                    <small>Perbesar atau perkecil gambar PNG 3D pada grid menu.</small>
+                  </span>
+                  <select id="profileMenuImageSizeSelect">
+                    <option value="small">Kecil</option>
+                    <option value="normal">Normal</option>
+                    <option value="large">Besar</option>
+                  </select>
+                </label>
+                <label class="setting-row">
+                  <span>
+                    <strong>Font Menu Home</strong>
+                    <small>Sesuaikan ukuran tulisan pada nama menu.</small>
+                  </span>
+                  <select id="profileMenuFontSizeSelect">
+                    <option value="small">Kecil</option>
+                    <option value="normal">Normal</option>
+                    <option value="large">Besar</option>
+                  </select>
+                </label>
               </section>
 
               <section class="profile-panel" data-profile-panel="shift-absensi">
@@ -739,7 +772,14 @@
                   </div>
                   <div class="shift-rules-grid" id="shiftRulesGrid"></div>
                   <div class="form-actions">
-                    <button class="secondary-action" type="submit">Simpan Aturan Shift</button>
+                    <button class="secondary-action shift-save-button" type="submit">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path>
+                        <path d="M17 21v-8H7v8"></path>
+                        <path d="M7 3v5h8"></path>
+                      </svg>
+                      Simpan Pengaturan
+                    </button>
                   </div>
                 </form>
               </section>

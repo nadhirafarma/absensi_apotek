@@ -1,17 +1,19 @@
 (function () {
   const SESSION_KEY = "nadhira.authSession";
   const LOGIN_PAGE = "login.html";
+  const LANDING_PAGE = "beranda.html";
 
   const currentPage = getCurrentPageName();
+  const currentFile = currentPage.split("?")[0].split("#")[0];
 
-  if (currentPage === LOGIN_PAGE) return;
+  if (currentFile === LOGIN_PAGE || currentFile === LANDING_PAGE) return;
 
   const session = readSession();
 
   if (session) return;
 
   const next = encodeURIComponent(currentPage || "index.html");
-  window.location.replace(`${LOGIN_PAGE}?next=${next}`);
+  window.location.replace(`${LANDING_PAGE}?next=${next}`);
 
   function readSession() {
     try {

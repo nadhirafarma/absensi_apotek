@@ -264,6 +264,7 @@
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
+    fetchLocalRecords({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
     window.setTimeout(maybeShowHomePrayerReminder, 900);
@@ -404,6 +405,9 @@
       profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
       profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
+      profileMenuIconSizeSelect: document.getElementById("profileMenuIconSizeSelect"),
+      profileMenuImageSizeSelect: document.getElementById("profileMenuImageSizeSelect"),
+      profileMenuFontSizeSelect: document.getElementById("profileMenuFontSizeSelect"),
       shiftRulesForm: document.getElementById("shiftRulesForm"),
       shiftRulesGrid: document.getElementById("shiftRulesGrid"),
       resetShiftRulesButton: document.getElementById("resetShiftRulesButton"),
@@ -545,6 +549,9 @@
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
+    if (els.profileMenuIconSizeSelect) els.profileMenuIconSizeSelect.addEventListener("change", saveProfilePreferences);
+    if (els.profileMenuImageSizeSelect) els.profileMenuImageSizeSelect.addEventListener("change", saveProfilePreferences);
+    if (els.profileMenuFontSizeSelect) els.profileMenuFontSizeSelect.addEventListener("change", saveProfilePreferences);
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     els.profileTabButtons.forEach((button) => {
@@ -653,16 +660,19 @@
   function bindUserAccessSync() {
     window.addEventListener("focus", () => {
       fetchUsers({ silent: true });
+      fetchLocalRecords({ silent: true });
       fetchOwnerActivityLog({ silent: true });
     });
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         fetchUsers({ silent: true });
+        fetchLocalRecords({ silent: true });
         fetchOwnerActivityLog({ silent: true });
       }
     });
     window.setInterval(() => {
       fetchUsers({ silent: true });
+      fetchLocalRecords({ silent: true });
       fetchOwnerActivityLog({ silent: true });
     }, 15000);
   }
@@ -701,6 +711,31 @@
       renderEmployees();
       renderUsers();
       applyCurrentUserAccess();
+    }
+  }
+
+  async function fetchLocalRecords(options = {}) {
+    try {
+      const payload = await postToApi({ action: "listLocalRecords" });
+      if (!payload || (payload.success !== true && payload.ok !== true)) return;
+
+      if (Array.isArray(payload.employees)) {
+        state.employees = payload.employees.map(normalizeEmployeeRecord).filter((item) => item.name || item.email || item.phone);
+        writeStoredArray(EMPLOYEE_KEY, state.employees);
+      }
+
+      if (Array.isArray(payload.suppliers)) {
+        state.suppliers = payload.suppliers.map(normalizeSupplierRecord).filter((item) => item.name || item.phone || item.pic);
+        writeStoredArray(SUPPLIER_KEY, state.suppliers);
+      }
+
+      renderEmployees();
+      renderSuppliers();
+      populateMedicineOptions();
+    } catch (error) {
+      if (!options.silent) {
+        console.warn("Gagal menyinkronkan data karyawan/supplier:", error);
+      }
     }
   }
 
@@ -2425,18 +2460,94 @@
       state.rows.flatMap((row) => [row.satuan_beli, row.satuan_1, row.satuan_2, row.satuan_3, row.satuan_4])
     ).sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
 
-    els.medicineFormFields.innerHTML = DATA_COLUMNS.map((column) => {
-      const wide = ["nama", "indikasi", "komposisi"].includes(column.key);
-      const unitMatch = column.key.match(/_(\d)$/);
+    const columnByKey = DATA_COLUMNS.reduce((map, column) => {
+      map.set(column.key, column);
+      return map;
+    }, new Map());
+
+    const field = (key, options = {}) => {
+      const column = columnByKey.get(key);
+      if (!column) return "";
+      const unitMatch = key.match(/_(\d)$/);
       const unitIndex = unitMatch ? unitMatch[1] : "";
       const className = [
-        wide ? "span-2" : "",
+        "medicine-field",
+        options.className || "",
+        options.wide ? "is-wide" : "",
         unitIndex ? "unit-field" : ""
       ].filter(Boolean).join(" ");
       const unitAttr = unitIndex ? ` data-unit-index="${unitIndex}"` : "";
+      const required = ["kode", "nama", "satuan_beli", "harga_beli"].includes(key) ? " *" : "";
 
-      return `<label class="${className}"${unitAttr}>${escapeHtml(column.label)}${renderMedicineControl(column, categoryOptions, supplierOptions, unitOptions)}</label>`;
-    }).join("");
+      return `
+        <label class="${className}"${unitAttr}>
+          <span class="medicine-field-label">${escapeHtml(options.label || column.label)}${required}</span>
+          ${renderMedicineControl(column, categoryOptions, supplierOptions, unitOptions)}
+        </label>
+      `;
+    };
+
+    const saleRows = [1, 2, 3, 4].map((index) => `
+      <div class="medicine-sale-row" data-unit-index="${index}">
+        ${field(`isi_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi" })}
+        ${field(`satuan_${index}`, { label: "Satuan", className: "medicine-sale-unit" })}
+        ${field(`harga_jual_${index}`, { label: `Harga Jual ${index}`, className: "medicine-sale-price" })}
+        ${field(`harga_resep_${index}`, { label: `Harga Resep ${index}`, className: "medicine-sale-prescription" })}
+      </div>
+    `).join("");
+
+    els.medicineFormFields.innerHTML = `
+      <fieldset class="medicine-section medicine-section-barang">
+        <legend>Barang</legend>
+        <div class="medicine-section-grid">
+          ${field("kode", { className: "medicine-code-field" })}
+          <span class="medicine-auto-label">auto</span>
+          ${field("nama", { wide: true })}
+          ${field("kategori")}
+        </div>
+      </fieldset>
+      <fieldset class="medicine-section medicine-section-beli">
+        <legend>Beli</legend>
+        <div class="medicine-section-grid">
+          ${field("satuan_beli")}
+          ${field("harga_beli")}
+          ${field("stok")}
+        </div>
+      </fieldset>
+      <fieldset class="medicine-section medicine-section-keterangan">
+        <legend>Keterangan</legend>
+        <div class="medicine-section-grid">
+          ${field("suplier")}
+          ${field("pabrik")}
+          ${field("stok_min")}
+          ${field("expired")}
+          <div class="medicine-tabs">
+            <span>Indikasi</span>
+            <span>Komposisi</span>
+            <span>Batch</span>
+            <span>Lokasi</span>
+          </div>
+          ${field("indikasi", { wide: true })}
+          ${field("komposisi", { wide: true })}
+          ${field("no_batch")}
+          ${field("lokasi")}
+        </div>
+      </fieldset>
+      <fieldset class="medicine-section medicine-section-jual">
+        <legend>Jual</legend>
+        <div class="medicine-price-head">
+          <span></span>
+          <span>Hrg. Biasa</span>
+          <span>Hrg. Resep</span>
+        </div>
+        <div class="medicine-sale-grid">${saleRows}</div>
+        ${field("laba_otomatis", { className: "medicine-profit-field" })}
+        <label class="medicine-check-row">
+          <input type="checkbox" checked disabled>
+          <span>Harga resep = biasa</span>
+        </label>
+      </fieldset>
+    `;
 
     updateMedicineUnitVisibility();
   }
@@ -2446,7 +2557,9 @@
     if (column.key === "suplier") return renderSelect(column.key, suppliers, "Pilih supplier");
     if (column.key === "satuan_beli" || /^satuan_[1-4]$/.test(column.key)) return renderSelect(column.key, units, "Pilih satuan");
     if (column.key === "expired") return `<input id="medicine-${column.key}" name="${column.key}" type="date">`;
-    if (column.type === "number") return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text">`;
+    if (column.type === "number" || PRICE_COLUMNS.has(column.key) || QUANTITY_COLUMNS.has(column.key) || /^isi_[1-4]$/.test(column.key)) {
+      return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text">`;
+    }
     if (["indikasi", "komposisi"].includes(column.key)) return `<textarea id="medicine-${column.key}" name="${column.key}" rows="3"></textarea>`;
     return `<input id="medicine-${column.key}" name="${column.key}" type="text">`;
   }
@@ -2596,6 +2709,27 @@
       return;
     }
 
+    if (isRemoteLocalRecordType(type)) {
+      const record = getLocalArray(type)[index] || {};
+      try {
+        const result = await postToApi({
+          action: "deleteLocalRecord",
+          type,
+          name: record.name || "",
+          email: record.email || "",
+          phone: record.phone || "",
+          pic: record.pic || ""
+        });
+        if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Data belum terhapus online.");
+        deleteLocalRecord(type, index);
+        closeDeleteModal();
+        await fetchLocalRecords({ silent: true });
+      } catch (error) {
+        if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`;
+      }
+      return;
+    }
+
     deleteLocalRecord(type, index);
     closeDeleteModal();
   }
@@ -2613,19 +2747,34 @@
   }
 
   function syncEmployeeSeed() {
-    const existing = readStoredArray(EMPLOYEE_KEY);
-    if (existing.length) {
-      state.employees = existing;
-      return;
-    }
+    const existing = readStoredArray(EMPLOYEE_KEY).map(normalizeEmployeeRecord);
+    const byKey = new Map();
 
-    state.employees = state.users.map((user) => ({
-      name: user.name || user.username,
-      phone: "",
-      address: "",
-      job: user.role || "",
-      email: user.email || ""
-    }));
+    existing.forEach((employee) => {
+      const key = normalizeSearch(employee.email || employee.name || employee.phone);
+      if (key) byKey.set(key, employee);
+    });
+
+    state.users.forEach((user) => {
+      const employee = normalizeEmployeeRecord({
+        name: user.name || user.username,
+        phone: user.phone,
+        address: user.address,
+        job: user.role || "",
+        email: user.email || ""
+      });
+      const keys = [employee.email, employee.name, employee.phone].map(normalizeSearch).filter(Boolean);
+      const existingKey = keys.find((key) => byKey.has(key));
+      const targetKey = existingKey || keys[0];
+      if (!targetKey) return;
+
+      byKey.set(targetKey, {
+        ...(byKey.get(targetKey) || {}),
+        ...employee
+      });
+    });
+
+    state.employees = Array.from(byKey.values()).filter((item) => item.name || item.email || item.phone);
     writeStoredArray(EMPLOYEE_KEY, state.employees);
   }
 
@@ -2705,6 +2854,25 @@
     };
   }
 
+  function normalizeEmployeeRecord(record) {
+    return {
+      name: String(record?.name || record?.nama || record?.nama_lengkap || "").trim(),
+      phone: normalizePhoneNumber(record?.phone || record?.noHp || record?.no_hp || record?.telepon || ""),
+      address: String(record?.address || record?.alamat || "").trim(),
+      job: String(record?.job || record?.jabatan || record?.role || "").trim(),
+      email: String(record?.email || record?.gmail || "").trim()
+    };
+  }
+
+  function normalizeSupplierRecord(record) {
+    return {
+      name: String(record?.name || record?.supplier || record?.suplier || record?.nama || record?.nama_supplier || "").trim(),
+      address: String(record?.address || record?.alamat || "").trim(),
+      phone: normalizePhoneNumber(record?.phone || record?.noHp || record?.no_hp || record?.telepon || ""),
+      pic: String(record?.pic || record?.sales || record?.cp || record?.kontak || "").trim()
+    };
+  }
+
   function isAyuNovaliaUser(user) {
     const identity = normalizeSearch(`${user?.name || ""} ${user?.username || ""} ${user?.email || ""}`);
     return identity.includes("ayu novalia");
@@ -2726,6 +2894,9 @@
       theme: prefs.theme === "dark" ? "dark" : "light",
       compact: prefs.compact === true || prefs.compact === "true",
       startDashboard: prefs.startDashboard === false || prefs.startDashboard === "false" ? false : true,
+      menuIconSize: ["small", "normal", "large"].includes(prefs.menuIconSize) ? prefs.menuIconSize : "normal",
+      menuImageSize: ["small", "normal", "large"].includes(prefs.menuImageSize) ? prefs.menuImageSize : "normal",
+      menuFontSize: ["small", "normal", "large"].includes(prefs.menuFontSize) ? prefs.menuFontSize : "normal",
       updatedAt: String(prefs.updatedAt || "")
     };
   }
@@ -3129,7 +3300,33 @@
       }
     }
 
-    if (state.recordType !== "user") {
+    if (isRemoteLocalRecordType(state.recordType)) {
+      if (els.recordModalStatus) {
+        els.recordModalStatus.textContent = `Menyimpan ${schema.title.toLowerCase()} ke Google Sheet...`;
+        els.recordModalStatus.dataset.type = "info";
+      }
+
+      const loadingToken = startAppLoading(`Menyimpan ${schema.title.toLowerCase()}...`, 0);
+
+      try {
+        record = await saveRemoteLocalRecord(state.recordType, record, previousRecord);
+        if (isEdit) {
+          target[state.recordIndex] = record;
+        } else {
+          target.push(record);
+        }
+        persistLocalArray(state.recordType, target);
+        await fetchLocalRecords({ silent: true });
+      } catch (error) {
+        if (els.recordModalStatus) {
+          els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`;
+          els.recordModalStatus.dataset.type = "error";
+        }
+        return;
+      } finally {
+        endAppLoading(loadingToken);
+      }
+    } else if (state.recordType !== "user") {
       if (isEdit) {
         target[state.recordIndex] = record;
       } else {
@@ -3147,6 +3344,29 @@
     renderUsers();
     applyCurrentUserAccess();
     populateMedicineOptions();
+  }
+
+  function isRemoteLocalRecordType(type) {
+    return type === "employee" || type === "supplier";
+  }
+
+  async function saveRemoteLocalRecord(type, record, previousRecord = {}) {
+    const result = await postToApi({
+      action: "saveLocalRecord",
+      type,
+      record,
+      originalName: previousRecord.name || "",
+      originalEmail: previousRecord.email || "",
+      originalPhone: previousRecord.phone || ""
+    });
+
+    if (!result || (result.success !== true && result.ok !== true)) {
+      throw new Error(result?.message || "Data belum tersimpan online.");
+    }
+
+    return type === "employee"
+      ? normalizeEmployeeRecord(result.record || record)
+      : normalizeSupplierRecord(result.record || record);
   }
 
   function deleteLocalRecord(type, index) {
@@ -3664,11 +3884,20 @@
     const localPrefs = readObject(PROFILE_PREFS_KEY);
     const prefs = Object.keys(userPrefs).length ? userPrefs : localPrefs;
     const theme = prefs.theme === "dark" ? "dark" : "light";
+    const menuIconSize = ["small", "normal", "large"].includes(prefs.menuIconSize) ? prefs.menuIconSize : "normal";
+    const menuImageSize = ["small", "normal", "large"].includes(prefs.menuImageSize) ? prefs.menuImageSize : "normal";
+    const menuFontSize = ["small", "normal", "large"].includes(prefs.menuFontSize) ? prefs.menuFontSize : "normal";
     document.body.classList.toggle("theme-dark", theme === "dark");
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
+    document.body.dataset.menuIconSize = menuIconSize;
+    document.body.dataset.menuImageSize = menuImageSize;
+    document.body.dataset.menuFontSize = menuFontSize;
     if (els.profileThemeSelect) els.profileThemeSelect.value = theme;
     if (els.profileCompactToggle) els.profileCompactToggle.checked = prefs.compact === true;
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.checked = prefs.startDashboard !== false;
+    if (els.profileMenuIconSizeSelect) els.profileMenuIconSizeSelect.value = menuIconSize;
+    if (els.profileMenuImageSizeSelect) els.profileMenuImageSizeSelect.value = menuImageSize;
+    if (els.profileMenuFontSizeSelect) els.profileMenuFontSizeSelect.value = menuFontSize;
   }
 
   async function saveProfilePreferences() {
@@ -3676,6 +3905,9 @@
       theme: els.profileThemeSelect?.value === "dark" ? "dark" : "light",
       compact: Boolean(els.profileCompactToggle?.checked),
       startDashboard: els.profileStartDashboardToggle ? Boolean(els.profileStartDashboardToggle.checked) : true,
+      menuIconSize: ["small", "normal", "large"].includes(els.profileMenuIconSizeSelect?.value) ? els.profileMenuIconSizeSelect.value : "normal",
+      menuImageSize: ["small", "normal", "large"].includes(els.profileMenuImageSizeSelect?.value) ? els.profileMenuImageSizeSelect.value : "normal",
+      menuFontSize: ["small", "normal", "large"].includes(els.profileMenuFontSizeSelect?.value) ? els.profileMenuFontSizeSelect.value : "normal",
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));
@@ -3712,6 +3944,28 @@
       return;
     }
     const rules = loadAttendanceShiftRules();
+    const dayIcon = `
+      <span class="shift-day-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+      </span>
+    `;
+    const clockIcon = `
+      <span class="shift-input-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
+      </span>
+    `;
+    const renderShiftModeIcon = (shiftKey) => shiftKey === "pagi"
+      ? '<span class="shift-mode-icon shift-mode-pagi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"></path></svg></span>'
+      : '<span class="shift-mode-icon shift-mode-sore" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 15.6A8.2 8.2 0 0 1 8.4 4a7 7 0 1 0 11.6 11.6Z"></path></svg></span>';
+    const renderShiftField = (dayKey, shiftKey, field, label, value) => `
+      <label class="shift-time-field">
+        <span>${escapeHtml(label)}</span>
+        <span class="shift-input-shell">
+          ${clockIcon}
+          <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="${field}" value="${escapeHtml(value)}">
+        </span>
+      </label>
+    `;
 
     els.shiftRulesGrid.innerHTML = ATTENDANCE_DAY_LABELS.map(([dayKey, dayLabel]) => {
       const dayRules = rules.days[dayKey] || {};
@@ -3719,29 +3973,18 @@
         const shiftRules = dayRules[shiftKey] || {};
 
         return `
-          <fieldset class="shift-rule-card">
-            <legend>${escapeHtml(dayLabel)} - ${escapeHtml(shiftLabel)}</legend>
-            <label>
-              <span>Jam Masuk (jam)</span>
-              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="start" value="${escapeHtml(shiftRules.start)}">
-            </label>
-            <label>
-              <span>Kompensasi Keterlambatan (menit)</span>
-              <input type="number" min="0" max="240" step="1" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="lateMinutes" value="${escapeHtml(String(shiftRules.lateMinutes))}">
-            </label>
-            <label>
-              <span>Batas Datang</span>
-              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="deadline" value="${escapeHtml(shiftRules.deadline)}">
-            </label>
-            <label>
-              <span>Mulai Absen Pulang</span>
-              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="returnStart" value="${escapeHtml(shiftRules.returnStart)}">
-            </label>
+          <fieldset class="shift-rule-card shift-rule-card-${escapeHtml(shiftKey)}">
+            <legend>${renderShiftModeIcon(shiftKey)}${escapeHtml(shiftLabel)}</legend>
+            <div class="shift-rule-fields">
+              ${renderShiftField(dayKey, shiftKey, "start", "Jam Masuk (jam)", shiftRules.start)}
+              ${renderShiftField(dayKey, shiftKey, "deadline", "Batas Datang", shiftRules.deadline)}
+              ${renderShiftField(dayKey, shiftKey, "returnStart", "Mulai Absen Pulang", shiftRules.returnStart)}
+            </div>
           </fieldset>
         `;
       }).join("");
 
-      return `<section class="shift-day-group"><h4>${escapeHtml(dayLabel)}</h4><div>${cards}</div></section>`;
+      return `<section class="shift-day-group"><h4>${dayIcon}${escapeHtml(dayLabel)}</h4><div class="shift-day-cards">${cards}</div></section>`;
     }).join("");
   }
 
@@ -3787,7 +4030,37 @@
         : sanitizeRuleTime(input.value, rules.days[day][shift][field]);
     });
 
+    ATTENDANCE_DAY_LABELS.forEach(([dayKey]) => {
+      ATTENDANCE_SHIFT_LABELS.forEach(([shiftKey]) => {
+        const rule = rules.days[dayKey]?.[shiftKey];
+        if (!rule) return;
+        rule.lateMinutes = calculateLateMinutes(rule.start, rule.deadline, rule.lateMinutes);
+      });
+    });
+
     return normalizeAttendanceShiftRules(rules);
+  }
+
+  function calculateLateMinutes(start, deadline, fallback) {
+    const startMinutes = getTimeMinutes(start);
+    const deadlineMinutes = getTimeMinutes(deadline);
+
+    if (startMinutes < 0 || deadlineMinutes < 0) return fallback;
+
+    const diff = deadlineMinutes >= startMinutes
+      ? deadlineMinutes - startMinutes
+      : deadlineMinutes + 1440 - startMinutes;
+
+    return clampInteger(diff, 0, 240, fallback);
+  }
+
+  function getTimeMinutes(value) {
+    const match = String(value || "").trim().match(/^(\d{2}):(\d{2})$/);
+    if (!match) return -1;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) return -1;
+    return hour * 60 + minute;
   }
 
   function loadAttendanceShiftRules() {

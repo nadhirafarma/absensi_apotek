@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nadhira Farma Digital - Sistem Informasi Apotek</title>
+  <meta name="description" content="Beranda Nadhira Farma Digital untuk layanan apotek, konsultasi, dan akses login internal.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/landing.css?v=20260605-landing-v1">
+  <script defer src="assets/landing.js?v=20260605-landing-v1"></script>
+</head>
+<body>
+  <main class="landing-page" data-lang="id">
+    <header class="landing-header">
+      <a class="landing-brand" href="beranda.html" aria-label="Nadhira Farma Digital">
+        <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+        <span>
+          <strong>Nadhira Farma Digital</strong>
+          <small>Sistem Informasi Apotek</small>
+        </span>
+      </a>
+
+      <button class="mobile-menu-button" id="landingMenuButton" type="button" aria-expanded="false" aria-controls="landingNav">
+        <span>Menu</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16"></path>
+          <path d="M4 12h16"></path>
+          <path d="M4 17h16"></path>
+        </svg>
+      </button>
+
+      <nav class="landing-nav" id="landingNav" aria-label="Navigasi beranda">
+        <a class="nav-action" id="landingLoginLink" href="login.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span data-i18n="login">Login</span>
+        </a>
+        <button class="nav-action" type="button" data-coming-soon="account">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M19 8v6"></path>
+            <path d="M16 11h6"></path>
+          </svg>
+          <span data-i18n="register">Daftar Akun</span>
+        </button>
+        <button class="nav-action" type="button" data-coming-soon="shop">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 7h15l-2 8H8L6 7Z"></path>
+            <path d="M6 7 5 3H2"></path>
+            <circle cx="9" cy="20" r="1.6"></circle>
+            <circle cx="18" cy="20" r="1.6"></circle>
+          </svg>
+          <span data-i18n="shop">Belanja</span>
+        </button>
+        <label class="language-picker">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M3 12h18"></path>
+            <path d="M12 3a14 14 0 0 1 0 18"></path>
+            <path d="M12 3a14 14 0 0 0 0 18"></path>
+          </svg>
+          <select id="languageSelect" aria-label="Pilih bahasa">
+            <option value="id">Bahasa</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </nav>
+    </header>
+
+    <section class="landing-hero" aria-labelledby="landingTitle">
+      <div class="hero-copy">
+        <h1 id="landingTitle" data-i18n="headline">Sehat dimulai dari pilihan yang tepat</h1>
+        <p data-i18n="subhead">Belanja obat asli dan terpercaya kini semakin mudah. Pilih, pesan, dan kami antar langsung ke rumah Anda.</p>
+      </div>
+
+      <section class="feature-strip" aria-label="Keunggulan layanan">
+        <article>
+          <span class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h15l-2 8H8L6 7Z"></path><path d="M6 7 5 3H2"></path></svg>
+          </span>
+          <strong data-i18n="feature1Title">Lengkap & Original</strong>
+          <small data-i18n="feature1Text">Ribuan produk obat original dan bergaransi.</small>
+        </article>
+        <article>
+          <span class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path><path d="m8.9 12.1 2 2 4.4-5"></path></svg>
+          </span>
+          <strong data-i18n="feature2Title">Aman & Terpercaya</strong>
+          <small data-i18n="feature2Text">Transaksi aman, privasi terjaga.</small>
+        </article>
+        <article>
+          <span class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path><circle cx="7" cy="19" r="2"></circle><circle cx="18" cy="19" r="2"></circle></svg>
+          </span>
+          <strong data-i18n="feature3Title">Pengiriman Cepat</strong>
+          <small data-i18n="feature3Text">Diantar langsung ke rumah Anda.</small>
+        </article>
+        <article>
+          <span class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12.5 12 21 3.5 12.5 12 4l8.5 8.5Z"></path><path d="M12 8h.01"></path></svg>
+          </span>
+          <strong data-i18n="feature4Title">Harga Bersahabat</strong>
+          <small data-i18n="feature4Text">Harga kompetitif dengan kualitas terbaik.</small>
+        </article>
+      </section>
+
+      <p class="hero-quote" data-i18n="quote">Bersama, kita wujudkan pelayanan terbaik untuk kesehatan yang lebih baik.</p>
+
+      <section class="value-grid" aria-label="Nilai layanan">
+        <article>
+          <span class="value-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.2 2.8 7.8 7 10 4.2-2.2 7-5.8 7-10V6l-7-3Z"></path><path d="m8.9 12.1 2 2 4.4-5"></path></svg>
+          </span>
+          <strong data-i18n="value1Title">Tanggung Jawab</strong>
+          <p data-i18n="value1Text">Setiap tugas adalah amanah yang dijalankan dengan sepenuh hati.</p>
+        </article>
+        <article>
+          <span class="value-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.5 12.5 2.2 2.2a2 2 0 0 0 2.8 0l3.9-3.9"></path><path d="M7.2 17.7 3 13.5l4.5-4.5 2 2"></path><path d="m16.8 17.7 4.2-4.2L16.5 9l-2 2"></path></svg>
+          </span>
+          <strong data-i18n="value2Title">Integritas Kerja</strong>
+          <p data-i18n="value2Text">Kejujuran dan disiplin adalah pondasi kepercayaan dalam setiap pekerjaan.</p>
+        </article>
+        <article>
+          <span class="value-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9"></path></svg>
+          </span>
+          <strong data-i18n="value3Title">Kerja Sama</strong>
+          <p data-i18n="value3Text">Bersinergi, saling mendukung, dan tumbuh bersama untuk mencapai tujuan bersama.</p>
+        </article>
+      </section>
+
+      <section class="quran-card" aria-label="Pengingat sholat">
+        <strong data-i18n="quranTitle">Allah berfirman dalam Al-Qur'an:</strong>
+        <p class="arabic">إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا</p>
+        <p data-i18n="quranText">Sesungguhnya shalat itu adalah kewajiban yang ditentukan waktunya atas orang-orang yang beriman.</p>
+        <b>(QS. An-Nisa: 103)</b>
+      </section>
+
+      <section class="trust-strip" aria-label="Kepercayaan layanan">
+        <span><b>100% Original</b><small data-i18n="trust1">Produk asli dengan kualitas terjamin</small></span>
+        <span><b data-i18n="trust2Title">Transaksi Aman</b><small data-i18n="trust2">Sistem aman dan terenkripsi</small></span>
+        <span><b data-i18n="trust3Title">Konsultasi Apoteker</b><small data-i18n="trust3">Gratis konsultasi seputar obat</small></span>
+        <span><b data-i18n="trust4Title">Layanan Pelanggan</b><small data-i18n="trust4">Siap membantu setiap saat</small></span>
+      </section>
+    </section>
+
+    <a class="whatsapp-float" href="https://wa.me/6281221403723?text=Halo%20Nadhira%20Farma%20Digital%2C%20saya%20ingin%20konsultasi." target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 11.7a8 8 0 0 1-11.7 7.1L4 20l1.3-4A8 8 0 1 1 20 11.7Z"></path>
+        <path d="M9 8.8c.2 3 2.1 5 5.2 5.7l1.1-1.1c.2-.2.5-.2.8-.1l1.2.5"></path>
+      </svg>
+      <span><b data-i18n="waTitle">Mulai Bertanya</b><small>via WhatsApp Only</small></span>
+    </a>
+
+    <section class="landing-popup" id="landingPopup" hidden>
+      <div class="landing-dialog" role="dialog" aria-modal="true" aria-labelledby="landingPopupTitle">
+        <button class="landing-dialog-close" id="landingPopupClose" type="button" aria-label="Tutup">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+        <h2 id="landingPopupTitle">Segera Launching</h2>
+        <p id="landingPopupText">Fitur ini sedang kami siapkan agar pengalaman Anda lebih nyaman.</p>
+        <button class="landing-dialog-action" id="landingPopupOk" type="button">Mengerti</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
