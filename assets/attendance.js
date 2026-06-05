@@ -25,8 +25,6 @@
     "Tia_Ivanka",
     "Yolan_Alfarel"
   ];
-  const GPS_BYPASS_LABELS = new Set(["Yolan_Alfarel"]);
-
   const els = {};
   const state = {
     faceMatcher: null,
@@ -416,8 +414,15 @@
   }
 
   async function validateLocation(label) {
-    if (GPS_BYPASS_LABELS.has(label)) {
-      return { ok: true, message: "GPS dilewati untuk akun khusus.", location: null, distance: 0 };
+    const profile = getAttendanceProfileData();
+
+    if (canBypassAttendanceRules(profile)) {
+      return {
+        ok: true,
+        message: "GPS dilewati untuk owner/administrator.",
+        location: null,
+        distance: 0
+      };
     }
 
     setStatus("Menunggu GPS terbaik...");
@@ -576,6 +581,10 @@
   }
 
   function validateAttendanceWindow(plan, profile) {
+    if (canBypassAttendanceRules(profile)) {
+      return { ok: true };
+    }
+
     const now = getJakartaNowParts();
     const minutes = now.hour * 60 + now.minute;
     const isSunday = now.weekday === "Sunday";
@@ -623,6 +632,11 @@
     }
 
     return { ok: true };
+  }
+
+  function canBypassAttendanceRules(profile) {
+    const role = normalizeSearch(profile?.role || "");
+    return role === "owner" || role === "administrator" || role === "admin";
   }
 
   async function sendAttendance(label, locationResult, attendancePlan) {
