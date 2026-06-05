@@ -17,7 +17,8 @@
   const PROFILE_ACTIVITY_KEY = "nadhira.profileActivity";
   const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
   const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
-  const WELCOME_REMINDER_KEY = "nadhira.welcomeReminderShown";
+  const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
+  const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 8;
   const EXPIRING_DAYS = 90;
@@ -130,6 +131,7 @@
     admin: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
     apoteker: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
     kasir: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
+    "asisten apoteker": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
     "staf gudang": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
     operator: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"]
   };
@@ -162,7 +164,7 @@
       fields: [
         { key: "name", label: "Nama Operator", required: true },
         { key: "username", label: "Username", required: true },
-        { key: "role", label: "Role", type: "select", options: ["Owner", "Administrator", "Apoteker", "Kasir", "Staf Gudang", "Operator"] },
+        { key: "role", label: "Role", type: "select", options: ["Owner", "Administrator", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"] },
         { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
         { key: "email", label: "Email", type: "email" },
         { key: "access", label: "Akses Menu & Fungsi", type: "access", wide: true }
@@ -219,7 +221,6 @@
     touchStartX: 0,
     touchStartY: 0,
     touchStartAt: 0,
-    welcomeReminderSlide: 0,
     appLoadingTimer: null,
     appLoadingToken: 0
   };
@@ -237,7 +238,7 @@
     applySavedSidebarState();
     hydrateProfileName();
     bindEvents();
-    if (isMobileViewport()) switchView("home");
+    if (!routeInitialViewFromQuery() && isMobileViewport()) switchView("home");
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
@@ -250,7 +251,16 @@
     fetchUsers();
     fetchOwnerActivityLog();
     bindUserAccessSync();
-    window.setTimeout(maybeShowWelcomeReminder, 900);
+    window.setTimeout(maybeShowHomePrayerReminder, 900);
+  }
+
+  function routeInitialViewFromQuery() {
+    const params = new URLSearchParams(window.location.search || "");
+    const requested = String(params.get("view") || "").trim().replace(/_/g, "-");
+    if (!requested || !VIEW_TITLES[requested]) return false;
+
+    switchView(requested);
+    return true;
   }
 
   function bindElements() {
@@ -299,10 +309,9 @@
       notificationMessage: document.getElementById("homeNotificationMessage"),
       notificationCloseButton: document.getElementById("homeNotificationCloseButton"),
       notificationOkButton: document.getElementById("homeNotificationOkButton"),
-      welcomeReminderModal: document.getElementById("welcomeReminderModal"),
-      welcomeReminderNextButton: document.getElementById("welcomeReminderNextButton"),
-      welcomeReminderCloseButton: document.getElementById("welcomeReminderCloseButton"),
-      welcomeReminderSlides: Array.from(document.querySelectorAll("[data-reminder-slide]")),
+      homePrayerReminderModal: document.getElementById("homePrayerReminderModal"),
+      homePrayerReminderCloseButton: document.getElementById("homePrayerReminderCloseButton"),
+      homePrayerReminderPrimaryButton: document.getElementById("homePrayerReminderPrimaryButton"),
       medicineModal: document.getElementById("medicineModal"),
       medicineForm: document.getElementById("medicineForm"),
       medicineFormFields: document.getElementById("medicineFormFields"),
@@ -531,11 +540,12 @@
       });
     }
 
-    if (els.welcomeReminderNextButton) els.welcomeReminderNextButton.addEventListener("click", () => setWelcomeReminderSlide(1));
-    if (els.welcomeReminderCloseButton) els.welcomeReminderCloseButton.addEventListener("click", closeWelcomeReminder);
-    if (els.welcomeReminderModal) {
-      els.welcomeReminderModal.addEventListener("click", (event) => {
-        if (event.target === els.welcomeReminderModal) closeWelcomeReminder();
+    [els.homePrayerReminderCloseButton, els.homePrayerReminderPrimaryButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeHomePrayerReminder);
+    });
+    if (els.homePrayerReminderModal) {
+      els.homePrayerReminderModal.addEventListener("click", (event) => {
+        if (event.target === els.homePrayerReminderModal) closeHomePrayerReminder();
       });
     }
 
@@ -555,6 +565,7 @@
         closeRecordModal();
         closeDeleteModal();
         stopDashboardScanner();
+        closeHomePrayerReminder();
       }
     });
     window.addEventListener("resize", () => {
@@ -2107,9 +2118,10 @@
     if (!els.notificationButton || !els.notificationDot) return;
 
     const items = getNotificationItems();
-    const count = items.length;
+    const seen = new Set(readSeenNotificationKeys());
+    const count = items.filter((item) => !seen.has(item.key)).length;
     const label = count
-      ? `Ada ${count} notifikasi tersimpan`
+      ? `Ada ${count} notifikasi baru`
       : "Tidak ada notifikasi terbaru";
 
     els.notificationDot.hidden = count < 1;
@@ -2129,6 +2141,7 @@
       positionNotificationPopover();
       els.notificationPopover.hidden = false;
     }
+    markNotificationItemsSeen(items);
   }
 
   function closeNotification() {
@@ -2234,6 +2247,24 @@
 
   function readDismissedNotificationKeys() {
     return readStoredArray(getNotificationDismissKey()).map(String);
+  }
+
+  function getNotificationSeenKey() {
+    const user = getCurrentUserRecord();
+    const identity = isOwnerUser(user) ? "owner" : getProfileStorageIdentity();
+    return `${NOTIFICATION_SEEN_KEY}.${identity || "guest"}`;
+  }
+
+  function readSeenNotificationKeys() {
+    return readStoredArray(getNotificationSeenKey()).map(String);
+  }
+
+  function markNotificationItemsSeen(items) {
+    const keys = (items || []).map((item) => String(item?.key || "")).filter(Boolean);
+    if (!keys.length) return;
+    const merged = Array.from(new Set(readSeenNotificationKeys().concat(keys))).slice(-300);
+    writeStoredArray(getNotificationSeenKey(), merged);
+    updateNotificationState();
   }
 
   function dismissNotificationKey(key) {
@@ -2629,7 +2660,9 @@
   }
 
   function normalizeUserRecord(user) {
-    const role = String(user?.role || "Operator").trim() || "Operator";
+    const role = isAyuNovaliaUser(user)
+      ? "Asisten Apoteker"
+      : (String(user?.role || "Operator").trim() || "Operator");
     return {
       name: String(user?.name || user?.username || "").trim(),
       username: String(user?.username || user?.name || "").trim(),
@@ -2642,6 +2675,11 @@
       access: normalizeAccessList(user?.access || user?.menu, role),
       preferences: normalizeProfilePreferences(user?.preferences || user?.profilePreferences || user?.profile_preferences)
     };
+  }
+
+  function isAyuNovaliaUser(user) {
+    const identity = normalizeSearch(`${user?.name || ""} ${user?.username || ""} ${user?.email || ""}`);
+    return identity.includes("ayu novalia");
   }
 
   function normalizeProfilePreferences(value) {
@@ -3685,37 +3723,23 @@
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
     if (viewName === "cari-data-obat") renderQuickSearchResults();
-    if (viewName === "dashboard") maybeShowWelcomeReminder();
+    if (viewName === "home") maybeShowHomePrayerReminder();
     setSidebarCollapsed(true);
   }
 
-  function maybeShowWelcomeReminder() {
-    if (!els.welcomeReminderModal || state.activeView !== "dashboard") return;
+  function maybeShowHomePrayerReminder() {
+    if (!els.homePrayerReminderModal || state.activeView !== "home") return;
     const user = getCurrentUserRecord();
-    const key = `${WELCOME_REMINDER_KEY}.${getProfileStorageIdentity() || user.username || "guest"}`;
+    const key = `${HOME_PRAYER_REMINDER_KEY}.${getProfileStorageIdentity() || user.username || "guest"}`;
     if (sessionStorage.getItem(key) === "1") return;
 
     sessionStorage.setItem(key, "1");
-    setWelcomeReminderSlide(0);
-    els.welcomeReminderModal.hidden = false;
+    els.homePrayerReminderModal.hidden = false;
     document.body.classList.add("dashboard-modal-open");
   }
 
-  function setWelcomeReminderSlide(index) {
-    state.welcomeReminderSlide = Number(index) || 0;
-    if (els.welcomeReminderSlides) {
-      els.welcomeReminderSlides.forEach((slide) => {
-        slide.classList.toggle("is-active", Number(slide.dataset.reminderSlide) === state.welcomeReminderSlide);
-      });
-    }
-    if (els.welcomeReminderNextButton) els.welcomeReminderNextButton.hidden = state.welcomeReminderSlide >= 1;
-    if (els.welcomeReminderCloseButton) {
-      els.welcomeReminderCloseButton.textContent = state.welcomeReminderSlide >= 1 ? "Saya Mengerti" : "Tutup";
-    }
-  }
-
-  function closeWelcomeReminder() {
-    if (els.welcomeReminderModal) els.welcomeReminderModal.hidden = true;
+  function closeHomePrayerReminder() {
+    if (els.homePrayerReminderModal) els.homePrayerReminderModal.hidden = true;
     const hasOpenModal = [els.medicineModal, els.recordModal, els.deleteModal, els.scannerModal]
       .some((modal) => modal && !modal.hidden);
     document.body.classList.toggle("dashboard-modal-open", hasOpenModal);
@@ -4298,6 +4322,7 @@
       administrator: "Administrator",
       operator: "Operator",
       kasir: "Kasir",
+      "asisten apoteker": "Asisten Apoteker",
       apoteker: "Apoteker",
       "staf gudang": "Staf Gudang"
     };

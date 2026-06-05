@@ -2,6 +2,8 @@
   const MODEL_BASE = "https://nadhirafarma.github.io/absensi_apotek/weights";
   const FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
+  const SESSION_KEY = "nadhira.authSession";
+  const PROFILE_KEY = "nadhira.localProfile";
 
   const APOTEK_LAT = -3.2733637;
   const APOTEK_LON = 104.8819249;
@@ -36,6 +38,7 @@
     processing: false,
     finished: false,
     paused: false,
+    started: false,
     lastLabel: "",
     matchStreak: 0
   };
@@ -46,6 +49,21 @@
     bindElements();
     bindEvents();
     startClock();
+
+    const profileStatus = validateProfileCompleteness();
+    if (!profileStatus.ok) {
+      showProfileRequired(profileStatus);
+      return;
+    }
+
+    showIntegrityGate();
+  }
+
+  async function startAttendanceFlow() {
+    if (state.started) return;
+    state.started = true;
+    if (els.integrityGateModal) els.integrityGateModal.hidden = true;
+    setStatus("Menyiapkan kamera dan Face ID...");
     warmUpLocation();
 
     try {
@@ -72,13 +90,106 @@
     els.gpsStatus = document.getElementById("gpsStatus");
     els.cancelButton = document.getElementById("cancelButton");
     els.retryButton = document.getElementById("retryButton");
+    els.profileRequiredModal = document.getElementById("profileRequiredModal");
+    els.profileRequiredMissing = document.getElementById("profileRequiredMissing");
+    els.integrityGateModal = document.getElementById("integrityGateModal");
+    els.integrityStartButton = document.getElementById("integrityStartButton");
+    els.integrityCloseButton = document.getElementById("integrityCloseButton");
   }
 
   function bindEvents() {
     els.cancelButton.addEventListener("click", cancelAttendance);
     els.retryButton.addEventListener("click", () => window.location.reload());
+    if (els.integrityStartButton) els.integrityStartButton.addEventListener("click", startAttendanceFlow);
+    if (els.integrityCloseButton) els.integrityCloseButton.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
     window.addEventListener("beforeunload", stopAll);
     window.addEventListener("resize", resizeFaceCanvas);
+  }
+
+  function showIntegrityGate() {
+    setStatus("Baca pengingat integritas sebelum memulai Absensi Face ID.");
+    setModelStatus("Menunggu mulai", "warning");
+    setGpsStatus("Belum dimulai", "warning");
+    if (els.integrityGateModal) els.integrityGateModal.hidden = false;
+  }
+
+  function showProfileRequired(profileStatus) {
+    const missing = profileStatus.missing || [];
+    setStatus("Lengkapi profil terlebih dahulu sebelum absensi.");
+    setModelStatus("Profil belum lengkap", "error");
+    setGpsStatus("Absensi ditahan", "error");
+    if (els.profileRequiredMissing) {
+      els.profileRequiredMissing.textContent = missing.length
+        ? `Data yang belum lengkap: ${missing.join(", ")}.`
+        : "Data profil belum lengkap.";
+    }
+    if (els.profileRequiredModal) els.profileRequiredModal.hidden = false;
+  }
+
+  function validateProfileCompleteness() {
+    const profile = getAttendanceProfileData();
+    const checks = [
+      ["Nama", profile.name],
+      ["Email", profile.email],
+      ["No. HP", profile.phone],
+      ["Alamat", profile.address]
+    ];
+    const missing = checks
+      .filter((item) => !String(item[1] || "").trim())
+      .map((item) => item[0]);
+
+    return {
+      ok: missing.length === 0,
+      missing,
+      profile
+    };
+  }
+
+  function getAttendanceProfileData() {
+    const session = readSession() || {};
+    const stored = readScopedProfileData(session);
+    return {
+      name: String(stored.name || session.name || session.username || "").trim(),
+      email: String(stored.email || session.email || "").trim(),
+      phone: normalizePhoneNumber(stored.phone || session.phone || ""),
+      address: String(stored.address || session.address || "").trim(),
+      role: String(stored.role || stored.job || session.role || "").trim(),
+      username: String(stored.username || session.username || "").trim()
+    };
+  }
+
+  function readScopedProfileData(session) {
+    const identity = getProfileStorageIdentity(session);
+    const scoped = readObject(`${PROFILE_KEY}.${identity}`);
+    if (Object.keys(scoped).length) return scoped;
+
+    const legacy = readObject(PROFILE_KEY);
+    const legacyIdentity = normalizeKey(legacy.profileKey || legacy.email || legacy.username || "");
+    return legacyIdentity && legacyIdentity === identity ? legacy : {};
+  }
+
+  function getProfileStorageIdentity(session) {
+    const rawIdentity = session.email || session.username || session.name || "akun";
+    return normalizeKey(rawIdentity) || "akun";
+  }
+
+  function readSession() {
+    try {
+      return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function readObject(key) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || "{}");
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch (error) {
+      return {};
+    }
   }
 
   function startClock() {
@@ -276,15 +387,26 @@
         return;
       }
 
-      if (attendanceResult.sudahAbsen) {
+      const attendancePlan = buildAttendancePlan(attendanceResult);
+
+      if (attendancePlan.done) {
         showResult("Absen sudah ada", formatName(label), {
-          primary: "Absensi hari ini sudah tercatat.",
+          primary: "Absensi datang dan pulang hari ini sudah tercatat.",
           secondary: "Bekerjalah dengan jujur dan tanggung jawab."
         }, "warning");
         return;
       }
 
-      await sendAttendance(label, locationResult);
+      const windowResult = validateAttendanceWindow(attendancePlan, getAttendanceProfileData());
+      if (!windowResult.ok) {
+        showResult(windowResult.title, formatName(label), {
+          primary: windowResult.message,
+          secondary: windowResult.secondary || "Hubungi owner jika membutuhkan pembukaan akses absensi."
+        }, "warning");
+        return;
+      }
+
+      await sendAttendance(label, locationResult, attendancePlan);
     } catch (error) {
       setStatus(`Absensi gagal: ${error.message}`);
       els.retryButton.hidden = false;
@@ -430,23 +552,99 @@
     }
   }
 
-  async function sendAttendance(label, locationResult) {
+  function buildAttendancePlan(result) {
+    const hasDatang = Boolean(result?.datang);
+    const hasPulang = Boolean(result?.pulang);
+    if ((hasDatang && hasPulang) || (result?.sudahAbsen && !hasDatang && !hasPulang)) {
+      return { done: true, type: "", shift: "" };
+    }
+
+    if (hasDatang) {
+      const datangInfo = typeof result.datang === "object" ? result.datang : {};
+      return {
+        done: false,
+        type: "PULANG",
+        shift: normalizeShiftLabel(datangInfo.shift || result.datangShift || getShiftLabel())
+      };
+    }
+
+    return {
+      done: false,
+      type: "DATANG",
+      shift: getShiftLabel()
+    };
+  }
+
+  function validateAttendanceWindow(plan, profile) {
+    const now = getJakartaNowParts();
+    const minutes = now.hour * 60 + now.minute;
+    const isSunday = now.weekday === "Sunday";
+    const isMorning = normalizeShiftLabel(plan.shift) === "SHIFT PAGI";
+    const role = normalizeSearch(profile.role || "");
+    const isKasirOrAssistant = role === "kasir" || role === "asisten apoteker";
+
+    if (plan.type === "DATANG" && isMorning) {
+      const deadline = isSunday ? minutesOf(8, 15) : minutesOf(8, 45);
+      const applies = isSunday || isKasirOrAssistant;
+      if (applies && minutes > deadline) {
+        return {
+          ok: false,
+          title: "Absensi Ditutup",
+          message: "Absensi tidak bisa/ditutup karena anda telat, hubungi owner untuk membuka absen."
+        };
+      }
+    }
+
+    if (plan.type === "DATANG" && !isMorning && minutes > minutesOf(14, 30)) {
+      return {
+        ok: false,
+        title: "Absensi Ditutup",
+        message: "Absensi tidak bisa/ditutup karena anda telat, hubungi owner untuk membuka absen."
+      };
+    }
+
+    if (plan.type === "PULANG" && isMorning) {
+      const start = isSunday ? minutesOf(15, 0) : minutesOf(15, 30);
+      if (minutes < start) {
+        return {
+          ok: false,
+          title: "Absen Pulang Belum Bisa",
+          message: `Absen pulang belum bisa. Waktu pulang shift pagi baru bisa mulai jam ${formatRuleTime(start)}.`
+        };
+      }
+    }
+
+    if (plan.type === "PULANG" && !isMorning && minutes < minutesOf(21, 0)) {
+      return {
+        ok: false,
+        title: "Absen Pulang Belum Bisa",
+        message: "Absen pulang belum bisa. Waktu pulang shift sore baru bisa mulai jam 21.00."
+      };
+    }
+
+    return { ok: true };
+  }
+
+  async function sendAttendance(label, locationResult, attendancePlan) {
     setStatus("Mengirim absensi...");
 
     const photo = capturePhoto();
     const photoBase64 = extractBase64(photo);
     const displayName = formatName(label);
-    const shift = getShiftLabel();
-    const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=HADIR`;
+    const shift = normalizeShiftLabel(attendancePlan?.shift || getShiftLabel());
+    const attendanceType = attendancePlan?.type || "DATANG";
+    const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=${encodeURIComponent(attendanceType)}`;
     const timestamp = new Date().toISOString();
     const fileName = `absensi_${label}_${timestamp.replace(/[:.]/g, "-")}.jpg`;
     const payload = {
       nama: label,
       nama_karyawan: displayName,
       namaKaryawan: displayName,
-      status: "HADIR",
-      status_kehadiran: "HADIR",
-      statusKehadiran: "HADIR",
+      status: attendanceType,
+      status_kehadiran: attendanceType,
+      statusKehadiran: attendanceType,
+      jenis_absen: attendanceType,
+      jenisAbsen: attendanceType,
       shift,
       SHIFT: shift,
       foto: photoBase64,
@@ -498,14 +696,14 @@
 
     if (result && result.sudahAbsen) {
       showResult("Absen sudah ada", displayName, {
-        primary: "Absensi hari ini sudah tercatat.",
+        primary: `${attendanceType === "PULANG" ? "Absen pulang" : "Absen datang"} hari ini sudah tercatat.`,
         secondary: "Bekerjalah dengan jujur dan tanggung jawab."
       }, "warning");
       return;
     }
 
-    showResult("Absen Berhasil", displayName, {
-      primary: "Absensi tersimpan",
+    showResult(attendanceType === "PULANG" ? "Absen Pulang Berhasil" : "Absen Datang Berhasil", displayName, {
+      primary: `${attendanceType === "PULANG" ? "Absen pulang" : "Absen datang"} tersimpan`,
       secondary: "Bekerjalah dengan jujur dan tanggung jawab."
     }, "success");
   }
@@ -592,8 +790,43 @@
       hour12: false,
       timeZone: "Asia/Jakarta"
     }).format(new Date()));
+    const hour = jakartaHour === 24 ? 0 : jakartaHour;
 
-    return jakartaHour < 12 ? "SHIFT PAGI" : "SHIFT SORE";
+    return hour < 12 ? "SHIFT PAGI" : "SHIFT SORE";
+  }
+
+  function normalizeShiftLabel(value) {
+    return /sore/i.test(String(value || "")) ? "SHIFT SORE" : "SHIFT PAGI";
+  }
+
+  function getJakartaNowParts() {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Jakarta"
+    }).formatToParts(new Date()).reduce((map, part) => {
+      map[part.type] = part.value;
+      return map;
+    }, {});
+    const hour = Number(parts.hour) === 24 ? 0 : Number(parts.hour || 0);
+
+    return {
+      weekday: parts.weekday || "",
+      hour,
+      minute: Number(parts.minute || 0)
+    };
+  }
+
+  function minutesOf(hour, minute) {
+    return hour * 60 + minute;
+  }
+
+  function formatRuleTime(totalMinutes) {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    return `${String(hour).padStart(2, "0")}.${String(minute).padStart(2, "0")}`;
   }
 
   function showResult(title, name, message, type) {
@@ -686,6 +919,23 @@
 
   function formatName(label) {
     return String(label || "").replace(/_/g, " ");
+  }
+
+  function normalizeSearch(value) {
+    return String(value || "").trim().toLowerCase().replace(/_/g, " ");
+  }
+
+  function normalizeKey(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  }
+
+  function normalizePhoneNumber(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    const cleaned = text.replace(/[^\d+]/g, "");
+    if (/^\+/.test(cleaned)) return cleaned;
+    if (/^8\d{7,}$/.test(cleaned)) return `0${cleaned}`;
+    return cleaned;
   }
 
   function escapeHtml(value) {

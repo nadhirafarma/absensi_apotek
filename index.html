@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260605-dashboard-search-v35">
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-home-attendance-v36">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260605-dashboard-search-v35"></script>
+  <script defer src="assets/app.js?v=20260605-home-attendance-v36"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260605-dashboard-search-v35"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-home-attendance-v36"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -844,26 +844,17 @@
     </div>
   </section>
 
-  <section class="welcome-reminder-modal" id="welcomeReminderModal" hidden>
-    <div class="welcome-reminder-card" role="dialog" aria-modal="true" aria-labelledby="welcomeReminderTitle">
-      <div class="welcome-reminder-mark" aria-hidden="true">
-        <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
-      </div>
-      <h2 id="welcomeReminderTitle">Pengingat Hari Ini</h2>
-      <div class="welcome-reminder-slides">
-        <article class="welcome-reminder-slide is-active" data-reminder-slide="0">
-          <strong>Integritas Kerja</strong>
-          <p>Bekerja dengan jujur, teliti, dan bertanggung jawab adalah bagian dari menjaga amanah pasien, tim, dan apotek.</p>
-        </article>
+  <section class="visual-reminder-modal home-prayer-reminder-modal" id="homePrayerReminderModal" hidden>
+    <div class="visual-reminder-frame" role="dialog" aria-modal="true" aria-label="Pengingat sholat">
+      <img class="visual-reminder-image" src="assets/reminder-sholat.png" alt="Pengingat jangan lalaikan sholat">
+      <button class="reminder-hotspot reminder-hotspot-close" id="homePrayerReminderCloseButton" type="button" aria-label="Tutup pengingat sholat"></button>
+      <button class="reminder-hotspot reminder-hotspot-primary" id="homePrayerReminderPrimaryButton" type="button" aria-label="Aamiin, InsyaAllah"></button>
+      <div class="welcome-reminder-slides" hidden>
         <article class="welcome-reminder-slide" data-reminder-slide="1">
           <strong>Jangan Lalai Sholat</strong>
           <p>“Dirikanlah sholat untuk mengingat-Ku.” Saat pekerjaan padat, tetap jaga waktu sholat dan jangan menukarnya dengan urusan dunia.</p>
           <small>QS. Thaha: 14</small>
         </article>
-      </div>
-      <div class="welcome-reminder-actions">
-        <button class="secondary-action" id="welcomeReminderNextButton" type="button">Selanjutnya</button>
-        <button class="primary-action" id="welcomeReminderCloseButton" type="button">Saya Mengerti</button>
       </div>
     </div>
   </section>

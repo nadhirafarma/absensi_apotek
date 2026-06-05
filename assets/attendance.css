@@ -190,6 +190,7 @@ video {
   gap: 10px;
 }
 
+.primary-button,
 .secondary-button,
 .danger-button {
   min-height: 48px;
@@ -200,6 +201,7 @@ video {
   cursor: pointer;
 }
 
+.primary-button,
 .secondary-button {
   background: var(--blue);
 }
@@ -299,8 +301,139 @@ video {
   text-decoration: none;
 }
 
+.profile-required-modal,
+.visual-reminder-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vw, 28px);
+  background: rgba(12, 23, 52, 0.48);
+  backdrop-filter: blur(15px);
+}
+
+.profile-required-card {
+  width: min(100%, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 26px 22px;
+  border: 1px solid rgba(207, 224, 244, 0.94);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 28px 80px rgba(17, 69, 134, 0.25);
+  text-align: center;
+}
+
+.profile-required-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(19, 120, 238, 0.14), rgba(232, 23, 152, 0.14));
+  color: var(--blue);
+}
+
+.profile-required-icon svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.profile-required-card h2,
+.profile-required-card p {
+  margin: 0;
+}
+
+.profile-required-card h2 {
+  color: var(--ink);
+  font-size: 1.08rem;
+}
+
+.profile-required-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.profile-required-missing {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(207, 224, 244, 0.9);
+  border-radius: 10px;
+  background: #f8fbff;
+  font-weight: 700;
+}
+
+.profile-required-button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-decoration: none;
+}
+
+.visual-reminder-frame {
+  position: relative;
+  width: min(90vw, 980px);
+  max-height: min(86vh, 640px);
+  aspect-ratio: 1536 / 1024;
+  overflow: hidden;
+  border-radius: clamp(22px, 3vw, 42px);
+  box-shadow: 0 34px 110px rgba(16, 31, 76, 0.34);
+}
+
+.visual-reminder-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.reminder-hotspot {
+  position: absolute;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.reminder-hotspot:focus-visible {
+  outline: 3px solid rgba(80, 74, 244, 0.45);
+  outline-offset: 3px;
+}
+
+.reminder-hotspot-close {
+  top: 3.5%;
+  right: 2.2%;
+  width: 7%;
+  height: 9%;
+}
+
+.reminder-hotspot-primary {
+  left: 35%;
+  bottom: 2.8%;
+  width: 31%;
+  height: 10.5%;
+}
+
 [hidden] {
   display: none !important;
+}
+
+@media (max-width: 760px) {
+  .visual-reminder-frame {
+    width: min(94vw, 560px);
+    max-height: 76vh;
+    border-radius: 24px;
+  }
 }
 
 @media (max-width: 420px) {

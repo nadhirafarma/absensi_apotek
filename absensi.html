@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/attendance.css">
+  <link rel="stylesheet" href="assets/attendance.css?v=20260605-home-attendance-v36">
   <script defer src="assets/auth-guard.js?v=20260601-deploy-fixes"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="assets/attendance.js"></script>
+  <script defer src="assets/attendance.js?v=20260605-home-attendance-v36"></script>
 </head>
 <body>
   <main class="attendance-shell">
@@ -48,5 +48,29 @@
       </div>
     </section>
   </main>
+
+  <section class="profile-required-modal" id="profileRequiredModal" hidden>
+    <div class="profile-required-card" role="dialog" aria-modal="true" aria-labelledby="profileRequiredTitle">
+      <div class="profile-required-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M16 11l2 2 4-4"></path>
+        </svg>
+      </div>
+      <h2 id="profileRequiredTitle">Lengkapi Profil Terlebih Dahulu</h2>
+      <p>Absensi Face ID belum bisa dilanjutkan karena data akun profil masih belum lengkap.</p>
+      <p class="profile-required-missing" id="profileRequiredMissing"></p>
+      <a class="primary-button profile-required-button" href="index.html?view=akun-profil">Lengkapi Profil</a>
+    </div>
+  </section>
+
+  <section class="visual-reminder-modal attendance-integrity-modal" id="integrityGateModal" hidden>
+    <div class="visual-reminder-frame" role="dialog" aria-modal="true" aria-label="Pengingat integritas kerja">
+      <img class="visual-reminder-image" src="assets/reminder-integritas.png" alt="Pengingat integritas kerja">
+      <button class="reminder-hotspot reminder-hotspot-close" id="integrityCloseButton" type="button" aria-label="Tutup pengingat integritas"></button>
+      <button class="reminder-hotspot reminder-hotspot-primary" id="integrityStartButton" type="button" aria-label="Mulai absensi Face ID"></button>
+    </div>
+  </section>
 </body>
 </html>
