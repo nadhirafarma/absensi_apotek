@@ -16,7 +16,10 @@
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
   const PROFILE_ACTIVITY_KEY = "nadhira.profileActivity";
   const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
+  const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
+  const WELCOME_REMINDER_KEY = "nadhira.welcomeReminderShown";
   const PAGE_SIZE = 10;
+  const QUICK_PAGE_SIZE = 8;
   const EXPIRING_DAYS = 90;
 
   const DATA_COLUMNS = [
@@ -210,6 +213,13 @@
     pendingProfilePhotoName: "",
     ownerActivities: [],
     quickFilter: { type: "all", days: EXPIRING_DAYS },
+    quickReport: null,
+    quickPage: 1,
+    previousView: "dashboard",
+    touchStartX: 0,
+    touchStartY: 0,
+    touchStartAt: 0,
+    welcomeReminderSlide: 0,
     appLoadingTimer: null,
     appLoadingToken: 0
   };
@@ -240,6 +250,7 @@
     fetchUsers();
     fetchOwnerActivityLog();
     bindUserAccessSync();
+    window.setTimeout(maybeShowWelcomeReminder, 900);
   }
 
   function bindElements() {
@@ -256,6 +267,11 @@
       quickResultsList: document.getElementById("quickResultsList"),
       quickSearchStatus: document.getElementById("quickSearchStatus"),
       quickFilterChips: document.getElementById("quickFilterChips"),
+      quickReportTitle: document.getElementById("quickReportTitle"),
+      quickBackButton: document.getElementById("quickBackButton"),
+      quickPagination: document.getElementById("quickPagination"),
+      quickPageInfo: document.getElementById("quickPageInfo"),
+      quickPageControls: document.getElementById("quickPageControls"),
       searchInput: document.getElementById("dashboardSearchInput"),
       filterButton: document.getElementById("dashboardFilterButton"),
       filterPanel: document.getElementById("dashboardFilterPanel"),
@@ -283,6 +299,10 @@
       notificationMessage: document.getElementById("homeNotificationMessage"),
       notificationCloseButton: document.getElementById("homeNotificationCloseButton"),
       notificationOkButton: document.getElementById("homeNotificationOkButton"),
+      welcomeReminderModal: document.getElementById("welcomeReminderModal"),
+      welcomeReminderNextButton: document.getElementById("welcomeReminderNextButton"),
+      welcomeReminderCloseButton: document.getElementById("welcomeReminderCloseButton"),
+      welcomeReminderSlides: Array.from(document.querySelectorAll("[data-reminder-slide]")),
       medicineModal: document.getElementById("medicineModal"),
       medicineForm: document.getElementById("medicineForm"),
       medicineFormFields: document.getElementById("medicineFormFields"),
@@ -394,9 +414,14 @@
     }
 
     if (els.quickSearchInput) {
-      els.quickSearchInput.addEventListener("input", renderQuickSearchResults);
+      els.quickSearchInput.addEventListener("input", () => {
+        state.quickPage = 1;
+        renderQuickSearchResults();
+      });
     }
     if (els.quickFilterChips) els.quickFilterChips.addEventListener("click", handleQuickFilterChipClick);
+    if (els.quickPageControls) els.quickPageControls.addEventListener("click", handleQuickPaginationClick);
+    if (els.quickBackButton) els.quickBackButton.addEventListener("click", goBackFromQuickSearch);
 
     document.querySelectorAll("[data-report-filter]").forEach((card) => {
       card.addEventListener("click", () => applyReportQuickFilter(card.dataset.reportFilter));
@@ -502,6 +527,15 @@
     if (els.notificationPopover) {
       els.notificationPopover.addEventListener("click", (event) => {
         if (event.target === els.notificationPopover) closeNotification();
+        handleNotificationAction(event);
+      });
+    }
+
+    if (els.welcomeReminderNextButton) els.welcomeReminderNextButton.addEventListener("click", () => setWelcomeReminderSlide(1));
+    if (els.welcomeReminderCloseButton) els.welcomeReminderCloseButton.addEventListener("click", closeWelcomeReminder);
+    if (els.welcomeReminderModal) {
+      els.welcomeReminderModal.addEventListener("click", (event) => {
+        if (event.target === els.welcomeReminderModal) closeWelcomeReminder();
       });
     }
 
@@ -528,6 +562,8 @@
       if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
       if (els.notificationPopover && !els.notificationPopover.hidden) positionNotificationPopover();
     });
+    document.addEventListener("touchstart", handleGlobalTouchStart, { passive: true });
+    document.addEventListener("touchend", handleGlobalTouchEnd, { passive: true });
   }
 
   async function fetchDataObat(options = {}) {
@@ -991,12 +1027,18 @@
 
     const query = normalizeSearch(els.quickSearchInput ? els.quickSearchInput.value : "");
     const filters = getDataObatFilterValues();
-    const rows = state.rows
+    const allRows = state.rows
       .filter((row) => matchesDataObatFilters(row, query, filters))
-      .filter((row) => matchesQuickReportFilter(row, state.quickFilter))
-      .slice(0, 40);
+      .filter((row) => matchesQuickReportFilter(row, state.quickFilter));
     const quickFilterLabel = getQuickFilterLabel(state.quickFilter);
+    const reportLabel = getQuickReportLabel(state.quickReport);
+    const totalPages = Math.max(1, Math.ceil(allRows.length / QUICK_PAGE_SIZE));
+    state.quickPage = Math.min(Math.max(1, Number(state.quickPage) || 1), totalPages);
+    const start = allRows.length ? (state.quickPage - 1) * QUICK_PAGE_SIZE : 0;
+    const rows = allRows.slice(start, start + QUICK_PAGE_SIZE);
     renderQuickFilterChips();
+    renderQuickReportTitle(reportLabel);
+    renderQuickPagination(allRows.length, start, rows.length, totalPages);
 
     if (els.quickSearchStatus) {
       if (!state.rows.length) {
@@ -1006,7 +1048,7 @@
           ? `Tidak ada obat untuk filter ${quickFilterLabel}.`
           : "Obat tidak ditemukan. Coba kata kunci atau barcode lain.";
       } else {
-        els.quickSearchStatus.textContent = `${formatNumber(rows.length)} hasil ${quickFilterLabel ? `${quickFilterLabel} ` : ""}ditampilkan dari ${formatNumber(state.rows.length)} data obat.`;
+        els.quickSearchStatus.textContent = `${formatNumber(allRows.length)} hasil ${quickFilterLabel ? `${quickFilterLabel} ` : ""}ditampilkan dari ${formatNumber(state.rows.length)} data obat.`;
       }
     }
 
@@ -1016,7 +1058,7 @@
     }
 
     els.quickResultsList.innerHTML = rows.map((row, index) => `
-      <article class="quick-medicine-card quick-tone-${(index % 4) + 1}">
+      <article class="quick-medicine-card quick-tone-${((start + index) % 4) + 1}">
         <div class="quick-medicine-name">
           <span class="quick-name-accent" aria-hidden="true"></span>
           <strong>${escapeHtml(formatCell(row.nama))}</strong>
@@ -1034,23 +1076,45 @@
   }
 
   function applyReportQuickFilter(type) {
+    const previousView = state.activeView && state.activeView !== "cari-data-obat" ? state.activeView : "dashboard";
+    state.previousView = previousView;
+    state.quickReport = {
+      type: type || "all",
+      days: type === "expiring" ? EXPIRING_DAYS : null
+    };
     state.quickFilter = {
       type: type || "all",
       days: type === "expiring" ? EXPIRING_DAYS : null
     };
+    state.quickPage = 1;
     if (els.quickSearchInput) els.quickSearchInput.value = "";
-    switchView("cari-data-obat");
+    switchView("cari-data-obat", { previousView });
     renderQuickSearchResults();
   }
 
   function resetQuickReportFilter() {
     state.quickFilter = { type: "all", days: EXPIRING_DAYS };
+    state.quickReport = null;
+    state.quickPage = 1;
+    renderQuickReportTitle("");
   }
 
   function handleQuickFilterChipClick(event) {
     const resetButton = event.target.closest("[data-quick-filter-reset]");
     if (resetButton) {
-      resetQuickReportFilter();
+      state.quickFilter = { type: "all", days: EXPIRING_DAYS };
+      state.quickPage = 1;
+      renderQuickSearchResults();
+      return;
+    }
+
+    const reportButton = event.target.closest("[data-quick-report]");
+    if (reportButton && state.quickReport) {
+      state.quickFilter = {
+        type: state.quickReport.type || "all",
+        days: state.quickReport.type === "expiring" ? (Number(state.quickReport.days) || EXPIRING_DAYS) : null
+      };
+      state.quickPage = 1;
       renderQuickSearchResults();
       return;
     }
@@ -1061,29 +1125,35 @@
       type: "expiring",
       days: Number(expiryButton.dataset.expiryDays) || EXPIRING_DAYS
     };
+    if (state.quickReport?.type === "expiring") {
+      state.quickReport.days = state.quickFilter.days;
+    }
+    state.quickPage = 1;
     renderQuickSearchResults();
   }
 
   function renderQuickFilterChips() {
     if (!els.quickFilterChips) return;
     const filter = state.quickFilter || {};
-    const label = getQuickFilterLabel(filter);
+    const reportLabel = getQuickReportLabel(state.quickReport);
 
-    if (!label) {
+    if (!reportLabel) {
       els.quickFilterChips.hidden = true;
       els.quickFilterChips.innerHTML = "";
       return;
     }
 
-    const expiryChips = filter.type === "expiring"
+    const expiryChips = state.quickReport?.type === "expiring"
       ? [30, 60, 90].map((days) => `<button type="button" data-expiry-days="${days}" class="${Number(filter.days) === days ? "is-active" : ""}">&lt; ${days} hari</button>`).join("")
       : "";
+    const reportActive = filter.type === state.quickReport.type;
+    const allActive = filter.type === "all";
 
     els.quickFilterChips.hidden = false;
     els.quickFilterChips.innerHTML = `
-      <span>${escapeHtml(label)}</span>
+      <button type="button" data-quick-report class="${reportActive ? "is-active" : ""}">${escapeHtml(reportLabel)}</button>
       ${expiryChips}
-      <button type="button" data-quick-filter-reset>Semua data</button>
+      <button type="button" data-quick-filter-reset class="${allActive ? "is-active" : ""}">Semua data</button>
     `;
   }
 
@@ -1101,6 +1171,101 @@
 
     if (type === "expiring") return `akan expired < ${days} hari`;
     return labels[type] || "";
+  }
+
+  function getQuickReportLabel(report) {
+    if (!report || !report.type || report.type === "all") return "";
+    const labels = {
+      active: "Obat Aktif",
+      inactive: "Obat Nonaktif",
+      expired: "Obat Expired",
+      empty: "Obat Kosong",
+      low: "Stok Menipis",
+      out: "Stok Habis",
+      expiring: "Akan Expired"
+    };
+
+    return labels[report.type] || "";
+  }
+
+  function renderQuickReportTitle(label) {
+    if (!els.quickReportTitle) return;
+    if (!label) {
+      els.quickReportTitle.hidden = true;
+      els.quickReportTitle.innerHTML = "";
+      return;
+    }
+
+    const detail = state.quickReport?.type === "expiring"
+      ? `Menampilkan obat yang akan expired dalam ${Number(state.quickReport.days || EXPIRING_DAYS)} hari.`
+      : "Lampiran data obat sesuai laporan dashboard.";
+    els.quickReportTitle.hidden = false;
+    els.quickReportTitle.innerHTML = `
+      <span>${escapeHtml(label)}</span>
+      <small>${escapeHtml(detail)}</small>
+    `;
+  }
+
+  function renderQuickPagination(totalRows, start, rowCount, totalPages) {
+    if (!els.quickPagination || !els.quickPageControls || !els.quickPageInfo) return;
+
+    if (!totalRows) {
+      els.quickPagination.hidden = true;
+      els.quickPageControls.innerHTML = "";
+      els.quickPageInfo.textContent = "";
+      return;
+    }
+
+    const end = start + rowCount;
+    els.quickPagination.hidden = false;
+    els.quickPageInfo.textContent = `Menampilkan ${formatNumber(start + 1)} - ${formatNumber(end)} dari ${formatNumber(totalRows)} data`;
+    const pages = getQuickPaginationPages(state.quickPage, totalPages);
+    els.quickPageControls.innerHTML = `
+      <button type="button" data-quick-page="prev" ${state.quickPage <= 1 ? "disabled" : ""} aria-label="Halaman sebelumnya">&lt;</button>
+      ${pages.map((page) => page === "..."
+        ? `<span class="quick-page-ellipsis">...</span>`
+        : `<button type="button" data-quick-page="${page}" class="${page === state.quickPage ? "is-active" : ""}">${page}</button>`
+      ).join("")}
+      <button type="button" data-quick-page="next" ${state.quickPage >= totalPages ? "disabled" : ""} aria-label="Halaman berikutnya">&gt;</button>
+    `;
+  }
+
+  function getQuickPaginationPages(current, total) {
+    if (total <= 5) return Array.from({ length: total }, (_, index) => index + 1);
+    const pages = [1];
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    if (start > 2) pages.push("...");
+    for (let page = start; page <= end; page += 1) pages.push(page);
+    if (end < total - 1) pages.push("...");
+    pages.push(total);
+    return pages;
+  }
+
+  function handleQuickPaginationClick(event) {
+    const button = event.target.closest("[data-quick-page]");
+    if (!button || button.disabled) return;
+
+    const action = button.dataset.quickPage;
+    const total = Math.max(1, Math.ceil(getQuickFilteredRowsCount() / QUICK_PAGE_SIZE));
+    if (action === "prev") state.quickPage = Math.max(1, state.quickPage - 1);
+    else if (action === "next") state.quickPage = Math.min(total, state.quickPage + 1);
+    else state.quickPage = Math.min(total, Math.max(1, Number(action) || 1));
+    renderQuickSearchResults();
+  }
+
+  function getQuickFilteredRowsCount() {
+    const query = normalizeSearch(els.quickSearchInput ? els.quickSearchInput.value : "");
+    const filters = getDataObatFilterValues();
+    return state.rows
+      .filter((row) => matchesDataObatFilters(row, query, filters))
+      .filter((row) => matchesQuickReportFilter(row, state.quickFilter))
+      .length;
+  }
+
+  function goBackFromQuickSearch() {
+    const target = state.previousView && VIEW_TITLES[state.previousView] ? state.previousView : (isMobileViewport() ? "home" : "dashboard");
+    switchView(target, { fromBack: true });
   }
 
   function matchesQuickReportFilter(row, filter) {
@@ -1941,37 +2106,25 @@
   function updateNotificationState() {
     if (!els.notificationButton || !els.notificationDot) return;
 
-    const seenAt = normalizeTimestamp(localStorage.getItem(HOME_UPLOAD_ACK_KEY) || "");
-    const latestActivityAt = getLatestOwnerActivityAt();
-    const seenActivityAt = normalizeTimestamp(localStorage.getItem(getActivityAckKey()) || "");
-    const hasUploadUnread = Boolean(state.uploadedAt && state.uploadedAt !== seenAt);
-    const hasActivityUnread = Boolean(latestActivityAt && latestActivityAt !== seenActivityAt);
-    const hasUnread = hasUploadUnread || hasActivityUnread;
-    const isOwner = isOwnerUser(getCurrentUserRecord());
-    const label = hasActivityUnread
-      ? (isOwner ? "Ada aktivitas seluruh user terbaru" : "Ada aktivitas akun Anda terbaru")
-      : state.uploadedAt
-        ? `${formatLastUpdated(state.uploadedAt)} berdasarkan upload sheet data_obat terakhir`
-        : "Tidak ada notifikasi terbaru";
+    const items = getNotificationItems();
+    const count = items.length;
+    const label = count
+      ? `Ada ${count} notifikasi tersimpan`
+      : "Tidak ada notifikasi terbaru";
 
-    els.notificationDot.hidden = !hasUnread;
-    els.notificationButton.classList.toggle("has-unread", hasUnread);
+    els.notificationDot.hidden = count < 1;
+    els.notificationDot.textContent = count > 9 ? "9+" : String(count);
+    els.notificationButton.classList.toggle("has-unread", count > 0);
     els.notificationButton.title = label;
-    els.notificationButton.setAttribute("aria-label", hasUnread ? `Notifikasi baru. ${label}` : label);
+    els.notificationButton.setAttribute("aria-label", label);
   }
 
   function openNotification() {
-    if (state.uploadedAt) localStorage.setItem(HOME_UPLOAD_ACK_KEY, state.uploadedAt);
-    const latestActivityAt = getLatestOwnerActivityAt();
-    if (latestActivityAt) localStorage.setItem(getActivityAckKey(), latestActivityAt);
-    updateNotificationState();
-
-    const activityItems = getVisibleActivityNotificationItems();
-    const uploadMessage = state.uploadedAt
-      ? `${formatLastUpdated(state.uploadedAt)}. Waktu ini berdasarkan upload sheet data_obat terakhir, bukan waktu sinkron browser.`
-      : "Belum ada info upload terbaru dari Google Sheet data_obat.";
-
-    if (els.notificationMessage) els.notificationMessage.innerHTML = buildNotificationHtml(activityItems, uploadMessage);
+    const items = getNotificationItems();
+    if (els.notificationMessage) {
+      els.notificationMessage.innerHTML = buildNotificationHtml(items);
+      bindNotificationSwipeActions();
+    }
     if (els.notificationPopover) {
       positionNotificationPopover();
       els.notificationPopover.hidden = false;
@@ -2003,7 +2156,7 @@
         return list.findIndex((entry) => `${entry.at}|${entry.title}|${entry.actor}|${entry.detail}|${entry.username}|${entry.email}` === key) === index;
       })
       .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
-      .slice(0, 5)
+      .slice(0, 30)
       .map(normalizeActivityRecord);
   }
 
@@ -2025,24 +2178,151 @@
     return `${OWNER_ACTIVITY_ACK_KEY}.${isOwnerUser(user) ? "owner" : getProfileStorageIdentity()}`;
   }
 
-  function buildNotificationHtml(activities, uploadMessage) {
-    const activityHtml = activities.length
-      ? `<ol class="notification-list">${activities.map((item, index) => {
+  function getNotificationItems() {
+    const dismissed = new Set(readDismissedNotificationKeys());
+    const items = [];
+    const uploadedAt = normalizeTimestamp(state.uploadedAt || "");
+
+    if (uploadedAt) {
+      items.push({
+        key: `upload|${uploadedAt}`,
+        kind: "upload",
+        title: "Update Data Obat",
+        detail: "Data obat terbaru tersedia dari upload Google Sheet.",
+        actor: "Sistem",
+        at: uploadedAt
+      });
+    }
+
+    getVisibleActivityNotificationItems().forEach((activity) => {
+      const item = normalizeActivityRecord(activity);
+      items.push({
+        ...item,
+        key: buildActivityNotificationKey(item),
+        kind: "activity",
+        title: item.title || "Aktivitas Akun",
+        detail: item.detail || "",
+        at: item.at || new Date().toISOString()
+      });
+    });
+
+    return items
+      .filter((item, index, list) => list.findIndex((entry) => entry.key === item.key) === index)
+      .filter((item) => !dismissed.has(item.key))
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+      .slice(0, 30);
+  }
+
+  function buildActivityNotificationKey(item) {
+    const normalized = normalizeActivityRecord(item);
+    return [
+      "activity",
+      normalized.at,
+      normalized.title,
+      normalized.actor,
+      normalized.username,
+      normalized.email,
+      normalized.detail
+    ].map((part) => String(part || "").replace(/\|/g, " ")).join("|");
+  }
+
+  function getNotificationDismissKey() {
+    const user = getCurrentUserRecord();
+    const identity = isOwnerUser(user) ? "owner" : getProfileStorageIdentity();
+    return `${NOTIFICATION_DISMISS_KEY}.${identity || "guest"}`;
+  }
+
+  function readDismissedNotificationKeys() {
+    return readStoredArray(getNotificationDismissKey()).map(String);
+  }
+
+  function dismissNotificationKey(key) {
+    const cleanKey = String(key || "");
+    if (!cleanKey) return;
+    const list = readDismissedNotificationKeys();
+    if (!list.includes(cleanKey)) writeStoredArray(getNotificationDismissKey(), list.concat(cleanKey).slice(-250));
+    updateNotificationState();
+    if (els.notificationPopover && !els.notificationPopover.hidden) openNotification();
+  }
+
+  function dismissAllNotifications() {
+    const keys = getNotificationItems().map((item) => item.key).filter(Boolean);
+    if (!keys.length) return;
+    const current = readDismissedNotificationKeys();
+    const merged = Array.from(new Set(current.concat(keys))).slice(-250);
+    writeStoredArray(getNotificationDismissKey(), merged);
+    updateNotificationState();
+    if (els.notificationPopover && !els.notificationPopover.hidden) openNotification();
+  }
+
+  function handleNotificationAction(event) {
+    const clearButton = event.target.closest("[data-notification-clear]");
+    if (clearButton) {
+      event.preventDefault();
+      dismissAllNotifications();
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-notification-delete]");
+    if (!deleteButton) return;
+    event.preventDefault();
+    dismissNotificationKey(deleteButton.dataset.notificationDelete);
+  }
+
+  function bindNotificationSwipeActions() {
+    if (!els.notificationMessage) return;
+    els.notificationMessage.querySelectorAll("[data-notification-key]").forEach((item) => {
+      let startX = 0;
+      let startY = 0;
+
+      item.addEventListener("touchstart", (event) => {
+        const touch = event.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+      }, { passive: true });
+
+      item.addEventListener("touchend", (event) => {
+        const touch = event.changedTouches[0];
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+        if (deltaX < -55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+          dismissNotificationKey(item.dataset.notificationKey);
+        }
+      }, { passive: true });
+    });
+  }
+
+  function buildNotificationHtml(items) {
+    if (!items.length) {
+      return '<div class="notification-empty">Tidak ada notifikasi tersimpan.</div>';
+    }
+
+    return `
+      <div class="notification-toolbar">
+        <strong>${items.length} notifikasi</strong>
+        <button type="button" data-notification-clear>Hapus semua</button>
+      </div>
+      <ol class="notification-list">${items.map((item, index) => {
           const time = formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", "");
           const actor = item.actor ? ` oleh ${item.actor}` : "";
           const detail = item.detail ? `<span class="notification-detail">${escapeHtml(item.detail)}</span>` : "";
-          return `<li class="notification-item">
+          return `<li class="notification-item" data-notification-key="${escapeHtml(item.key)}">
             <span class="notification-number">${index + 1}</span>
             <span class="notification-body">
               <strong>${escapeHtml(item.title || "Aktivitas")}</strong>
               <small>${escapeHtml(time + actor)}</small>
               ${detail}
             </span>
+            <button class="notification-delete" type="button" data-notification-delete="${escapeHtml(item.key)}" aria-label="Hapus notifikasi">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
           </li>`;
-        }).join("")}</ol>`
-      : '<div class="notification-empty">Tidak ada notifikasi aktivitas terbaru.</div>';
-
-    return `${activityHtml}<div class="notification-upload-note">${escapeHtml(uploadMessage)}</div>`;
+        }).join("")}</ol>
+      <div class="notification-upload-note">Geser laporan ke kiri atau tekan tombol hapus untuk menghapus notifikasi.</div>
+    `;
   }
 
   function buildOwnerActivityNotification() {
@@ -3389,8 +3669,12 @@
 
   }
 
-  function switchView(viewName) {
+  function switchView(viewName, options = {}) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
+    const previousView = state.activeView;
+    if (viewName === "cari-data-obat" && previousView !== "cari-data-obat") {
+      state.previousView = options.previousView || previousView || (isMobileViewport() ? "home" : "dashboard");
+    }
     state.activeView = viewName;
     els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
     els.viewButtons.forEach((button) => {
@@ -3401,7 +3685,111 @@
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
     if (viewName === "cari-data-obat") renderQuickSearchResults();
+    if (viewName === "dashboard") maybeShowWelcomeReminder();
     setSidebarCollapsed(true);
+  }
+
+  function maybeShowWelcomeReminder() {
+    if (!els.welcomeReminderModal || state.activeView !== "dashboard") return;
+    const user = getCurrentUserRecord();
+    const key = `${WELCOME_REMINDER_KEY}.${getProfileStorageIdentity() || user.username || "guest"}`;
+    if (sessionStorage.getItem(key) === "1") return;
+
+    sessionStorage.setItem(key, "1");
+    setWelcomeReminderSlide(0);
+    els.welcomeReminderModal.hidden = false;
+    document.body.classList.add("dashboard-modal-open");
+  }
+
+  function setWelcomeReminderSlide(index) {
+    state.welcomeReminderSlide = Number(index) || 0;
+    if (els.welcomeReminderSlides) {
+      els.welcomeReminderSlides.forEach((slide) => {
+        slide.classList.toggle("is-active", Number(slide.dataset.reminderSlide) === state.welcomeReminderSlide);
+      });
+    }
+    if (els.welcomeReminderNextButton) els.welcomeReminderNextButton.hidden = state.welcomeReminderSlide >= 1;
+    if (els.welcomeReminderCloseButton) {
+      els.welcomeReminderCloseButton.textContent = state.welcomeReminderSlide >= 1 ? "Saya Mengerti" : "Tutup";
+    }
+  }
+
+  function closeWelcomeReminder() {
+    if (els.welcomeReminderModal) els.welcomeReminderModal.hidden = true;
+    const hasOpenModal = [els.medicineModal, els.recordModal, els.deleteModal, els.scannerModal]
+      .some((modal) => modal && !modal.hidden);
+    document.body.classList.toggle("dashboard-modal-open", hasOpenModal);
+  }
+
+  function handleGlobalTouchStart(event) {
+    if (!isMobileViewport() || !event.touches || event.touches.length !== 1) return;
+    if (shouldIgnoreSwipeTarget(event.target)) return;
+
+    const touch = event.touches[0];
+    state.touchStartX = touch.clientX;
+    state.touchStartY = touch.clientY;
+    state.touchStartAt = Date.now();
+  }
+
+  function handleGlobalTouchEnd(event) {
+    if (!isMobileViewport() || !state.touchStartAt || !event.changedTouches || !event.changedTouches.length) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - state.touchStartX;
+    const deltaY = touch.clientY - state.touchStartY;
+    const elapsed = Date.now() - state.touchStartAt;
+    state.touchStartAt = 0;
+
+    if (elapsed > 900 || Math.abs(deltaX) < 78 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+    navigateBySwipe(deltaX > 0 ? -1 : 1);
+  }
+
+  function shouldIgnoreSwipeTarget(target) {
+    return Boolean(target && target.closest([
+      "input",
+      "textarea",
+      "select",
+      "button",
+      "a",
+      "[role='dialog']",
+      ".notification-popover",
+      ".scanner-modal",
+      ".data-table-scroll",
+      ".simple-table-wrap",
+      ".dashboard-search"
+    ].join(",")));
+  }
+
+  function navigateBySwipe(direction) {
+    if (direction < 0 && state.activeView === "cari-data-obat") {
+      goBackFromQuickSearch();
+      return;
+    }
+
+    const views = getSwipeViewSequence();
+    const currentIndex = Math.max(0, views.indexOf(state.activeView));
+    const nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= views.length) return;
+    switchView(views[nextIndex], { fromSwipe: true });
+  }
+
+  function getSwipeViewSequence() {
+    const user = getCurrentUserRecord();
+    const access = new Set(user.access || []);
+    if (isOwnerUser(user)) ACCESS_MENUS.forEach((item) => access.add(item.key));
+
+    return [
+      "home",
+      "dashboard",
+      "cari-data-obat",
+      "data-obat",
+      "data-karyawan",
+      "data-supplier",
+      "surat-pesanan",
+      "import-data-obat",
+      "akun-profil",
+      "manajemen-pengguna"
+    ].filter((viewName) => VIEW_TITLES[viewName] && canView(viewName, access));
   }
 
   function handleViewportRoute() {

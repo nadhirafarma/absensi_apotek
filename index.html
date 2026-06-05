@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260605-central-access-v34">
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-dashboard-search-v35">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260605-central-access-v34"></script>
+  <script defer src="assets/app.js?v=20260605-dashboard-search-v35"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260605-central-access-v34"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-dashboard-search-v35"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -327,14 +327,26 @@
                 </button>
               </label>
             </div>
+            <div class="quick-report-title" id="quickReportTitle" hidden></div>
             <div class="quick-search-head">
               <div>
                 <h2 id="quickSearchTitle">Cari Data Obat</h2>
                 <p id="quickSearchStatus">Ketik nama obat atau scan barcode untuk mencari data.</p>
               </div>
+              <button class="quick-back-button" id="quickBackButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M19 12H5"></path>
+                  <path d="m12 19-7-7 7-7"></path>
+                </svg>
+                <span>Kembali</span>
+              </button>
             </div>
             <div class="quick-filter-chips" id="quickFilterChips" hidden></div>
             <div class="quick-results-list" id="quickResultsList"></div>
+            <div class="quick-pagination" id="quickPagination" hidden>
+              <span id="quickPageInfo"></span>
+              <div class="quick-page-controls" id="quickPageControls"></div>
+            </div>
           </section>
         </section>
 
@@ -470,7 +482,12 @@
               <div>
                 <h2>Data Karyawan</h2>
               </div>
-              <button class="secondary-action" id="addEmployeeButton" type="button">Tambah Karyawan</button>
+              <button class="icon-add-action" id="addEmployeeButton" type="button" aria-label="Tambah karyawan" title="Tambah karyawan">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+              </button>
             </div>
             <div class="simple-table-wrap">
               <table class="simple-table">
@@ -492,7 +509,12 @@
               <div>
                 <h2>Data Supplier</h2>
               </div>
-              <button class="secondary-action" id="addSupplierButton" type="button">Tambah Supplier</button>
+              <button class="icon-add-action" id="addSupplierButton" type="button" aria-label="Tambah supplier" title="Tambah supplier">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+              </button>
             </div>
             <div class="simple-table-wrap">
               <table class="simple-table">
@@ -819,6 +841,30 @@
       <h2 id="homeNotificationTitle">Update Data Obat</h2>
       <div class="notification-message" id="homeNotificationMessage">Memuat informasi upload data obat.</div>
       <button class="secondary-action notification-confirm" id="homeNotificationOkButton" type="button">Mengerti</button>
+    </div>
+  </section>
+
+  <section class="welcome-reminder-modal" id="welcomeReminderModal" hidden>
+    <div class="welcome-reminder-card" role="dialog" aria-modal="true" aria-labelledby="welcomeReminderTitle">
+      <div class="welcome-reminder-mark" aria-hidden="true">
+        <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+      </div>
+      <h2 id="welcomeReminderTitle">Pengingat Hari Ini</h2>
+      <div class="welcome-reminder-slides">
+        <article class="welcome-reminder-slide is-active" data-reminder-slide="0">
+          <strong>Integritas Kerja</strong>
+          <p>Bekerja dengan jujur, teliti, dan bertanggung jawab adalah bagian dari menjaga amanah pasien, tim, dan apotek.</p>
+        </article>
+        <article class="welcome-reminder-slide" data-reminder-slide="1">
+          <strong>Jangan Lalai Sholat</strong>
+          <p>“Dirikanlah sholat untuk mengingat-Ku.” Saat pekerjaan padat, tetap jaga waktu sholat dan jangan menukarnya dengan urusan dunia.</p>
+          <small>QS. Thaha: 14</small>
+        </article>
+      </div>
+      <div class="welcome-reminder-actions">
+        <button class="secondary-action" id="welcomeReminderNextButton" type="button">Selanjutnya</button>
+        <button class="primary-action" id="welcomeReminderCloseButton" type="button">Saya Mengerti</button>
+      </div>
     </div>
   </section>
 

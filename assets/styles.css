@@ -217,13 +217,20 @@ svg {
 
 .notification-dot {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 9px;
-  height: 9px;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
   border: 2px solid #fff;
   border-radius: 999px;
   background: var(--pink);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
   box-shadow: 0 0 0 4px rgba(232, 23, 152, 0.14);
 }
 
@@ -488,12 +495,60 @@ h1 {
 
 .notification-item {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr) 28px;
+  align-items: start;
   gap: 8px;
   padding: 9px;
   border: 1px solid rgba(185, 207, 238, 0.72);
   border-radius: 8px;
   background: rgba(246, 250, 255, 0.86);
+}
+
+.notification-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.notification-toolbar strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.notification-toolbar button,
+.notification-delete {
+  min-height: 28px;
+  border: 1px solid rgba(255, 71, 126, 0.28);
+  border-radius: 8px;
+  background: #fff2f6;
+  color: #e1165b;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-toolbar button {
+  padding: 0 10px;
+}
+
+.notification-delete {
+  width: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.notification-delete svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .notification-number {
@@ -543,6 +598,90 @@ h1 {
 
 .notification-upload-note {
   margin-top: 10px;
+}
+
+.welcome-reminder-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 4200;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(8, 25, 62, 0.42);
+  backdrop-filter: blur(14px);
+}
+
+.welcome-reminder-modal[hidden] {
+  display: none;
+}
+
+.welcome-reminder-card {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  box-shadow: 0 34px 90px rgba(8, 25, 62, 0.28);
+}
+
+.welcome-reminder-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(19, 120, 238, 0.12), rgba(232, 23, 152, 0.12));
+  color: var(--blue);
+}
+
+.welcome-reminder-mark svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.welcome-reminder-card h2,
+.welcome-reminder-card h3,
+.welcome-reminder-card p {
+  margin: 0;
+}
+
+.welcome-reminder-card h2 {
+  color: #08245c;
+  font-size: 1.14rem;
+}
+
+.welcome-reminder-slide {
+  display: none;
+  gap: 8px;
+}
+
+.welcome-reminder-slide.is-active {
+  display: grid;
+}
+
+.welcome-reminder-slide h3 {
+  color: #0b3a89;
+  font-size: 0.98rem;
+}
+
+.welcome-reminder-slide p {
+  color: #536b94;
+  font-size: 0.88rem;
+  line-height: 1.58;
+}
+
+.welcome-reminder-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .notification-close {
@@ -6730,6 +6869,57 @@ body.dashboard-modal-open #view-data-obat.is-active .data-workspace > .data-tool
   font-weight: 600;
 }
 
+.quick-back-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border: 1px solid #c5d9f6;
+  border-radius: 9px;
+  background: #fff;
+  color: #0b3a89;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(20, 68, 128, 0.06);
+}
+
+.quick-back-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quick-report-title {
+  display: grid;
+  gap: 3px;
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 11px 13px;
+  border: 1px solid rgba(39, 123, 244, 0.24);
+  border-radius: 9px;
+  background: linear-gradient(120deg, rgba(237, 246, 255, 0.96), rgba(255, 246, 251, 0.86));
+  color: #08245c;
+}
+
+.quick-report-title span {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.quick-report-title small {
+  color: #58709b;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
 .quick-filter-chips {
   display: flex;
   flex-wrap: wrap;
@@ -6765,6 +6955,57 @@ body.dashboard-modal-open #view-data-obat.is-active .data-workspace > .data-tool
   border-color: transparent;
   background: linear-gradient(100deg, #2678ed, #e81798);
   color: #fff;
+}
+
+.quick-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: min(100%, 720px);
+  margin: 2px auto 0;
+}
+
+.quick-page-info {
+  color: #58709b;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.quick-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.quick-page-controls button,
+.quick-page-ellipsis {
+  min-width: 31px;
+  height: 31px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #c9dcf8;
+  border-radius: 8px;
+  background: #fff;
+  color: #0b3a89;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.quick-page-controls button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.quick-page-controls button.is-active {
+  border-color: rgba(19, 120, 238, 0.46);
+  background: linear-gradient(135deg, #1378ee, #e81798);
+  color: #fff;
+}
+
+.quick-page-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .quick-results-list {
@@ -6941,7 +7182,7 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
 
 .quick-medicine-card {
   position: relative;
-  padding: 14px 46px 14px 16px;
+  padding: 14px 16px;
   border-color: rgba(208, 225, 244, 0.96);
   border-radius: 16px;
   background: rgba(250, 253, 255, 0.88);
@@ -7034,14 +7275,34 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
 }
 
 .quick-card-arrow {
-  position: absolute;
-  top: 50%;
-  right: 18px;
-  color: #9aa9ba;
-  font-size: 2.5rem;
-  font-weight: 500;
-  line-height: 1;
-  transform: translateY(-50%);
+  display: none !important;
+}
+
+.icon-add-action {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(19, 120, 238, 0.32);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1378ee, #e81798);
+  color: #fff;
+  box-shadow: 0 18px 38px rgba(19, 120, 238, 0.18);
+  cursor: pointer;
+}
+
+.icon-add-action svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quick-card-arrow {
+  display: none !important;
 }
 
 @media (max-width: 900px) {
@@ -7092,8 +7353,24 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
   }
 
   .quick-medicine-card {
-    padding: 10px 34px 10px 10px;
+    padding: 10px;
     border-radius: 13px;
+  }
+
+  .quick-pagination {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .quick-page-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .quick-back-button {
+    min-width: 34px;
+    padding: 0 9px;
   }
 
   .quick-medicine-name {
@@ -7131,8 +7408,7 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
   }
 
   .quick-card-arrow {
-    right: 10px;
-    font-size: 1.8rem;
+    display: none !important;
   }
 }
 
@@ -7149,23 +7425,26 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
 
   .mobile-home-shell {
     display: grid;
-    gap: 14px;
-    width: min(100%, 640px);
+    gap: 12px;
+    width: min(100%, 560px);
     margin: 0 auto 16px;
   }
 
   .mobile-home-brand {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 36px auto;
+    justify-content: center;
     gap: 10px;
     align-items: center;
-    padding: 2px 2px 0;
+    width: 100%;
+    padding: 2px 2px 4px;
     color: #08245c;
+    text-align: left;
   }
 
   .mobile-home-brand img {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     object-fit: contain;
   }
 
@@ -7189,19 +7468,19 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
   .mobile-home-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 9px;
+    gap: 8px;
   }
 
   .mobile-home-card {
-    min-height: 118px;
+    min-height: 96px;
     display: grid;
     align-content: center;
     justify-items: center;
-    gap: 6px;
-    padding: 9px 6px 8px;
+    gap: 5px;
+    padding: 7px 5px;
     border: 1px solid rgba(210, 225, 245, 0.94);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.92);
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(237, 246, 255, 0.92));
     color: #08245c;
     font-family: inherit;
     text-align: center;
@@ -7216,16 +7495,16 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
   }
 
   .mobile-home-card strong {
-    min-height: 26px;
+    min-height: 22px;
     display: grid;
     place-items: center;
-    font-size: clamp(0.62rem, 2.5vw, 0.76rem);
+    font-size: clamp(0.56rem, 2.25vw, 0.68rem);
     line-height: 1.12;
   }
 
   .mobile-home-icon {
-    width: 66px;
-    height: 58px;
+    width: 54px;
+    height: 48px;
     display: grid;
     place-items: center;
     border-radius: 0;
@@ -7361,23 +7640,23 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
 
 @media (max-width: 430px) {
   .mobile-home-grid {
-    gap: 7px;
+    gap: 6px;
   }
 
   .mobile-home-card {
-    min-height: 104px;
-    padding: 8px 5px;
-    border-radius: 13px;
+    min-height: 88px;
+    padding: 6px 4px;
+    border-radius: 20px;
   }
 
   .mobile-home-icon {
-    width: 56px;
-    height: 50px;
+    width: 48px;
+    height: 43px;
   }
 
   .mobile-home-card strong {
-    font-size: 0.56rem;
-    min-height: 24px;
+    font-size: 0.52rem;
+    min-height: 20px;
   }
 
   .mobile-bottom-nav {
