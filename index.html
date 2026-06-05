@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260605-home-attendance-v36">
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-popup-text-v38">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260605-home-attendance-v36"></script>
+  <script defer src="assets/app.js?v=20260605-popup-text-v38"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260605-home-attendance-v36"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-popup-text-v38"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -844,18 +844,38 @@
     </div>
   </section>
 
-  <section class="visual-reminder-modal home-prayer-reminder-modal" id="homePrayerReminderModal" hidden>
-    <div class="visual-reminder-frame" role="dialog" aria-modal="true" aria-label="Pengingat sholat">
-      <img class="visual-reminder-image" src="assets/reminder-sholat.png" alt="Pengingat jangan lalaikan sholat">
-      <button class="reminder-hotspot reminder-hotspot-close" id="homePrayerReminderCloseButton" type="button" aria-label="Tutup pengingat sholat"></button>
-      <button class="reminder-hotspot reminder-hotspot-primary" id="homePrayerReminderPrimaryButton" type="button" aria-label="Aamiin, InsyaAllah"></button>
-      <div class="welcome-reminder-slides" hidden>
+  <section class="text-reminder-modal home-prayer-reminder-modal" id="homePrayerReminderModal" hidden>
+    <div class="text-reminder-card prayer-reminder-card" role="dialog" aria-modal="true" aria-labelledby="homePrayerReminderTitle">
+      <button class="text-reminder-close" id="homePrayerReminderCloseButton" type="button" aria-label="Tutup pengingat sholat">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+      <span class="reminder-pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        Pengingat Kebaikan
+      </span>
+      <h2 id="homePrayerReminderTitle">Jangan lalaikan sholat karena dunia</h2>
+      <p class="reminder-lead">Pekerjaan boleh padat, tetapi hati tetap perlu pulang kepada Allah tepat waktu.</p>
+      <div class="reminder-verse">
+        <strong>QS. Al-Ankabut: 64</strong>
+        <p>Kehidupan dunia hanyalah permainan dan senda gurau. Negeri akhirat itulah kehidupan yang sebenarnya, seandainya kita mengetahui.</p>
+      </div>
+      <p>Jadikan sholat sebagai jeda terbaik sebelum melanjutkan pelayanan. Semoga setiap langkah kerja hari ini tetap membawa berkah, tenang, dan amanah.</p>
+      <button class="primary-action reminder-primary" id="homePrayerReminderPrimaryButton" type="button">
+        Aamiin, Insya Allah
+      </button>
+      <!-- Legacy image-reminder fallback removed.
         <article class="welcome-reminder-slide" data-reminder-slide="1">
           <strong>Jangan Lalai Sholat</strong>
           <p>“Dirikanlah sholat untuk mengingat-Ku.” Saat pekerjaan padat, tetap jaga waktu sholat dan jangan menukarnya dengan urusan dunia.</p>
           <small>QS. Thaha: 14</small>
         </article>
-      </div>
+      -->
     </div>
   </section>
 

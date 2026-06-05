@@ -540,9 +540,12 @@
       });
     }
 
-    [els.homePrayerReminderCloseButton, els.homePrayerReminderPrimaryButton].forEach((button) => {
-      if (button) button.addEventListener("click", closeHomePrayerReminder);
-    });
+    if (els.homePrayerReminderCloseButton) {
+      els.homePrayerReminderCloseButton.addEventListener("click", closeHomePrayerReminder);
+    }
+    if (els.homePrayerReminderPrimaryButton) {
+      els.homePrayerReminderPrimaryButton.addEventListener("click", goHomeFromPrayerReminder);
+    }
     if (els.homePrayerReminderModal) {
       els.homePrayerReminderModal.addEventListener("click", (event) => {
         if (event.target === els.homePrayerReminderModal) closeHomePrayerReminder();
@@ -3743,6 +3746,11 @@
     const hasOpenModal = [els.medicineModal, els.recordModal, els.deleteModal, els.scannerModal]
       .some((modal) => modal && !modal.hidden);
     document.body.classList.toggle("dashboard-modal-open", hasOpenModal);
+  }
+
+  function goHomeFromPrayerReminder() {
+    closeHomePrayerReminder();
+    if (state.activeView !== "home" && canView("home")) switchView("home");
   }
 
   function handleGlobalTouchStart(event) {

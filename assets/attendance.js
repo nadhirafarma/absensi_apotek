@@ -37,6 +37,7 @@
     finished: false,
     paused: false,
     started: false,
+    integrityRead: false,
     lastLabel: "",
     matchStreak: 0
   };
@@ -59,6 +60,7 @@
 
   async function startAttendanceFlow() {
     if (state.started) return;
+    if (!state.integrityRead) return;
     state.started = true;
     if (els.integrityGateModal) els.integrityGateModal.hidden = true;
     setStatus("Menyiapkan kamera dan Face ID...");
@@ -91,6 +93,8 @@
     els.profileRequiredModal = document.getElementById("profileRequiredModal");
     els.profileRequiredMissing = document.getElementById("profileRequiredMissing");
     els.integrityGateModal = document.getElementById("integrityGateModal");
+    els.integrityReminderScroll = document.getElementById("integrityReminderScroll");
+    els.integrityReadHint = document.getElementById("integrityReadHint");
     els.integrityStartButton = document.getElementById("integrityStartButton");
     els.integrityCloseButton = document.getElementById("integrityCloseButton");
   }
@@ -98,7 +102,15 @@
   function bindEvents() {
     els.cancelButton.addEventListener("click", cancelAttendance);
     els.retryButton.addEventListener("click", () => window.location.reload());
-    if (els.integrityStartButton) els.integrityStartButton.addEventListener("click", startAttendanceFlow);
+    if (els.integrityStartButton) {
+      els.integrityStartButton.addEventListener("click", () => {
+        if (!state.integrityRead) return;
+        startAttendanceFlow();
+      });
+    }
+    if (els.integrityReminderScroll) {
+      els.integrityReminderScroll.addEventListener("scroll", updateIntegrityReadState, { passive: true });
+    }
     if (els.integrityCloseButton) els.integrityCloseButton.addEventListener("click", () => {
       window.location.href = "index.html";
     });
@@ -110,7 +122,23 @@
     setStatus("Baca pengingat integritas sebelum memulai Absensi Face ID.");
     setModelStatus("Menunggu mulai", "warning");
     setGpsStatus("Belum dimulai", "warning");
+    state.integrityRead = false;
     if (els.integrityGateModal) els.integrityGateModal.hidden = false;
+    updateIntegrityReadState();
+    window.setTimeout(updateIntegrityReadState, 60);
+  }
+
+  function updateIntegrityReadState() {
+    if (!els.integrityStartButton) return;
+
+    const scrollBox = els.integrityReminderScroll;
+    const canStart = state.integrityRead || !scrollBox ||
+      scrollBox.scrollHeight - scrollBox.clientHeight <= 8 ||
+      scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 8;
+
+    if (canStart) state.integrityRead = true;
+    els.integrityStartButton.disabled = !state.integrityRead;
+    if (els.integrityReadHint) els.integrityReadHint.hidden = state.integrityRead;
   }
 
   function showProfileRequired(profileStatus) {
