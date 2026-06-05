@@ -8637,3 +8637,128 @@ body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-acti
     font-size: 0.74rem !important;
   }
 }
+
+/* 20260605 mobile v42: keep brand text centered and bottom nav labels inside footer. */
+@media (max-width: 760px) {
+  .mobile-home-brand {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 42px !important;
+    margin: 0 auto !important;
+    padding: 2px 52px 4px !important;
+    text-align: center !important;
+  }
+
+  .mobile-home-brand img {
+    left: clamp(18px, calc(50% - 156px), 82px) !important;
+    top: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    transform: translateY(-50%) !important;
+  }
+
+  .mobile-home-brand span,
+  .mobile-home-brand strong,
+  .mobile-home-brand small {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .mobile-bottom-nav {
+    min-height: 64px !important;
+    padding: 6px 14px calc(7px + env(safe-area-inset-bottom)) !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-bottom-nav button {
+    position: relative !important;
+    min-height: 50px !important;
+    display: grid !important;
+    grid-template-rows: 24px auto !important;
+    align-content: center !important;
+    justify-items: center !important;
+    gap: 3px !important;
+    overflow: visible !important;
+    padding: 4px 2px !important;
+    line-height: 1.12 !important;
+  }
+
+  .mobile-bottom-nav button svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .mobile-bottom-nav button span {
+    position: static !important;
+    display: block !important;
+    max-width: 86px !important;
+    min-height: 16px !important;
+    color: inherit !important;
+    font-size: 0.58rem !important;
+    font-weight: 800 !important;
+    line-height: 1.12 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    min-height: 54px !important;
+    margin-top: -11px !important;
+    padding: 5px 12px 4px !important;
+    border-radius: 26px !important;
+    grid-template-rows: 22px auto !important;
+  }
+
+  .mobile-bottom-nav .is-featured svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .mobile-bottom-nav .is-featured span {
+    max-width: 112px !important;
+    color: #fff !important;
+    font-size: 0.6rem !important;
+    line-height: 1.05 !important;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  body.dashboard-page {
+    padding-bottom: 96px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-home-brand {
+    padding-inline: 48px !important;
+  }
+
+  .mobile-home-brand img {
+    left: clamp(14px, calc(50% - 148px), 58px) !important;
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .mobile-bottom-nav {
+    left: 12px !important;
+    right: 12px !important;
+    min-height: 62px !important;
+    padding-inline: 10px !important;
+  }
+
+  .mobile-bottom-nav button span {
+    font-size: 0.54rem !important;
+  }
+
+  .mobile-bottom-nav .is-featured {
+    min-height: 52px !important;
+    padding-inline: 10px !important;
+  }
+
+  .mobile-bottom-nav .is-featured span {
+    font-size: 0.56rem !important;
+  }
+}
