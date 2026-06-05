@@ -112,6 +112,7 @@
     els.attendanceShiftSelect = document.getElementById("attendanceShiftSelect");
     els.attendanceArrivalButton = document.getElementById("attendanceArrivalButton");
     els.attendanceReturnButton = document.getElementById("attendanceReturnButton");
+    els.attendanceChoiceCloseButton = document.getElementById("attendanceChoiceCloseButton");
     els.attendanceChoiceStatus = document.getElementById("attendanceChoiceStatus");
   }
 
@@ -128,6 +129,9 @@
       els.integrityReminderScroll.addEventListener("scroll", updateIntegrityReadState, { passive: true });
     }
     if (els.integrityCloseButton) els.integrityCloseButton.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+    if (els.attendanceChoiceCloseButton) els.attendanceChoiceCloseButton.addEventListener("click", () => {
       window.location.href = "index.html";
     });
     if (els.attendanceArrivalButton) els.attendanceArrivalButton.addEventListener("click", () => selectAttendanceType("DATANG"));

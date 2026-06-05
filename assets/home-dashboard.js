@@ -380,6 +380,7 @@
       profileDisplayRole: document.getElementById("profileDisplayRole"),
       profileUsername: document.getElementById("profileUsername"),
       profileEmail: document.getElementById("profileEmail"),
+      profilePhonePreview: document.getElementById("profilePhonePreview"),
       profileRole: document.getElementById("profileRole"),
       profileTabButtons: Array.from(document.querySelectorAll("[data-profile-tab]")),
       profilePanels: Array.from(document.querySelectorAll("[data-profile-panel]")),
@@ -3266,6 +3267,7 @@
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
     if (els.profileEmail) els.profileEmail.textContent = profile.email || "-";
+    if (els.profilePhonePreview) els.profilePhonePreview.textContent = profile.phone || "-";
     if (els.profileRole) els.profileRole.textContent = profile.role || "-";
     if (els.profileNameInput) els.profileNameInput.value = profile.name || "";
     if (els.profileEmailInput) els.profileEmailInput.value = profile.email || "";
@@ -3690,6 +3692,10 @@
 
   function renderAttendanceShiftSettings() {
     if (!els.shiftRulesGrid) return;
+    if (!isAdminUser(getCurrentUserRecord())) {
+      els.shiftRulesGrid.innerHTML = "";
+      return;
+    }
     const rules = loadAttendanceShiftRules();
 
     els.shiftRulesGrid.innerHTML = ATTENDANCE_DAY_LABELS.map(([dayKey, dayLabel]) => {
@@ -3726,6 +3732,10 @@
 
   function saveAttendanceShiftSettings(event) {
     event.preventDefault();
+    if (!isAdminUser(getCurrentUserRecord())) {
+      setProfileStatus("Pengaturan shift absensi hanya dapat diubah oleh owner/admin.", "error");
+      return;
+    }
     const rules = collectAttendanceShiftRules();
     rules.updatedAt = new Date().toISOString();
     localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(rules));
@@ -3735,6 +3745,10 @@
   }
 
   function resetAttendanceShiftSettings() {
+    if (!isAdminUser(getCurrentUserRecord())) {
+      setProfileStatus("Reset shift absensi hanya dapat dilakukan oleh owner/admin.", "error");
+      return;
+    }
     localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(createDefaultAttendanceShiftRules()));
     renderAttendanceShiftSettings();
     setProfileStatus("Pengaturan shift absensi dikembalikan ke default.", "success");
@@ -3833,14 +3847,19 @@
 
   function syncProfileActivityAccess() {
     const user = getCurrentUserRecord();
-    const isAllowed = isOwnerUser(user);
+    const canManageShift = isAdminUser(user);
     const activityTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "aktivitas");
     const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
+    const shiftTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "shift-absensi");
+    const shiftPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "shift-absensi");
 
-    if (activityTab) activityTab.hidden = !isAllowed;
-    if (activityPanel) activityPanel.hidden = !isAllowed;
+    if (activityTab) activityTab.hidden = true;
+    if (activityPanel) activityPanel.hidden = true;
+    if (shiftTab) shiftTab.hidden = !canManageShift;
+    if (shiftPanel) shiftPanel.hidden = !canManageShift;
 
-    if (!isAllowed && activityTab?.classList.contains("is-active")) {
+    if ((activityTab?.classList.contains("is-active")) ||
+        (!canManageShift && shiftTab?.classList.contains("is-active"))) {
       switchProfileTab("profil");
     }
   }

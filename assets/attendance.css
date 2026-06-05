@@ -682,3 +682,317 @@ video {
     grid-template-columns: 1fr;
   }
 }
+
+/* 20260605 attendance choice popup polish. */
+.attendance-choice-modal {
+  padding: clamp(16px, 4vw, 40px);
+  background:
+    radial-gradient(circle at 16% 8%, rgba(88, 64, 196, 0.26), transparent 34%),
+    linear-gradient(145deg, rgba(29, 42, 83, 0.46), rgba(108, 120, 160, 0.58));
+  backdrop-filter: blur(18px);
+}
+
+.attendance-choice-card {
+  position: relative;
+  width: min(92vw, 620px);
+  max-height: min(92vh, 800px);
+  display: grid;
+  justify-items: stretch;
+  gap: clamp(16px, 2.5vw, 22px);
+  overflow-y: auto;
+  padding: clamp(34px, 5vw, 58px) clamp(22px, 5vw, 48px) clamp(28px, 4vw, 44px);
+  border: 1px solid rgba(225, 230, 255, 0.92);
+  border-radius: clamp(28px, 4vw, 38px);
+  background:
+    radial-gradient(circle at 50% 13%, rgba(139, 111, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 10% 20%, rgba(232, 23, 152, 0.07), transparent 30%),
+    rgba(255, 255, 255, 0.985);
+  box-shadow: 0 34px 110px rgba(20, 31, 75, 0.30);
+  text-align: center;
+}
+
+.attendance-choice-card::-webkit-scrollbar {
+  width: 7px;
+}
+
+.attendance-choice-card::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(87, 99, 155, 0.28);
+}
+
+.attendance-choice-close {
+  position: absolute;
+  top: clamp(18px, 3vw, 28px);
+  right: clamp(18px, 3vw, 28px);
+  width: clamp(42px, 7vw, 54px);
+  height: clamp(42px, 7vw, 54px);
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(103, 93, 190, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #5a54b6;
+  cursor: pointer;
+}
+
+.attendance-choice-close svg,
+.attendance-choice-icon svg,
+.attendance-select-icon,
+.attendance-select-caret,
+.attendance-choice-action svg,
+.attendance-choice-home svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.attendance-choice-close svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.6;
+}
+
+.attendance-choice-icon {
+  width: clamp(84px, 16vw, 118px);
+  height: clamp(84px, 16vw, 118px);
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.72)),
+    linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(232, 23, 152, 0.12));
+  color: #7f3ff3;
+  box-shadow:
+    0 0 0 34px rgba(255, 255, 255, 0.35),
+    0 18px 38px rgba(91, 94, 222, 0.18);
+}
+
+.attendance-choice-icon svg {
+  width: 58%;
+  height: 58%;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 10px 14px rgba(78, 84, 234, 0.25));
+}
+
+.attendance-choice-card h2 {
+  width: min(100%, 430px);
+  justify-self: center;
+  color: #101b58;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.attendance-choice-card h2 span {
+  color: #8d4cf4;
+}
+
+.attendance-choice-card > p {
+  width: min(100%, 450px);
+  justify-self: center;
+  color: #66709a;
+  font-size: clamp(1rem, 2.6vw, 1.24rem);
+  line-height: 1.55;
+}
+
+.attendance-choice-field {
+  gap: 10px;
+  color: #111d54;
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+}
+
+.attendance-select-shell {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+
+.attendance-select-shell select {
+  width: 100%;
+  min-height: clamp(58px, 10vw, 76px);
+  appearance: none;
+  padding: 0 clamp(52px, 9vw, 70px) 0 clamp(74px, 12vw, 92px);
+  border: 2px solid rgba(148, 116, 246, 0.25);
+  border-radius: clamp(16px, 3vw, 22px);
+  background: rgba(255, 255, 255, 0.96);
+  color: #151f5b;
+  box-shadow: 0 12px 30px rgba(62, 85, 173, 0.08);
+  font: inherit;
+  font-size: clamp(1rem, 2.8vw, 1.22rem);
+  font-weight: 800;
+}
+
+.attendance-select-icon {
+  position: absolute;
+  left: clamp(18px, 3.6vw, 28px);
+  width: clamp(34px, 6vw, 46px);
+  height: clamp(34px, 6vw, 46px);
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(142, 75, 244, 0.10);
+  color: #863ff0;
+  stroke-width: 2.4;
+  pointer-events: none;
+}
+
+.attendance-select-caret {
+  position: absolute;
+  right: clamp(18px, 3.8vw, 30px);
+  width: 24px;
+  height: 24px;
+  color: #8a3df1;
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.attendance-choice-actions {
+  grid-template-columns: 1fr;
+  gap: clamp(12px, 2.3vw, 18px);
+}
+
+.attendance-choice-action {
+  min-height: clamp(62px, 10vw, 78px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(14px, 3vw, 22px);
+  padding: 10px clamp(18px, 4vw, 28px);
+  border: 0;
+  border-radius: clamp(16px, 3vw, 22px);
+  background: linear-gradient(110deg, #3485f4 0%, #7249f5 52%, #e817c3 100%);
+  box-shadow: 0 18px 34px rgba(87, 73, 228, 0.28);
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.attendance-choice-action span {
+  width: clamp(42px, 7vw, 56px);
+  height: clamp(42px, 7vw, 56px);
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.attendance-choice-action span svg {
+  width: 54%;
+  height: 54%;
+  stroke-width: 2.4;
+}
+
+.attendance-choice-action strong {
+  min-width: 0;
+  color: #fff;
+  font-size: clamp(1.05rem, 3vw, 1.45rem);
+  font-weight: 800;
+}
+
+.attendance-choice-arrow {
+  width: 28px;
+  height: 28px;
+  stroke-width: 3;
+}
+
+.attendance-choice-status {
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: clamp(16px, 3vw, 22px);
+  border-radius: clamp(16px, 3vw, 22px);
+  background: rgba(244, 247, 255, 0.92);
+  color: #313e71;
+  font-size: clamp(0.96rem, 2.6vw, 1.16rem);
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.attendance-choice-status::before {
+  content: "";
+  width: clamp(42px, 8vw, 58px);
+  height: clamp(42px, 8vw, 58px);
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(81, 100, 255, 0.12), rgba(232, 23, 152, 0.10)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237245f3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3Cpath d='M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z'/%3E%3C/svg%3E") center / 58% no-repeat;
+}
+
+.attendance-choice-status[data-type="error"] {
+  background: #fff1f4;
+  color: var(--red);
+}
+
+.attendance-choice-status[data-type="success"] {
+  background: #ecfff5;
+  color: var(--green);
+}
+
+.attendance-choice-divider {
+  position: relative;
+  display: block;
+  height: 1px;
+  margin: 2px 0 0;
+  background: linear-gradient(90deg, transparent, rgba(118, 120, 205, 0.26), transparent);
+}
+
+.attendance-choice-divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #3f8df5, #d72bd5);
+  transform: translate(-50%, -50%);
+}
+
+.attendance-choice-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #2567ef;
+  font-size: clamp(1rem, 2.7vw, 1.2rem);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.attendance-choice-home svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.4;
+}
+
+@media (max-width: 520px) {
+  .attendance-choice-card {
+    width: min(94vw, 430px);
+    max-height: 88vh;
+    gap: 14px;
+    padding: 58px 18px 26px;
+  }
+
+  .attendance-choice-card h2 {
+    font-size: clamp(1.72rem, 9vw, 2.35rem);
+  }
+
+  .attendance-choice-card > p {
+    font-size: 1rem;
+  }
+
+  .attendance-choice-action {
+    min-height: 62px;
+  }
+
+  .attendance-choice-status {
+    align-items: flex-start;
+    padding: 15px;
+    font-size: 0.94rem;
+  }
+}

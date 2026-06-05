@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/attendance.css?v=20260605-shift-rules-v39">
+  <link rel="stylesheet" href="assets/attendance.css?v=20260605-ui-polish-v40">
   <script defer src="assets/auth-guard.js?v=20260601-deploy-fixes"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="assets/attendance.js?v=20260605-shift-rules-v39"></script>
+  <script defer src="assets/attendance.js?v=20260605-ui-polish-v40"></script>
 </head>
 <body>
   <main class="attendance-shell">
@@ -129,21 +129,81 @@
 
   <section class="attendance-choice-modal" id="attendanceChoiceModal" hidden>
     <div class="attendance-choice-card" role="dialog" aria-modal="true" aria-labelledby="attendanceChoiceTitle">
-      <h2 id="attendanceChoiceTitle">Pilih Shift dan Jenis Absensi</h2>
+      <button class="attendance-choice-close" id="attendanceChoiceCloseButton" type="button" aria-label="Kembali ke Home">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+      <span class="attendance-choice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <rect x="4" y="5" width="16" height="15" rx="3"></rect>
+          <path d="M8 3v4"></path>
+          <path d="M16 3v4"></path>
+          <path d="M8 11h8"></path>
+          <path d="m9 15 2 2 4-5"></path>
+        </svg>
+      </span>
+      <h2 id="attendanceChoiceTitle">Pilih <span>Shift</span> dan Jenis Absensi</h2>
       <p>Face ID akan dimulai setelah shift dan jenis absensi dipilih sesuai aturan waktu yang aktif.</p>
       <label class="attendance-choice-field">
         <span>Shift</span>
-        <select id="attendanceShiftSelect">
-          <option value="SHIFT PAGI">Shift Pagi</option>
-          <option value="SHIFT SORE">Shift Sore</option>
-        </select>
+        <span class="attendance-select-shell">
+          <svg class="attendance-select-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+            <path d="M8 3v4"></path>
+            <path d="M16 3v4"></path>
+            <path d="M3 10h18"></path>
+          </svg>
+          <select id="attendanceShiftSelect">
+            <option value="SHIFT PAGI">Shift Pagi</option>
+            <option value="SHIFT SORE">Shift Sore</option>
+          </select>
+          <svg class="attendance-select-caret" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </span>
       </label>
       <div class="attendance-choice-actions">
-        <button class="primary-button" id="attendanceArrivalButton" type="button">Absen Datang</button>
-        <button class="secondary-button" id="attendanceReturnButton" type="button">Absen Pulang</button>
+        <button class="attendance-choice-action" id="attendanceArrivalButton" type="button">
+          <span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <path d="m10 17 5-5-5-5"></path>
+              <path d="M15 12H3"></path>
+            </svg>
+          </span>
+          <strong>Absen Datang</strong>
+          <svg class="attendance-choice-arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
+        <button class="attendance-choice-action" id="attendanceReturnButton" type="button">
+          <span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="m16 17 5-5-5-5"></path>
+              <path d="M21 12H9"></path>
+            </svg>
+          </span>
+          <strong>Absen Pulang</strong>
+          <svg class="attendance-choice-arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
       </div>
-      <p class="attendance-choice-status" id="attendanceChoiceStatus" role="status" aria-live="polite"></p>
-      <a class="text-link" href="index.html">Kembali ke Home</a>
+      <p class="attendance-choice-status" id="attendanceChoiceStatus" role="status" aria-live="polite">
+        Pilih shift dan jenis absensi terlebih dahulu.
+      </p>
+      <span class="attendance-choice-divider" aria-hidden="true"></span>
+      <a class="attendance-choice-home" href="index.html">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m3 11 9-8 9 8"></path>
+          <path d="M5 10v10h14V10"></path>
+          <path d="M9 20v-6h6v6"></path>
+        </svg>
+        <span>Kembali ke Home</span>
+      </a>
     </div>
   </section>
 </body>
