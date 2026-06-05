@@ -405,9 +405,6 @@
       profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
       profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
-      profileMenuIconSizeSelect: document.getElementById("profileMenuIconSizeSelect"),
-      profileMenuImageSizeSelect: document.getElementById("profileMenuImageSizeSelect"),
-      profileMenuFontSizeSelect: document.getElementById("profileMenuFontSizeSelect"),
       shiftRulesForm: document.getElementById("shiftRulesForm"),
       shiftRulesGrid: document.getElementById("shiftRulesGrid"),
       resetShiftRulesButton: document.getElementById("resetShiftRulesButton"),
@@ -549,9 +546,6 @@
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
-    if (els.profileMenuIconSizeSelect) els.profileMenuIconSizeSelect.addEventListener("change", saveProfilePreferences);
-    if (els.profileMenuImageSizeSelect) els.profileMenuImageSizeSelect.addEventListener("change", saveProfilePreferences);
-    if (els.profileMenuFontSizeSelect) els.profileMenuFontSizeSelect.addEventListener("change", saveProfilePreferences);
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     els.profileTabButtons.forEach((button) => {
@@ -2894,9 +2888,6 @@
       theme: prefs.theme === "dark" ? "dark" : "light",
       compact: prefs.compact === true || prefs.compact === "true",
       startDashboard: prefs.startDashboard === false || prefs.startDashboard === "false" ? false : true,
-      menuIconSize: ["small", "normal", "large"].includes(prefs.menuIconSize) ? prefs.menuIconSize : "normal",
-      menuImageSize: ["small", "normal", "large"].includes(prefs.menuImageSize) ? prefs.menuImageSize : "normal",
-      menuFontSize: ["small", "normal", "large"].includes(prefs.menuFontSize) ? prefs.menuFontSize : "normal",
       updatedAt: String(prefs.updatedAt || "")
     };
   }
@@ -3884,20 +3875,14 @@
     const localPrefs = readObject(PROFILE_PREFS_KEY);
     const prefs = Object.keys(userPrefs).length ? userPrefs : localPrefs;
     const theme = prefs.theme === "dark" ? "dark" : "light";
-    const menuIconSize = ["small", "normal", "large"].includes(prefs.menuIconSize) ? prefs.menuIconSize : "normal";
-    const menuImageSize = ["small", "normal", "large"].includes(prefs.menuImageSize) ? prefs.menuImageSize : "normal";
-    const menuFontSize = ["small", "normal", "large"].includes(prefs.menuFontSize) ? prefs.menuFontSize : "normal";
     document.body.classList.toggle("theme-dark", theme === "dark");
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
-    document.body.dataset.menuIconSize = menuIconSize;
-    document.body.dataset.menuImageSize = menuImageSize;
-    document.body.dataset.menuFontSize = menuFontSize;
+    delete document.body.dataset.menuIconSize;
+    delete document.body.dataset.menuImageSize;
+    delete document.body.dataset.menuFontSize;
     if (els.profileThemeSelect) els.profileThemeSelect.value = theme;
     if (els.profileCompactToggle) els.profileCompactToggle.checked = prefs.compact === true;
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.checked = prefs.startDashboard !== false;
-    if (els.profileMenuIconSizeSelect) els.profileMenuIconSizeSelect.value = menuIconSize;
-    if (els.profileMenuImageSizeSelect) els.profileMenuImageSizeSelect.value = menuImageSize;
-    if (els.profileMenuFontSizeSelect) els.profileMenuFontSizeSelect.value = menuFontSize;
   }
 
   async function saveProfilePreferences() {
@@ -3905,9 +3890,6 @@
       theme: els.profileThemeSelect?.value === "dark" ? "dark" : "light",
       compact: Boolean(els.profileCompactToggle?.checked),
       startDashboard: els.profileStartDashboardToggle ? Boolean(els.profileStartDashboardToggle.checked) : true,
-      menuIconSize: ["small", "normal", "large"].includes(els.profileMenuIconSizeSelect?.value) ? els.profileMenuIconSizeSelect.value : "normal",
-      menuImageSize: ["small", "normal", "large"].includes(els.profileMenuImageSizeSelect?.value) ? els.profileMenuImageSizeSelect.value : "normal",
-      menuFontSize: ["small", "normal", "large"].includes(els.profileMenuFontSizeSelect?.value) ? els.profileMenuFontSizeSelect.value : "normal",
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));

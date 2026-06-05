@@ -9,6 +9,8 @@
   const popupText = document.getElementById("landingPopupText");
   const popupClose = document.getElementById("landingPopupClose");
   const popupOk = document.getElementById("landingPopupOk");
+  const adPopup = document.getElementById("landingAdPopup");
+  const adClose = document.getElementById("landingAdClose");
 
   const text = {
     id: {
@@ -121,10 +123,19 @@
     if (button) button.addEventListener("click", hidePopup);
   });
 
+  if (adClose) adClose.addEventListener("click", hideAdPopup);
+
   if (popup) {
     popup.addEventListener("click", (event) => {
       if (event.target === popup) hidePopup();
     });
+  }
+
+  if (adPopup) {
+    adPopup.addEventListener("click", (event) => {
+      if (event.target === adPopup) hideAdPopup();
+    });
+    window.setTimeout(showAdPopup, 900);
   }
 
   function updateLoginHref() {
@@ -165,6 +176,17 @@
 
   function hidePopup() {
     if (popup) popup.hidden = true;
+  }
+
+  function showAdPopup() {
+    if (!adPopup || sessionStorage.getItem("nadhira.landingPrayerAdClosed") === "1") return;
+    adPopup.hidden = false;
+  }
+
+  function hideAdPopup() {
+    if (!adPopup) return;
+    adPopup.hidden = true;
+    sessionStorage.setItem("nadhira.landingPrayerAdClosed", "1");
   }
 
   function readSession() {

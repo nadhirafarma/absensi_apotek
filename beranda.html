@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/landing.css?v=20260605-landing-v1">
-  <script defer src="assets/landing.js?v=20260605-landing-v1"></script>
+  <link rel="stylesheet" href="assets/landing.css?v=20260606-landing-v2">
+  <script defer src="assets/landing.js?v=20260606-landing-v2"></script>
 </head>
 <body>
   <main class="landing-page" data-lang="id">
@@ -169,6 +169,21 @@
         <h2 id="landingPopupTitle">Segera Launching</h2>
         <p id="landingPopupText">Fitur ini sedang kami siapkan agar pengalaman Anda lebih nyaman.</p>
         <button class="landing-dialog-action" id="landingPopupOk" type="button">Mengerti</button>
+      </div>
+    </section>
+
+    <section class="landing-ad-popup" id="landingAdPopup" hidden>
+      <div class="landing-ad-card" role="dialog" aria-modal="true" aria-labelledby="landingAdTitle">
+        <button class="landing-dialog-close" id="landingAdClose" type="button" aria-label="Tutup pengingat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+        <span class="ad-pill" id="landingAdTitle">Pengingat Sholat</span>
+        <p class="ad-arabic">إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا</p>
+        <p class="ad-translation">“Sesungguhnya shalat itu adalah kewajiban yang ditentukan waktunya atas orang-orang yang beriman.”</p>
+        <strong>QS. An-Nisa: 103</strong>
       </div>
     </section>
   </main>

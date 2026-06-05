@@ -640,3 +640,191 @@ a {
     display: none;
   }
 }
+
+/* 20260606 v2: fixed header, cleaner hero layering, blue-magenta wash, and prayer ad popup. */
+.landing-page {
+  background:
+    linear-gradient(120deg, rgba(230, 245, 255, 0.94) 0%, rgba(255, 255, 255, 0.78) 36%, rgba(255, 234, 249, 0.72) 100%),
+    linear-gradient(90deg, rgba(47, 114, 255, 0.16), rgba(240, 24, 167, 0.14)),
+    url("landing-apotek.png") center / cover no-repeat;
+}
+
+.landing-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, rgba(45, 115, 255, 0.14), transparent 28%),
+    linear-gradient(285deg, rgba(240, 24, 167, 0.12), transparent 32%);
+}
+
+.landing-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  min-height: 92px;
+  padding: 14px clamp(18px, 3.2vw, 34px);
+  border-bottom: 1px solid rgba(203, 218, 247, 0.72);
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 16px 36px rgba(26, 57, 128, 0.08);
+}
+
+.landing-brand,
+.landing-nav,
+.mobile-menu-button {
+  position: relative;
+  z-index: 2;
+}
+
+.landing-hero {
+  position: relative;
+  z-index: 1;
+  padding-top: 172px;
+}
+
+.hero-copy,
+.feature-strip,
+.hero-quote,
+.value-grid,
+.quran-card,
+.trust-strip {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-ad-popup {
+  position: fixed;
+  z-index: 38;
+  inset: 0;
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.landing-ad-popup[hidden] {
+  display: none;
+}
+
+.landing-ad-card {
+  position: relative;
+  width: min(94vw, 520px);
+  margin-left: clamp(8px, 3vw, 42px);
+  padding: 28px 30px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.95)),
+    linear-gradient(120deg, rgba(47, 114, 255, 0.12), rgba(240, 24, 167, 0.10));
+  box-shadow: 0 28px 86px rgba(16, 31, 86, 0.25);
+  color: var(--landing-ink);
+  pointer-events: auto;
+  animation: landingAdSlide 0.68s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.landing-ad-card .landing-dialog-close {
+  top: 18px;
+  right: 18px;
+}
+
+.ad-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(116, 72, 255, 0.11);
+  color: #5b38ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.ad-arabic {
+  margin: 22px 48px 12px 0;
+  color: var(--landing-ink);
+  font-family: "Times New Roman", serif;
+  font-size: clamp(1.42rem, 2.1vw, 2.1rem);
+  line-height: 1.9;
+  text-align: right;
+}
+
+.ad-translation {
+  margin: 0 0 10px;
+  color: #334ca0;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.landing-ad-card strong {
+  color: var(--landing-pink);
+}
+
+@keyframes landingAdSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-48px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (max-width: 820px) {
+  .landing-page {
+    background:
+      linear-gradient(180deg, rgba(238, 248, 255, 0.94), rgba(255, 255, 255, 0.82) 44%, rgba(255, 235, 249, 0.88)),
+      linear-gradient(90deg, rgba(47, 114, 255, 0.16), rgba(240, 24, 167, 0.12)),
+      url("landing-apotek.png") center top / auto 42vh no-repeat;
+  }
+
+  .landing-header {
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: 72px;
+    padding: 10px 12px;
+    border-radius: 0;
+  }
+
+  .landing-nav {
+    left: 12px;
+    right: 12px;
+  }
+
+  .landing-hero {
+    padding-top: 92px;
+  }
+
+  .hero-copy {
+    padding-top: 24vh;
+  }
+
+  .landing-ad-popup {
+    align-items: end;
+    padding: 16px 12px 88px;
+  }
+
+  .landing-ad-card {
+    width: 100%;
+    margin-left: 0;
+    padding: 20px 18px 18px;
+    border-radius: 22px;
+  }
+
+  .ad-arabic {
+    margin-right: 44px;
+    font-size: 1.28rem;
+    line-height: 1.8;
+  }
+
+  .ad-translation {
+    font-size: 0.88rem;
+  }
+}

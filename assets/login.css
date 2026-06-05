@@ -823,3 +823,77 @@ svg {
     font-size: 1.42rem;
   }
 }
+
+/* 20260606 v2: centered login without motivational side panel. */
+.login-page {
+  width: min(760px, 100%);
+  min-height: 100vh;
+  padding: 18px 20px 12px;
+  align-items: center;
+}
+
+.login-header {
+  width: 100%;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 10px;
+}
+
+.brand {
+  justify-self: center;
+  text-align: center;
+}
+
+.brand img {
+  width: 42px;
+  height: 42px;
+}
+
+.brand span {
+  display: grid;
+  justify-items: center;
+}
+
+.system-pill {
+  grid-column: 1;
+  justify-self: center;
+}
+
+.login-layout {
+  width: 100%;
+  flex: 1;
+  grid-template-columns: minmax(280px, 420px);
+  justify-content: center;
+  align-items: center;
+  padding-block: 18px;
+}
+
+.login-message {
+  display: none !important;
+}
+
+.login-card {
+  width: min(100%, 420px);
+}
+
+.login-footer {
+  margin-top: auto;
+}
+
+@media (max-width: 860px) {
+  .login-page {
+    padding: 18px 14px 16px;
+  }
+
+  .brand {
+    justify-self: center;
+  }
+
+  .system-pill {
+    justify-self: center;
+  }
+
+  .login-layout {
+    padding-block: 18px;
+  }
+}
