@@ -996,3 +996,251 @@ video {
     font-size: 0.94rem;
   }
 }
+
+/* 20260605 mobile v41: smaller attendance choice and integrity reminders. */
+@media (max-width: 760px) {
+  .attendance-integrity-modal,
+  .attendance-choice-modal {
+    padding: 10px;
+  }
+
+  .attendance-integrity-modal .text-reminder-card {
+    width: min(90vw, 360px);
+    max-height: 76vh;
+    gap: 10px;
+    padding: 40px 14px 16px;
+    border-radius: 18px;
+  }
+
+  .attendance-integrity-modal .text-reminder-close {
+    width: 32px;
+    height: 32px;
+    top: 9px;
+    right: 9px;
+  }
+
+  .attendance-integrity-modal .reminder-pill {
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .attendance-integrity-modal .reminder-pill svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .attendance-integrity-modal .integrity-scroll {
+    max-height: 44vh;
+    gap: 9px;
+    padding: 0 4px 2px;
+  }
+
+  .attendance-integrity-modal .text-reminder-card h2 {
+    font-size: clamp(1.2rem, 5.8vw, 1.48rem);
+    line-height: 1.16;
+  }
+
+  .attendance-integrity-modal .text-reminder-card p {
+    font-size: 0.76rem;
+    line-height: 1.48;
+  }
+
+  .attendance-integrity-modal .integrity-values {
+    gap: 8px;
+  }
+
+  .attendance-integrity-modal .integrity-values article {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
+    gap: 8px;
+    padding: 9px;
+    text-align: left;
+  }
+
+  .attendance-integrity-modal .integrity-value-icon {
+    grid-row: span 2;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .attendance-integrity-modal .integrity-value-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .attendance-integrity-modal .integrity-values strong {
+    font-size: 0.82rem;
+  }
+
+  .attendance-integrity-modal .integrity-values p {
+    font-size: 0.7rem;
+    line-height: 1.36;
+  }
+
+  .attendance-integrity-modal .reminder-note {
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 0.76rem;
+    line-height: 1.48;
+  }
+
+  .attendance-integrity-modal .integrity-read-hint {
+    font-size: 0.72rem;
+  }
+
+  .attendance-integrity-modal .reminder-primary {
+    min-height: 40px;
+    font-size: 0.82rem;
+  }
+
+  .attendance-choice-card {
+    width: min(88vw, 350px);
+    max-height: 78vh;
+    gap: 9px;
+    padding: 42px 14px 16px;
+    border-radius: 20px;
+  }
+
+  .attendance-choice-close {
+    top: 9px;
+    right: 9px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .attendance-choice-close svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .attendance-choice-icon {
+    width: 58px;
+    height: 58px;
+    box-shadow:
+      0 0 0 14px rgba(255, 255, 255, 0.28),
+      0 12px 24px rgba(91, 94, 222, 0.14);
+  }
+
+  .attendance-choice-card h2 {
+    width: min(100%, 280px);
+    font-size: clamp(1.35rem, 6.5vw, 1.72rem);
+    line-height: 1.12;
+  }
+
+  .attendance-choice-card > p {
+    width: min(100%, 290px);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .attendance-choice-field {
+    gap: 6px;
+    font-size: 0.82rem;
+  }
+
+  .attendance-select-shell select {
+    min-height: 44px;
+    padding-left: 52px;
+    padding-right: 42px;
+    border-radius: 13px;
+    font-size: 0.9rem;
+  }
+
+  .attendance-select-icon {
+    left: 12px;
+    width: 30px;
+    height: 30px;
+    padding: 7px;
+    border-radius: 9px;
+  }
+
+  .attendance-select-caret {
+    right: 13px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .attendance-choice-actions {
+    gap: 8px;
+  }
+
+  .attendance-choice-action {
+    min-height: 48px;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 13px;
+    box-shadow: 0 12px 22px rgba(87, 73, 228, 0.22);
+  }
+
+  .attendance-choice-action span {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .attendance-choice-action strong {
+    font-size: 0.92rem;
+  }
+
+  .attendance-choice-arrow {
+    width: 20px;
+    height: 20px;
+  }
+
+  .attendance-choice-status {
+    gap: 9px;
+    padding: 10px;
+    border-radius: 13px;
+    font-size: 0.76rem;
+    line-height: 1.38;
+  }
+
+  .attendance-choice-status::before {
+    width: 34px;
+    height: 34px;
+  }
+
+  .attendance-choice-divider {
+    margin-top: 0;
+  }
+
+  .attendance-choice-divider::after {
+    width: 9px;
+    height: 9px;
+  }
+
+  .attendance-choice-home {
+    gap: 8px;
+    font-size: 0.86rem;
+  }
+
+  .attendance-choice-home svg {
+    width: 19px;
+    height: 19px;
+  }
+}
+
+@media (max-width: 390px) {
+  .attendance-choice-card {
+    width: min(90vw, 330px);
+    max-height: 76vh;
+    gap: 8px;
+    padding: 40px 12px 14px;
+  }
+
+  .attendance-choice-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .attendance-choice-card h2 {
+    font-size: 1.34rem;
+  }
+
+  .attendance-choice-card > p {
+    font-size: 0.74rem;
+  }
+}

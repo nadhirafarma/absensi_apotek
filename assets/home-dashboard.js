@@ -384,6 +384,7 @@
       profileRole: document.getElementById("profileRole"),
       profileTabButtons: Array.from(document.querySelectorAll("[data-profile-tab]")),
       profilePanels: Array.from(document.querySelectorAll("[data-profile-panel]")),
+      profilePanelCloseButtons: Array.from(document.querySelectorAll("[data-profile-panel-close]")),
       profileStatusText: document.getElementById("profileStatusText"),
       profileNameInput: document.getElementById("profileNameInput"),
       profileEmailInput: document.getElementById("profileEmailInput"),
@@ -547,7 +548,10 @@
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     els.profileTabButtons.forEach((button) => {
-      button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab));
+      button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab, { openPanel: true }));
+    });
+    els.profilePanelCloseButtons.forEach((button) => {
+      button.addEventListener("click", closeProfilePanel);
     });
 
     if (els.notificationButton) els.notificationButton.addEventListener("click", openNotification);
@@ -3568,10 +3572,21 @@
     return false;
   }
 
-  function switchProfileTab(tabName) {
+  function switchProfileTab(tabName, options) {
     if (!tabName) return;
+    const openPanel = options && Object.prototype.hasOwnProperty.call(options, "openPanel")
+      ? options.openPanel !== false
+      : true;
     els.profileTabButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.profileTab === tabName));
     els.profilePanels.forEach((panel) => panel.classList.toggle("is-active", panel.dataset.profilePanel === tabName));
+    document.querySelector(".profile-modern-layout")?.classList.toggle("profile-panel-open", openPanel);
+    document.body.classList.toggle("profile-panel-modal-open", openPanel);
+    setProfileStatus("", "");
+  }
+
+  function closeProfilePanel() {
+    document.querySelector(".profile-modern-layout")?.classList.remove("profile-panel-open");
+    document.body.classList.remove("profile-panel-modal-open");
     setProfileStatus("", "");
   }
 
@@ -3860,7 +3875,7 @@
 
     if ((activityTab?.classList.contains("is-active")) ||
         (!canManageShift && shiftTab?.classList.contains("is-active"))) {
-      switchProfileTab("profil");
+      switchProfileTab("profil", { openPanel: false });
     }
   }
 
