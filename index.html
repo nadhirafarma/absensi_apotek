@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260605-popup-text-v38">
+  <link rel="stylesheet" href="assets/styles.css?v=20260605-shift-rules-v39">
   <script defer src="assets/auth-guard.js?v=20260604-global-filter-search-v25"></script>
-  <script defer src="assets/app.js?v=20260605-popup-text-v38"></script>
+  <script defer src="assets/app.js?v=20260605-shift-rules-v39"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260605-popup-text-v38"></script>
+  <script defer src="assets/home-dashboard.js?v=20260605-shift-rules-v39"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -284,6 +284,17 @@
                   </svg>
                 </span>
                 <strong>Import Data<br>Obat</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="manajemen-pengguna" data-access-key="manajemen_pengguna">
+                <span class="mobile-home-icon icon-users">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.9"></path>
+                    <path d="M16 3.1a4 4 0 0 1 0 7.8"></path>
+                  </svg>
+                </span>
+                <strong>Manajemen<br>Pengguna</strong>
               </button>
             </div>
           </section>
@@ -623,6 +634,7 @@
                 <button class="profile-tab" type="button" data-profile-tab="keamanan">Keamanan</button>
                 <button class="profile-tab" type="button" data-profile-tab="aktivitas">Aktivitas</button>
                 <button class="profile-tab" type="button" data-profile-tab="preferensi">Preferensi</button>
+                <button class="profile-tab" type="button" data-profile-tab="shift-absensi">Shift Absensi</button>
               </div>
               <p class="profile-status" id="profileStatusText" role="status" aria-live="polite"></p>
 
@@ -708,6 +720,22 @@
                   </span>
                   <input id="profileStartDashboardToggle" type="checkbox">
                 </label>
+              </section>
+
+              <section class="profile-panel" data-profile-panel="shift-absensi">
+                <form class="shift-rules-form" id="shiftRulesForm">
+                  <div class="module-head compact-head">
+                    <div>
+                      <h3>Pengaturan Shift Absensi</h3>
+                      <p>Atur batas absen datang dan mulai absen pulang untuk Shift Pagi dan Shift Sore setiap hari.</p>
+                    </div>
+                    <button class="text-button" id="resetShiftRulesButton" type="button">Reset Default</button>
+                  </div>
+                  <div class="shift-rules-grid" id="shiftRulesGrid"></div>
+                  <div class="form-actions">
+                    <button class="secondary-action" type="submit">Simpan Aturan Shift</button>
+                  </div>
+                </form>
               </section>
             </section>
           </div>

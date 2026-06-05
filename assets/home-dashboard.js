@@ -16,12 +16,26 @@
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
   const PROFILE_ACTIVITY_KEY = "nadhira.profileActivity";
   const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
+  const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
   const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
   const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 8;
   const EXPIRING_DAYS = 90;
+  const ATTENDANCE_DAY_LABELS = [
+    ["monday", "Senin"],
+    ["tuesday", "Selasa"],
+    ["wednesday", "Rabu"],
+    ["thursday", "Kamis"],
+    ["friday", "Jumat"],
+    ["saturday", "Sabtu"],
+    ["sunday", "Minggu"]
+  ];
+  const ATTENDANCE_SHIFT_LABELS = [
+    ["pagi", "Shift Pagi"],
+    ["sore", "Shift Sore"]
+  ];
 
   const DATA_COLUMNS = [
     { key: "kode", label: "Kode" },
@@ -246,6 +260,7 @@
     renderProfile();
     renderProfileSecurity();
     renderProfileActivity();
+    renderAttendanceShiftSettings();
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
@@ -387,6 +402,9 @@
       profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
       profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
+      shiftRulesForm: document.getElementById("shiftRulesForm"),
+      shiftRulesGrid: document.getElementById("shiftRulesGrid"),
+      resetShiftRulesButton: document.getElementById("resetShiftRulesButton"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -525,6 +543,8 @@
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
+    if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
+    if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     els.profileTabButtons.forEach((button) => {
       button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab));
     });
@@ -3666,6 +3686,149 @@
     applyProfilePreferences();
     setProfileStatus("Preferensi tampilan berhasil disimpan.", "success");
     addProfileActivity("Preferensi tampilan diperbarui", `${prefs.theme === "dark" ? "Tema gelap" : "Tema terang"}, ${prefs.compact ? "mode ringkas aktif" : "mode ringkas nonaktif"}`);
+  }
+
+  function renderAttendanceShiftSettings() {
+    if (!els.shiftRulesGrid) return;
+    const rules = loadAttendanceShiftRules();
+
+    els.shiftRulesGrid.innerHTML = ATTENDANCE_DAY_LABELS.map(([dayKey, dayLabel]) => {
+      const dayRules = rules.days[dayKey] || {};
+      const cards = ATTENDANCE_SHIFT_LABELS.map(([shiftKey, shiftLabel]) => {
+        const shiftRules = dayRules[shiftKey] || {};
+
+        return `
+          <fieldset class="shift-rule-card">
+            <legend>${escapeHtml(dayLabel)} - ${escapeHtml(shiftLabel)}</legend>
+            <label>
+              <span>Jam Masuk</span>
+              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="start" value="${escapeHtml(shiftRules.start)}">
+            </label>
+            <label>
+              <span>Kompensasi Telat (menit)</span>
+              <input type="number" min="0" max="240" step="1" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="lateMinutes" value="${escapeHtml(String(shiftRules.lateMinutes))}">
+            </label>
+            <label>
+              <span>Batas Datang</span>
+              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="deadline" value="${escapeHtml(shiftRules.deadline)}">
+            </label>
+            <label>
+              <span>Mulai Absen Pulang</span>
+              <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="returnStart" value="${escapeHtml(shiftRules.returnStart)}">
+            </label>
+          </fieldset>
+        `;
+      }).join("");
+
+      return `<section class="shift-day-group"><h4>${escapeHtml(dayLabel)}</h4><div>${cards}</div></section>`;
+    }).join("");
+  }
+
+  function saveAttendanceShiftSettings(event) {
+    event.preventDefault();
+    const rules = collectAttendanceShiftRules();
+    rules.updatedAt = new Date().toISOString();
+    localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(rules));
+    renderAttendanceShiftSettings();
+    setProfileStatus("Pengaturan shift absensi berhasil disimpan.", "success");
+    addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang Face ID diperbarui di perangkat ini.");
+  }
+
+  function resetAttendanceShiftSettings() {
+    localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(createDefaultAttendanceShiftRules()));
+    renderAttendanceShiftSettings();
+    setProfileStatus("Pengaturan shift absensi dikembalikan ke default.", "success");
+    addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi Face ID kembali ke jadwal default.");
+  }
+
+  function collectAttendanceShiftRules() {
+    const rules = createDefaultAttendanceShiftRules();
+
+    if (!els.shiftRulesGrid) return rules;
+
+    Array.from(els.shiftRulesGrid.querySelectorAll("[data-shift-day][data-shift-name][data-shift-field]")).forEach((input) => {
+      const day = input.dataset.shiftDay;
+      const shift = input.dataset.shiftName;
+      const field = input.dataset.shiftField;
+
+      if (!rules.days[day] || !rules.days[day][shift]) return;
+
+      rules.days[day][shift][field] = field === "lateMinutes"
+        ? clampInteger(input.value, 0, 240, rules.days[day][shift][field])
+        : sanitizeRuleTime(input.value, rules.days[day][shift][field]);
+    });
+
+    return normalizeAttendanceShiftRules(rules);
+  }
+
+  function loadAttendanceShiftRules() {
+    return normalizeAttendanceShiftRules(readObject(ATTENDANCE_SHIFT_RULES_KEY));
+  }
+
+  function createDefaultAttendanceShiftRules() {
+    const rules = {
+      updatedAt: "",
+      days: {}
+    };
+
+    ATTENDANCE_DAY_LABELS.forEach(([dayKey]) => {
+      const isSunday = dayKey === "sunday";
+      rules.days[dayKey] = {
+        pagi: {
+          start: "08:00",
+          lateMinutes: isSunday ? 15 : 45,
+          deadline: isSunday ? "08:15" : "08:45",
+          returnStart: isSunday ? "15:00" : "15:30"
+        },
+        sore: {
+          start: "14:00",
+          lateMinutes: 30,
+          deadline: "14:30",
+          returnStart: "21:00"
+        }
+      };
+    });
+
+    return rules;
+  }
+
+  function normalizeAttendanceShiftRules(value) {
+    const defaults = createDefaultAttendanceShiftRules();
+    const source = value && typeof value === "object" ? value : {};
+    const normalized = createDefaultAttendanceShiftRules();
+    normalized.updatedAt = String(source.updatedAt || "");
+
+    ATTENDANCE_DAY_LABELS.forEach(([dayKey]) => {
+      ATTENDANCE_SHIFT_LABELS.forEach(([shiftKey]) => {
+        const sourceRule = source.days?.[dayKey]?.[shiftKey] || {};
+        const defaultRule = defaults.days[dayKey][shiftKey];
+
+        normalized.days[dayKey][shiftKey] = {
+          start: sanitizeRuleTime(sourceRule.start, defaultRule.start),
+          lateMinutes: clampInteger(sourceRule.lateMinutes, 0, 240, defaultRule.lateMinutes),
+          deadline: sanitizeRuleTime(sourceRule.deadline, defaultRule.deadline),
+          returnStart: sanitizeRuleTime(sourceRule.returnStart, defaultRule.returnStart)
+        };
+      });
+    });
+
+    return normalized;
+  }
+
+  function sanitizeRuleTime(value, fallback) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{1,2})[:.](\d{2})$/);
+    if (!match) return fallback;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return fallback;
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  }
+
+  function clampInteger(value, min, max, fallback) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, Math.round(number)));
   }
 
   function syncProfileActivityAccess() {

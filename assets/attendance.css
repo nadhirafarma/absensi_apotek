@@ -302,7 +302,8 @@ video {
 }
 
 .profile-required-modal,
-.text-reminder-modal {
+.text-reminder-modal,
+.attendance-choice-modal {
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -324,6 +325,80 @@ video {
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 28px 80px rgba(17, 69, 134, 0.25);
   text-align: center;
+}
+
+.attendance-choice-card {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 14px;
+  padding: 26px 22px;
+  border: 1px solid rgba(207, 224, 244, 0.94);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 28px 80px rgba(17, 69, 134, 0.25);
+  text-align: center;
+}
+
+.attendance-choice-card h2,
+.attendance-choice-card p {
+  margin: 0;
+}
+
+.attendance-choice-card h2 {
+  color: var(--ink);
+  font-size: 1.16rem;
+}
+
+.attendance-choice-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.attendance-choice-field {
+  display: grid;
+  gap: 7px;
+  color: #244679;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.attendance-choice-field select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.attendance-choice-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.attendance-choice-status {
+  min-height: 20px;
+  font-weight: 800;
+}
+
+.attendance-choice-status[data-type="error"] {
+  color: var(--red);
+}
+
+.attendance-choice-status[data-type="success"] {
+  color: var(--green);
+}
+
+.text-link {
+  color: var(--blue);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .profile-required-icon {
@@ -601,5 +676,9 @@ video {
   .clock {
     width: 100%;
     text-align: center;
+  }
+
+  .attendance-choice-actions {
+    grid-template-columns: 1fr;
   }
 }
