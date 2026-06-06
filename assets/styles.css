@@ -10799,3 +10799,228 @@ body.notification-open .mobile-bottom-nav {
     font-size: 0.82rem !important;
   }
 }
+
+/* 20260606 v50: notification actions, shift sync layout, history swipe, and split medicine sales form. */
+.notification-confirm {
+  display: none !important;
+}
+
+.notification-toolbar {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  justify-items: start !important;
+  gap: 7px !important;
+  padding-right: 70px !important;
+  margin-top: 4px !important;
+}
+
+.notification-toolbar button {
+  justify-self: start !important;
+  min-height: 32px !important;
+  margin-top: 0 !important;
+}
+
+.notification-list {
+  max-height: min(54vh, 390px) !important;
+}
+
+.shift-input-icon {
+  display: none !important;
+}
+
+.shift-day-cards {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.shift-rule-fields {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.shift-time-field {
+  min-width: 0 !important;
+}
+
+.shift-input-shell {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  padding: 0 !important;
+}
+
+.shift-input-shell input {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 0 5px !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+}
+
+#medicineForm .medicine-section-jual {
+  border-color: rgba(255, 159, 205, 0.72) !important;
+}
+
+#medicineForm .medicine-sale-block {
+  margin-top: 10px !important;
+}
+
+#medicineForm .medicine-sale-block + .medicine-sale-block {
+  margin-top: 18px !important;
+}
+
+#medicineForm .medicine-sale-block h4 {
+  margin: 0 0 10px !important;
+  color: #071a53 !important;
+  font-size: 0.88rem !important;
+  font-weight: 900 !important;
+}
+
+#medicineForm .medicine-price-head,
+#medicineForm .medicine-sale-row {
+  display: grid !important;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr) minmax(130px, 1fr) minmax(88px, 0.58fr) 42px !important;
+  gap: 12px !important;
+  align-items: end !important;
+}
+
+#medicineForm .medicine-price-head {
+  margin: 0 0 8px !important;
+  color: #0a956b !important;
+}
+
+#medicineForm .medicine-price-head-prescription,
+#medicineForm .medicine-sale-block-prescription h4 {
+  color: #e81798 !important;
+}
+
+#medicineForm .medicine-sale-row-regular .medicine-sale-price input,
+#medicineForm .medicine-sale-row-regular .medicine-sale-profit input {
+  background: #effcf6 !important;
+  border-color: #c9eadb !important;
+}
+
+#medicineForm .medicine-sale-row-prescription .medicine-sale-prescription input,
+#medicineForm .medicine-sale-row-prescription .medicine-sale-profit input {
+  background: #fff1f8 !important;
+  border-color: #f2c8dd !important;
+}
+
+#medicineForm .medicine-sale-delete {
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 240, 245, 0.95) !important;
+  color: #ff2457 !important;
+  cursor: pointer !important;
+}
+
+#medicineForm .medicine-sale-delete svg {
+  width: 17px !important;
+  height: 17px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+#medicineForm .medicine-sale-note {
+  max-width: 920px !important;
+  margin: 12px 0 0 !important;
+  color: #62739c !important;
+  font-size: 0.76rem !important;
+  line-height: 1.5 !important;
+}
+
+#medicineForm .medicine-field input::placeholder,
+#medicineForm .medicine-field textarea::placeholder {
+  color: #8d9ab8 !important;
+}
+
+@media (max-width: 900px) {
+  .profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active {
+    width: min(100vw - 18px, 760px) !important;
+  }
+
+  .shift-day-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .shift-rule-card {
+    padding: 12px 8px 10px !important;
+  }
+
+  .shift-rule-card legend {
+    font-size: 0.74rem !important;
+  }
+
+  .shift-rule-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .shift-time-field > span:first-child {
+    min-height: 26px !important;
+    font-size: 0.58rem !important;
+    line-height: 1.12 !important;
+  }
+
+  .shift-input-shell input {
+    min-height: 34px !important;
+    padding: 0 1px !important;
+    font-size: 0.58rem !important;
+    font-weight: 800 !important;
+  }
+
+  .notification-popover:not([hidden]) {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .notification-card {
+    max-height: calc(100dvh - 128px) !important;
+  }
+
+  .notification-list {
+    max-height: calc(100dvh - 296px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #medicineForm .medicine-sale-block h4 {
+    font-size: 0.82rem !important;
+  }
+
+  #medicineForm .medicine-price-head {
+    display: none !important;
+  }
+
+  #medicineForm .medicine-sale-row {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    padding: 12px !important;
+    border: 1px solid rgba(207, 224, 244, 0.78) !important;
+    border-radius: 12px !important;
+    background: rgba(248, 251, 255, 0.72) !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field-label {
+    display: block !important;
+  }
+
+  #medicineForm .medicine-sale-delete {
+    width: 100% !important;
+    height: 36px !important;
+  }
+
+  #medicineForm .medicine-sale-note {
+    font-size: 0.68rem !important;
+  }
+}

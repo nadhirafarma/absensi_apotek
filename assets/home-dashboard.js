@@ -22,6 +22,7 @@
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
+  const MAX_MEDICINE_UNIT_COUNT = 3;
   const EXPIRING_DAYS = 90;
   const ATTENDANCE_DAY_LABELS = [
     ["monday", "Senin"],
@@ -61,18 +62,26 @@
     { key: "harga_jual_4", label: "Harga Jual 4" },
     { key: "laba_jual_4", label: "Laba Jual 4", type: "number" },
     { key: "stok_min", label: "Stok Min", type: "number" },
+    { key: "isi_resep_1", label: "Isi Resep 1" },
+    { key: "satuan_resep_1", label: "Satuan Resep 1" },
     { key: "harga_resep_1", label: "Harga Resep 1" },
     { key: "laba_resep_1", label: "Laba Resep 1", type: "number" },
     { key: "stok_konversi_1", label: "Stok Konversi 1", type: "number" },
     { key: "satuan_konversi_1", label: "Satuan Konversi 1" },
+    { key: "isi_resep_2", label: "Isi Resep 2" },
+    { key: "satuan_resep_2", label: "Satuan Resep 2" },
     { key: "harga_resep_2", label: "Harga Resep 2" },
     { key: "laba_resep_2", label: "Laba Resep 2", type: "number" },
     { key: "stok_konversi_2", label: "Stok Konversi 2", type: "number" },
     { key: "satuan_konversi_2", label: "Satuan Konversi 2" },
+    { key: "isi_resep_3", label: "Isi Resep 3" },
+    { key: "satuan_resep_3", label: "Satuan Resep 3" },
     { key: "harga_resep_3", label: "Harga Resep 3" },
     { key: "laba_resep_3", label: "Laba Resep 3", type: "number" },
     { key: "stok_konversi_3", label: "Stok Konversi 3", type: "number" },
     { key: "satuan_konversi_3", label: "Satuan Konversi 3" },
+    { key: "isi_resep_4", label: "Isi Resep 4" },
+    { key: "satuan_resep_4", label: "Satuan Resep 4" },
     { key: "harga_resep_4", label: "Harga Resep 4" },
     { key: "laba_resep_4", label: "Laba Resep 4", type: "number" },
     { key: "stok_konversi_4", label: "Stok Konversi 4", type: "number" },
@@ -241,7 +250,7 @@
     activeView: "dashboard",
     medicineMode: "edit",
     editingMedicine: null,
-    unitCount: 4,
+    unitCount: MAX_MEDICINE_UNIT_COUNT,
     recordType: "",
     recordIndex: -1,
     pendingDelete: null,
@@ -252,6 +261,8 @@
     quickReport: null,
     quickPage: 1,
     previousView: "dashboard",
+    viewHistory: [],
+    viewForwardStack: [],
     touchStartX: 0,
     touchStartY: 0,
     touchStartAt: 0,
@@ -272,7 +283,7 @@
     applySavedSidebarState();
     hydrateProfileName();
     bindEvents();
-    if (!routeInitialViewFromQuery() && isMobileViewport()) switchView("home");
+    if (!routeInitialViewFromQuery() && isMobileViewport()) switchView("home", { skipHistory: true });
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
@@ -281,6 +292,7 @@
     renderProfileSecurity();
     renderProfileActivity();
     renderAttendanceShiftSettings();
+    loadAttendanceShiftSettingsFromBackend({ silent: true });
     loadStoredModules();
     fetchDataObat();
     fetchUsers();
@@ -295,7 +307,7 @@
     const requested = String(params.get("view") || "").trim().replace(/_/g, "-");
     if (!requested || !VIEW_TITLES[requested]) return false;
 
-    switchView(requested);
+    switchView(requested, { skipHistory: true });
     return true;
   }
 
@@ -841,6 +853,14 @@
       harga_beli: ["harga_beli", "hargabeli"],
       stok_min: ["stok_min", "stokmin"],
       laba_otomatis: ["laba_otomatis", "labaotomatis"],
+      isi_resep_1: ["isi_resep_1", "isiresep1"],
+      satuan_resep_1: ["satuan_resep_1", "satuanresep1"],
+      isi_resep_2: ["isi_resep_2", "isiresep2"],
+      satuan_resep_2: ["satuan_resep_2", "satuanresep2"],
+      isi_resep_3: ["isi_resep_3", "isiresep3"],
+      satuan_resep_3: ["satuan_resep_3", "satuanresep3"],
+      isi_resep_4: ["isi_resep_4", "isiresep4"],
+      satuan_resep_4: ["satuan_resep_4", "satuanresep4"],
       _row: ["_row", "row", "rowNumber", "nomorbaris"]
     };
 
@@ -2490,7 +2510,17 @@
     const categoryOptions = uniqueValues("kategori");
     const supplierOptions = uniqueValues("suplier");
     const unitOptions = unique(
-      state.rows.flatMap((row) => [row.satuan_beli, row.satuan_1, row.satuan_2, row.satuan_3, row.satuan_4])
+      state.rows.flatMap((row) => [
+        row.satuan_beli,
+        row.satuan_1,
+        row.satuan_2,
+        row.satuan_3,
+        row.satuan_4,
+        row.satuan_resep_1,
+        row.satuan_resep_2,
+        row.satuan_resep_3,
+        row.satuan_resep_4
+      ])
     ).sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
 
     const columnByKey = DATA_COLUMNS.reduce((map, column) => {
@@ -2529,19 +2559,34 @@
       `;
     };
 
-    const saleRows = [1, 2, 3, 4].map((index) => `
-      <div class="medicine-sale-row" data-unit-index="${index}">
-        <div class="medicine-sale-unit-pair">
-          ${field(`isi_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi", compact: true })}
-          ${field(`satuan_${index}`, { label: "Satuan", className: "medicine-sale-unit", addOption: index === 1, compact: true })}
-        </div>
-        <span class="medicine-sale-plus" aria-hidden="true">+</span>
+    const saleIndexes = Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1);
+    const deleteSaleButton = (group, index) => `
+      <button class="medicine-sale-delete" type="button" data-remove-sale-row="${escapeHtml(group)}" data-unit-index="${index}" aria-label="Hapus baris ${escapeHtml(group === "regular" ? "harga non resep" : "harga resep")} ${index}">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 6h18"></path>
+          <path d="M8 6V4h8v2"></path>
+          <path d="M19 6l-1 14H6L5 6"></path>
+          <path d="M10 11v5"></path>
+          <path d="M14 11v5"></path>
+        </svg>
+      </button>
+    `;
+    const saleRegularRows = saleIndexes.map((index) => `
+      <div class="medicine-sale-row medicine-sale-row-regular" data-unit-index="${index}">
+        ${field(`isi_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi", compact: true })}
+        ${field(`satuan_${index}`, { label: `Satuan Jual ${index}`, className: "medicine-sale-unit", addOption: index === 1, compact: true })}
         ${field(`harga_jual_${index}`, { label: `Harga Jual ${index}`, className: "medicine-sale-price", compact: true })}
         ${field(`laba_jual_${index}`, { label: "Laba %", className: "medicine-sale-profit", compact: true })}
-        ${field(`harga_resep_${index}`, { label: `Harga Resep ${index}`, className: "medicine-sale-prescription", compact: true })}
+        ${deleteSaleButton("regular", index)}
+      </div>
+    `).join("");
+    const salePrescriptionRows = saleIndexes.map((index) => `
+      <div class="medicine-sale-row medicine-sale-row-prescription" data-unit-index="${index}">
+        ${field(`isi_resep_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi", compact: true })}
+        ${field(`satuan_resep_${index}`, { label: `Satuan Jual ${index}`, className: "medicine-sale-unit", addOption: index === 1, compact: true })}
+        ${field(`harga_resep_${index}`, { label: `Harga Jual ${index}`, className: "medicine-sale-prescription", compact: true })}
         ${field(`laba_resep_${index}`, { label: "Laba %", className: "medicine-sale-profit", compact: true })}
-        ${field(`stok_konversi_${index}`, { label: "Stok Konversi", className: "medicine-sale-conversion", compact: true })}
-        ${field(`satuan_konversi_${index}`, { label: "Satuan Stok", className: "medicine-sale-conversion-unit", compact: true })}
+        ${deleteSaleButton("prescription", index)}
       </div>
     `).join("");
     const noteTabs = [
@@ -2595,21 +2640,33 @@
       </fieldset>
       <fieldset class="medicine-section medicine-section-jual">
         <legend><span class="medicine-section-icon" aria-hidden="true">${renderMedicineSectionIcon("jual")}</span>Informasi Penjualan</legend>
-        <div class="medicine-price-head" aria-hidden="true">
-          <span>Isi</span>
-          <span></span>
-          <span>Harga Jual</span>
-          <span>Laba %</span>
-          <span>Harga Resep</span>
-          <span>Laba %</span>
-          <span>Stok Konversi</span>
-          <span>Satuan</span>
+        <div class="medicine-sale-block medicine-sale-block-regular">
+          <h4>Harga Non Resep</h4>
+          <div class="medicine-price-head medicine-price-head-regular" aria-hidden="true">
+            <span>Isi</span>
+            <span>Satuan Jual</span>
+            <span>Harga Jual</span>
+            <span>Laba %</span>
+            <span></span>
+          </div>
+          <div class="medicine-sale-grid">${saleRegularRows}</div>
         </div>
-        <div class="medicine-sale-grid">${saleRows}</div>
+        <div class="medicine-sale-block medicine-sale-block-prescription">
+          <h4>Harga Resep</h4>
+          <div class="medicine-price-head medicine-price-head-prescription" aria-hidden="true">
+            <span>Isi</span>
+            <span>Satuan Jual</span>
+            <span>Harga Jual</span>
+            <span>Laba %</span>
+            <span></span>
+          </div>
+          <div class="medicine-sale-grid">${salePrescriptionRows}</div>
+        </div>
         <label class="medicine-check-row">
           <input id="medicine-copy-prescription-price" type="checkbox" checked>
           <span>Harga resep = biasa</span>
         </label>
+        <p class="medicine-sale-note">Apabila harga jual diisi, persentase laba mengikuti harga jual berdasarkan isi dan satuan terhadap satuan beli. Jika persentase laba diisi, harga jual otomatis mengikuti persentase tersebut.</p>
         <div class="medicine-check-row medicine-profit-row">
           <input id="medicine-auto-profit-toggle" type="checkbox">
           <span>Laba otomatis pembelian</span>
@@ -2626,11 +2683,12 @@
     if (column.key === "kategori") return renderSelect(column.key, categories, "Pilih kategori", "kategori");
     if (column.key === "suplier") return renderSelect(column.key, suppliers, "Pilih supplier", "suplier");
     if (column.key === "expired") return `<input id="medicine-${column.key}" name="${column.key}" type="date">`;
-    if (column.key === "satuan_beli" || /^satuan_[1-4]$/.test(column.key) || /^satuan_konversi_[1-4]$/.test(column.key)) {
+    if (column.key === "satuan_beli" || /^satuan_[1-4]$/.test(column.key) || /^satuan_resep_[1-4]$/.test(column.key) || /^satuan_konversi_[1-4]$/.test(column.key)) {
       return renderSelect(column.key, units, "Pilih satuan", "unit");
     }
-    if (column.type === "number" || PRICE_COLUMNS.has(column.key) || QUANTITY_COLUMNS.has(column.key) || /^isi_[1-4]$/.test(column.key)) {
-      return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text" placeholder="0">`;
+    if (column.type === "number" || PRICE_COLUMNS.has(column.key) || QUANTITY_COLUMNS.has(column.key) || /^isi_[1-4]$/.test(column.key) || /^isi_resep_[1-4]$/.test(column.key)) {
+      const placeholder = /^harga_/.test(column.key) ? "" : "";
+      return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text" placeholder="${placeholder}">`;
     }
     if (["indikasi", "komposisi"].includes(column.key)) {
       return `<textarea id="medicine-${column.key}" name="${column.key}" rows="4" placeholder="Masukkan ${escapeHtml(column.label.toLowerCase())} obat"></textarea>`;
@@ -2669,6 +2727,13 @@
     if (optionButton) {
       event.preventDefault();
       addMedicineOption(optionButton.dataset.addOption);
+      return;
+    }
+
+    const removeSaleButton = event.target.closest("[data-remove-sale-row]");
+    if (removeSaleButton) {
+      event.preventDefault();
+      clearMedicineSaleRow(Number(removeSaleButton.dataset.unitIndex), removeSaleButton.dataset.removeSaleRow);
     }
   }
 
@@ -2686,23 +2751,37 @@
     if (event.target && event.target.id === "medicine-satuan_beli") {
       const stockUnit = document.getElementById("medicine-stock-unit");
       if (stockUnit && !stockUnit.value) stockUnit.value = event.target.value;
+      updateMedicineSaleHelpers();
+      return;
+    }
+
+    if (event.target && /^medicine-satuan_\d$/.test(event.target.id)) {
+      syncPrescriptionPrices();
     }
   }
 
   function handleMedicineFormInput(event) {
     if (!event.target || !event.target.id) return;
-    if (/^medicine-laba_(jual|resep)_\d$/.test(event.target.id)) {
-      event.target.dataset.userEdited = "true";
+    const profitMatch = event.target.id.match(/^medicine-laba_(jual|resep)_(\d)$/);
+    if (profitMatch) {
+      updateMedicinePriceFromProfit(profitMatch[1], Number(profitMatch[2]));
+      if (profitMatch[1] === "jual") syncPrescriptionPrices();
       return;
     }
     if (event.target.id === "medicine-laba_otomatis") {
       applyMedicineAutoProfit();
       return;
     }
-    if (/^medicine-harga_(jual|resep)_\d$/.test(event.target.id) || event.target.id === "medicine-harga_beli") {
+    const priceMatch = event.target.id.match(/^medicine-harga_(jual|resep)_(\d)$/);
+    if (priceMatch) {
+      updateMedicineProfitForType(priceMatch[1], Number(priceMatch[2]));
+      if (priceMatch[1] === "jual") syncPrescriptionPrices();
+      return;
+    }
+    if (event.target.id === "medicine-harga_beli" || /^medicine-isi(?:_resep)?_\d$/.test(event.target.id)) {
       if (event.target.id === "medicine-harga_beli") applyMedicineAutoProfit();
-      if (/^medicine-harga_jual_\d$/.test(event.target.id)) syncPrescriptionPrices();
       updateMedicineSaleHelpers();
+      if (/^medicine-isi_\d$/.test(event.target.id)) syncPrescriptionPrices();
     }
   }
 
@@ -2737,13 +2816,39 @@
     select.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
+  function clearMedicineSaleRow(index, group) {
+    if (!index) return;
+    const keys = group === "prescription"
+      ? [`isi_resep_${index}`, `satuan_resep_${index}`, `harga_resep_${index}`, `laba_resep_${index}`]
+      : [`isi_${index}`, `satuan_${index}`, `harga_jual_${index}`, `laba_jual_${index}`, `stok_konversi_${index}`, `satuan_konversi_${index}`];
+
+    keys.forEach((key) => {
+      const control = document.getElementById(`medicine-${key}`);
+      if (!control) return;
+      control.value = "";
+      delete control.dataset.userEdited;
+    });
+
+    if (group !== "prescription") syncPrescriptionPrices();
+    updateMedicineSaleHelpers();
+  }
+
   function syncPrescriptionPrices() {
     const copy = document.getElementById("medicine-copy-prescription-price");
     if (!copy || !copy.checked) return;
-    [1, 2, 3, 4].forEach((index) => {
+    Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).forEach((index) => {
+      const saleIsi = document.getElementById(`medicine-isi_${index}`);
+      const prescriptionIsi = document.getElementById(`medicine-isi_resep_${index}`);
+      const saleUnit = document.getElementById(`medicine-satuan_${index}`);
+      const prescriptionUnit = document.getElementById(`medicine-satuan_resep_${index}`);
       const sale = document.getElementById(`medicine-harga_jual_${index}`);
       const prescription = document.getElementById(`medicine-harga_resep_${index}`);
+      const saleProfit = document.getElementById(`medicine-laba_jual_${index}`);
+      const prescriptionProfit = document.getElementById(`medicine-laba_resep_${index}`);
+      if (saleIsi && prescriptionIsi) prescriptionIsi.value = saleIsi.value;
+      if (saleUnit && prescriptionUnit) prescriptionUnit.value = saleUnit.value;
       if (sale && prescription) prescription.value = sale.value;
+      if (saleProfit && prescriptionProfit) prescriptionProfit.value = saleProfit.value;
     });
     updateMedicineSaleHelpers();
   }
@@ -2754,46 +2859,72 @@
     const rawPercent = String(document.getElementById("medicine-laba_otomatis")?.value || "").trim();
     if (!rawPercent) return;
     const percent = parseMedicineNumber(rawPercent);
-    const buyPrice = parseMedicineNumber(document.getElementById("medicine-harga_beli")?.value);
 
-    [1, 2, 3, 4].forEach((index) => {
+    Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).forEach((index) => {
       if (index > state.unitCount) return;
       const saleProfit = document.getElementById(`medicine-laba_jual_${index}`);
       const prescriptionProfit = document.getElementById(`medicine-laba_resep_${index}`);
-      const salePrice = document.getElementById(`medicine-harga_jual_${index}`);
 
       if (saleProfit) {
-        saleProfit.dataset.userEdited = "true";
         saleProfit.value = String(percent);
+        updateMedicinePriceFromProfit("jual", index);
       }
       if (prescriptionProfit) {
-        prescriptionProfit.dataset.userEdited = "true";
         prescriptionProfit.value = String(percent);
-      }
-      if (buyPrice && salePrice) {
-        salePrice.value = formatIntegerPrice(String(Math.round(buyPrice * (1 + (percent / 100)))));
+        updateMedicinePriceFromProfit("resep", index);
       }
     });
     syncPrescriptionPrices();
   }
 
   function updateMedicineSaleHelpers() {
-    const buyPrice = parseMedicineNumber(document.getElementById("medicine-harga_beli")?.value);
-    [1, 2, 3, 4].forEach((index) => {
-      updateMedicineProfitField(`harga_jual_${index}`, `laba_jual_${index}`, buyPrice);
-      updateMedicineProfitField(`harga_resep_${index}`, `laba_resep_${index}`, buyPrice);
+    Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).forEach((index) => {
+      updateMedicineProfitForType("jual", index);
+      updateMedicineProfitForType("resep", index);
     });
   }
 
-  function updateMedicineProfitField(priceKey, profitKey, buyPrice) {
+  function getMedicineSaleBasePrice(type, index) {
+    const buyPrice = parseMedicineNumber(document.getElementById("medicine-harga_beli")?.value);
+    if (!buyPrice) return 0;
+
+    const isiKey = type === "resep" ? `isi_resep_${index}` : `isi_${index}`;
+    const fallbackIsiKey = `isi_${index}`;
+    const isi = parseMedicineNumber(document.getElementById(`medicine-${isiKey}`)?.value) ||
+      parseMedicineNumber(document.getElementById(`medicine-${fallbackIsiKey}`)?.value) ||
+      1;
+
+    return isi > 0 ? buyPrice / isi : buyPrice;
+  }
+
+  function updateMedicineProfitForType(type, index) {
+    const priceKey = type === "resep" ? `harga_resep_${index}` : `harga_jual_${index}`;
+    const profitKey = type === "resep" ? `laba_resep_${index}` : `laba_jual_${index}`;
     const price = parseMedicineNumber(document.getElementById(`medicine-${priceKey}`)?.value);
     const profit = document.getElementById(`medicine-${profitKey}`);
-    if (!profit || profit.dataset.userEdited === "true") return;
-    if (!buyPrice || !price) {
+    const basePrice = getMedicineSaleBasePrice(type, index);
+
+    if (!profit) return;
+    if (!basePrice || !price) {
       profit.value = "";
       return;
     }
-    profit.value = Math.max(0, ((price - buyPrice) / buyPrice) * 100).toFixed(1);
+    profit.value = Math.max(0, ((price - basePrice) / basePrice) * 100).toFixed(1);
+  }
+
+  function updateMedicinePriceFromProfit(type, index) {
+    const priceKey = type === "resep" ? `harga_resep_${index}` : `harga_jual_${index}`;
+    const profitKey = type === "resep" ? `laba_resep_${index}` : `laba_jual_${index}`;
+    const price = document.getElementById(`medicine-${priceKey}`);
+    const profitControl = document.getElementById(`medicine-${profitKey}`);
+    const rawProfit = String(profitControl?.value || "").trim();
+    const profit = parseMedicineNumber(rawProfit);
+    const basePrice = getMedicineSaleBasePrice(type, index);
+
+    if (!price || !basePrice) return;
+    price.value = rawProfit
+      ? formatIntegerPrice(String(Math.round(basePrice * (1 + (profit / 100)))))
+      : "";
   }
 
   function parseMedicineNumber(value) {
@@ -2839,10 +2970,20 @@
 
     const copyPrescription = document.getElementById("medicine-copy-prescription-price");
     if (copyPrescription) {
-      const hasDifferentPrescription = [1, 2, 3, 4].some((unitIndex) => {
+      const hasDifferentPrescription = Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).some((unitIndex) => {
         const sale = String(row?.[`harga_jual_${unitIndex}`] || "").trim();
         const prescription = String(row?.[`harga_resep_${unitIndex}`] || "").trim();
-        return sale && prescription && normalizePriceValue(sale, `harga_jual_${unitIndex}`) !== normalizePriceValue(prescription, `harga_resep_${unitIndex}`);
+        const saleIsi = String(row?.[`isi_${unitIndex}`] || "").trim();
+        const prescriptionIsi = String(row?.[`isi_resep_${unitIndex}`] || "").trim();
+        const saleUnit = String(row?.[`satuan_${unitIndex}`] || "").trim();
+        const prescriptionUnit = String(row?.[`satuan_resep_${unitIndex}`] || "").trim();
+        return (
+          sale && prescription && normalizePriceValue(sale, `harga_jual_${unitIndex}`) !== normalizePriceValue(prescription, `harga_resep_${unitIndex}`)
+        ) || (
+          prescriptionIsi && saleIsi !== prescriptionIsi
+        ) || (
+          prescriptionUnit && saleUnit !== prescriptionUnit
+        );
       });
       copyPrescription.checked = !hasDifferentPrescription;
       if (!row) syncPrescriptionPrices();
@@ -2858,14 +2999,14 @@
   }
 
   function setUnitCount(nextCount) {
-    state.unitCount = Math.min(4, Math.max(1, Number(nextCount) || 1));
+    state.unitCount = Math.min(MAX_MEDICINE_UNIT_COUNT, Math.max(1, Number(nextCount) || 1));
     updateMedicineUnitVisibility();
   }
 
   function getInitialUnitCount(row) {
-    if (!row) return 4;
-    for (let index = 4; index >= 1; index -= 1) {
-      if (String(row[`satuan_${index}`] || row[`isi_${index}`] || row[`harga_jual_${index}`] || row[`harga_resep_${index}`] || "").trim()) {
+    if (!row) return MAX_MEDICINE_UNIT_COUNT;
+    for (let index = MAX_MEDICINE_UNIT_COUNT; index >= 1; index -= 1) {
+      if (String(row[`satuan_${index}`] || row[`isi_${index}`] || row[`harga_jual_${index}`] || row[`isi_resep_${index}`] || row[`satuan_resep_${index}`] || row[`harga_resep_${index}`] || "").trim()) {
         return index;
       }
     }
@@ -2912,12 +3053,17 @@
   }
 
   function collectMedicineForm() {
+    const originalRow = state.editingMedicine?.row || {};
     return DATA_COLUMNS.reduce((acc, column) => {
       const control = document.getElementById(`medicine-${column.key}`);
       const unitMatch = column.key.match(/_(\d)$/);
+      if (unitMatch && Number(unitMatch[1]) > MAX_MEDICINE_UNIT_COUNT) {
+        acc[column.key] = originalRow[column.key] || "";
+        return acc;
+      }
       acc[column.key] = unitMatch && Number(unitMatch[1]) > state.unitCount
         ? ""
-        : control ? control.value.trim() : "";
+        : control ? control.value.trim() : (originalRow[column.key] || "");
       return acc;
     }, {});
   }
@@ -4199,11 +4345,6 @@
         <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
       </span>
     `;
-    const clockIcon = `
-      <span class="shift-input-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg>
-      </span>
-    `;
     const renderShiftModeIcon = (shiftKey) => shiftKey === "pagi"
       ? '<span class="shift-mode-icon shift-mode-pagi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"></path></svg></span>'
       : '<span class="shift-mode-icon shift-mode-sore" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 15.6A8.2 8.2 0 0 1 8.4 4a7 7 0 1 0 11.6 11.6Z"></path></svg></span>';
@@ -4211,7 +4352,6 @@
       <label class="shift-time-field">
         <span>${escapeHtml(label)}</span>
         <span class="shift-input-shell">
-          ${clockIcon}
           <input type="time" data-shift-day="${dayKey}" data-shift-name="${shiftKey}" data-shift-field="${field}" value="${escapeHtml(value)}">
         </span>
       </label>
@@ -4238,7 +4378,23 @@
     }).join("");
   }
 
-  function saveAttendanceShiftSettings(event) {
+  async function loadAttendanceShiftSettingsFromBackend(options = {}) {
+    try {
+      const result = await postToApi({ action: "getAttendanceShiftSettings" });
+      const remoteRules = result?.settings || result?.rules;
+      if (result && (result.success === true || result.ok === true) && remoteRules) {
+        const rules = normalizeAttendanceShiftRules(remoteRules);
+        localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(rules));
+        renderAttendanceShiftSettings();
+      }
+    } catch (error) {
+      if (!options.silent) {
+        setProfileStatus("Pengaturan shift belum bisa diambil dari backend. Pastikan Apps Script terbaru sudah di-deploy.", "error");
+      }
+    }
+  }
+
+  async function saveAttendanceShiftSettings(event) {
     event.preventDefault();
     if (!isAdminUser(getCurrentUserRecord())) {
       setProfileStatus("Pengaturan shift absensi hanya dapat diubah oleh owner/admin.", "error");
@@ -4246,21 +4402,63 @@
     }
     const rules = collectAttendanceShiftRules();
     rules.updatedAt = new Date().toISOString();
-    localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(rules));
-    renderAttendanceShiftSettings();
-    setProfileStatus("Pengaturan shift absensi berhasil disimpan.", "success");
-    addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang Face ID diperbarui di perangkat ini.");
+    const user = getCurrentUserRecord();
+    const loadingToken = startAppLoading("Menyimpan pengaturan shift absensi ke backend...", 0);
+
+    try {
+      const result = await postToApi({
+        action: "saveAttendanceShiftSettings",
+        settings: rules,
+        username: user.username || user.name || "",
+        role: user.role || ""
+      });
+      if (!result || (result.success !== true && result.ok !== true)) {
+        throw new Error(result?.message || "Backend belum menerima pengaturan shift.");
+      }
+
+      const savedRules = normalizeAttendanceShiftRules(result.settings || result.rules || rules);
+      localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(savedRules));
+      renderAttendanceShiftSettings();
+      setProfileStatus("Pengaturan shift absensi berhasil disimpan online dan siap dipakai lintas perangkat.", "success");
+      addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang Face ID tersimpan di backend.");
+    } catch (error) {
+      setProfileStatus(`${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`, "error");
+    } finally {
+      endAppLoading(loadingToken);
+    }
   }
 
-  function resetAttendanceShiftSettings() {
+  async function resetAttendanceShiftSettings() {
     if (!isAdminUser(getCurrentUserRecord())) {
       setProfileStatus("Reset shift absensi hanya dapat dilakukan oleh owner/admin.", "error");
       return;
     }
-    localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(createDefaultAttendanceShiftRules()));
-    renderAttendanceShiftSettings();
-    setProfileStatus("Pengaturan shift absensi dikembalikan ke default.", "success");
-    addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi Face ID kembali ke jadwal default.");
+    const user = getCurrentUserRecord();
+    const rules = createDefaultAttendanceShiftRules();
+    rules.updatedAt = new Date().toISOString();
+    const loadingToken = startAppLoading("Mereset pengaturan shift absensi di backend...", 0);
+
+    try {
+      const result = await postToApi({
+        action: "saveAttendanceShiftSettings",
+        settings: rules,
+        username: user.username || user.name || "",
+        role: user.role || ""
+      });
+      if (!result || (result.success !== true && result.ok !== true)) {
+        throw new Error(result?.message || "Backend belum menerima reset shift.");
+      }
+
+      const savedRules = normalizeAttendanceShiftRules(result.settings || result.rules || rules);
+      localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(savedRules));
+      renderAttendanceShiftSettings();
+      setProfileStatus("Pengaturan shift absensi dikembalikan ke default dan tersimpan online.", "success");
+      addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi Face ID kembali ke jadwal default di backend.");
+    } catch (error) {
+      setProfileStatus(`${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`, "error");
+    } finally {
+      endAppLoading(loadingToken);
+    }
   }
 
   function collectAttendanceShiftRules() {
@@ -4433,6 +4631,11 @@
   function switchView(viewName, options = {}) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
     const previousView = state.activeView;
+    if (!options.fromHistory && !options.skipHistory && previousView && previousView !== viewName) {
+      state.viewHistory.push(previousView);
+      state.viewHistory = state.viewHistory.slice(-24);
+      state.viewForwardStack = [];
+    }
     if (viewName === "cari-data-obat" && previousView !== "cari-data-obat") {
       state.previousView = options.previousView || previousView || (isMobileViewport() ? "home" : "dashboard");
     }
@@ -4513,40 +4716,23 @@
   }
 
   function navigateBySwipe(direction) {
-    if (direction < 0 && state.activeView === "cari-data-obat") {
-      goBackFromQuickSearch();
+    if (direction < 0) {
+      const previous = state.viewHistory.pop();
+      if (!previous || !canView(previous)) return;
+      state.viewForwardStack.push(state.activeView);
+      switchView(previous, { fromHistory: true });
       return;
     }
 
-    const views = getSwipeViewSequence();
-    const currentIndex = Math.max(0, views.indexOf(state.activeView));
-    const nextIndex = currentIndex + direction;
-    if (nextIndex < 0 || nextIndex >= views.length) return;
-    switchView(views[nextIndex], { fromSwipe: true });
-  }
-
-  function getSwipeViewSequence() {
-    const user = getCurrentUserRecord();
-    const access = new Set(user.access || []);
-    if (isOwnerUser(user)) ACCESS_MENUS.forEach((item) => access.add(item.key));
-
-    return [
-      "home",
-      "dashboard",
-      "cari-data-obat",
-      "data-obat",
-      "data-karyawan",
-      "data-supplier",
-      "surat-pesanan",
-      "import-data-obat",
-      "akun-profil",
-      "manajemen-pengguna"
-    ].filter((viewName) => VIEW_TITLES[viewName] && canView(viewName, access));
+    const next = state.viewForwardStack.pop();
+    if (!next || !canView(next)) return;
+    state.viewHistory.push(state.activeView);
+    switchView(next, { fromHistory: true });
   }
 
   function handleViewportRoute() {
     if (!isMobileViewport() && state.activeView === "home") {
-      switchView("dashboard");
+      switchView("dashboard", { skipHistory: true });
     }
   }
 
