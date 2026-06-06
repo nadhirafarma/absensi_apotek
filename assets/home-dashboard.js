@@ -2663,10 +2663,9 @@
           <div class="medicine-sale-grid">${salePrescriptionRows}</div>
         </div>
         <label class="medicine-check-row">
-          <input id="medicine-copy-prescription-price" type="checkbox" checked>
+          <input id="medicine-copy-prescription-price" type="checkbox">
           <span>Harga resep = biasa</span>
         </label>
-        <p class="medicine-sale-note">Apabila harga jual diisi, persentase laba mengikuti harga jual berdasarkan isi dan satuan terhadap satuan beli. Jika persentase laba diisi, harga jual otomatis mengikuti persentase tersebut.</p>
         <div class="medicine-check-row medicine-profit-row">
           <input id="medicine-auto-profit-toggle" type="checkbox">
           <span>Laba otomatis pembelian</span>
@@ -2970,23 +2969,26 @@
 
     const copyPrescription = document.getElementById("medicine-copy-prescription-price");
     if (copyPrescription) {
-      const hasDifferentPrescription = Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).some((unitIndex) => {
-        const sale = String(row?.[`harga_jual_${unitIndex}`] || "").trim();
-        const prescription = String(row?.[`harga_resep_${unitIndex}`] || "").trim();
-        const saleIsi = String(row?.[`isi_${unitIndex}`] || "").trim();
-        const prescriptionIsi = String(row?.[`isi_resep_${unitIndex}`] || "").trim();
-        const saleUnit = String(row?.[`satuan_${unitIndex}`] || "").trim();
-        const prescriptionUnit = String(row?.[`satuan_resep_${unitIndex}`] || "").trim();
-        return (
-          sale && prescription && normalizePriceValue(sale, `harga_jual_${unitIndex}`) !== normalizePriceValue(prescription, `harga_resep_${unitIndex}`)
-        ) || (
-          prescriptionIsi && saleIsi !== prescriptionIsi
-        ) || (
-          prescriptionUnit && saleUnit !== prescriptionUnit
-        );
-      });
-      copyPrescription.checked = !hasDifferentPrescription;
-      if (!row) syncPrescriptionPrices();
+      if (!row) {
+        copyPrescription.checked = false;
+      } else {
+        const hasDifferentPrescription = Array.from({ length: MAX_MEDICINE_UNIT_COUNT }, (_, index) => index + 1).some((unitIndex) => {
+          const sale = String(row?.[`harga_jual_${unitIndex}`] || "").trim();
+          const prescription = String(row?.[`harga_resep_${unitIndex}`] || "").trim();
+          const saleIsi = String(row?.[`isi_${unitIndex}`] || "").trim();
+          const prescriptionIsi = String(row?.[`isi_resep_${unitIndex}`] || "").trim();
+          const saleUnit = String(row?.[`satuan_${unitIndex}`] || "").trim();
+          const prescriptionUnit = String(row?.[`satuan_resep_${unitIndex}`] || "").trim();
+          return (
+            sale && prescription && normalizePriceValue(sale, `harga_jual_${unitIndex}`) !== normalizePriceValue(prescription, `harga_resep_${unitIndex}`)
+          ) || (
+            prescriptionIsi && saleIsi !== prescriptionIsi
+          ) || (
+            prescriptionUnit && saleUnit !== prescriptionUnit
+          );
+        });
+        copyPrescription.checked = !hasDifferentPrescription;
+      }
     }
 
     updateMedicineUnitVisibility();
@@ -3436,6 +3438,12 @@
     const role = normalizeSearch(user?.role);
     const username = normalizeSearch(user?.username || user?.name || "");
     return role === "owner" || username === "owner";
+  }
+
+  function canManageAttendanceShift(user) {
+    const role = normalizeSearch(user?.role);
+    const username = normalizeSearch(user?.username || user?.name || "");
+    return role === "owner" || role === "admin" || role === "administrator" || username === "owner" || username === "admin";
   }
 
   function renderEmployees() {
@@ -4199,6 +4207,9 @@
 
   function switchProfileTab(tabName, options) {
     if (!tabName) return;
+    if (tabName === "shift-absensi" && !canManageAttendanceShift(getCurrentUserRecord())) {
+      tabName = "profil";
+    }
     const openPanel = options && Object.prototype.hasOwnProperty.call(options, "openPanel")
       ? options.openPanel !== false
       : true;
@@ -4335,7 +4346,7 @@
 
   function renderAttendanceShiftSettings() {
     if (!els.shiftRulesGrid) return;
-    if (!isAdminUser(getCurrentUserRecord())) {
+    if (!canManageAttendanceShift(getCurrentUserRecord())) {
       els.shiftRulesGrid.innerHTML = "";
       return;
     }
@@ -4396,7 +4407,7 @@
 
   async function saveAttendanceShiftSettings(event) {
     event.preventDefault();
-    if (!isAdminUser(getCurrentUserRecord())) {
+    if (!canManageAttendanceShift(getCurrentUserRecord())) {
       setProfileStatus("Pengaturan shift absensi hanya dapat diubah oleh owner/admin.", "error");
       return;
     }
@@ -4429,7 +4440,7 @@
   }
 
   async function resetAttendanceShiftSettings() {
-    if (!isAdminUser(getCurrentUserRecord())) {
+    if (!canManageAttendanceShift(getCurrentUserRecord())) {
       setProfileStatus("Reset shift absensi hanya dapat dilakukan oleh owner/admin.", "error");
       return;
     }
@@ -4583,7 +4594,7 @@
 
   function syncProfileActivityAccess() {
     const user = getCurrentUserRecord();
-    const canManageShift = isAdminUser(user);
+    const canManageShift = canManageAttendanceShift(user);
     const activityTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "aktivitas");
     const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
     const shiftTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "shift-absensi");

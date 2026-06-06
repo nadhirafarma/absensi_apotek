@@ -11024,3 +11024,279 @@ body.notification-open .mobile-bottom-nav {
     font-size: 0.68rem !important;
   }
 }
+
+/* 20260607 v51: compact add-medicine modal and stricter readable fields. */
+@media (min-width: 901px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    width: min(97vw, 1260px) !important;
+    max-width: calc(100vw - 28px) !important;
+    max-height: calc(100dvh - 88px) !important;
+    padding: 14px 16px 12px !important;
+    overflow: hidden !important;
+  }
+
+  #medicineForm .modal-head {
+    gap: 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  #medicineForm .modal-head > div {
+    min-height: 42px !important;
+    padding-left: 52px !important;
+  }
+
+  #medicineForm .modal-head > div::before {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    background-size: 24px !important;
+  }
+
+  #medicineForm .modal-head h2 {
+    font-size: 1.06rem !important;
+    line-height: 1.12 !important;
+  }
+
+  #medicineForm .modal-head p,
+  #medicineForm .form-status {
+    font-size: 0.68rem !important;
+    line-height: 1.25 !important;
+  }
+
+  #medicineForm #closeMedicineModalButton {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  #medicineForm .medicine-form-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr) !important;
+    gap: 8px 12px !important;
+  }
+
+  #medicineForm .medicine-section {
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  #medicineForm .medicine-section legend {
+    gap: 7px !important;
+    padding: 0 7px !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0 !important;
+  }
+
+  #medicineForm .medicine-section-icon {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 7px !important;
+  }
+
+  #medicineForm .medicine-section-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  #medicineForm .medicine-section-grid {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  #medicineForm .medicine-field {
+    grid-template-columns: 116px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.15 !important;
+  }
+
+  #medicineForm .medicine-field-label {
+    min-width: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  #medicineForm .medicine-control-wrap {
+    grid-template-columns: minmax(180px, 1fr) auto !important;
+    gap: 5px !important;
+  }
+
+  #medicineForm .medicine-code-field .medicine-control-wrap {
+    grid-template-columns: minmax(200px, 1fr) auto !important;
+  }
+
+  #medicineForm .medicine-field input,
+  #medicineForm .medicine-field select,
+  #medicineForm .medicine-field textarea,
+  #medicineForm .medicine-stock-unit {
+    min-height: 31px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.1 !important;
+  }
+
+  #medicineForm .medicine-field textarea {
+    min-height: 66px !important;
+    padding-top: 8px !important;
+  }
+
+  #medicineForm .medicine-auto-badge {
+    min-height: 22px !important;
+    padding: 0 7px !important;
+    border-radius: 6px !important;
+    font-size: 0.58rem !important;
+  }
+
+  #medicineForm .medicine-add-option {
+    width: 31px !important;
+    height: 31px !important;
+    border-radius: 8px !important;
+    font-size: 1.04rem !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    grid-template-columns: minmax(0, 1fr) 78px !important;
+    gap: 6px !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    grid-template-columns: 116px minmax(0, 150px) !important;
+  }
+
+  #medicineForm .medicine-info-tabs {
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  #medicineForm .medicine-info-tabs button {
+    min-height: 27px !important;
+    border-bottom-width: 2px !important;
+    font-size: 0.68rem !important;
+  }
+
+  #medicineForm .medicine-info-panel {
+    margin-top: 6px !important;
+  }
+
+  #medicineForm .medicine-section-jual {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: start !important;
+    column-gap: 12px !important;
+    row-gap: 6px !important;
+    padding: 9px 12px 10px !important;
+  }
+
+  #medicineForm .medicine-section-jual > legend,
+  #medicineForm .medicine-section-jual > .medicine-check-row,
+  #medicineForm .medicine-section-jual > .medicine-profit-row {
+    grid-column: 1 / -1 !important;
+  }
+
+  #medicineForm .medicine-sale-block + .medicine-sale-block {
+    margin-top: 0 !important;
+  }
+
+  #medicineForm .medicine-sale-block h4 {
+    margin: 0 0 4px !important;
+    font-size: 0.68rem !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    grid-template-columns: 72px 86px 92px 58px 26px !important;
+    gap: 5px !important;
+  }
+
+  #medicineForm .medicine-price-head {
+    margin: 0 0 3px !important;
+    font-size: 0.6rem !important;
+    line-height: 1.05 !important;
+  }
+
+  #medicineForm .medicine-sale-grid {
+    display: grid !important;
+    gap: 4px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field {
+    display: block !important;
+    font-size: 0.62rem !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field-label {
+    display: none !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field input,
+  #medicineForm .medicine-sale-row .medicine-field select {
+    min-height: 28px !important;
+    padding: 0 6px !important;
+    font-size: 0.66rem !important;
+    border-radius: 7px !important;
+  }
+
+  #medicineForm .medicine-sale-delete {
+    width: 26px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+  }
+
+  #medicineForm .medicine-sale-delete svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  #medicineForm .medicine-check-row {
+    margin-top: 7px !important;
+    gap: 7px !important;
+    font-size: 0.68rem !important;
+  }
+
+  #medicineForm .medicine-check-row input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  #medicineForm .medicine-profit-row {
+    grid-template-columns: auto auto minmax(120px, 170px) !important;
+  }
+
+  #medicineForm .medicine-profit-field {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #medicineForm .medicine-sale-note {
+    display: none !important;
+  }
+
+  #medicineForm > .form-actions {
+    margin-top: 7px !important;
+    gap: 10px !important;
+  }
+
+  #medicineForm > .form-actions .text-button,
+  #medicineForm > .form-actions .primary-button {
+    min-height: 36px !important;
+    padding: 0 22px !important;
+    border-radius: 9px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    max-height: calc(100dvh - 20px) !important;
+    overflow: auto !important;
+  }
+
+  #medicineForm .medicine-control-wrap {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  #medicineForm .medicine-check-row input#medicine-copy-prescription-price {
+    accent-color: #2f6cf6 !important;
+  }
+
+  #medicineForm .medicine-sale-note {
+    display: none !important;
+  }
+}
