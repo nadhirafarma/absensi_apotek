@@ -714,13 +714,25 @@
       if (!payload || (payload.success !== true && payload.ok !== true)) return;
 
       if (Array.isArray(payload.employees)) {
-        state.employees = payload.employees.map(normalizeEmployeeRecord).filter((item) => item.name || item.email || item.phone);
-        writeStoredArray(EMPLOYEE_KEY, state.employees);
+        const employees = payload.employees
+          .map(normalizeEmployeeRecord)
+          .filter((item) => item.name || item.email || item.phone);
+
+        if (employees.length || !state.employees.length || options.allowEmpty === true) {
+          state.employees = employees;
+          writeStoredArray(EMPLOYEE_KEY, state.employees);
+        }
       }
 
       if (Array.isArray(payload.suppliers)) {
-        state.suppliers = payload.suppliers.map(normalizeSupplierRecord).filter((item) => item.name || item.phone || item.pic);
-        writeStoredArray(SUPPLIER_KEY, state.suppliers);
+        const suppliers = payload.suppliers
+          .map(normalizeSupplierRecord)
+          .filter((item) => item.name || item.phone || item.pic);
+
+        if (suppliers.length || !state.suppliers.length || options.allowEmpty === true) {
+          state.suppliers = suppliers;
+          writeStoredArray(SUPPLIER_KEY, state.suppliers);
+        }
       }
 
       renderEmployees();

@@ -2,7 +2,7 @@
   const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
   const PROFILE_KEY = "nadhira.localProfile";
-  const LOGIN_PAGE = "login.html";
+  const LANDING_PAGE = "beranda.html";
   const dateLabel = document.getElementById("todayLabel");
   const clockLabel = document.getElementById("clockLabel");
   const connectionStatus = document.getElementById("connectionStatus");
@@ -300,7 +300,7 @@
   }
 
   function getLogoutUrl() {
-    return `${LOGIN_PAGE}?logout=1&t=${Date.now()}&next=${encodeURIComponent(getCurrentPageName())}`;
+    return `${LANDING_PAGE}?logout=1&t=${Date.now()}`;
   }
 
   updateClock();

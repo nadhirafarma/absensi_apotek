@@ -828,3 +828,180 @@ a {
     font-size: 0.88rem;
   }
 }
+
+/* 20260606 landing v3: use the final landing background and repair mobile header menu. */
+.landing-page {
+  background: url("landing-bg.png") center / cover no-repeat !important;
+}
+
+.landing-page::before {
+  display: none !important;
+}
+
+.landing-header {
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+
+@media (min-width: 821px) {
+  .landing-header {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    min-height: 88px !important;
+    padding: 12px clamp(22px, 3.2vw, 38px) !important;
+    border-bottom: 1px solid rgba(211, 225, 250, 0.72) !important;
+    box-shadow: 0 14px 34px rgba(34, 62, 138, 0.08) !important;
+  }
+
+  .landing-hero {
+    padding-top: 128px !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .landing-page {
+    background: url("landing-bg.png") center top / cover no-repeat !important;
+  }
+
+  .landing-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: auto !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid rgba(211, 225, 250, 0.78) !important;
+    box-shadow: 0 12px 28px rgba(28, 58, 128, 0.1) !important;
+  }
+
+  .landing-brand {
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .landing-brand img {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 auto !important;
+    border-radius: 12px !important;
+  }
+
+  .landing-brand span {
+    min-width: 0 !important;
+    max-width: 148px !important;
+  }
+
+  .landing-brand strong {
+    font-size: 0.8rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .landing-brand small {
+    margin-top: 1px !important;
+    font-size: 0.58rem !important;
+    line-height: 1.18 !important;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex !important;
+    min-width: 104px !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    padding: 0 12px !important;
+    border-radius: 14px !important;
+    font-size: 0.92rem !important;
+  }
+
+  .mobile-menu-button svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .landing-nav {
+    grid-column: 1 / -1 !important;
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    display: none !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+    padding: 8px !important;
+    border: 1px solid rgba(211, 225, 250, 0.9) !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 18px 44px rgba(18, 45, 118, 0.12) !important;
+  }
+
+  .landing-header.is-open .landing-nav {
+    display: grid !important;
+  }
+
+  .nav-action,
+  .language-picker {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 0 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .nav-action svg,
+  .language-picker svg {
+    width: 18px !important;
+    height: 18px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .language-picker select {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 0.82rem !important;
+  }
+
+  .landing-hero {
+    padding-top: 88px !important;
+  }
+
+  .landing-header.is-open + .landing-hero {
+    padding-top: 244px !important;
+  }
+
+  .hero-copy {
+    padding-top: 20vh !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .landing-brand span {
+    max-width: 116px !important;
+  }
+
+  .landing-brand strong {
+    font-size: 0.72rem !important;
+  }
+
+  .landing-brand small {
+    font-size: 0.53rem !important;
+  }
+
+  .mobile-menu-button {
+    min-width: 96px !important;
+    min-height: 40px !important;
+    font-size: 0.88rem !important;
+  }
+
+  .landing-nav {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-header.is-open + .landing-hero {
+    padding-top: 322px !important;
+  }
+}

@@ -10043,3 +10043,26 @@ body.compact-dashboard .setting-row small {
     height: 36px !important;
   }
 }
+
+/* 20260606 v47 final: keep the Shift Absensi dialog centered on all viewports. */
+.profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active {
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(92vw, 920px) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: min(86dvh, 760px) !important;
+  overflow: hidden auto !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+@media (max-width: 760px) {
+  .profile-modern-layout.profile-panel-open [data-profile-panel="shift-absensi"].is-active {
+    width: min(94vw, 560px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: min(82dvh, 680px) !important;
+    padding: 14px 12px !important;
+    border-radius: 20px !important;
+  }
+}
