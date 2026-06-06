@@ -21,7 +21,7 @@
   const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
   const PAGE_SIZE = 10;
-  const QUICK_PAGE_SIZE = 8;
+  const QUICK_PAGE_SIZE = 20;
   const EXPIRING_DAYS = 90;
   const ATTENDANCE_DAY_LABELS = [
     ["monday", "Senin"],

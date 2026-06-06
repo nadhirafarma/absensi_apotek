@@ -1005,3 +1005,149 @@ a {
     padding-top: 322px !important;
   }
 }
+
+/* 20260606 landing v4: desktop landing scale reduced by about 20%. */
+@media (min-width: 821px) {
+  .landing-header {
+    min-height: 70px !important;
+    padding: 9px clamp(18px, 2.6vw, 30px) !important;
+  }
+
+  .landing-brand {
+    gap: 11px !important;
+  }
+
+  .landing-brand img {
+    width: 54px !important;
+    height: 54px !important;
+    border-radius: 12px !important;
+  }
+
+  .landing-brand strong {
+    font-size: 0.84rem !important;
+  }
+
+  .landing-brand small {
+    font-size: 0.62rem !important;
+  }
+
+  .landing-nav {
+    gap: 10px !important;
+  }
+
+  .nav-action,
+  .language-picker {
+    min-height: 43px !important;
+    gap: 8px !important;
+    padding: 0 16px !important;
+    border-radius: 9px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .nav-action svg,
+  .language-picker svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .landing-hero {
+    padding: 104px clamp(18px, 3.2vw, 52px) 22px !important;
+    gap: 14px 28px !important;
+  }
+
+  .hero-copy {
+    max-width: 576px !important;
+  }
+
+  .hero-copy h1 {
+    max-width: 576px !important;
+    font-size: clamp(1.92rem, 4vw, 3.56rem) !important;
+  }
+
+  .hero-copy p {
+    margin-top: 14px !important;
+    max-width: 528px !important;
+    font-size: clamp(0.84rem, 1.32vw, 1.06rem) !important;
+  }
+
+  .feature-strip {
+    max-width: 608px !important;
+    padding: 16px 14px !important;
+  }
+
+  .feature-strip article {
+    gap: 6px !important;
+    padding: 0 12px !important;
+  }
+
+  .feature-icon,
+  .value-icon {
+    width: 43px !important;
+    height: 43px !important;
+    border-radius: 14px !important;
+  }
+
+  .feature-strip strong {
+    font-size: 0.66rem !important;
+  }
+
+  .feature-strip small,
+  .trust-strip small {
+    font-size: 0.58rem !important;
+  }
+
+  .hero-quote {
+    max-width: 608px !important;
+    padding: 12px 19px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .value-grid {
+    max-width: 704px !important;
+    gap: 14px !important;
+  }
+
+  .value-grid article {
+    min-height: 168px !important;
+    gap: 13px !important;
+    padding: 21px 22px !important;
+  }
+
+  .value-grid p {
+    font-size: 0.69rem !important;
+  }
+
+  .quran-card {
+    padding: 24px 29px !important;
+  }
+
+  .quran-card .arabic {
+    font-size: clamp(1.08rem, 1.68vw, 1.68rem) !important;
+  }
+
+  .quran-card p:not(.arabic) {
+    font-size: 0.8rem !important;
+  }
+
+  .trust-strip {
+    padding: 14px 18px !important;
+  }
+
+  .trust-strip span {
+    padding: 0 19px !important;
+  }
+
+  .whatsapp-float {
+    right: 24px !important;
+    bottom: 22px !important;
+    gap: 8px !important;
+    padding: 10px 13px 10px 10px !important;
+    border-radius: 13px !important;
+  }
+
+  .whatsapp-float svg {
+    width: 43px !important;
+    height: 43px !important;
+    padding: 8px !important;
+  }
+}

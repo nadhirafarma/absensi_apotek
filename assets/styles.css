@@ -10066,3 +10066,135 @@ body.compact-dashboard .setting-row small {
     border-radius: 20px !important;
   }
 }
+
+/* 20260606 v48: shrink desktop dialogs, fix shift time inputs, and keep notifications above mobile footer. */
+@media (min-width: 761px) {
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active {
+    width: min(74vw, 608px) !important;
+    max-width: 608px !important;
+    max-height: min(78vh, 576px) !important;
+    padding: 20px !important;
+    gap: 13px !important;
+    font-size: 0.88rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .security-reset-card {
+    padding: 18px !important;
+    gap: 12px !important;
+    border-radius: 11px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .security-reset-card h3 {
+    font-size: 1rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .security-reset-card p,
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .password-rules {
+    font-size: 0.78rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .password-field input {
+    min-height: 36px !important;
+    font-size: 0.86rem !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .password-visibility-toggle {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .profile-modern-layout.profile-panel-open [data-profile-panel="keamanan"].is-active .form-actions .secondary-action {
+    min-height: 40px !important;
+    padding: 9px 16px !important;
+    font-size: 0.84rem !important;
+  }
+}
+
+.shift-rule-fields {
+  align-items: stretch !important;
+}
+
+.shift-time-field {
+  grid-template-rows: minmax(38px, auto) minmax(50px, auto) !important;
+}
+
+.shift-time-field > span:first-child {
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+}
+
+.shift-input-icon {
+  display: none !important;
+}
+
+.shift-input-shell {
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-height: 50px !important;
+  height: 50px !important;
+}
+
+.shift-input-shell input {
+  min-height: 36px !important;
+  padding-inline: 4px !important;
+}
+
+.notification-popover {
+  z-index: 2147483500 !important;
+}
+
+@media (max-width: 760px) {
+  .notification-popover:not([hidden]) {
+    inset: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 14px 14px calc(104px + env(safe-area-inset-bottom)) !important;
+    background: rgba(8, 30, 73, 0.32) !important;
+    backdrop-filter: blur(12px) !important;
+    pointer-events: auto !important;
+  }
+
+  .notification-card {
+    width: min(100%, 430px) !important;
+    max-height: calc(100dvh - 132px) !important;
+    padding: 20px 16px 16px !important;
+    border-radius: 18px !important;
+  }
+
+  .notification-card::before {
+    display: none !important;
+  }
+
+  .notification-card h2 {
+    margin-right: 62px !important;
+    font-size: 1.04rem !important;
+  }
+
+  .notification-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding-right: 62px !important;
+  }
+
+  .notification-toolbar button {
+    justify-self: start !important;
+    min-height: 34px !important;
+    margin-top: 2px !important;
+    padding-inline: 12px !important;
+  }
+
+  .notification-list {
+    max-height: calc(100dvh - 392px) !important;
+  }
+
+  .notification-confirm {
+    min-height: 44px !important;
+    margin-top: 8px !important;
+  }
+}
