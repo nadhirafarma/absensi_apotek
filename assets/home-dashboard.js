@@ -47,20 +47,36 @@
     { key: "satuan_1", label: "Satuan 1" },
     { key: "isi_1", label: "Isi 1" },
     { key: "harga_jual_1", label: "Harga Jual 1" },
+    { key: "laba_jual_1", label: "Laba Jual 1", type: "number" },
     { key: "satuan_2", label: "Satuan 2" },
     { key: "isi_2", label: "Isi 2" },
     { key: "harga_jual_2", label: "Harga Jual 2" },
+    { key: "laba_jual_2", label: "Laba Jual 2", type: "number" },
     { key: "satuan_3", label: "Satuan 3" },
     { key: "isi_3", label: "Isi 3" },
     { key: "harga_jual_3", label: "Harga Jual 3" },
+    { key: "laba_jual_3", label: "Laba Jual 3", type: "number" },
     { key: "satuan_4", label: "Satuan 4" },
     { key: "isi_4", label: "Isi 4" },
     { key: "harga_jual_4", label: "Harga Jual 4" },
+    { key: "laba_jual_4", label: "Laba Jual 4", type: "number" },
     { key: "stok_min", label: "Stok Min", type: "number" },
     { key: "harga_resep_1", label: "Harga Resep 1" },
+    { key: "laba_resep_1", label: "Laba Resep 1", type: "number" },
+    { key: "stok_konversi_1", label: "Stok Konversi 1", type: "number" },
+    { key: "satuan_konversi_1", label: "Satuan Konversi 1" },
     { key: "harga_resep_2", label: "Harga Resep 2" },
+    { key: "laba_resep_2", label: "Laba Resep 2", type: "number" },
+    { key: "stok_konversi_2", label: "Stok Konversi 2", type: "number" },
+    { key: "satuan_konversi_2", label: "Satuan Konversi 2" },
     { key: "harga_resep_3", label: "Harga Resep 3" },
+    { key: "laba_resep_3", label: "Laba Resep 3", type: "number" },
+    { key: "stok_konversi_3", label: "Stok Konversi 3", type: "number" },
+    { key: "satuan_konversi_3", label: "Satuan Konversi 3" },
     { key: "harga_resep_4", label: "Harga Resep 4" },
+    { key: "laba_resep_4", label: "Laba Resep 4", type: "number" },
+    { key: "stok_konversi_4", label: "Stok Konversi 4", type: "number" },
+    { key: "satuan_konversi_4", label: "Satuan Konversi 4" },
     { key: "laba_otomatis", label: "Laba Otomatis" },
     { key: "suplier", label: "Supplier" },
     { key: "pabrik", label: "Pabrik" },
@@ -106,7 +122,11 @@
   ]);
   const QUANTITY_COLUMNS = new Set([
     "stok",
-    "stok_min"
+    "stok_min",
+    "stok_konversi_1",
+    "stok_konversi_2",
+    "stok_konversi_3",
+    "stok_konversi_4"
   ]);
 
   const VIEW_TITLES = {
@@ -495,6 +515,11 @@
     if (els.addUnitButton) els.addUnitButton.addEventListener("click", () => setUnitCount(state.unitCount + 1));
     if (els.removeUnitButton) els.removeUnitButton.addEventListener("click", () => setUnitCount(state.unitCount - 1));
     if (els.medicineForm) els.medicineForm.addEventListener("submit", saveMedicine);
+    if (els.medicineFormFields) {
+      els.medicineFormFields.addEventListener("click", handleMedicineFormClick);
+      els.medicineFormFields.addEventListener("change", handleMedicineFormChange);
+      els.medicineFormFields.addEventListener("input", handleMedicineFormInput);
+    }
 
     [els.closeRecordModalButton, els.cancelRecordButton].forEach((button) => {
       if (button) button.addEventListener("click", closeRecordModal);
@@ -2209,12 +2234,14 @@
     if (els.notificationPopover) {
       positionNotificationPopover();
       els.notificationPopover.hidden = false;
+      document.body.classList.add("notification-open");
     }
     markNotificationItemsSeen(items);
   }
 
   function closeNotification() {
     if (els.notificationPopover) els.notificationPopover.hidden = true;
+    document.body.classList.remove("notification-open");
   }
 
   function getOwnerActivityNotificationItems() {
@@ -2480,103 +2507,307 @@
         "medicine-field",
         options.className || "",
         options.wide ? "is-wide" : "",
+        options.compact ? "is-compact" : "",
         unitIndex ? "unit-field" : ""
       ].filter(Boolean).join(" ");
       const unitAttr = unitIndex ? ` data-unit-index="${unitIndex}"` : "";
-      const required = ["kode", "nama", "satuan_beli", "harga_beli"].includes(key) ? " *" : "";
+      const required = options.required || ["kode", "nama", "satuan_beli", "harga_beli"].includes(key) ? " *" : "";
+      const addButton = options.addOption
+        ? `<button class="medicine-add-option" type="button" data-add-option="${escapeHtml(key)}" aria-label="Tambah pilihan ${escapeHtml(options.label || column.label)}">+</button>`
+        : "";
+      const autoBadge = options.autoBadge ? '<span class="medicine-auto-badge">AUTO</span>' : "";
 
       return `
         <label class="${className}"${unitAttr}>
           <span class="medicine-field-label">${escapeHtml(options.label || column.label)}${required}</span>
-          ${renderMedicineControl(column, categoryOptions, supplierOptions, unitOptions)}
+          <span class="medicine-control-wrap">
+            ${renderMedicineControl(column, categoryOptions, supplierOptions, unitOptions)}
+            ${autoBadge}
+            ${addButton}
+          </span>
         </label>
       `;
     };
 
     const saleRows = [1, 2, 3, 4].map((index) => `
       <div class="medicine-sale-row" data-unit-index="${index}">
-        ${field(`isi_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi" })}
-        ${field(`satuan_${index}`, { label: "Satuan", className: "medicine-sale-unit" })}
-        ${field(`harga_jual_${index}`, { label: `Harga Jual ${index}`, className: "medicine-sale-price" })}
-        ${field(`harga_resep_${index}`, { label: `Harga Resep ${index}`, className: "medicine-sale-prescription" })}
+        <div class="medicine-sale-unit-pair">
+          ${field(`isi_${index}`, { label: `Isi ${index}`, className: "medicine-sale-isi", compact: true })}
+          ${field(`satuan_${index}`, { label: "Satuan", className: "medicine-sale-unit", addOption: index === 1, compact: true })}
+        </div>
+        <span class="medicine-sale-plus" aria-hidden="true">+</span>
+        ${field(`harga_jual_${index}`, { label: `Harga Jual ${index}`, className: "medicine-sale-price", compact: true })}
+        ${field(`laba_jual_${index}`, { label: "Laba %", className: "medicine-sale-profit", compact: true })}
+        ${field(`harga_resep_${index}`, { label: `Harga Resep ${index}`, className: "medicine-sale-prescription", compact: true })}
+        ${field(`laba_resep_${index}`, { label: "Laba %", className: "medicine-sale-profit", compact: true })}
+        ${field(`stok_konversi_${index}`, { label: "Stok Konversi", className: "medicine-sale-conversion", compact: true })}
+        ${field(`satuan_konversi_${index}`, { label: "Satuan Stok", className: "medicine-sale-conversion-unit", compact: true })}
+      </div>
+    `).join("");
+    const noteTabs = [
+      ["indikasi", "Indikasi"],
+      ["komposisi", "Komposisi"],
+      ["no_batch", "Batch"],
+      ["lokasi", "Lokasi"]
+    ];
+    const tabButtons = noteTabs.map(([key, label], index) => `
+      <button class="${index === 0 ? "is-active" : ""}" type="button" data-medicine-tab="${key}">${label}</button>
+    `).join("");
+    const tabPanels = noteTabs.map(([key, label], index) => `
+      <div class="medicine-info-panel ${index === 0 ? "is-active" : ""}" data-medicine-panel="${key}">
+        ${field(key, { label, wide: true })}
       </div>
     `).join("");
 
     els.medicineFormFields.innerHTML = `
       <fieldset class="medicine-section medicine-section-barang">
-        <legend>Barang</legend>
+        <legend><span class="medicine-section-icon" aria-hidden="true">${renderMedicineSectionIcon("barang")}</span>Informasi Barang</legend>
         <div class="medicine-section-grid">
-          ${field("kode", { className: "medicine-code-field" })}
-          <span class="medicine-auto-label">auto</span>
-          ${field("nama", { wide: true })}
-          ${field("kategori")}
+          ${field("kode", { label: "Kode Obat", className: "medicine-code-field", autoBadge: true })}
+          ${field("nama", { label: "Nama Obat", wide: true })}
+          ${field("kategori", { label: "Kategori", addOption: true })}
         </div>
       </fieldset>
       <fieldset class="medicine-section medicine-section-beli">
-        <legend>Beli</legend>
+        <legend><span class="medicine-section-icon" aria-hidden="true">${renderMedicineSectionIcon("beli")}</span>Informasi Pembelian</legend>
         <div class="medicine-section-grid">
-          ${field("satuan_beli")}
-          ${field("harga_beli")}
-          ${field("stok")}
+          ${field("satuan_beli", { label: "Satuan Beli", addOption: true })}
+          ${field("harga_beli", { label: "Harga Beli" })}
+          <div class="medicine-stock-row">
+            ${field("stok", { label: "Stok" })}
+            <select class="medicine-stock-unit" id="medicine-stock-unit" aria-label="Satuan stok">
+              <option value="">Box</option>
+              ${unitOptions.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}
+            </select>
+          </div>
         </div>
       </fieldset>
       <fieldset class="medicine-section medicine-section-keterangan">
-        <legend>Keterangan</legend>
+        <legend><span class="medicine-section-icon" aria-hidden="true">${renderMedicineSectionIcon("keterangan")}</span>Keterangan</legend>
         <div class="medicine-section-grid">
-          ${field("suplier")}
-          ${field("pabrik")}
-          ${field("stok_min")}
-          ${field("expired")}
-          <div class="medicine-tabs">
-            <span>Indikasi</span>
-            <span>Komposisi</span>
-            <span>Batch</span>
-            <span>Lokasi</span>
-          </div>
-          ${field("indikasi", { wide: true })}
-          ${field("komposisi", { wide: true })}
-          ${field("no_batch")}
-          ${field("lokasi")}
+          ${field("suplier", { label: "Supplier", addOption: true })}
+          ${field("pabrik", { label: "Pabrik" })}
+          ${field("stok_min", { label: "Stok Minimum" })}
+          ${field("expired", { label: "Expired" })}
         </div>
+        <div class="medicine-info-tabs">${tabButtons}</div>
+        <div class="medicine-info-panels">${tabPanels}</div>
       </fieldset>
       <fieldset class="medicine-section medicine-section-jual">
-        <legend>Jual</legend>
-        <div class="medicine-price-head">
+        <legend><span class="medicine-section-icon" aria-hidden="true">${renderMedicineSectionIcon("jual")}</span>Informasi Penjualan</legend>
+        <div class="medicine-price-head" aria-hidden="true">
+          <span>Isi</span>
           <span></span>
-          <span>Hrg. Biasa</span>
-          <span>Hrg. Resep</span>
+          <span>Harga Jual</span>
+          <span>Laba %</span>
+          <span>Harga Resep</span>
+          <span>Laba %</span>
+          <span>Stok Konversi</span>
+          <span>Satuan</span>
         </div>
         <div class="medicine-sale-grid">${saleRows}</div>
-        ${field("laba_otomatis", { className: "medicine-profit-field" })}
         <label class="medicine-check-row">
-          <input type="checkbox" checked disabled>
+          <input id="medicine-copy-prescription-price" type="checkbox" checked>
           <span>Harga resep = biasa</span>
         </label>
+        <div class="medicine-check-row medicine-profit-row">
+          <input id="medicine-auto-profit-toggle" type="checkbox">
+          <span>Laba otomatis pembelian</span>
+          ${field("laba_otomatis", { label: "Persen laba", className: "medicine-profit-field", compact: true })}
+        </div>
       </fieldset>
     `;
 
     updateMedicineUnitVisibility();
+    updateMedicineSaleHelpers();
   }
 
   function renderMedicineControl(column, categories, suppliers, units) {
-    if (column.key === "kategori") return renderSelect(column.key, categories, "Pilih kategori");
-    if (column.key === "suplier") return renderSelect(column.key, suppliers, "Pilih supplier");
-    if (column.key === "satuan_beli" || /^satuan_[1-4]$/.test(column.key)) return renderSelect(column.key, units, "Pilih satuan");
+    if (column.key === "kategori") return renderSelect(column.key, categories, "Pilih kategori", "kategori");
+    if (column.key === "suplier") return renderSelect(column.key, suppliers, "Pilih supplier", "suplier");
     if (column.key === "expired") return `<input id="medicine-${column.key}" name="${column.key}" type="date">`;
-    if (column.type === "number" || PRICE_COLUMNS.has(column.key) || QUANTITY_COLUMNS.has(column.key) || /^isi_[1-4]$/.test(column.key)) {
-      return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text">`;
+    if (column.key === "satuan_beli" || /^satuan_[1-4]$/.test(column.key) || /^satuan_konversi_[1-4]$/.test(column.key)) {
+      return renderSelect(column.key, units, "Pilih satuan", "unit");
     }
-    if (["indikasi", "komposisi"].includes(column.key)) return `<textarea id="medicine-${column.key}" name="${column.key}" rows="3"></textarea>`;
-    return `<input id="medicine-${column.key}" name="${column.key}" type="text">`;
+    if (column.type === "number" || PRICE_COLUMNS.has(column.key) || QUANTITY_COLUMNS.has(column.key) || /^isi_[1-4]$/.test(column.key)) {
+      return `<input id="medicine-${column.key}" name="${column.key}" inputmode="decimal" type="text" placeholder="0">`;
+    }
+    if (["indikasi", "komposisi"].includes(column.key)) {
+      return `<textarea id="medicine-${column.key}" name="${column.key}" rows="4" placeholder="Masukkan ${escapeHtml(column.label.toLowerCase())} obat"></textarea>`;
+    }
+    return `<input id="medicine-${column.key}" name="${column.key}" type="text" placeholder="Masukkan ${escapeHtml(column.label.toLowerCase())}">`;
   }
 
-  function renderSelect(key, options, placeholder) {
+  function renderSelect(key, options, placeholder, group = "") {
     return `
-      <select id="medicine-${key}" name="${key}">
+      <select id="medicine-${key}" name="${key}"${group ? ` data-option-group="${group}"` : ""}>
         <option value="">${escapeHtml(placeholder)}</option>
         ${options.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}
       </select>
     `;
+  }
+
+  function renderMedicineSectionIcon(type) {
+    const icons = {
+      barang: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7V5a5 5 0 0 1 10 0v2"></path><rect x="5" y="7" width="14" height="14" rx="3"></rect><path d="M9 12h6"></path><path d="M12 9v6"></path></svg>',
+      beli: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1"></circle><circle cx="17" cy="20" r="1"></circle><path d="M3 4h2l2.3 11.4a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20 8H7"></path></svg>',
+      keterangan: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path><path d="M14 2v5h5"></path><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>',
+      jual: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17 9 11l4 4 7-7"></path><path d="M14 8h6v6"></path></svg>'
+    };
+    return icons[type] || icons.barang;
+  }
+
+  function handleMedicineFormClick(event) {
+    const tabButton = event.target.closest("[data-medicine-tab]");
+    if (tabButton) {
+      event.preventDefault();
+      switchMedicineInfoTab(tabButton.dataset.medicineTab);
+      return;
+    }
+
+    const optionButton = event.target.closest("[data-add-option]");
+    if (optionButton) {
+      event.preventDefault();
+      addMedicineOption(optionButton.dataset.addOption);
+    }
+  }
+
+  function handleMedicineFormChange(event) {
+    if (event.target && event.target.id === "medicine-copy-prescription-price") {
+      syncPrescriptionPrices();
+      return;
+    }
+
+    if (event.target && event.target.id === "medicine-auto-profit-toggle") {
+      applyMedicineAutoProfit();
+      return;
+    }
+
+    if (event.target && event.target.id === "medicine-satuan_beli") {
+      const stockUnit = document.getElementById("medicine-stock-unit");
+      if (stockUnit && !stockUnit.value) stockUnit.value = event.target.value;
+    }
+  }
+
+  function handleMedicineFormInput(event) {
+    if (!event.target || !event.target.id) return;
+    if (/^medicine-laba_(jual|resep)_\d$/.test(event.target.id)) {
+      event.target.dataset.userEdited = "true";
+      return;
+    }
+    if (event.target.id === "medicine-laba_otomatis") {
+      applyMedicineAutoProfit();
+      return;
+    }
+    if (/^medicine-harga_(jual|resep)_\d$/.test(event.target.id) || event.target.id === "medicine-harga_beli") {
+      if (event.target.id === "medicine-harga_beli") applyMedicineAutoProfit();
+      if (/^medicine-harga_jual_\d$/.test(event.target.id)) syncPrescriptionPrices();
+      updateMedicineSaleHelpers();
+    }
+  }
+
+  function switchMedicineInfoTab(key) {
+    if (!els.medicineFormFields) return;
+    els.medicineFormFields.querySelectorAll("[data-medicine-tab]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.medicineTab === key);
+    });
+    els.medicineFormFields.querySelectorAll("[data-medicine-panel]").forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.medicinePanel === key);
+    });
+  }
+
+  function addMedicineOption(key) {
+    const select = document.getElementById(`medicine-${key}`);
+    if (!select) return;
+    const label = select.closest(".medicine-field")?.querySelector(".medicine-field-label")?.textContent?.replace("*", "").trim() || "Pilihan";
+    const value = window.prompt(`Masukkan ${label} baru:`);
+    const clean = String(value || "").trim();
+    if (!clean) return;
+
+    const group = select.dataset.optionGroup || "";
+    const targets = group
+      ? Array.from(els.medicineFormFields.querySelectorAll(`select[data-option-group="${group}"]`))
+      : [select];
+
+    targets.forEach((target) => {
+      const exists = Array.from(target.options).some((option) => option.value.toLowerCase() === clean.toLowerCase());
+      if (!exists) target.add(new Option(clean, clean));
+    });
+    select.value = clean;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function syncPrescriptionPrices() {
+    const copy = document.getElementById("medicine-copy-prescription-price");
+    if (!copy || !copy.checked) return;
+    [1, 2, 3, 4].forEach((index) => {
+      const sale = document.getElementById(`medicine-harga_jual_${index}`);
+      const prescription = document.getElementById(`medicine-harga_resep_${index}`);
+      if (sale && prescription) prescription.value = sale.value;
+    });
+    updateMedicineSaleHelpers();
+  }
+
+  function applyMedicineAutoProfit() {
+    const enabled = document.getElementById("medicine-auto-profit-toggle")?.checked;
+    if (!enabled) return;
+    const rawPercent = String(document.getElementById("medicine-laba_otomatis")?.value || "").trim();
+    if (!rawPercent) return;
+    const percent = parseMedicineNumber(rawPercent);
+    const buyPrice = parseMedicineNumber(document.getElementById("medicine-harga_beli")?.value);
+
+    [1, 2, 3, 4].forEach((index) => {
+      if (index > state.unitCount) return;
+      const saleProfit = document.getElementById(`medicine-laba_jual_${index}`);
+      const prescriptionProfit = document.getElementById(`medicine-laba_resep_${index}`);
+      const salePrice = document.getElementById(`medicine-harga_jual_${index}`);
+
+      if (saleProfit) {
+        saleProfit.dataset.userEdited = "true";
+        saleProfit.value = String(percent);
+      }
+      if (prescriptionProfit) {
+        prescriptionProfit.dataset.userEdited = "true";
+        prescriptionProfit.value = String(percent);
+      }
+      if (buyPrice && salePrice) {
+        salePrice.value = formatIntegerPrice(String(Math.round(buyPrice * (1 + (percent / 100)))));
+      }
+    });
+    syncPrescriptionPrices();
+  }
+
+  function updateMedicineSaleHelpers() {
+    const buyPrice = parseMedicineNumber(document.getElementById("medicine-harga_beli")?.value);
+    [1, 2, 3, 4].forEach((index) => {
+      updateMedicineProfitField(`harga_jual_${index}`, `laba_jual_${index}`, buyPrice);
+      updateMedicineProfitField(`harga_resep_${index}`, `laba_resep_${index}`, buyPrice);
+    });
+  }
+
+  function updateMedicineProfitField(priceKey, profitKey, buyPrice) {
+    const price = parseMedicineNumber(document.getElementById(`medicine-${priceKey}`)?.value);
+    const profit = document.getElementById(`medicine-${profitKey}`);
+    if (!profit || profit.dataset.userEdited === "true") return;
+    if (!buyPrice || !price) {
+      profit.value = "";
+      return;
+    }
+    profit.value = Math.max(0, ((price - buyPrice) / buyPrice) * 100).toFixed(1);
+  }
+
+  function parseMedicineNumber(value) {
+    const text = String(value || "").replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+    const number = Number(text);
+    return Number.isFinite(number) ? number : 0;
+  }
+
+  function getNextMedicineCode() {
+    const maxNumber = state.rows.reduce((max, row) => {
+      const match = String(row.kode || row.barcode || "").match(/^OBT(\d+)$/i);
+      return match ? Math.max(max, Number(match[1]) || 0) : max;
+    }, 0);
+    return `OBT${String(maxNumber + 1).padStart(4, "0")}`;
   }
 
   function openMedicineModal(mode, row = null, index = -1) {
@@ -2592,9 +2823,33 @@
       const control = document.getElementById(`medicine-${column.key}`);
       if (!control) return;
       control.value = row ? formatControlValue(column.key, row[column.key]) : "";
+      if (/^laba_(jual|resep)_\d$/.test(column.key) && control.value) {
+        control.dataset.userEdited = "true";
+      }
     });
 
+    if (!row) {
+      const codeInput = document.getElementById("medicine-kode");
+      if (codeInput && !codeInput.value) codeInput.value = getNextMedicineCode();
+    }
+
+    const stockUnit = document.getElementById("medicine-stock-unit");
+    const buyUnit = document.getElementById("medicine-satuan_beli");
+    if (stockUnit && buyUnit) stockUnit.value = buyUnit.value || "";
+
+    const copyPrescription = document.getElementById("medicine-copy-prescription-price");
+    if (copyPrescription) {
+      const hasDifferentPrescription = [1, 2, 3, 4].some((unitIndex) => {
+        const sale = String(row?.[`harga_jual_${unitIndex}`] || "").trim();
+        const prescription = String(row?.[`harga_resep_${unitIndex}`] || "").trim();
+        return sale && prescription && normalizePriceValue(sale, `harga_jual_${unitIndex}`) !== normalizePriceValue(prescription, `harga_resep_${unitIndex}`);
+      });
+      copyPrescription.checked = !hasDifferentPrescription;
+      if (!row) syncPrescriptionPrices();
+    }
+
     updateMedicineUnitVisibility();
+    updateMedicineSaleHelpers();
     showModal(els.medicineModal);
   }
 
@@ -2627,6 +2882,7 @@
 
   async function saveMedicine(event) {
     event.preventDefault();
+    syncPrescriptionPrices();
     const row = collectMedicineForm();
     const mode = state.medicineMode;
 
