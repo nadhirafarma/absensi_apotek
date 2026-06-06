@@ -2,6 +2,7 @@
   const MODEL_BASE = "https://nadhirafarma.github.io/absensi_apotek/weights";
   const FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
+  const DASHBOARD_API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
   const PROFILE_KEY = "nadhira.localProfile";
   const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
@@ -61,6 +62,7 @@
       return;
     }
 
+    await loadAttendanceShiftSettingsFromBackend({ silent: true });
     showIntegrityGate();
   }
 
@@ -194,8 +196,17 @@
 
     state.selectedShift = shift;
     state.selectedAttendanceType = plan.type;
-    state.attendancePlan = plan;
-    setAttendanceChoiceStatus("Valid. Menyiapkan kamera Face ID...", "success");
+    state.attendancePlan = {
+      ...plan,
+      warning: Boolean(windowResult.warning),
+      warningFlag: windowResult.flag || "",
+      warningTitle: windowResult.title || "",
+      warningMessage: windowResult.message || ""
+    };
+    setAttendanceChoiceStatus(
+      windowResult.warning ? `${windowResult.message} Absensi tetap dapat dilanjutkan.` : "Valid. Menyiapkan kamera Face ID...",
+      windowResult.warning ? "warning" : "success"
+    );
     startAttendanceFlow();
   }
 
@@ -505,6 +516,14 @@
         return;
       }
 
+      if (windowResult.warning) {
+        attendancePlan.warning = true;
+        attendancePlan.warningFlag = windowResult.flag || attendancePlan.warningFlag || "";
+        attendancePlan.warningTitle = windowResult.title || attendancePlan.warningTitle || "";
+        attendancePlan.warningMessage = windowResult.message || attendancePlan.warningMessage || "";
+        setStatus(`${windowResult.message} Absensi tetap diproses.`);
+      }
+
       await sendAttendance(label, locationResult, attendancePlan);
     } catch (error) {
       setStatus(`Absensi gagal: ${error.message}`);
@@ -732,7 +751,11 @@
     return {
       done: false,
       type: selected.type === "PULANG" ? "PULANG" : "DATANG",
-      shift
+      shift,
+      warning: Boolean(selected.warning),
+      warningFlag: selected.warningFlag || "",
+      warningTitle: selected.warningTitle || "",
+      warningMessage: selected.warningMessage || ""
     };
   }
 
@@ -750,17 +773,21 @@
 
     if (plan.type === "DATANG" && minutes > deadline) {
       return {
-        ok: false,
-        title: "Absensi Ditutup",
-        message: `Absensi tidak bisa/ditutup karena anda telat. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}. Hubungi owner untuk membuka absen.`
+        ok: true,
+        warning: true,
+        flag: "late",
+        title: "Absen Terlambat",
+        message: `Anda terlambat. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}.`
       };
     }
 
     if (plan.type === "PULANG" && minutes < returnStart) {
       return {
-        ok: false,
-        title: "Absen Pulang Belum Bisa",
-        message: `Absen pulang belum bisa. Waktu pulang ${shiftLabel} baru bisa mulai jam ${formatRuleTime(returnStart)}.`
+        ok: true,
+        warning: true,
+        flag: "early_return",
+        title: "Pulang Terlalu Cepat",
+        message: `Anda pulang terlalu cepat. Waktu pulang ${shiftLabel} mulai jam ${formatRuleTime(returnStart)}.`
       };
     }
 
@@ -807,6 +834,10 @@
       longitude: locationResult.location ? locationResult.location.longitude : "",
       gps_accuracy: locationResult.location ? Math.round(locationResult.location.accuracy) : "",
       gps_distance: typeof locationResult.distance === "number" ? Math.round(locationResult.distance) : "",
+      attendance_warning: attendancePlan?.warningMessage || "",
+      attendanceWarning: attendancePlan?.warningMessage || "",
+      attendance_flag: attendancePlan?.warningFlag || "",
+      attendanceFlag: attendancePlan?.warningFlag || "",
       timestamp
     };
     let responseText = "";
@@ -849,9 +880,11 @@
       return;
     }
 
+    const warningMessage = attendancePlan?.warningMessage || result.warningMessage || "";
+
     showResult(attendanceType === "PULANG" ? "Absen Pulang Berhasil" : "Absen Datang Berhasil", displayName, {
       primary: `${attendanceType === "PULANG" ? "Absen pulang" : "Absen datang"} tersimpan`,
-      secondary: "Bekerjalah dengan jujur dan tanggung jawab."
+      secondary: warningMessage || "Bekerjalah dengan jujur dan tanggung jawab."
     }, "success");
   }
 
@@ -959,6 +992,24 @@
 
   function loadAttendanceShiftRules() {
     return normalizeAttendanceShiftRules(readObject(ATTENDANCE_SHIFT_RULES_KEY));
+  }
+
+  async function loadAttendanceShiftSettingsFromBackend(options = {}) {
+    try {
+      const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
+        method: "POST",
+        body: JSON.stringify({ action: "getAttendanceShiftSettings" }),
+        cache: "no-store"
+      }, 10000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      const remoteRules = result?.settings || result?.rules;
+      if (result && (result.success === true || result.ok === true) && remoteRules) {
+        localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(normalizeAttendanceShiftRules(remoteRules)));
+      }
+    } catch (error) {
+      if (!options.silent) setStatus("Aturan shift belum bisa disinkronkan. Menggunakan aturan terakhir di perangkat.");
+    }
   }
 
   function createDefaultAttendanceShiftRules() {

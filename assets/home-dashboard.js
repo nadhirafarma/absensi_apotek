@@ -1,6 +1,7 @@
 (function () {
   const API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const API_URL = `${API_BASE}?sheet=data_obat`;
+  const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const SESSION_KEY = "nadhira.authSession";
   const META_KEY = "nadhira.obatCacheMeta";
   const HOME_UPLOAD_ACK_KEY = "nadhira.homeUploadNotificationSeenAt";
@@ -141,6 +142,7 @@
   const VIEW_TITLES = {
     home: "Home",
     dashboard: "Dashboard",
+    presensi: "Presensi / Catatan Kehadiran",
     "cari-data-obat": "Cari Data Obat",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
@@ -154,6 +156,7 @@
   const ACCESS_MENUS = [
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi_face_id", label: "Absensi Face ID" },
+    { key: "presensi", label: "Presensi / Catatan Kehadiran" },
     { key: "cari_data_obat", label: "Cari Data Obat" },
     { key: "data_obat", label: "Data Obat" },
     { key: "filter_data_obat", label: "Filter Data Obat" },
@@ -170,13 +173,13 @@
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    admin: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    apoteker: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    kasir: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
-    "asisten apoteker": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    operator: ["dashboard", "absensi_face_id", "cari_data_obat", "data_obat", "akun_profil"]
+    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"],
+    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
+    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -257,6 +260,12 @@
     pendingProfilePhoto: null,
     pendingProfilePhotoName: "",
     ownerActivities: [],
+    attendanceRecords: [],
+    attendanceGroups: [],
+    attendanceDate: "",
+    attendanceMonth: "",
+    attendanceYear: "",
+    editingAttendanceGroup: null,
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
     quickPage: 1,
@@ -297,6 +306,7 @@
     fetchDataObat();
     fetchUsers();
     fetchLocalRecords({ silent: true });
+    fetchAttendanceRecords({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
     window.setTimeout(maybeShowHomePrayerReminder, 900);
@@ -440,6 +450,37 @@
       shiftRulesForm: document.getElementById("shiftRulesForm"),
       shiftRulesGrid: document.getElementById("shiftRulesGrid"),
       resetShiftRulesButton: document.getElementById("resetShiftRulesButton"),
+      attendanceRefreshButton: document.getElementById("attendanceRefreshButton"),
+      attendanceDateFilter: document.getElementById("attendanceDateFilter"),
+      attendanceMonthFilter: document.getElementById("attendanceMonthFilter"),
+      attendanceYearFilter: document.getElementById("attendanceYearFilter"),
+      attendanceTotalEmployees: document.getElementById("attendanceTotalEmployees"),
+      attendancePresentToday: document.getElementById("attendancePresentToday"),
+      attendanceLateToday: document.getElementById("attendanceLateToday"),
+      attendanceAbsentToday: document.getElementById("attendanceAbsentToday"),
+      attendanceWorkDays: document.getElementById("attendanceWorkDays"),
+      attendanceWorkDaysSide: document.getElementById("attendanceWorkDaysSide"),
+      attendanceTableBody: document.getElementById("attendanceTableBody"),
+      attendanceTableInfo: document.getElementById("attendanceTableInfo"),
+      attendanceActionHeader: document.getElementById("attendanceActionHeader"),
+      attendanceMonthlyTableBody: document.getElementById("attendanceMonthlyTableBody"),
+      attendanceMonthlyInfo: document.getElementById("attendanceMonthlyInfo"),
+      attendanceMonthTitle: document.getElementById("attendanceMonthTitle"),
+      attendanceShiftPagi: document.getElementById("attendanceShiftPagi"),
+      attendanceShiftSore: document.getElementById("attendanceShiftSore"),
+      attendanceDetailButton: document.getElementById("attendanceDetailButton"),
+      attendanceStatusText: document.getElementById("attendanceStatusText"),
+      attendanceEditModal: document.getElementById("attendanceEditModal"),
+      attendanceEditForm: document.getElementById("attendanceEditForm"),
+      attendanceEditStatus: document.getElementById("attendanceEditStatus"),
+      closeAttendanceEditButton: document.getElementById("closeAttendanceEditButton"),
+      cancelAttendanceEditButton: document.getElementById("cancelAttendanceEditButton"),
+      attendanceEditName: document.getElementById("attendanceEditName"),
+      attendanceEditDate: document.getElementById("attendanceEditDate"),
+      attendanceEditShift: document.getElementById("attendanceEditShift"),
+      attendanceEditDatang: document.getElementById("attendanceEditDatang"),
+      attendanceEditPulang: document.getElementById("attendanceEditPulang"),
+      attendanceEditWarning: document.getElementById("attendanceEditWarning"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -585,6 +626,34 @@
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
+    if (els.attendanceRefreshButton) els.attendanceRefreshButton.addEventListener("click", () => fetchAttendanceRecords({ manual: true }));
+    if (els.attendanceDateFilter) els.attendanceDateFilter.addEventListener("change", () => {
+      state.attendanceDate = els.attendanceDateFilter.value || getTodayDateKey();
+      renderAttendanceDashboard();
+    });
+    [els.attendanceMonthFilter, els.attendanceYearFilter].forEach((control) => {
+      if (!control) return;
+      control.addEventListener("change", () => {
+        state.attendanceMonth = els.attendanceMonthFilter?.value || getCurrentMonthValue();
+        state.attendanceYear = els.attendanceYearFilter?.value || String(new Date().getFullYear());
+        renderAttendanceDashboard();
+      });
+    });
+    if (els.attendanceTableBody) els.attendanceTableBody.addEventListener("click", handleAttendanceTableAction);
+    if (els.attendanceEditForm) els.attendanceEditForm.addEventListener("submit", saveAttendanceEdit);
+    [els.closeAttendanceEditButton, els.cancelAttendanceEditButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeAttendanceEditModal);
+    });
+    if (els.attendanceEditModal) {
+      els.attendanceEditModal.addEventListener("click", (event) => {
+        if (event.target === els.attendanceEditModal) closeAttendanceEditModal();
+      });
+    }
+    if (els.attendanceDetailButton) {
+      els.attendanceDetailButton.addEventListener("click", () => {
+        document.querySelector(".attendance-monthly-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
     els.profileTabButtons.forEach((button) => {
       button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab, { openPanel: true }));
     });
@@ -693,18 +762,21 @@
       fetchUsers({ silent: true });
       fetchLocalRecords({ silent: true });
       fetchOwnerActivityLog({ silent: true });
+      fetchAttendanceRecords({ silent: true });
     });
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         fetchUsers({ silent: true });
         fetchLocalRecords({ silent: true });
         fetchOwnerActivityLog({ silent: true });
+        fetchAttendanceRecords({ silent: true });
       }
     });
     window.setInterval(() => {
       fetchUsers({ silent: true });
       fetchLocalRecords({ silent: true });
       fetchOwnerActivityLog({ silent: true });
+      fetchAttendanceRecords({ silent: true });
     }, 15000);
   }
 
@@ -775,6 +847,7 @@
       renderEmployees();
       renderSuppliers();
       populateMedicineOptions();
+      renderAttendanceDashboard();
     } catch (error) {
       if (!options.silent) {
         console.warn("Gagal menyinkronkan data karyawan/supplier:", error);
@@ -3391,6 +3464,7 @@
     }
     if (els.addMedicineButton) els.addMedicineButton.hidden = !access.has("edit_obat");
     renderTableBody();
+    renderAttendanceDashboard();
 
     if (state.activeView && !canView(state.activeView, access)) {
       const firstAllowed = ACCESS_MENUS.find((item) => access.has(item.key)) || ACCESS_MENUS[0];
@@ -3400,8 +3474,14 @@
 
   function canView(viewName, access) {
     if (viewName === "home") return true;
+    if (!access) {
+      const user = getCurrentUserRecord();
+      access = new Set(user.access || []);
+      if (isOwnerUser(user)) ACCESS_MENUS.forEach((item) => access.add(item.key));
+    }
     const map = {
       dashboard: "dashboard",
+      presensi: "presensi",
       "cari-data-obat": "cari_data_obat",
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
@@ -3416,6 +3496,7 @@
 
   function accessKeyToView(key) {
     const map = {
+      presensi: "presensi",
       cari_data_obat: "cari-data-obat",
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
@@ -3443,7 +3524,7 @@
   function canManageAttendanceShift(user) {
     const role = normalizeSearch(user?.role);
     const username = normalizeSearch(user?.username || user?.name || "");
-    return role === "owner" || role === "admin" || role === "administrator" || username === "owner" || username === "admin";
+    return role === "owner" || role === "admin" || role === "administrator" || role === "asisten apoteker" || username === "owner" || username === "admin";
   }
 
   function renderEmployees() {
@@ -4618,6 +4699,485 @@
     else els.profileStatusText.removeAttribute("data-type");
   }
 
+  async function fetchAttendanceRecords(options = {}) {
+    ensureAttendanceFilterDefaults();
+    const user = getCurrentUserRecord();
+    const identity = getAttendanceIdentity(user);
+    const attendanceName = resolveAttendanceEmployeeName(user);
+
+    try {
+      if (options.manual && els.attendanceStatusText) {
+        els.attendanceStatusText.textContent = "Menyinkronkan catatan kehadiran...";
+      }
+
+      const payload = await getAbsensiRecords({
+        action: "listAttendanceRecords",
+        role: user.role || "",
+        username: user.username || "",
+        name: attendanceName || identity.name,
+        nama: attendanceName || identity.name,
+        nama_karyawan: attendanceName || identity.name,
+        email: identity.email,
+        limit: 1000
+      });
+
+      if (!Array.isArray(payload.records) && !Array.isArray(payload.data)) {
+        throw new Error("Endpoint listAttendanceRecords belum aktif di Apps Script absensi.");
+      }
+
+      const records = Array.isArray(payload.records)
+        ? payload.records
+        : (Array.isArray(payload.data) ? payload.data : []);
+
+      state.attendanceRecords = records.map(normalizeAttendanceRecord).filter((record) => record.name);
+      state.attendanceGroups = buildAttendanceGroups(state.attendanceRecords);
+      renderAttendanceDashboard();
+
+      if (els.attendanceStatusText) {
+        els.attendanceStatusText.textContent = options.manual
+          ? "Catatan kehadiran berhasil disinkronkan."
+          : "Catatan kehadiran tersinkron dengan Google Sheet.";
+      }
+    } catch (error) {
+      if (!options.silent) {
+        console.warn("Gagal memuat catatan presensi:", error);
+      }
+      if (els.attendanceStatusText) {
+        els.attendanceStatusText.textContent = "Endpoint presensi belum bisa diakses. Pastikan Apps Script absensi sudah diperbarui.";
+      }
+      renderAttendanceDashboard();
+    }
+  }
+
+  async function postToAbsensiApi(payload) {
+    const response = await fetch(ABSENSI_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
+  }
+
+  async function getAbsensiRecords(params) {
+    const url = new URL(ABSENSI_API_URL);
+    Object.entries(params || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+    });
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
+  }
+
+  function ensureAttendanceFilterDefaults() {
+    const today = getTodayDateKey();
+    const month = getCurrentMonthValue();
+    const year = String(new Date().getFullYear());
+
+    if (!state.attendanceDate) state.attendanceDate = today;
+    if (!state.attendanceMonth) state.attendanceMonth = month;
+    if (!state.attendanceYear) state.attendanceYear = year;
+    if (els.attendanceDateFilter && !els.attendanceDateFilter.value) els.attendanceDateFilter.value = state.attendanceDate;
+    if (els.attendanceMonthFilter) els.attendanceMonthFilter.value = state.attendanceMonth;
+    populateAttendanceYearFilter();
+  }
+
+  function populateAttendanceYearFilter() {
+    if (!els.attendanceYearFilter || els.attendanceYearFilter.options.length) return;
+    const current = new Date().getFullYear();
+    els.attendanceYearFilter.innerHTML = Array.from({ length: 5 }, (_, index) => {
+      const year = current - 2 + index;
+      return `<option value="${year}">${year}</option>`;
+    }).join("");
+    els.attendanceYearFilter.value = state.attendanceYear || String(current);
+  }
+
+  function normalizeAttendanceRecord(record) {
+    const timestamp = String(record.timestamp || record.Timestamp || "").trim();
+    const date = normalizeAttendanceDateKey(record.date || record.tanggal || record.Tanggal, timestamp);
+    const time = normalizeAttendanceTime(record.time || record.jam || record.Jam, timestamp);
+    const status = normalizeAttendanceStatus(record.status || record.status_kehadiran || record.jenis_absen || record.jenisAbsen);
+    const name = String(record.nama || record.nama_karyawan || record.namaKaryawan || record.name || "").trim();
+
+    return {
+      rowNumber: Number(record.rowNumber || record.row || record._row || 0),
+      timestamp,
+      date,
+      time,
+      name,
+      status,
+      shift: normalizeAttendanceShift(record.shift || record.Shift),
+      warningMessage: String(record.warningMessage || record.attendance_warning || record.attendanceWarning || "").trim(),
+      warningFlag: normalizeSearch(record.warningFlag || record.attendance_flag || record.attendanceFlag || "")
+    };
+  }
+
+  function buildAttendanceGroups(records) {
+    const map = new Map();
+
+    records.forEach((record) => {
+      if (!record.name || !record.date) return;
+      const key = `${normalizeSearch(record.name)}|${record.date}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          name: record.name,
+          date: record.date,
+          shift: record.shift || "",
+          datang: "",
+          pulang: "",
+          datangRow: 0,
+          pulangRow: 0,
+          warningMessage: "",
+          warningFlag: "",
+          records: []
+        });
+      }
+
+      const item = map.get(key);
+      item.records.push(record);
+      if (record.shift && !item.shift) item.shift = record.shift;
+      if (record.warningMessage && !item.warningMessage) item.warningMessage = record.warningMessage;
+      if (record.warningFlag && !item.warningFlag) item.warningFlag = record.warningFlag;
+
+      if (record.status === "PULANG") {
+        if (!item.pulang || record.time > item.pulang) {
+          item.pulang = record.time;
+          item.pulangRow = record.rowNumber;
+        }
+        return;
+      }
+
+      if (!item.datang || record.time < item.datang) {
+        item.datang = record.time;
+        item.datangRow = record.rowNumber;
+      }
+    });
+
+    return Array.from(map.values())
+      .map((group) => ({
+        ...group,
+        shift: group.shift || inferAttendanceShift(group.datang),
+        duration: calculateAttendanceDuration(group.datang, group.pulang),
+        statusLabel: getAttendanceStatusLabel(group)
+      }))
+      .sort((a, b) => (`${b.date} ${b.datang || b.pulang}`).localeCompare(`${a.date} ${a.datang || a.pulang}`));
+  }
+
+  function renderAttendanceDashboard() {
+    if (!els.attendanceTableBody) return;
+    ensureAttendanceFilterDefaults();
+    const user = getCurrentUserRecord();
+    const canEdit = isAdminUser(user);
+    const visibleGroups = getVisibleAttendanceGroups();
+    const selectedDate = state.attendanceDate || getTodayDateKey();
+    const todayGroups = visibleGroups.filter((group) => group.date === selectedDate);
+    const monthGroups = visibleGroups.filter((group) => group.date.slice(0, 7) === `${state.attendanceYear}-${state.attendanceMonth}`);
+    const employees = getVisibleAttendanceEmployees();
+    const employeeCount = employees.length || countUniqueNames(visibleGroups);
+    const presentToday = todayGroups.filter((group) => group.datang).length;
+    const lateToday = todayGroups.filter((group) => isLateAttendance(group)).length;
+    const absentToday = Math.max(0, employeeCount - presentToday);
+    const workDays = countWorkDaysInMonth(Number(state.attendanceYear), Number(state.attendanceMonth));
+    const pagi = monthGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+    const sore = monthGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+    const shiftTotal = Math.max(1, pagi + sore);
+
+    document.body.classList.toggle("attendance-can-edit", canEdit);
+    if (els.attendanceActionHeader) els.attendanceActionHeader.hidden = !canEdit;
+    setText(els.attendanceTotalEmployees, formatNumber(employeeCount));
+    setText(els.attendancePresentToday, formatNumber(presentToday));
+    setText(els.attendanceLateToday, formatNumber(lateToday));
+    setText(els.attendanceAbsentToday, formatNumber(absentToday));
+    setText(els.attendanceWorkDays, `${formatNumber(workDays)} Hari`);
+    setText(els.attendanceWorkDaysSide, `${formatNumber(workDays)} Hari`);
+    setText(els.attendanceMonthTitle, `${getMonthName(state.attendanceMonth)} ${state.attendanceYear}`);
+    setText(els.attendanceShiftPagi, `${formatNumber(pagi)} Hari`);
+    setText(els.attendanceShiftSore, `${formatNumber(sore)} Hari`);
+    if (els.attendanceShiftPagi?.nextElementSibling) els.attendanceShiftPagi.nextElementSibling.style.setProperty("--bar", `${Math.round((pagi / shiftTotal) * 100)}%`);
+    if (els.attendanceShiftSore?.nextElementSibling) els.attendanceShiftSore.nextElementSibling.style.setProperty("--bar", `${Math.round((sore / shiftTotal) * 100)}%`);
+
+    renderAttendanceTable(todayGroups, canEdit);
+    renderAttendanceMonthlyTable(monthGroups, employees, workDays);
+  }
+
+  function renderAttendanceTable(groups, canEdit) {
+    if (!els.attendanceTableBody) return;
+
+    if (!groups.length) {
+      els.attendanceTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="${canEdit ? 8 : 7}">Belum ada catatan kehadiran pada tanggal ini.</td></tr>`;
+      setText(els.attendanceTableInfo, "Menampilkan 0 catatan.");
+      return;
+    }
+
+    els.attendanceTableBody.innerHTML = groups.map((group) => {
+      const actionCell = canEdit
+        ? `<td><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
+        : "";
+      return `
+        <tr>
+          <td><strong>${escapeHtml(group.name)}</strong></td>
+          <td>${escapeHtml(formatAttendanceDate(group.date))}</td>
+          <td><span class="attendance-shift-pill ${normalizeSearch(group.shift).includes("sore") ? "is-sore" : "is-pagi"}">${escapeHtml(group.shift || "-")}</span></td>
+          <td>${escapeHtml(group.datang || "-")}</td>
+          <td>${escapeHtml(group.pulang || "-")}</td>
+          <td>${escapeHtml(group.duration || "-")}</td>
+          <td>${renderAttendanceStatus(group)}</td>
+          ${actionCell}
+        </tr>
+      `;
+    }).join("");
+    setText(els.attendanceTableInfo, `Menampilkan ${formatNumber(groups.length)} catatan pada ${formatAttendanceDate(state.attendanceDate)}.`);
+  }
+
+  function renderAttendanceMonthlyTable(monthGroups, employees, workDays) {
+    if (!els.attendanceMonthlyTableBody) return;
+    const employeeNames = employees.map((employee) => employee.name).filter(Boolean);
+    const names = employeeNames.length
+      ? employeeNames
+      : Array.from(new Set(monthGroups.map((group) => group.name))).sort((a, b) => a.localeCompare(b));
+
+    if (!names.length) {
+      els.attendanceMonthlyTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="8">Belum ada data rekap bulanan.</td></tr>`;
+      setText(els.attendanceMonthlyInfo, "Menampilkan 0 karyawan.");
+      return;
+    }
+
+    els.attendanceMonthlyTableBody.innerHTML = names.map((name) => {
+      const groups = monthGroups.filter((group) => normalizeSearch(group.name) === normalizeSearch(name));
+      const hadir = groups.filter((group) => group.datang).length;
+      const terlambat = groups.filter(isLateAttendance).length;
+      const tidakHadir = Math.max(0, workDays - hadir);
+      const pagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+      const sore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+      const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
+      return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${percent}%</td></tr>`;
+    }).join("");
+    setText(els.attendanceMonthlyInfo, `Menampilkan ${formatNumber(names.length)} karyawan untuk ${getMonthName(state.attendanceMonth)} ${state.attendanceYear}.`);
+  }
+
+  function getVisibleAttendanceGroups() {
+    const user = getCurrentUserRecord();
+    if (isAdminUser(user)) return state.attendanceGroups.slice();
+    const keys = getAttendanceIdentityKeys(user);
+    getVisibleAttendanceEmployees().forEach((employee) => {
+      if (employee.name) keys.add(normalizeSearch(employee.name));
+    });
+    return state.attendanceGroups.filter((group) => keys.has(normalizeSearch(group.name)));
+  }
+
+  function getVisibleAttendanceEmployees() {
+    const user = getCurrentUserRecord();
+    const employees = state.employees.length
+      ? state.employees
+      : state.users.map((item) => ({ name: item.name, email: item.email, phone: item.phone, job: item.role }));
+    if (isAdminUser(user)) return employees.filter((employee) => employee.name);
+    const keys = getAttendanceIdentityKeys(user);
+    const filtered = employees.filter((employee) => {
+      return [employee.name, employee.email, employee.phone].some((value) => keys.has(normalizeSearch(value)));
+    });
+    return filtered.length ? filtered : [{ name: user.name || user.username || "Akun" }];
+  }
+
+  function handleAttendanceTableAction(event) {
+    const button = event.target.closest("[data-attendance-key]");
+    if (!button) return;
+    if (!isAdminUser(getCurrentUserRecord())) return;
+    const group = state.attendanceGroups.find((item) => item.key === button.dataset.attendanceKey);
+    if (group) openAttendanceEditModal(group);
+  }
+
+  function openAttendanceEditModal(group) {
+    if (!els.attendanceEditModal || !group) return;
+    state.editingAttendanceGroup = group;
+    if (els.attendanceEditName) els.attendanceEditName.value = group.name || "";
+    if (els.attendanceEditDate) els.attendanceEditDate.value = group.date || getTodayDateKey();
+    if (els.attendanceEditShift) els.attendanceEditShift.value = normalizeSearch(group.shift).includes("sore") ? "Sore" : "Pagi";
+    if (els.attendanceEditDatang) els.attendanceEditDatang.value = group.datang || "";
+    if (els.attendanceEditPulang) els.attendanceEditPulang.value = group.pulang || "";
+    if (els.attendanceEditWarning) els.attendanceEditWarning.value = group.warningMessage || "";
+    if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Perubahan disimpan langsung ke Google Sheet absensi.";
+    els.attendanceEditModal.hidden = false;
+    document.body.classList.add("dashboard-modal-open");
+  }
+
+  function closeAttendanceEditModal() {
+    if (els.attendanceEditModal) els.attendanceEditModal.hidden = true;
+    state.editingAttendanceGroup = null;
+    syncModalOpenState();
+  }
+
+  async function saveAttendanceEdit(event) {
+    event.preventDefault();
+    const user = getCurrentUserRecord();
+    if (!isAdminUser(user) || !state.editingAttendanceGroup) return;
+    const token = startAppLoading("Menyimpan catatan kehadiran...", 0);
+
+    try {
+      const group = state.editingAttendanceGroup;
+      const payload = await postToAbsensiApi({
+        action: "updateAttendanceRecord",
+        role: user.role || "",
+        username: user.username || user.name || "",
+        name: els.attendanceEditName?.value || group.name,
+        date: els.attendanceEditDate?.value || group.date,
+        shift: els.attendanceEditShift?.value || group.shift,
+        jamDatang: els.attendanceEditDatang?.value || "",
+        jamPulang: els.attendanceEditPulang?.value || "",
+        datangRow: group.datangRow || 0,
+        pulangRow: group.pulangRow || 0,
+        warningMessage: els.attendanceEditWarning?.value || "",
+        warningFlag: els.attendanceEditWarning?.value ? "manual_note" : "",
+        updatedBy: user.name || user.username || "Admin"
+      });
+
+      if (!payload || (payload.ok !== true && payload.success !== true)) {
+        throw new Error(payload?.message || payload?.error || "Catatan kehadiran gagal disimpan.");
+      }
+
+      if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Catatan berhasil disimpan online.";
+      closeAttendanceEditModal();
+      await fetchAttendanceRecords({ manual: true });
+    } catch (error) {
+      if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = error.message || "Catatan kehadiran gagal disimpan.";
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  function getAttendanceIdentity(user) {
+    return {
+      name: String(user?.name || user?.username || "").trim(),
+      email: String(user?.email || "").trim()
+    };
+  }
+
+  function resolveAttendanceEmployeeName(user) {
+    const keys = getAttendanceIdentityKeys(user);
+    const employee = state.employees.find((item) => {
+      return [item.name, item.email, item.phone].some((value) => keys.has(normalizeSearch(value)));
+    });
+    return String(employee?.name || user?.name || user?.username || "").trim();
+  }
+
+  function getAttendanceIdentityKeys(user) {
+    return new Set([user?.name, user?.username, user?.email, user?.phone]
+      .map(normalizeSearch)
+      .filter(Boolean));
+  }
+
+  function normalizeAttendanceStatus(value) {
+    const text = normalizeSearch(value);
+    return text.includes("pulang") || text.includes("keluar") || text.includes("out") ? "PULANG" : "DATANG";
+  }
+
+  function normalizeAttendanceShift(value) {
+    const text = normalizeSearch(value);
+    if (text.includes("sore")) return "Sore";
+    if (text.includes("pagi")) return "Pagi";
+    return String(value || "").trim();
+  }
+
+  function inferAttendanceShift(time) {
+    if (!time) return "Pagi";
+    const hour = Number(String(time).slice(0, 2));
+    return hour >= 12 ? "Sore" : "Pagi";
+  }
+
+  function normalizeAttendanceDateKey(value, timestamp) {
+    const text = String(value || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const slash = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (slash) return `${slash[3]}-${String(slash[2]).padStart(2, "0")}-${String(slash[1]).padStart(2, "0")}`;
+    const date = new Date(timestamp || text);
+    if (Number.isNaN(date.getTime())) return getTodayDateKey();
+    return formatDateKey(date);
+  }
+
+  function normalizeAttendanceTime(value, timestamp) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{1,2}):(\d{2})/);
+    if (match) return `${String(match[1]).padStart(2, "0")}:${match[2]}`;
+    const date = new Date(timestamp || text);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function calculateAttendanceDuration(start, end) {
+    const startMinutes = getClockMinutes(start);
+    const endMinutes = getClockMinutes(end);
+    if (startMinutes < 0 || endMinutes < 0) return "";
+    const diff = endMinutes >= startMinutes ? endMinutes - startMinutes : endMinutes + 1440 - startMinutes;
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}j ${minutes}m`;
+  }
+
+  function getClockMinutes(value) {
+    const match = String(value || "").match(/^(\d{2}):(\d{2})$/);
+    if (!match) return -1;
+    return Number(match[1]) * 60 + Number(match[2]);
+  }
+
+  function getAttendanceStatusLabel(group) {
+    if (!group.datang) return "Tidak Hadir";
+    if (normalizeSearch(group.warningFlag).includes("late") || normalizeSearch(group.warningMessage).includes("terlambat")) return "Terlambat";
+    if (normalizeSearch(group.warningFlag).includes("early") || normalizeSearch(group.warningMessage).includes("terlalu cepat")) return "Pulang Cepat";
+    return "Hadir";
+  }
+
+  function isLateAttendance(group) {
+    return getAttendanceStatusLabel(group) === "Terlambat";
+  }
+
+  function renderAttendanceStatus(group) {
+    const label = group.statusLabel || getAttendanceStatusLabel(group);
+    const key = normalizeSearch(label).replace(/\s+/g, "-");
+    const note = group.warningMessage ? `<small>${escapeHtml(group.warningMessage)}</small>` : "";
+    return `<span class="attendance-status-pill is-${key}">${escapeHtml(label)}</span>${note}`;
+  }
+
+  function countUniqueNames(groups) {
+    return new Set(groups.map((group) => normalizeSearch(group.name)).filter(Boolean)).size;
+  }
+
+  function countWorkDaysInMonth(year, month) {
+    const totalDays = new Date(year, month, 0).getDate();
+    let count = 0;
+    for (let day = 1; day <= totalDays; day += 1) {
+      const date = new Date(year, month - 1, day);
+      if (date.getDay() !== 0) count += 1;
+    }
+    return count;
+  }
+
+  function getTodayDateKey() {
+    return formatDateKey(new Date());
+  }
+
+  function getCurrentMonthValue() {
+    return String(new Date().getMonth() + 1).padStart(2, "0");
+  }
+
+  function formatDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+
+  function formatAttendanceDate(dateKey) {
+    const match = String(dateKey || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return dateKey || "-";
+    return `${match[3]} ${getMonthName(match[2])} ${match[1]}`;
+  }
+
+  function getMonthName(value) {
+    const names = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return names[Math.max(0, Math.min(11, Number(value) - 1))] || "";
+  }
+
+  function setText(element, value) {
+    if (element) element.textContent = value;
+  }
+
   function renderReports() {
     if (!els.reportTotal) return;
     const active = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "aktif").length;
@@ -4660,6 +5220,10 @@
     });
     if (els.viewTitle) els.viewTitle.textContent = VIEW_TITLES[viewName];
     if (viewName === "cari-data-obat") renderQuickSearchResults();
+    if (viewName === "presensi") {
+      renderAttendanceDashboard();
+      fetchAttendanceRecords({ silent: true });
+    }
     if (viewName === "home") maybeShowHomePrayerReminder();
     setSidebarCollapsed(true);
   }

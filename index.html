@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260607-dashboard-v51">
-  <script defer src="assets/auth-guard.js?v=20260607-dashboard-v51"></script>
-  <script defer src="assets/app.js?v=20260607-dashboard-v51"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260607-dashboard-v52">
+  <script defer src="assets/auth-guard.js?v=20260607-dashboard-v52"></script>
+  <script defer src="assets/app.js?v=20260607-dashboard-v52"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260607-dashboard-v51"></script>
+  <script defer src="assets/home-dashboard.js?v=20260607-dashboard-v52"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -60,6 +60,17 @@
           </svg>
           <span class="sidebar-label">Absensi Face ID</span>
         </a>
+        <button class="sidebar-link" type="button" data-view-target="presensi" data-access-key="presensi" title="Presensi">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 2v4"></path>
+            <path d="M16 2v4"></path>
+            <rect x="4" y="4" width="16" height="18" rx="2"></rect>
+            <path d="M8 12h8"></path>
+            <path d="M8 16h5"></path>
+            <path d="m15 17 2 2 4-4"></path>
+          </svg>
+          <span class="sidebar-label">Presensi</span>
+        </button>
         <button class="sidebar-link" type="button" data-view-target="cari-data-obat" data-access-key="cari_data_obat" title="Cari Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="10.5" cy="10.5" r="6.5"></circle>
@@ -233,6 +244,19 @@
                 </span>
                 <strong>Absensi<br>Face ID</strong>
               </a>
+              <button class="mobile-home-card" type="button" data-view-target="presensi" data-access-key="presensi">
+                <span class="mobile-home-icon icon-presence">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 2v4"></path>
+                    <path d="M16 2v4"></path>
+                    <rect x="4" y="4" width="16" height="18" rx="2"></rect>
+                    <path d="M8 12h8"></path>
+                    <path d="M8 16h5"></path>
+                    <path d="m15 17 2 2 4-4"></path>
+                  </svg>
+                </span>
+                <strong>Presensi<br>Kehadiran</strong>
+              </button>
               <button class="mobile-home-card" type="button" data-view-target="data-obat" data-access-key="data_obat">
                 <span class="mobile-home-icon icon-medicine">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -311,6 +335,111 @@
             <article class="stat-card" role="button" tabindex="0" data-report-filter="empty"><span class="stat-icon stat-purple">0</span><span><small>Obat Kosong</small><strong id="reportEmpty">0</strong><em>Stok 0 / kosong</em></span></article>
             <article class="stat-card" role="button" tabindex="0" data-report-filter="low"><span class="stat-icon stat-orange">S</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
             <article class="stat-card" role="button" tabindex="0" data-report-filter="out"><span class="stat-icon stat-pink">-</span><span><small>Stok Habis</small><strong id="reportOut">0</strong><em>Perlu pemesanan</em></span></article>
+          </section>
+        </section>
+
+        <section class="dashboard-view" id="view-presensi" data-view="presensi">
+          <section class="attendance-dashboard" aria-labelledby="attendancePageTitle">
+            <div class="attendance-page-head">
+              <div>
+                <h2 id="attendancePageTitle">Presensi / Catatan Kehadiran</h2>
+                <p id="attendanceStatusText">Catatan kehadiran tersinkron dengan Google Sheet.</p>
+              </div>
+              <button class="secondary-action" id="attendanceRefreshButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"></path><path d="M21 4v6h-6"></path></svg>
+                Refresh
+              </button>
+            </div>
+
+            <section class="attendance-stats" aria-label="Ringkasan presensi">
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-blue">K</span><span><small>Total Karyawan</small><strong id="attendanceTotalEmployees">0</strong><em>Seluruh karyawan aktif</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-green">H</span><span><small>Hadir Hari Ini</small><strong id="attendancePresentToday">0</strong><em>Sudah absen datang</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-purple">T</span><span><small>Terlambat Hari Ini</small><strong id="attendanceLateToday">0</strong><em>Datang melewati batas</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-orange">A</span><span><small>Tidak Hadir Hari Ini</small><strong id="attendanceAbsentToday">0</strong><em>Belum ada absen</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-pink">B</span><span><small>Total Hari Kerja</small><strong id="attendanceWorkDays">0 Hari</strong><em>Bulan berjalan</em></span></article>
+            </section>
+
+            <div class="attendance-layout">
+              <article class="attendance-card attendance-records-card">
+                <div class="attendance-card-head">
+                  <div>
+                    <h3>Catatan Kehadiran</h3>
+                    <p>Owner dan admin dapat mengedit data, role lain hanya melihat catatan akunnya.</p>
+                  </div>
+                  <div class="attendance-toolbar">
+                    <input id="attendanceDateFilter" type="date" aria-label="Filter tanggal presensi">
+                  </div>
+                </div>
+                <div class="simple-table-wrap attendance-table-wrap">
+                  <table class="simple-table attendance-table">
+                    <thead>
+                      <tr>
+                        <th>Nama Karyawan</th>
+                        <th>Tanggal</th>
+                        <th>Shift</th>
+                        <th>Jam Datang</th>
+                        <th>Jam Pulang</th>
+                        <th>Durasi Kerja</th>
+                        <th>Status</th>
+                        <th id="attendanceActionHeader">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                  </table>
+                </div>
+                <p class="table-footnote" id="attendanceTableInfo">Memuat catatan kehadiran...</p>
+              </article>
+
+              <aside class="attendance-card attendance-month-card">
+                <div class="attendance-card-head">
+                  <div>
+                    <h3>Rekap Bulan Ini</h3>
+                    <p id="attendanceMonthTitle">Ringkasan shift bulan berjalan.</p>
+                  </div>
+                </div>
+                <div class="attendance-month-filters">
+                  <select id="attendanceMonthFilter" aria-label="Bulan presensi">
+                    <option value="01">Januari</option>
+                    <option value="02">Februari</option>
+                    <option value="03">Maret</option>
+                    <option value="04">April</option>
+                    <option value="05">Mei</option>
+                    <option value="06">Juni</option>
+                    <option value="07">Juli</option>
+                    <option value="08">Agustus</option>
+                    <option value="09">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                  </select>
+                  <select id="attendanceYearFilter" aria-label="Tahun presensi"></select>
+                </div>
+                <div class="attendance-month-total">
+                  <span>Total Hari Kerja</span>
+                  <strong id="attendanceWorkDaysSide">0 Hari</strong>
+                </div>
+                <div class="attendance-shift-bars">
+                  <div><span>Pagi</span><strong id="attendanceShiftPagi">0 Hari</strong><i style="--bar:0%"></i></div>
+                  <div><span>Sore</span><strong id="attendanceShiftSore">0 Hari</strong><i style="--bar:0%"></i></div>
+                </div>
+                <button class="filter-action" id="attendanceDetailButton" type="button">Lihat Rekap Detail</button>
+              </aside>
+            </div>
+
+            <article class="attendance-card attendance-monthly-card">
+              <div class="attendance-card-head">
+                <div>
+                  <h3>Rekap Kehadiran Bulanan</h3>
+                  <p id="attendanceMonthlyInfo">Menampilkan rekap karyawan bulan ini.</p>
+                </div>
+              </div>
+              <div class="simple-table-wrap">
+                <table class="simple-table attendance-monthly-table">
+                  <thead><tr><th>Nama Karyawan</th><th>Total Hari Kerja</th><th>Hadir</th><th>Terlambat</th><th>Tidak Hadir</th><th>Shift Pagi</th><th>Shift Sore</th><th>Persentase</th></tr></thead>
+                  <tbody id="attendanceMonthlyTableBody"></tbody>
+                </table>
+              </div>
+            </article>
           </section>
         </section>
 
@@ -823,6 +952,37 @@
       <div class="form-actions">
         <button class="text-button" id="cancelRecordButton" type="button">Batal</button>
         <button class="secondary-action" type="submit">Simpan</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="dashboard-modal" id="attendanceEditModal" hidden>
+    <form class="modal-card record-modal-card" id="attendanceEditForm">
+      <div class="modal-head">
+        <div>
+          <h2>Edit Catatan Kehadiran</h2>
+          <p id="attendanceEditStatus">Perubahan disimpan langsung ke Google Sheet absensi.</p>
+        </div>
+        <button class="icon-button" id="closeAttendanceEditButton" type="button" aria-label="Tutup">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+      <div class="form-grid">
+        <label>Nama Karyawan<input id="attendanceEditName" type="text" required></label>
+        <label>Tanggal<input id="attendanceEditDate" type="date" required></label>
+        <label>Shift
+          <select id="attendanceEditShift">
+            <option value="Pagi">Pagi</option>
+            <option value="Sore">Sore</option>
+          </select>
+        </label>
+        <label>Jam Datang<input id="attendanceEditDatang" type="time"></label>
+        <label>Jam Pulang<input id="attendanceEditPulang" type="time"></label>
+        <label class="wide-field">Peringatan / Catatan<input id="attendanceEditWarning" type="text" placeholder="Contoh: Terlambat 10 menit"></label>
+      </div>
+      <div class="form-actions">
+        <button class="text-button" id="cancelAttendanceEditButton" type="button">Batal</button>
+        <button class="secondary-action" type="submit">Simpan Presensi</button>
       </div>
     </form>
   </section>

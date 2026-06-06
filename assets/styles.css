@@ -14,6 +14,449 @@
   --shadow: 0 18px 48px rgba(17, 69, 134, 0.12);
 }
 
+/* 20260607 v52b: final compact medicine modal + realtime attendance page. */
+@media (min-width: 901px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    width: min(1220px, calc(100vw - 72px)) !important;
+    max-height: calc(100dvh - 28px) !important;
+    padding: 18px 20px 14px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  #medicineForm .modal-head {
+    margin-bottom: 10px !important;
+  }
+
+  #medicineForm .medicine-form-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr) !important;
+    gap: 10px 12px !important;
+    align-items: start !important;
+  }
+
+  #medicineForm .medicine-section {
+    padding: 12px 12px 10px !important;
+    border-radius: 13px !important;
+    min-width: 0 !important;
+  }
+
+  #medicineForm .medicine-section-barang,
+  #medicineForm .medicine-section-beli {
+    grid-column: 1 !important;
+  }
+
+  #medicineForm .medicine-section-keterangan {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+  }
+
+  #medicineForm .medicine-section-jual {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px 12px !important;
+  }
+
+  #medicineForm .medicine-section legend {
+    padding-right: 8px !important;
+    font-size: 0.72rem !important;
+  }
+
+  #medicineForm .medicine-section-grid {
+    gap: 6px !important;
+  }
+
+  #medicineForm .medicine-field {
+    grid-template-columns: 102px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  #medicineForm .medicine-field-label {
+    font-size: 0.68rem !important;
+    line-height: 1.15 !important;
+  }
+
+  #medicineForm .medicine-field input,
+  #medicineForm .medicine-field select,
+  #medicineForm .medicine-field textarea {
+    min-height: 29px !important;
+    padding: 0 8px !important;
+    font-size: 0.69rem !important;
+    border-radius: 8px !important;
+  }
+
+  #medicineForm .medicine-field textarea {
+    min-height: 72px !important;
+    padding-top: 8px !important;
+  }
+
+  #medicineForm .medicine-control-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) 30px !important;
+    gap: 5px !important;
+  }
+
+  #medicineForm .medicine-add-option,
+  #medicineForm .medicine-auto-badge {
+    width: 30px !important;
+    height: 29px !important;
+    min-width: 30px !important;
+    border-radius: 8px !important;
+    font-size: 0.62rem !important;
+  }
+
+  #medicineForm .medicine-code-field .medicine-control-wrap {
+    max-width: 254px !important;
+    grid-template-columns: minmax(0, 196px) 44px !important;
+  }
+
+  #medicineForm #medicine-kode {
+    max-width: 196px !important;
+  }
+
+  #medicineForm .medicine-section-barang .medicine-field:not(.is-wide) .medicine-control-wrap,
+  #medicineForm .medicine-section-beli .medicine-field:not(.is-wide) .medicine-control-wrap,
+  #medicineForm .medicine-section-keterangan .medicine-field:not(.is-wide) .medicine-control-wrap {
+    max-width: 392px !important;
+  }
+
+  #medicineForm #medicine-kategori,
+  #medicineForm #medicine-suplier,
+  #medicineForm #medicine-satuan_beli {
+    max-width: 338px !important;
+  }
+
+  #medicineForm #medicine-stok_min {
+    max-width: 132px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    width: max-content !important;
+    max-width: 100% !important;
+    grid-template-columns: 236px 78px !important;
+    gap: 8px !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    grid-template-columns: 102px 118px !important;
+  }
+
+  #medicineForm #medicine-stok {
+    width: 118px !important;
+  }
+
+  #medicineForm .medicine-stock-unit {
+    min-height: 29px !important;
+    width: 78px !important;
+    padding-inline: 8px !important;
+    font-size: 0.68rem !important;
+  }
+
+  #medicineForm .medicine-info-tabs {
+    margin-top: 8px !important;
+    gap: 4px !important;
+  }
+
+  #medicineForm .medicine-info-tabs button {
+    min-height: 28px !important;
+    font-size: 0.68rem !important;
+  }
+
+  #medicineForm .medicine-sale-block {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  #medicineForm .medicine-sale-block h4 {
+    margin-bottom: 5px !important;
+    font-size: 0.7rem !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: 58px 84px 84px 48px 24px !important;
+    gap: 4px !important;
+  }
+
+  #medicineForm .medicine-price-head {
+    font-size: 0.58rem !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-control-wrap {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field input,
+  #medicineForm .medicine-sale-row .medicine-field select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 26px !important;
+    padding-inline: 5px !important;
+    font-size: 0.6rem !important;
+  }
+
+  #medicineForm .medicine-sale-delete {
+    width: 24px !important;
+    height: 26px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    max-height: calc(100dvh - 16px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  #medicineForm .medicine-section-jual {
+    overflow: visible !important;
+  }
+
+  #medicineForm .medicine-sale-block {
+    overflow-x: auto !important;
+  }
+}
+
+.attendance-dashboard {
+  display: grid;
+  gap: 16px;
+}
+
+.attendance-page-head,
+.attendance-card,
+.attendance-month-total {
+  border: 1px solid rgba(112, 151, 226, 0.26);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 48px rgba(24, 52, 112, 0.08);
+}
+
+.attendance-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 18px;
+}
+
+.attendance-page-head h2,
+.attendance-card h3 {
+  margin: 0;
+  color: #071955;
+}
+
+.attendance-page-head p,
+.attendance-card-head p,
+.attendance-monthly-card p {
+  margin: 4px 0 0;
+  color: #5b6f9c;
+  font-size: 0.86rem;
+}
+
+.attendance-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.attendance-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+  align-items: start;
+}
+
+.attendance-card {
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.attendance-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.attendance-toolbar,
+.attendance-month-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.attendance-toolbar input,
+.attendance-month-filters select {
+  min-height: 38px;
+  border: 1px solid #cfe0ff;
+  border-radius: 10px;
+  padding: 0 12px;
+  color: #081a55;
+  font: inherit;
+  font-size: 0.86rem;
+  background: #fff;
+}
+
+.attendance-table-wrap {
+  max-height: 430px;
+  overflow: auto;
+}
+
+.attendance-table td:first-child strong {
+  display: block;
+  color: #071955;
+}
+
+.attendance-shift-pill,
+.attendance-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  min-height: 24px;
+  border-radius: 7px;
+  padding: 0 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.attendance-shift-pill.is-pagi {
+  color: #0c8a57;
+  background: #e4f8ee;
+  border: 1px solid #bfebd3;
+}
+
+.attendance-shift-pill.is-sore {
+  color: #6b38e8;
+  background: #f0e9ff;
+  border: 1px solid #d7c8ff;
+}
+
+.attendance-status-pill.is-hadir {
+  color: #0b8a4d;
+  background: #e4f9ee;
+}
+
+.attendance-status-pill.is-terlambat,
+.attendance-status-pill.is-pulang-cepat {
+  color: #b85a00;
+  background: #fff2dc;
+}
+
+.attendance-status-pill.is-tidak-hadir {
+  color: #d8284a;
+  background: #ffe8ee;
+}
+
+.attendance-table td small {
+  display: block;
+  margin-top: 4px;
+  max-width: 190px;
+  color: #6677a5;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.attendance-month-card {
+  display: grid;
+  gap: 14px;
+}
+
+.attendance-month-filters select {
+  width: 100%;
+}
+
+.attendance-month-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.attendance-month-total span,
+.attendance-shift-bars span {
+  color: #61739f;
+  font-size: 0.82rem;
+}
+
+.attendance-month-total strong {
+  color: #071955;
+  font-size: 1.32rem;
+}
+
+.attendance-shift-bars {
+  display: grid;
+  gap: 14px;
+}
+
+.attendance-shift-bars div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.attendance-shift-bars i {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #20c275 var(--bar, 0%), #e8edf8 var(--bar, 0%));
+}
+
+.attendance-shift-bars div:nth-child(2) i {
+  background: linear-gradient(90deg, #7c49f2 var(--bar, 0%), #e8edf8 var(--bar, 0%));
+}
+
+.attendance-edit-button {
+  width: 32px;
+  height: 32px;
+}
+
+body:not(.attendance-can-edit) .attendance-table th:last-child,
+body:not(.attendance-can-edit) .attendance-table td:last-child {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .attendance-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attendance-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .attendance-page-head,
+  .attendance-card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .attendance-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-table-wrap,
+  .attendance-monthly-card .simple-table-wrap {
+    overflow-x: auto;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -11299,4 +11742,230 @@ body.notification-open .mobile-bottom-nav {
   #medicineForm .medicine-sale-note {
     display: none !important;
   }
+}
+
+/* 20260607 v52: readable compact medicine form with scrollable bottom fields. */
+@media (min-width: 901px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    max-height: calc(100dvh - 66px) !important;
+    overflow: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-width: thin !important;
+  }
+
+  #medicineForm .medicine-form-grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) !important;
+  }
+
+  #medicineForm .medicine-section-grid {
+    gap: 7px !important;
+  }
+
+  #medicineForm .medicine-field {
+    grid-template-columns: 112px minmax(0, 1fr) !important;
+  }
+
+  #medicineForm .medicine-control-wrap {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  #medicineForm .medicine-code-field .medicine-control-wrap {
+    grid-template-columns: minmax(0, 0.75fr) auto !important;
+  }
+
+  #medicineForm #medicine-kode,
+  #medicineForm #medicine-kategori,
+  #medicineForm #medicine-suplier,
+  #medicineForm #medicine-stok_min,
+  #medicineForm #medicine-satuan_beli {
+    max-width: 100% !important;
+  }
+
+  #medicineForm #medicine-kode {
+    max-width: 260px !important;
+  }
+
+  #medicineForm #medicine-kategori,
+  #medicineForm #medicine-suplier,
+  #medicineForm #medicine-satuan_beli {
+    max-width: 360px !important;
+  }
+
+  #medicineForm #medicine-stok_min {
+    max-width: 180px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    grid-template-columns: minmax(0, 310px) 78px !important;
+    justify-content: start !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    grid-template-columns: 112px minmax(0, 128px) !important;
+  }
+
+  #medicineForm .medicine-section-jual {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+  }
+
+  #medicineForm .medicine-sale-block {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    width: max-content !important;
+    max-width: 100% !important;
+    grid-template-columns: 58px 76px 78px 48px 24px !important;
+    gap: 4px !important;
+    align-items: center !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field,
+  #medicineForm .medicine-sale-row .medicine-control-wrap {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-control-wrap {
+    display: block !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field input,
+  #medicineForm .medicine-sale-row .medicine-field select {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 27px !important;
+    padding-inline: 5px !important;
+    font-size: 0.62rem !important;
+  }
+
+  #medicineForm .medicine-sale-delete {
+    width: 24px !important;
+    height: 27px !important;
+  }
+
+  #medicineForm > .form-actions {
+    position: sticky !important;
+    bottom: -12px !important;
+    z-index: 4 !important;
+    padding-top: 8px !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.96) 44%) !important;
+  }
+}
+
+/* 20260607 v52c: last-write desktop medicine form corrections. */
+@media (min-width: 901px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    width: min(1220px, calc(100vw - 72px)) !important;
+    max-height: calc(100dvh - 28px) !important;
+    padding: 18px 20px 14px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  #medicineForm .medicine-form-grid {
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr) !important;
+    gap: 10px 12px !important;
+  }
+
+  #medicineForm .medicine-section-barang,
+  #medicineForm .medicine-section-beli {
+    grid-column: 1 !important;
+  }
+
+  #medicineForm .medicine-section-keterangan {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+  }
+
+  #medicineForm .medicine-section-jual {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px 12px !important;
+    overflow: visible !important;
+  }
+
+  #medicineForm .medicine-section {
+    padding: 12px !important;
+    min-width: 0 !important;
+  }
+
+  #medicineForm .medicine-field {
+    grid-template-columns: 102px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  #medicineForm .medicine-control-wrap {
+    grid-template-columns: minmax(0, 1fr) 30px !important;
+    gap: 5px !important;
+  }
+
+  #medicineForm .medicine-code-field .medicine-control-wrap {
+    max-width: 254px !important;
+    grid-template-columns: minmax(0, 196px) 44px !important;
+  }
+
+  #medicineForm #medicine-kode {
+    width: 196px !important;
+    max-width: 196px !important;
+  }
+
+  #medicineForm #medicine-kategori,
+  #medicineForm #medicine-suplier,
+  #medicineForm #medicine-satuan_beli {
+    max-width: 338px !important;
+  }
+
+  #medicineForm #medicine-stok_min {
+    max-width: 132px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    width: max-content !important;
+    max-width: 100% !important;
+    grid-template-columns: 236px 78px !important;
+    gap: 8px !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    grid-template-columns: 102px 118px !important;
+  }
+
+  #medicineForm #medicine-stok {
+    width: 118px !important;
+  }
+
+  #medicineForm .medicine-sale-block {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: 58px 84px 84px 48px 24px !important;
+    gap: 4px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-control-wrap {
+    display: block !important;
+    max-width: none !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field input,
+  #medicineForm .medicine-sale-row .medicine-field select {
+    min-height: 26px !important;
+    padding-inline: 5px !important;
+    font-size: 0.6rem !important;
+  }
+}
+
+.stat-green {
+  color: #0aa66b;
+  background: #e8fbf1;
 }
