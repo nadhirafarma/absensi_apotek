@@ -12375,3 +12375,34 @@ body.notification-open .mobile-bottom-nav {
     gap: 6px !important;
   }
 }
+
+/* 20260607 v56: attendance status text no longer overlaps action icons. */
+.attendance-table .attendance-status-cell {
+  min-width: 230px !important;
+  max-width: 280px !important;
+  vertical-align: top !important;
+}
+
+.attendance-table .attendance-action-cell {
+  width: 54px !important;
+  min-width: 54px !important;
+  max-width: 54px !important;
+  text-align: center !important;
+  vertical-align: top !important;
+}
+
+.attendance-status-stack {
+  display: grid !important;
+  justify-items: start !important;
+  gap: 5px !important;
+  max-width: 250px !important;
+}
+
+.attendance-status-stack small {
+  display: block !important;
+  max-width: 250px !important;
+  margin-top: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.35 !important;
+}

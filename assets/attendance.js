@@ -539,7 +539,7 @@
     if (canBypassAttendanceRules(profile)) {
       return {
         ok: true,
-        message: "GPS dilewati untuk owner/administrator.",
+        message: "GPS dilewati untuk owner.",
         location: null,
         distance: 0
       };
@@ -707,6 +707,9 @@
     const hasDatang = Boolean(result?.datang);
     const hasPulang = Boolean(result?.pulang);
     const shift = normalizeShiftLabel(selected.shift || getShiftLabel());
+    const datangInfo = typeof result.datang === "object" ? result.datang : {};
+    const rawDatangShift = String(datangInfo.shift || result.datangShift || "").trim();
+    const existingDatangShift = rawDatangShift ? normalizeShiftLabel(rawDatangShift) : "";
 
     if ((hasDatang && hasPulang) || (result?.sudahAbsen && !hasDatang && !hasPulang)) {
       return {
@@ -735,6 +738,17 @@
         shift,
         title: "Absen Pulang Sudah Ada",
         message: "Absen pulang hari ini sudah tercatat."
+      };
+    }
+
+    if (selected.type === "PULANG" && hasDatang && existingDatangShift && shift !== existingDatangShift) {
+      const shiftText = existingDatangShift === "SHIFT SORE" ? "shift sore" : "shift pagi";
+      return {
+        blocked: true,
+        type: "PULANG",
+        shift: existingDatangShift,
+        title: "Shift Tidak Sesuai",
+        message: `Anda berada di ${shiftText}, pilih ${shiftText} untuk absen pulang.`
       };
     }
 
@@ -778,7 +792,7 @@
         warning: true,
         flag: "late",
         title: "Absen Terlambat",
-        message: `Anda terlambat ${lateMinutes} menit. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}.`
+        message: `Anda telat absensi selama ${formatDurationWords(lateMinutes)}. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}.`
       };
     }
 
@@ -789,7 +803,7 @@
         warning: true,
         flag: "early_return",
         title: "Pulang Terlalu Cepat",
-        message: `Anda pulang ${earlyMinutes} menit lebih cepat. Waktu pulang ${shiftLabel} mulai jam ${formatRuleTime(returnStart)}.`
+        message: `Anda Pulang ${formatDurationWords(earlyMinutes)} lebih cepat, seharusnya jam ${formatRuleTime(returnStart)}.`
       };
     }
 
@@ -798,7 +812,8 @@
 
   function canBypassAttendanceRules(profile) {
     const role = normalizeSearch(profile?.role || "");
-    return role === "owner" || role === "administrator" || role === "admin";
+    const username = normalizeSearch(profile?.username || profile?.name || "");
+    return role === "owner" || username === "owner";
   }
 
   async function sendAttendance(label, locationResult, attendancePlan) {
@@ -1142,6 +1157,18 @@
     const hour = Math.floor(totalMinutes / 60);
     const minute = totalMinutes % 60;
     return `${String(hour).padStart(2, "0")}.${String(minute).padStart(2, "0")}`;
+  }
+
+  function formatDurationWords(totalMinutes) {
+    const safeMinutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
+    const hours = Math.floor(safeMinutes / 60);
+    const minutes = safeMinutes % 60;
+    const parts = [];
+
+    if (hours) parts.push(`${hours} Jam`);
+    if (minutes || !parts.length) parts.push(`${minutes} Menit`);
+
+    return parts.join(" ");
   }
 
   function showResult(title, name, message, type) {

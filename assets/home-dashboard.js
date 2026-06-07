@@ -4931,7 +4931,7 @@
 
     els.attendanceTableBody.innerHTML = groups.map((group) => {
       const actionCell = canEdit
-        ? `<td><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
+        ? `<td class="attendance-action-cell"><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
         : "";
       return `
         <tr>
@@ -4941,7 +4941,7 @@
           <td>${escapeHtml(group.datang || "-")}</td>
           <td>${escapeHtml(group.pulang || "-")}</td>
           <td>${escapeHtml(group.duration || "-")}</td>
-          <td>${renderAttendanceStatus(group)}</td>
+          <td class="attendance-status-cell">${renderAttendanceStatus(group)}</td>
           ${actionCell}
         </tr>
       `;
@@ -5141,7 +5141,7 @@
   function getAttendanceStatusLabel(group) {
     if (!group.datang) return "Tidak Hadir";
     if (normalizeSearch(group.warningFlag).includes("late") || normalizeSearch(group.warningMessage).includes("terlambat")) return "Terlambat";
-    if (normalizeSearch(group.warningFlag).includes("early") || normalizeSearch(group.warningMessage).includes("terlalu cepat")) return "Pulang Cepat";
+    if (normalizeSearch(group.warningFlag).includes("early") || normalizeSearch(group.warningMessage).includes("terlalu cepat") || normalizeSearch(group.warningMessage).includes("lebih cepat")) return "Pulang Cepat";
     return "Hadir";
   }
 
@@ -5153,7 +5153,7 @@
     const label = group.statusLabel || getAttendanceStatusLabel(group);
     const key = normalizeSearch(label).replace(/\s+/g, "-");
     const note = group.warningMessage ? `<small>${escapeHtml(group.warningMessage)}</small>` : "";
-    return `<span class="attendance-status-pill is-${key}">${escapeHtml(label)}</span>${note}`;
+    return `<span class="attendance-status-stack"><span class="attendance-status-pill is-${key}">${escapeHtml(label)}</span>${note}</span>`;
   }
 
   function countUniqueNames(groups) {
