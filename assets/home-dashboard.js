@@ -2608,6 +2608,7 @@
       const unitIndex = unitMatch ? unitMatch[1] : "";
       const className = [
         "medicine-field",
+        `medicine-field-${key.replace(/_/g, "-")}`,
         options.className || "",
         options.wide ? "is-wide" : "",
         options.compact ? "is-compact" : "",
@@ -2618,7 +2619,9 @@
       const addButton = options.addOption
         ? `<button class="medicine-add-option" type="button" data-add-option="${escapeHtml(key)}" aria-label="Tambah pilihan ${escapeHtml(options.label || column.label)}">+</button>`
         : "";
-      const autoBadge = options.autoBadge ? '<span class="medicine-auto-badge">AUTO</span>' : "";
+      const autoBadge = options.autoBadge
+        ? '<button class="medicine-auto-badge" type="button" data-generate-medicine-code>AUTO</button>'
+        : "";
 
       return `
         <label class="${className}"${unitAttr}>
@@ -2799,6 +2802,13 @@
     if (optionButton) {
       event.preventDefault();
       addMedicineOption(optionButton.dataset.addOption);
+      return;
+    }
+
+    const autoCodeButton = event.target.closest("[data-generate-medicine-code]");
+    if (autoCodeButton) {
+      event.preventDefault();
+      fillRandomMedicineCode();
       return;
     }
 
@@ -3005,12 +3015,21 @@
     return Number.isFinite(number) ? number : 0;
   }
 
-  function getNextMedicineCode() {
-    const maxNumber = state.rows.reduce((max, row) => {
-      const match = String(row.kode || row.barcode || "").match(/^OBT(\d+)$/i);
-      return match ? Math.max(max, Number(match[1]) || 0) : max;
-    }, 0);
-    return `OBT${String(maxNumber + 1).padStart(4, "0")}`;
+  function fillRandomMedicineCode() {
+    const codeInput = document.getElementById("medicine-kode");
+    if (!codeInput) return;
+    codeInput.value = getRandomMedicineCode();
+    codeInput.focus();
+  }
+
+  function getRandomMedicineCode() {
+    const used = new Set(state.rows.map((row) => normalizeSearch(row.kode || row.barcode || "")));
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const number = Math.floor(Math.random() * 10000);
+      const code = `OB${String(number).padStart(4, "0")}`;
+      if (!used.has(normalizeSearch(code))) return code;
+    }
+    return `OB${String(Date.now()).slice(-4)}`;
   }
 
   function openMedicineModal(mode, row = null, index = -1) {
@@ -3030,11 +3049,6 @@
         control.dataset.userEdited = "true";
       }
     });
-
-    if (!row) {
-      const codeInput = document.getElementById("medicine-kode");
-      if (codeInput && !codeInput.value) codeInput.value = getNextMedicineCode();
-    }
 
     const stockUnit = document.getElementById("medicine-stock-unit");
     const buyUnit = document.getElementById("medicine-satuan_beli");

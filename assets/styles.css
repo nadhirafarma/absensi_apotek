@@ -11969,3 +11969,217 @@ body.notification-open .mobile-bottom-nav {
   color: #0aa66b;
   background: #e8fbf1;
 }
+
+/* 20260607 v53: medicine field sizing, inline AUTO/plus buttons, compact master tables. */
+#medicineForm .medicine-auto-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 29px !important;
+  min-height: 29px !important;
+  padding: 0 7px !important;
+  border: 1px solid #d7e4ff !important;
+  border-radius: 8px !important;
+  background: #edf4ff !important;
+  color: #1264eb !important;
+  font-size: 0.58rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+#medicineForm .medicine-auto-badge:hover {
+  background: #dfeaff !important;
+}
+
+#view-data-karyawan .module-card,
+#view-data-supplier .module-card {
+  max-width: 720px !important;
+}
+
+#view-data-karyawan .simple-table-wrap,
+#view-data-supplier .simple-table-wrap {
+  max-width: 640px !important;
+}
+
+#view-data-karyawan .simple-table,
+#view-data-supplier .simple-table {
+  width: 620px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+}
+
+#view-data-karyawan .simple-table th:first-child,
+#view-data-karyawan .simple-table td:first-child,
+#view-data-supplier .simple-table th:first-child,
+#view-data-supplier .simple-table td:first-child {
+  width: calc(100% - 156px) !important;
+}
+
+#view-data-karyawan .simple-table th:last-child,
+#view-data-karyawan .simple-table td:last-child,
+#view-data-supplier .simple-table th:last-child,
+#view-data-supplier .simple-table td:last-child {
+  width: 156px !important;
+  text-align: left !important;
+}
+
+#view-data-karyawan .simple-table tbody tr:nth-child(odd),
+#view-data-supplier .simple-table tbody tr:nth-child(odd) {
+  background: rgba(237, 246, 255, 0.72) !important;
+}
+
+#view-data-karyawan .simple-table tbody tr:nth-child(even),
+#view-data-supplier .simple-table tbody tr:nth-child(even) {
+  background: rgba(255, 244, 250, 0.55) !important;
+}
+
+#view-data-karyawan .simple-table tbody tr:hover,
+#view-data-supplier .simple-table tbody tr:hover {
+  background: rgba(226, 238, 255, 0.92) !important;
+}
+
+@media (min-width: 901px) {
+  #medicineForm .medicine-field-kategori .medicine-control-wrap {
+    max-width: 254px !important;
+    grid-template-columns: minmax(0, 196px) 30px !important;
+  }
+
+  #medicineForm .medicine-field-pabrik .medicine-control-wrap {
+    max-width: 196px !important;
+    grid-template-columns: minmax(0, 196px) !important;
+  }
+
+  #medicineForm #medicine-kategori,
+  #medicineForm #medicine-pabrik {
+    width: 196px !important;
+    max-width: 196px !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    grid-template-columns: 58px 118px 86px 48px 24px !important;
+    gap: 4px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-control-wrap {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 24px !important;
+    gap: 3px !important;
+    align-items: center !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-add-option {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    padding: 0 !important;
+    font-size: 0.78rem !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+    width: min(100% - 12px, 430px) !important;
+    padding: 14px 12px 12px !important;
+  }
+
+  #medicineForm .medicine-field-harga-beli .medicine-control-wrap {
+    max-width: 166px !important;
+  }
+
+  #medicineForm #medicine-harga_beli {
+    width: 166px !important;
+    max-width: 166px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    width: max-content !important;
+    max-width: 100% !important;
+    grid-template-columns: 132px 72px !important;
+    gap: 7px !important;
+    justify-content: start !important;
+    align-items: end !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    display: block !important;
+    width: 132px !important;
+  }
+
+  #medicineForm #medicine-stok {
+    width: 132px !important;
+    max-width: 132px !important;
+  }
+
+  #medicineForm .medicine-stock-unit {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding-inline: 7px !important;
+  }
+
+  #medicineForm .medicine-sale-block {
+    overflow-x: hidden !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    display: grid !important;
+    width: 100% !important;
+    grid-template-columns: 44px 88px 74px 42px 22px !important;
+    gap: 3px !important;
+    align-items: center !important;
+  }
+
+  #medicineForm .medicine-price-head {
+    margin-bottom: 3px !important;
+    font-size: 0.52rem !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-field input,
+  #medicineForm .medicine-sale-row .medicine-field select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 25px !important;
+    padding-inline: 4px !important;
+    font-size: 0.56rem !important;
+    border-radius: 6px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-control-wrap {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 22px !important;
+    gap: 2px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-add-option,
+  #medicineForm .medicine-sale-delete {
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 25px !important;
+    min-height: 25px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+  }
+
+  #medicineForm .medicine-sale-delete svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
