@@ -12183,3 +12183,191 @@ body.notification-open .mobile-bottom-nav {
     height: 12px !important;
   }
 }
+
+/* 20260607 v54: stock-min unit, optional sale unit row, compact purchase/date controls. */
+#medicineForm .medicine-min-stock-row {
+  display: grid !important;
+  grid-template-columns: minmax(96px, 132px) minmax(92px, 118px) !important;
+  gap: 8px !important;
+  align-items: end !important;
+  width: max-content !important;
+  max-width: 100% !important;
+}
+
+#medicineForm .medicine-min-stock-row .medicine-field {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+#medicineForm .medicine-min-stock-row .medicine-control-wrap {
+  display: block !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+#medicineForm .medicine-sale-controls {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  margin-top: 6px !important;
+}
+
+#medicineForm .medicine-sale-controls button {
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+}
+
+#addUnitButton,
+#removeUnitButton {
+  display: none !important;
+}
+
+@media (min-width: 901px) {
+  #medicineForm .medicine-field-satuan-beli .medicine-control-wrap {
+    max-width: 214px !important;
+    grid-template-columns: minmax(0, 176px) 30px !important;
+  }
+
+  #medicineForm #medicine-satuan_beli {
+    width: 176px !important;
+    max-width: 176px !important;
+  }
+
+  #medicineForm .medicine-field-harga-beli .medicine-control-wrap,
+  #medicineForm #medicine-harga_beli {
+    width: 176px !important;
+    max-width: 176px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    grid-template-columns: 126px 116px !important;
+    gap: 10px !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field {
+    grid-template-columns: 58px 68px !important;
+  }
+
+  #medicineForm #medicine-stok {
+    width: 68px !important;
+    max-width: 68px !important;
+  }
+
+  #medicineForm .medicine-stock-unit {
+    width: 116px !important;
+    min-width: 116px !important;
+    padding-inline: 8px !important;
+  }
+
+  #medicineForm .medicine-min-stock-row #medicine-stok_min {
+    width: 132px !important;
+    max-width: 132px !important;
+  }
+
+  #medicineForm .medicine-field-satuan-stok-min,
+  #medicineForm .medicine-field-satuan-stok-min .medicine-control-wrap,
+  #medicineForm #medicine-satuan_stok_min {
+    width: 118px !important;
+    max-width: 118px !important;
+  }
+
+  #medicineForm .medicine-field-expired .medicine-control-wrap,
+  #medicineForm #medicine-expired {
+    width: 166px !important;
+    max-width: 166px !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    grid-template-columns: 56px 124px 84px 46px 22px !important;
+    gap: 4px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #medicineForm .medicine-section-grid {
+    min-width: 0 !important;
+  }
+
+  #medicineForm .medicine-field-satuan-beli .medicine-control-wrap {
+    max-width: 176px !important;
+    grid-template-columns: minmax(0, 138px) 30px !important;
+  }
+
+  #medicineForm #medicine-satuan_beli {
+    width: 138px !important;
+    max-width: 138px !important;
+  }
+
+  #medicineForm .medicine-field-harga-beli .medicine-control-wrap,
+  #medicineForm #medicine-harga_beli {
+    width: 138px !important;
+    max-width: 138px !important;
+  }
+
+  #medicineForm .medicine-stock-row {
+    grid-template-columns: 86px 108px !important;
+    gap: 7px !important;
+  }
+
+  #medicineForm .medicine-stock-row .medicine-field,
+  #medicineForm #medicine-stok {
+    width: 86px !important;
+    max-width: 86px !important;
+  }
+
+  #medicineForm .medicine-stock-unit {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    padding-inline: 7px !important;
+  }
+
+  #medicineForm .medicine-min-stock-row {
+    grid-template-columns: 94px 104px !important;
+    gap: 7px !important;
+  }
+
+  #medicineForm .medicine-min-stock-row #medicine-stok_min {
+    width: 94px !important;
+    max-width: 94px !important;
+  }
+
+  #medicineForm .medicine-field-satuan-stok-min,
+  #medicineForm .medicine-field-satuan-stok-min .medicine-control-wrap,
+  #medicineForm #medicine-satuan_stok_min {
+    width: 104px !important;
+    max-width: 104px !important;
+  }
+
+  #medicineForm .medicine-field-expired .medicine-control-wrap,
+  #medicineForm #medicine-expired {
+    width: 146px !important;
+    max-width: 146px !important;
+  }
+
+  #medicineForm .medicine-price-head,
+  #medicineForm .medicine-sale-row {
+    grid-template-columns: 38px 92px 66px 38px 20px !important;
+    gap: 3px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-control-wrap {
+    grid-template-columns: minmax(0, 1fr) 20px !important;
+  }
+
+  #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-add-option,
+  #medicineForm .medicine-sale-delete {
+    width: 20px !important;
+    min-width: 20px !important;
+  }
+
+  #medicineForm .medicine-sale-controls {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+}

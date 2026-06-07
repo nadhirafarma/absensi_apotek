@@ -772,22 +772,24 @@
     const returnStart = parseRuleTime(rule.returnStart, minutesOf(0, 0));
 
     if (plan.type === "DATANG" && minutes > deadline) {
+      const lateMinutes = Math.max(1, minutes - deadline);
       return {
         ok: true,
         warning: true,
         flag: "late",
         title: "Absen Terlambat",
-        message: `Anda terlambat. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}.`
+        message: `Anda terlambat ${lateMinutes} menit. Batas absen datang ${shiftLabel} sampai jam ${formatRuleTime(deadline)}.`
       };
     }
 
     if (plan.type === "PULANG" && minutes < returnStart) {
+      const earlyMinutes = Math.max(1, returnStart - minutes);
       return {
         ok: true,
         warning: true,
         flag: "early_return",
         title: "Pulang Terlalu Cepat",
-        message: `Anda pulang terlalu cepat. Waktu pulang ${shiftLabel} mulai jam ${formatRuleTime(returnStart)}.`
+        message: `Anda pulang ${earlyMinutes} menit lebih cepat. Waktu pulang ${shiftLabel} mulai jam ${formatRuleTime(returnStart)}.`
       };
     }
 
@@ -807,6 +809,7 @@
     const displayName = formatName(label);
     const shift = normalizeShiftLabel(attendancePlan?.shift || getShiftLabel());
     const attendanceType = attendancePlan?.type || "DATANG";
+    const jakartaTime = getJakartaNowParts();
     const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=${encodeURIComponent(attendanceType)}`;
     const timestamp = new Date().toISOString();
     const fileName = `absensi_${label}_${timestamp.replace(/[:.]/g, "-")}.jpg`;
@@ -821,6 +824,12 @@
       jenisAbsen: attendanceType,
       shift,
       SHIFT: shift,
+      tanggal_absen: jakartaTime.dateKey,
+      tanggalAbsen: jakartaTime.dateKey,
+      jam_absen: jakartaTime.timeText,
+      jamAbsen: jakartaTime.timeText,
+      waktu_datang: attendanceType === "DATANG" ? jakartaTime.timeText : "",
+      waktu_pulang: attendanceType === "PULANG" ? jakartaTime.timeText : "",
       foto: photoBase64,
       foto_absensi: photoBase64,
       fotoAbsensi: photoBase64,
@@ -1099,6 +1108,9 @@
   function getJakartaNowParts() {
     const parts = new Intl.DateTimeFormat("en-US", {
       weekday: "long",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -1108,11 +1120,17 @@
       return map;
     }, {});
     const hour = Number(parts.hour) === 24 ? 0 : Number(parts.hour || 0);
+    const minute = Number(parts.minute || 0);
+    const year = String(parts.year || "").padStart(4, "0");
+    const month = String(parts.month || "").padStart(2, "0");
+    const day = String(parts.day || "").padStart(2, "0");
 
     return {
       weekday: parts.weekday || "",
       hour,
-      minute: Number(parts.minute || 0)
+      minute,
+      dateKey: `${year}-${month}-${day}`,
+      timeText: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
     };
   }
 
