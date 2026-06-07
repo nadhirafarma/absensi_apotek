@@ -12185,6 +12185,10 @@ body.notification-open .mobile-bottom-nav {
 }
 
 /* 20260607 v54: stock-min unit, optional sale unit row, compact purchase/date controls. */
+#medicineForm .medicine-sale-row.is-hidden {
+  display: none !important;
+}
+
 #medicineForm .medicine-min-stock-row {
   display: grid !important;
   grid-template-columns: minmax(96px, 132px) minmax(92px, 118px) !important;

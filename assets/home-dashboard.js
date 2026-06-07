@@ -2752,8 +2752,8 @@
           <span>Harga resep = biasa</span>
         </label>
         <div class="medicine-sale-controls">
-          <button class="filter-action medicine-add-sale-row" type="button" data-add-sale-row>+ Tambah Kolom Satuan</button>
-          <button class="filter-action medicine-remove-sale-row" type="button" data-remove-last-sale-row>Kurangi Kolom</button>
+          <button class="filter-action medicine-add-sale-row" type="button" data-add-sale-row>Tambah Kolom</button>
+          <button class="filter-action medicine-remove-sale-row" type="button" data-remove-last-sale-row>Hapus Kolom</button>
         </div>
       </fieldset>
     `;
@@ -3110,8 +3110,8 @@
       addButton.disabled = state.unitCount >= MAX_MEDICINE_UNIT_COUNT;
     }
     if (removeButton) {
-      removeButton.hidden = state.unitCount <= DEFAULT_MEDICINE_UNIT_COUNT;
-      removeButton.disabled = state.unitCount <= DEFAULT_MEDICINE_UNIT_COUNT;
+      removeButton.hidden = state.unitCount <= 1;
+      removeButton.disabled = state.unitCount <= 1;
     }
   }
 
