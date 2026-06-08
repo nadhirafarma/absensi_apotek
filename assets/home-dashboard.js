@@ -718,6 +718,7 @@
     });
     if (els.generateSalarySlipButton) els.generateSalarySlipButton.addEventListener("click", generateSalarySlipPdf);
     if (els.openSalarySlipButton) els.openSalarySlipButton.addEventListener("click", () => {
+      if (state.appLoadingToken) endAppLoading(state.appLoadingToken);
       if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
     });
     els.profileTabButtons.forEach((button) => {
@@ -4896,7 +4897,8 @@
   function normalizeAttendanceRecord(record) {
     const timestamp = String(record.timestamp || record.Timestamp || "").trim();
     const date = normalizeAttendanceDateKey(record.date || record.tanggal_absen || record.tanggalAbsen || record.tanggal || record.Tanggal, timestamp);
-    const time = normalizeAttendanceTime(record.time || record.jam_absen || record.jamAbsen || record.jam || record.Jam, timestamp);
+    const timestampTime = formatJakartaTimeFromTimestamp(timestamp);
+    const time = timestampTime || normalizeAttendanceTime(record.time || record.jam_absen || record.jamAbsen || record.jam || record.Jam, timestamp);
     const status = normalizeAttendanceStatus(record.status || record.status_kehadiran || record.jenis_absen || record.jenisAbsen);
     const name = String(record.nama || record.nama_karyawan || record.namaKaryawan || record.name || "").trim();
 
@@ -4918,10 +4920,14 @@
 
     records.forEach((record) => {
       if (!record.name || !record.date) return;
-      const key = `${normalizeSearch(record.name)}|${record.date}`;
+      const isOvertime = record.status === "LEMBUR";
+      const key = isOvertime
+        ? `${normalizeSearch(record.name)}|${record.date}|lembur|${normalizeSearch(record.shift) || "shift"}|${record.rowNumber || record.time}`
+        : `${normalizeSearch(record.name)}|${record.date}|regular`;
       if (!map.has(key)) {
         map.set(key, {
           key,
+          isOvertime,
           name: record.name,
           date: record.date,
           shift: record.shift || "",
@@ -4939,11 +4945,11 @@
 
       const item = map.get(key);
       item.records.push(record);
-      if (record.shift && !item.shift) item.shift = record.shift;
       if (record.warningMessage && !item.warningMessage) item.warningMessage = record.warningMessage;
       if (record.warningFlag && !item.warningFlag) item.warningFlag = record.warningFlag;
 
       if (record.status === "PULANG") {
+        if (record.shift && !item.shift) item.shift = record.shift;
         if (!item.pulang || record.time > item.pulang) {
           item.pulang = record.time;
           item.pulangRow = record.rowNumber;
@@ -4952,6 +4958,8 @@
       }
 
       if (record.status === "LEMBUR") {
+        item.isOvertime = true;
+        if (record.shift) item.shift = record.shift;
         if (!item.lembur || record.time > item.lembur) {
           item.lembur = record.time;
           item.lemburRow = record.rowNumber;
@@ -4959,6 +4967,7 @@
         return;
       }
 
+      if (record.shift && !item.shift) item.shift = record.shift;
       if (!item.datang || record.time < item.datang) {
         item.datang = record.time;
         item.datangRow = record.rowNumber;
@@ -4972,7 +4981,7 @@
         duration: calculateAttendanceDuration(group.datang, group.pulang),
         statusLabel: getAttendanceStatusLabel(group)
       }))
-      .sort((a, b) => (`${b.date} ${b.datang || b.pulang}`).localeCompare(`${a.date} ${a.datang || a.pulang}`));
+      .sort((a, b) => (`${b.date} ${getAttendanceGroupSortTime(b)}`).localeCompare(`${a.date} ${getAttendanceGroupSortTime(a)}`));
   }
 
   function renderAttendanceDashboard() {
@@ -4986,12 +4995,14 @@
     const monthGroups = visibleGroups.filter((group) => group.date.slice(0, 7) === `${state.attendanceYear}-${state.attendanceMonth}`);
     const employees = getVisibleAttendanceEmployees();
     const employeeCount = employees.length || countUniqueNames(visibleGroups);
-    const presentToday = todayGroups.filter((group) => group.datang).length;
+    const regularTodayGroups = todayGroups.filter((group) => !group.isOvertime);
+    const regularMonthGroups = monthGroups.filter((group) => !group.isOvertime);
+    const presentToday = regularTodayGroups.filter((group) => group.datang).length;
     const lateToday = todayGroups.filter((group) => isLateAttendance(group)).length;
     const absentToday = Math.max(0, employeeCount - presentToday);
     const workDays = countWorkDaysInMonth(Number(state.attendanceYear), Number(state.attendanceMonth));
-    const pagi = monthGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-    const sore = monthGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+    const pagi = regularMonthGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+    const sore = regularMonthGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
     const shiftTotal = Math.max(1, pagi + sore);
 
     document.body.classList.toggle("attendance-can-edit", canEdit);
@@ -5023,17 +5034,20 @@
     }
 
     els.attendanceTableBody.innerHTML = groups.map((group) => {
-      const actionCell = canEdit
+      const actionCell = canEdit && !group.isOvertime
         ? `<td class="attendance-action-cell"><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
-        : "";
+        : canEdit ? `<td class="attendance-action-cell"></td>` : "";
+      const displayDatang = group.isOvertime ? (group.lembur || "-") : (group.datang || "-");
+      const displayPulang = group.isOvertime ? "-" : (group.pulang || "-");
+      const displayDuration = group.isOvertime ? "-" : (group.duration || "-");
       return `
         <tr>
           <td><strong>${escapeHtml(group.name)}</strong></td>
           <td>${escapeHtml(formatAttendanceDate(group.date))}</td>
           <td><span class="attendance-shift-pill ${normalizeSearch(group.shift).includes("sore") ? "is-sore" : "is-pagi"}">${escapeHtml(group.shift || "-")}</span></td>
-          <td>${escapeHtml(group.datang || "-")}</td>
-          <td>${escapeHtml(group.pulang || "-")}</td>
-          <td>${escapeHtml(group.duration || "-")}</td>
+          <td>${escapeHtml(displayDatang)}</td>
+          <td>${escapeHtml(displayPulang)}</td>
+          <td>${escapeHtml(displayDuration)}</td>
           <td class="attendance-status-cell">${renderAttendanceStatus(group)}</td>
           ${actionCell}
         </tr>
@@ -5057,11 +5071,12 @@
 
     els.attendanceMonthlyTableBody.innerHTML = names.map((name) => {
       const groups = monthGroups.filter((group) => normalizeSearch(group.name) === normalizeSearch(name));
-      const hadir = groups.filter((group) => group.datang).length;
-      const terlambat = groups.filter(isLateAttendance).length;
+      const regularGroups = groups.filter((group) => !group.isOvertime);
+      const hadir = regularGroups.filter((group) => group.datang).length;
+      const terlambat = regularGroups.filter(isLateAttendance).length;
       const tidakHadir = Math.max(0, workDays - hadir);
-      const pagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-      const sore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+      const pagi = regularGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+      const sore = regularGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
       const lembur = groups.filter((group) => group.lembur).length;
       const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
       return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${formatNumber(lembur)}</td><td>${percent}%</td></tr>`;
@@ -5377,8 +5392,10 @@
 
     const employee = getSelectedPayrollEmployee();
     if (!employee) {
+      state.salarySlipUrl = "";
       els.salarySlipSummary.innerHTML = `<span>Belum ada karyawan terpilih.</span>`;
       if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = true;
+      if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = true;
       return;
     }
 
@@ -5400,12 +5417,13 @@
     const groups = state.attendanceGroups.filter((group) => {
       return normalizeSearch(group.name) === normalizeSearch(employee.name) && String(group.date || "").startsWith(monthKey);
     });
-    const present = groups.filter((group) => group.datang).length;
-    const completeDays = groups.filter((group) => group.datang && group.pulang).length;
+    const regularGroups = groups.filter((group) => !group.isOvertime);
+    const present = regularGroups.filter((group) => group.datang).length;
+    const completeDays = regularGroups.filter((group) => group.datang && group.pulang).length;
     const overtimeDays = groups.filter((group) => group.lembur).length;
-    const late = groups.filter(isLateAttendance).length;
-    const shiftPagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-    const shiftSore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+    const late = regularGroups.filter(isLateAttendance).length;
+    const shiftPagi = regularGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+    const shiftSore = regularGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
     const baseSalary = getPayrollAmountByMode(employee.baseSalary, employee.baseSalaryMode, completeDays);
     const mealAllowance = getPayrollAmountByMode(employee.mealAllowance, employee.mealAllowanceMode, completeDays);
     const overtime = getPayrollAmountByMode(employee.overtime, employee.overtimeMode, overtimeDays);
@@ -5455,9 +5473,10 @@
 
       state.salarySlipUrl = result.fileUrl || result.printUrl || "";
       if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = !state.salarySlipUrl;
-      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = result.message || "PDF slip gaji berhasil dibuat.";
+      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = state.salarySlipUrl
+        ? "PDF slip gaji siap dibuka."
+        : (result.message || "PDF slip gaji berhasil dibuat, tetapi link file belum diterima.");
       renderSalarySlipSummary();
-      if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
     } catch (error) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
     } finally {
@@ -5588,6 +5607,28 @@
     return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   }
 
+  function formatJakartaTimeFromTimestamp(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    const date = new Date(text);
+    if (Number.isNaN(date.getTime())) return "";
+
+    try {
+      const parts = new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        hourCycle: "h23"
+      }).formatToParts(date);
+      const hour = parts.find((part) => part.type === "hour")?.value || "";
+      const minute = parts.find((part) => part.type === "minute")?.value || "";
+      return hour && minute ? `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}` : "";
+    } catch (error) {
+      return normalizeAttendanceTime("", text);
+    }
+  }
+
   function calculateAttendanceDuration(start, end) {
     const startMinutes = getClockMinutes(start);
     const endMinutes = getClockMinutes(end);
@@ -5598,6 +5639,10 @@
     return `${hours}j ${minutes}m`;
   }
 
+  function getAttendanceGroupSortTime(group) {
+    return group.lembur || group.pulang || group.datang || "00:00";
+  }
+
   function getClockMinutes(value) {
     const match = String(value || "").match(/^(\d{2}):(\d{2})$/);
     if (!match) return -1;
@@ -5605,6 +5650,7 @@
   }
 
   function getAttendanceStatusLabel(group) {
+    if (group.isOvertime || (group.lembur && !group.datang && !group.pulang)) return "Lembur";
     if (!group.datang) return "Tidak Hadir";
     if (normalizeSearch(group.warningFlag).includes("late") || normalizeSearch(group.warningMessage).includes("terlambat")) return "Terlambat";
     if (normalizeSearch(group.warningFlag).includes("early") || normalizeSearch(group.warningMessage).includes("terlalu cepat") || normalizeSearch(group.warningMessage).includes("lebih cepat")) return "Pulang Cepat";

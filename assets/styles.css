@@ -359,6 +359,11 @@
   background: #ffe8ee;
 }
 
+.attendance-status-pill.is-lembur {
+  color: #5b2bc5;
+  background: #f0e8ff;
+}
+
 .attendance-table td small {
   display: block;
   margin-top: 4px;
