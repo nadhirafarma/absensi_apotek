@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260608-dashboard-v58">
-  <script defer src="assets/auth-guard.js?v=20260608-dashboard-v58"></script>
-  <script defer src="assets/app.js?v=20260608-dashboard-v58"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260608-dashboard-v59">
+  <script defer src="assets/auth-guard.js?v=20260608-dashboard-v59"></script>
+  <script defer src="assets/app.js?v=20260608-dashboard-v59"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260608-dashboard-v58"></script>
+  <script defer src="assets/home-dashboard.js?v=20260608-dashboard-v59"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -435,7 +435,7 @@
               </div>
               <div class="simple-table-wrap">
                 <table class="simple-table attendance-monthly-table">
-                  <thead><tr><th>Nama Karyawan</th><th>Total Hari Kerja</th><th>Hadir</th><th>Terlambat</th><th>Tidak Hadir</th><th>Shift Pagi</th><th>Shift Sore</th><th>Persentase</th></tr></thead>
+                  <thead><tr><th>Nama Karyawan</th><th>Total Hari Kerja</th><th>Hadir</th><th>Terlambat</th><th>Tidak Hadir</th><th>Shift Pagi</th><th>Shift Sore</th><th>Lembur</th><th>Persentase</th></tr></thead>
                   <tbody id="attendanceMonthlyTableBody"></tbody>
                 </table>
               </div>
@@ -1080,9 +1080,33 @@
         <label>NIP<input id="payrollNipInput" name="nip" type="text" required></label>
         <label>Nama Karyawan<input id="payrollNameInput" name="name" type="text" required></label>
         <label class="span-2">Jabatan<input id="payrollJobInput" name="job" type="text"></label>
-        <label>Gaji Pokok<input id="payrollBaseSalaryInput" name="baseSalary" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Uang Makan<input id="payrollMealAllowanceInput" name="mealAllowance" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Lembur<input id="payrollOvertimeInput" name="overtime" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label class="payroll-rate-field">Gaji Pokok
+          <span class="payroll-rate-row">
+            <input id="payrollBaseSalaryInput" name="baseSalary" type="number" min="0" step="1" inputmode="numeric">
+            <select id="payrollBaseSalaryModeSelect" name="baseSalaryMode" aria-label="Mode gaji pokok">
+              <option value="monthly">Perbulan</option>
+              <option value="daily">Perhari</option>
+            </select>
+          </span>
+        </label>
+        <label class="payroll-rate-field">Uang Makan
+          <span class="payroll-rate-row">
+            <input id="payrollMealAllowanceInput" name="mealAllowance" type="number" min="0" step="1" inputmode="numeric">
+            <select id="payrollMealAllowanceModeSelect" name="mealAllowanceMode" aria-label="Mode uang makan">
+              <option value="daily">Perhari</option>
+              <option value="monthly">Perbulan</option>
+            </select>
+          </span>
+        </label>
+        <label class="payroll-rate-field">Lembur
+          <span class="payroll-rate-row">
+            <input id="payrollOvertimeInput" name="overtime" type="number" min="0" step="1" inputmode="numeric">
+            <select id="payrollOvertimeModeSelect" name="overtimeMode" aria-label="Mode lembur">
+              <option value="daily">Perhari</option>
+              <option value="monthly">Perbulan</option>
+            </select>
+          </span>
+        </label>
         <label>Tunjangan<input id="payrollAllowanceInput" name="allowance" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Bonus<input id="payrollBonusInput" name="bonus" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Pinjaman<input id="payrollLoanInput" name="loan" type="number" min="0" step="1" inputmode="numeric"></label>

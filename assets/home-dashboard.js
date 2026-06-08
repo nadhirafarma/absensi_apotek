@@ -505,8 +505,11 @@
       payrollNameInput: document.getElementById("payrollNameInput"),
       payrollJobInput: document.getElementById("payrollJobInput"),
       payrollBaseSalaryInput: document.getElementById("payrollBaseSalaryInput"),
+      payrollBaseSalaryModeSelect: document.getElementById("payrollBaseSalaryModeSelect"),
       payrollMealAllowanceInput: document.getElementById("payrollMealAllowanceInput"),
+      payrollMealAllowanceModeSelect: document.getElementById("payrollMealAllowanceModeSelect"),
       payrollOvertimeInput: document.getElementById("payrollOvertimeInput"),
+      payrollOvertimeModeSelect: document.getElementById("payrollOvertimeModeSelect"),
       payrollAllowanceInput: document.getElementById("payrollAllowanceInput"),
       payrollBonusInput: document.getElementById("payrollBonusInput"),
       payrollLoanInput: document.getElementById("payrollLoanInput"),
@@ -4924,8 +4927,10 @@
           shift: record.shift || "",
           datang: "",
           pulang: "",
+          lembur: "",
           datangRow: 0,
           pulangRow: 0,
+          lemburRow: 0,
           warningMessage: "",
           warningFlag: "",
           records: []
@@ -4942,6 +4947,14 @@
         if (!item.pulang || record.time > item.pulang) {
           item.pulang = record.time;
           item.pulangRow = record.rowNumber;
+        }
+        return;
+      }
+
+      if (record.status === "LEMBUR") {
+        if (!item.lembur || record.time > item.lembur) {
+          item.lembur = record.time;
+          item.lemburRow = record.rowNumber;
         }
         return;
       }
@@ -5037,7 +5050,7 @@
       : Array.from(new Set(monthGroups.map((group) => group.name))).sort((a, b) => a.localeCompare(b));
 
     if (!names.length) {
-      els.attendanceMonthlyTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="8">Belum ada data rekap bulanan.</td></tr>`;
+      els.attendanceMonthlyTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="9">Belum ada data rekap bulanan.</td></tr>`;
       setText(els.attendanceMonthlyInfo, "Menampilkan 0 karyawan.");
       return;
     }
@@ -5049,8 +5062,9 @@
       const tidakHadir = Math.max(0, workDays - hadir);
       const pagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
       const sore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+      const lembur = groups.filter((group) => group.lembur).length;
       const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
-      return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${percent}%</td></tr>`;
+      return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${formatNumber(lembur)}</td><td>${percent}%</td></tr>`;
     }).join("");
     setText(els.attendanceMonthlyInfo, `Menampilkan ${formatNumber(names.length)} karyawan untuk ${getMonthName(state.attendanceMonth)} ${state.attendanceYear}.`);
   }
@@ -5202,9 +5216,9 @@
         <td>${escapeHtml(employee.nip || "-")}</td>
         <td><strong>${escapeHtml(employee.name || "-")}</strong></td>
         <td>${escapeHtml(employee.job || "-")}</td>
-        <td>${formatPayrollMoney(employee.baseSalary)}</td>
-        <td>${formatPayrollMoney(employee.mealAllowance)}</td>
-        <td>${formatPayrollMoney(employee.overtime)}</td>
+        <td>${formatPayrollRate(employee.baseSalary, employee.baseSalaryMode)}</td>
+        <td>${formatPayrollRate(employee.mealAllowance, employee.mealAllowanceMode)}</td>
+        <td>${formatPayrollRate(employee.overtime, employee.overtimeMode)}</td>
         <td>${formatPayrollMoney(employee.allowance)}</td>
         <td>${formatPayrollMoney(employee.bonus)}</td>
         <td>${formatPayrollMoney(employee.loan)}</td>
@@ -5247,8 +5261,11 @@
     setInputValue(els.payrollNameInput, employee.name);
     setInputValue(els.payrollJobInput, employee.job);
     setInputValue(els.payrollBaseSalaryInput, employee.baseSalary || "");
+    setInputValue(els.payrollBaseSalaryModeSelect, normalizePayrollMode(employee.baseSalaryMode, "monthly"));
     setInputValue(els.payrollMealAllowanceInput, employee.mealAllowance || "");
+    setInputValue(els.payrollMealAllowanceModeSelect, normalizePayrollMode(employee.mealAllowanceMode, "daily"));
     setInputValue(els.payrollOvertimeInput, employee.overtime || "");
+    setInputValue(els.payrollOvertimeModeSelect, normalizePayrollMode(employee.overtimeMode, "daily"));
     setInputValue(els.payrollAllowanceInput, employee.allowance || "");
     setInputValue(els.payrollBonusInput, employee.bonus || "");
     setInputValue(els.payrollLoanInput, employee.loan || "");
@@ -5308,8 +5325,11 @@
       name: String(els.payrollNameInput?.value || "").trim(),
       job: String(els.payrollJobInput?.value || "").trim(),
       baseSalary: parsePayrollNumber(els.payrollBaseSalaryInput?.value),
+      baseSalaryMode: normalizePayrollMode(els.payrollBaseSalaryModeSelect?.value, "monthly"),
       mealAllowance: parsePayrollNumber(els.payrollMealAllowanceInput?.value),
+      mealAllowanceMode: normalizePayrollMode(els.payrollMealAllowanceModeSelect?.value, "daily"),
       overtime: parsePayrollNumber(els.payrollOvertimeInput?.value),
+      overtimeMode: normalizePayrollMode(els.payrollOvertimeModeSelect?.value, "daily"),
       allowance: parsePayrollNumber(els.payrollAllowanceInput?.value),
       bonus: parsePayrollNumber(els.payrollBonusInput?.value),
       loan: parsePayrollNumber(els.payrollLoanInput?.value),
@@ -5366,6 +5386,8 @@
     const summary = calculateSalarySlipPreview(employee);
     els.salarySlipSummary.innerHTML = `
       <span><small>Hadir</small><strong>${formatNumber(summary.present)} Hari</strong></span>
+      <span><small>Hadir Lengkap</small><strong>${formatNumber(summary.completeDays)} Hari</strong></span>
+      <span><small>Lembur</small><strong>${formatNumber(summary.overtimeDays)} Hari</strong></span>
       <span><small>Terlambat</small><strong>${formatNumber(summary.late)} Hari</strong></span>
       <span><small>Shift Pagi</small><strong>${formatNumber(summary.shiftPagi)} Hari</strong></span>
       <span><small>Shift Sore</small><strong>${formatNumber(summary.shiftSore)} Hari</strong></span>
@@ -5379,14 +5401,21 @@
       return normalizeSearch(group.name) === normalizeSearch(employee.name) && String(group.date || "").startsWith(monthKey);
     });
     const present = groups.filter((group) => group.datang).length;
+    const completeDays = groups.filter((group) => group.datang && group.pulang).length;
+    const overtimeDays = groups.filter((group) => group.lembur).length;
     const late = groups.filter(isLateAttendance).length;
     const shiftPagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
     const shiftSore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
-    const income = Number(employee.baseSalary || 0) + Number(employee.mealAllowance || 0) + Number(employee.overtime || 0) + Number(employee.allowance || 0) + Number(employee.bonus || 0);
+    const baseSalary = getPayrollAmountByMode(employee.baseSalary, employee.baseSalaryMode, completeDays);
+    const mealAllowance = getPayrollAmountByMode(employee.mealAllowance, employee.mealAllowanceMode, completeDays);
+    const overtime = getPayrollAmountByMode(employee.overtime, employee.overtimeMode, overtimeDays);
+    const income = baseSalary + mealAllowance + overtime + Number(employee.allowance || 0) + Number(employee.bonus || 0);
     const deductions = Number(employee.loan || 0) + Number(employee.debt || 0) + Number(employee.other || 0);
 
     return {
       present,
+      completeDays,
+      overtimeDays,
       late,
       shiftPagi,
       shiftSore,
@@ -5451,8 +5480,11 @@
       name: String(value?.name || value?.nama || value?.namaKaryawan || "").trim(),
       job: String(value?.job || value?.jabatan || "").trim(),
       baseSalary: parsePayrollNumber(value?.baseSalary ?? value?.gajiPokok ?? value?.gaji_pokok),
+      baseSalaryMode: normalizePayrollMode(value?.baseSalaryMode ?? value?.modeGajiPokok ?? value?.mode_gaji_pokok, "monthly"),
       mealAllowance: parsePayrollNumber(value?.mealAllowance ?? value?.uangMakan ?? value?.uang_makan),
+      mealAllowanceMode: normalizePayrollMode(value?.mealAllowanceMode ?? value?.modeUangMakan ?? value?.mode_uang_makan, "daily"),
       overtime: parsePayrollNumber(value?.overtime ?? value?.lembur),
+      overtimeMode: normalizePayrollMode(value?.overtimeMode ?? value?.modeLembur ?? value?.mode_lembur, "daily"),
       allowance: parsePayrollNumber(value?.allowance ?? value?.tunjangan),
       bonus: parsePayrollNumber(value?.bonus),
       loan: parsePayrollNumber(value?.loan ?? value?.pinjaman),
@@ -5469,6 +5501,28 @@
 
   function formatPayrollMoney(value) {
     return `Rp. ${formatNumber(Math.round(Number(value || 0)))}`;
+  }
+
+  function formatPayrollRate(value, mode) {
+    return `<span class="payroll-rate-value">${formatPayrollMoney(value)}</span><small class="payroll-rate-mode">${formatPayrollMode(mode)}</small>`;
+  }
+
+  function formatPayrollMode(mode) {
+    return normalizePayrollMode(mode, "monthly") === "daily" ? "Perhari" : "Perbulan";
+  }
+
+  function normalizePayrollMode(mode, fallback = "monthly") {
+    const text = normalizeSearch(mode);
+    if (text === "daily" || text === "day" || text === "harian" || text === "perhari") return "daily";
+    if (text === "monthly" || text === "month" || text === "bulanan" || text === "perbulan") return "monthly";
+    return fallback === "daily" ? "daily" : "monthly";
+  }
+
+  function getPayrollAmountByMode(value, mode, quantity) {
+    const amount = Number(value || 0);
+    return normalizePayrollMode(mode, "monthly") === "daily"
+      ? amount * Math.max(0, Number(quantity || 0))
+      : amount;
   }
 
   function setInputValue(input, value) {
@@ -5498,6 +5552,7 @@
 
   function normalizeAttendanceStatus(value) {
     const text = normalizeSearch(value);
+    if (text.includes("lembur") || text.includes("overtime")) return "LEMBUR";
     return text.includes("pulang") || text.includes("keluar") || text.includes("out") ? "PULANG" : "DATANG";
   }
 

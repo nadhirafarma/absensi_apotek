@@ -114,6 +114,7 @@
     els.attendanceShiftSelect = document.getElementById("attendanceShiftSelect");
     els.attendanceArrivalButton = document.getElementById("attendanceArrivalButton");
     els.attendanceReturnButton = document.getElementById("attendanceReturnButton");
+    els.attendanceOvertimeButton = document.getElementById("attendanceOvertimeButton");
     els.attendanceChoiceCloseButton = document.getElementById("attendanceChoiceCloseButton");
     els.attendanceChoiceStatus = document.getElementById("attendanceChoiceStatus");
   }
@@ -138,6 +139,7 @@
     });
     if (els.attendanceArrivalButton) els.attendanceArrivalButton.addEventListener("click", () => selectAttendanceType("DATANG"));
     if (els.attendanceReturnButton) els.attendanceReturnButton.addEventListener("click", () => selectAttendanceType("PULANG"));
+    if (els.attendanceOvertimeButton) els.attendanceOvertimeButton.addEventListener("click", () => selectAttendanceType("LEMBUR"));
     window.addEventListener("beforeunload", stopAll);
     window.addEventListener("resize", resizeFaceCanvas);
   }
@@ -183,7 +185,7 @@
     const shift = normalizeShiftLabel(els.attendanceShiftSelect?.value || getShiftLabel());
     const plan = {
       done: false,
-      type: type === "PULANG" ? "PULANG" : "DATANG",
+      type: normalizeAttendanceType(type),
       shift
     };
     const windowResult = validateAttendanceWindow(plan, getAttendanceProfileData());
@@ -706,10 +708,33 @@
 
     const hasDatang = Boolean(result?.datang);
     const hasPulang = Boolean(result?.pulang);
+    const hasLembur = Boolean(result?.lembur);
     const shift = normalizeShiftLabel(selected.shift || getShiftLabel());
     const datangInfo = typeof result.datang === "object" ? result.datang : {};
     const rawDatangShift = String(datangInfo.shift || result.datangShift || "").trim();
     const existingDatangShift = rawDatangShift ? normalizeShiftLabel(rawDatangShift) : "";
+
+    if (selected.type === "LEMBUR") {
+      if (hasLembur) {
+        return {
+          done: true,
+          type: "LEMBUR",
+          shift,
+          title: "Absen Lembur Sudah Ada",
+          message: "Absen lembur hari ini sudah tercatat."
+        };
+      }
+
+      return {
+        done: false,
+        type: "LEMBUR",
+        shift,
+        warning: Boolean(selected.warning),
+        warningFlag: selected.warningFlag || "",
+        warningTitle: selected.warningTitle || "",
+        warningMessage: selected.warningMessage || ""
+      };
+    }
 
     if ((hasDatang && hasPulang) || (result?.sudahAbsen && !hasDatang && !hasPulang)) {
       return {
@@ -764,7 +789,7 @@
 
     return {
       done: false,
-      type: selected.type === "PULANG" ? "PULANG" : "DATANG",
+      type: normalizeAttendanceType(selected.type),
       shift,
       warning: Boolean(selected.warning),
       warningFlag: selected.warningFlag || "",
@@ -775,6 +800,10 @@
 
   function validateAttendanceWindow(plan, profile) {
     if (canBypassAttendanceRules(profile)) {
+      return { ok: true };
+    }
+
+    if (plan.type === "LEMBUR") {
       return { ok: true };
     }
 
@@ -845,6 +874,9 @@
       jamAbsen: jakartaTime.timeText,
       waktu_datang: attendanceType === "DATANG" ? jakartaTime.timeText : "",
       waktu_pulang: attendanceType === "PULANG" ? jakartaTime.timeText : "",
+      waktu_lembur: attendanceType === "LEMBUR" ? jakartaTime.timeText : "",
+      jam_lembur: attendanceType === "LEMBUR" ? jakartaTime.timeText : "",
+      jamLembur: attendanceType === "LEMBUR" ? jakartaTime.timeText : "",
       foto: photoBase64,
       foto_absensi: photoBase64,
       fotoAbsensi: photoBase64,
@@ -897,19 +929,39 @@
     }
 
     if (result && result.sudahAbsen) {
+      const duplicateLabel = getAttendanceTypeLabel(attendanceType).toLowerCase();
       showResult("Absen sudah ada", displayName, {
-        primary: `${attendanceType === "PULANG" ? "Absen pulang" : "Absen datang"} hari ini sudah tercatat.`,
+        primary: `${duplicateLabel} hari ini sudah tercatat.`,
         secondary: "Bekerjalah dengan jujur dan tanggung jawab."
       }, "warning");
       return;
     }
 
     const warningMessage = attendancePlan?.warningMessage || result.warningMessage || "";
+    const successTitle = attendanceType === "PULANG"
+      ? "Absen Pulang Berhasil"
+      : attendanceType === "LEMBUR"
+        ? "Absen Lembur Berhasil"
+        : "Absen Datang Berhasil";
+    const successLabel = getAttendanceTypeLabel(attendanceType).toLowerCase();
 
-    showResult(attendanceType === "PULANG" ? "Absen Pulang Berhasil" : "Absen Datang Berhasil", displayName, {
-      primary: `${attendanceType === "PULANG" ? "Absen pulang" : "Absen datang"} tersimpan`,
+    showResult(successTitle, displayName, {
+      primary: `${successLabel} tersimpan`,
       secondary: warningMessage || "Bekerjalah dengan jujur dan tanggung jawab."
     }, "success");
+  }
+
+  function normalizeAttendanceType(type) {
+    const text = String(type || "").toUpperCase();
+    if (text === "PULANG") return "PULANG";
+    if (text === "LEMBUR") return "LEMBUR";
+    return "DATANG";
+  }
+
+  function getAttendanceTypeLabel(type) {
+    if (type === "PULANG") return "Absen pulang";
+    if (type === "LEMBUR") return "Absen lembur";
+    return "Absen datang";
   }
 
   async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT_MS) {

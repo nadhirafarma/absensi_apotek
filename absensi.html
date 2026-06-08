@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/attendance.css?v=20260607-dashboard-v56">
-  <script defer src="assets/auth-guard.js?v=20260607-dashboard-v56"></script>
+  <link rel="stylesheet" href="assets/attendance.css?v=20260608-dashboard-v59">
+  <script defer src="assets/auth-guard.js?v=20260608-dashboard-v59"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="assets/attendance.js?v=20260607-dashboard-v56"></script>
+  <script defer src="assets/attendance.js?v=20260608-dashboard-v59"></script>
 </head>
 <body>
   <main class="attendance-shell">
@@ -187,6 +187,18 @@
             </svg>
           </span>
           <strong>Absen Pulang</strong>
+          <svg class="attendance-choice-arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
+        <button class="attendance-choice-action attendance-choice-overtime" id="attendanceOvertimeButton" type="button">
+          <span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2v20"></path>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </span>
+          <strong>Absen Lembur</strong>
           <svg class="attendance-choice-arrow" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m9 18 6-6-6-6"></path>
           </svg>

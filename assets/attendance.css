@@ -868,6 +868,10 @@ video {
   text-align: left;
 }
 
+.attendance-choice-overtime {
+  background: linear-gradient(110deg, #0ea5e9 0%, #2563eb 46%, #8b5cf6 100%);
+}
+
 .attendance-choice-action span {
   width: clamp(42px, 7vw, 56px);
   height: clamp(42px, 7vw, 56px);
