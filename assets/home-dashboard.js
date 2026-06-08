@@ -5325,8 +5325,12 @@
       }
 
       setPayrollModalStatus("Data gaji berhasil disimpan.", "success");
+      upsertPayrollEmployee(result.employee || employee, index);
       closePayrollModal();
-      await fetchPayrollEmployees({ manual: true });
+      renderPayrollTable();
+      populateSalarySlipControls();
+      renderSalarySlipSummary();
+      if (els.payrollStatusText) els.payrollStatusText.textContent = `Data gaji ${employee.name || employee.nip} berhasil disimpan.`;
     } catch (error) {
       setPayrollModalStatus(error.message || "Data gaji gagal disimpan.", "error");
     } finally {
@@ -5351,6 +5355,28 @@
       debt: parsePayrollNumber(els.payrollDebtInput?.value),
       other: parsePayrollNumber(els.payrollOtherInput?.value)
     };
+  }
+
+  function upsertPayrollEmployee(value, fallbackIndex) {
+    const employee = normalizePayrollEmployee(value || {});
+    if (!employee.nip && !employee.name) return;
+
+    const key = normalizeSearch(employee.nip || employee.name);
+    const existingIndex = state.payrollEmployees.findIndex((item) => {
+      return normalizeSearch(item.nip || item.name) === key
+        || (employee.name && normalizeSearch(item.name) === normalizeSearch(employee.name));
+    });
+    const targetIndex = existingIndex >= 0 ? existingIndex : Number(fallbackIndex);
+
+    if (targetIndex >= 0 && targetIndex < state.payrollEmployees.length) {
+      state.payrollEmployees[targetIndex] = {
+        ...state.payrollEmployees[targetIndex],
+        ...employee
+      };
+      return;
+    }
+
+    state.payrollEmployees.push(employee);
   }
 
   function setPayrollModalStatus(message, type) {

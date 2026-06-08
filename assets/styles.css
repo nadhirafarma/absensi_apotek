@@ -12433,6 +12433,14 @@ body.notification-open .mobile-bottom-nav {
   min-width: 860px;
 }
 
+@media (min-width: 900px) {
+  #view-presensi.is-active .attendance-dashboard {
+    width: 111.111%;
+    transform: scale(0.9);
+    transform-origin: top left;
+  }
+}
+
 .payroll-table {
   min-width: 1180px;
 }
