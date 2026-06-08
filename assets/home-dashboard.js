@@ -270,6 +270,9 @@
     attendanceMonth: "",
     attendanceYear: "",
     editingAttendanceGroup: null,
+    payrollEmployees: [],
+    payrollEditingIndex: -1,
+    salarySlipUrl: "",
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
     quickPage: 1,
@@ -311,6 +314,7 @@
     fetchUsers();
     fetchLocalRecords({ silent: true });
     fetchAttendanceRecords({ silent: true });
+    fetchPayrollEmployees({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
     window.setTimeout(maybeShowHomePrayerReminder, 900);
@@ -485,6 +489,36 @@
       attendanceEditDatang: document.getElementById("attendanceEditDatang"),
       attendanceEditPulang: document.getElementById("attendanceEditPulang"),
       attendanceEditWarning: document.getElementById("attendanceEditWarning"),
+      payrollEmployeeCard: document.getElementById("payrollEmployeeCard"),
+      payrollStatusText: document.getElementById("payrollStatusText"),
+      payrollRefreshButton: document.getElementById("payrollRefreshButton"),
+      payrollAddButton: document.getElementById("payrollAddButton"),
+      payrollTableBody: document.getElementById("payrollTableBody"),
+      payrollModal: document.getElementById("payrollModal"),
+      payrollForm: document.getElementById("payrollForm"),
+      payrollModalTitle: document.getElementById("payrollModalTitle"),
+      payrollModalStatus: document.getElementById("payrollModalStatus"),
+      closePayrollModalButton: document.getElementById("closePayrollModalButton"),
+      cancelPayrollButton: document.getElementById("cancelPayrollButton"),
+      payrollNipInput: document.getElementById("payrollNipInput"),
+      payrollNameInput: document.getElementById("payrollNameInput"),
+      payrollJobInput: document.getElementById("payrollJobInput"),
+      payrollBaseSalaryInput: document.getElementById("payrollBaseSalaryInput"),
+      payrollMealAllowanceInput: document.getElementById("payrollMealAllowanceInput"),
+      payrollOvertimeInput: document.getElementById("payrollOvertimeInput"),
+      payrollAllowanceInput: document.getElementById("payrollAllowanceInput"),
+      payrollBonusInput: document.getElementById("payrollBonusInput"),
+      payrollLoanInput: document.getElementById("payrollLoanInput"),
+      payrollDebtInput: document.getElementById("payrollDebtInput"),
+      payrollOtherInput: document.getElementById("payrollOtherInput"),
+      salarySlipCard: document.getElementById("salarySlipCard"),
+      salarySlipStatusText: document.getElementById("salarySlipStatusText"),
+      salarySlipEmployeeSelect: document.getElementById("salarySlipEmployeeSelect"),
+      salarySlipMonthSelect: document.getElementById("salarySlipMonthSelect"),
+      salarySlipYearSelect: document.getElementById("salarySlipYearSelect"),
+      generateSalarySlipButton: document.getElementById("generateSalarySlipButton"),
+      openSalarySlipButton: document.getElementById("openSalarySlipButton"),
+      salarySlipSummary: document.getElementById("salarySlipSummary"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -658,6 +692,30 @@
         document.querySelector(".attendance-monthly-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
+    if (els.payrollRefreshButton) els.payrollRefreshButton.addEventListener("click", () => fetchPayrollEmployees({ manual: true }));
+    if (els.payrollAddButton) els.payrollAddButton.addEventListener("click", () => openPayrollModal(-1));
+    if (els.payrollTableBody) els.payrollTableBody.addEventListener("click", handlePayrollTableAction);
+    if (els.payrollForm) els.payrollForm.addEventListener("submit", savePayrollEmployee);
+    [els.closePayrollModalButton, els.cancelPayrollButton].forEach((button) => {
+      if (button) button.addEventListener("click", closePayrollModal);
+    });
+    if (els.payrollModal) {
+      els.payrollModal.addEventListener("click", (event) => {
+        if (event.target === els.payrollModal) closePayrollModal();
+      });
+    }
+    [els.salarySlipEmployeeSelect, els.salarySlipMonthSelect, els.salarySlipYearSelect].forEach((control) => {
+      if (!control) return;
+      control.addEventListener("change", () => {
+        state.salarySlipUrl = "";
+        if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = true;
+        renderSalarySlipSummary();
+      });
+    });
+    if (els.generateSalarySlipButton) els.generateSalarySlipButton.addEventListener("click", generateSalarySlipPdf);
+    if (els.openSalarySlipButton) els.openSalarySlipButton.addEventListener("click", () => {
+      if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
+    });
     els.profileTabButtons.forEach((button) => {
       button.addEventListener("click", () => switchProfileTab(button.dataset.profileTab, { openPanel: true }));
     });
@@ -3211,6 +3269,25 @@
       return;
     }
 
+    if (type === "payroll") {
+      const record = state.payrollEmployees[index] || {};
+      try {
+        const result = await postToAbsensiApi({
+          action: "deletePayrollEmployee",
+          role: getCurrentUserRecord().role || "",
+          username: getCurrentUserRecord().username || "",
+          originalNip: record.nip || "",
+          originalName: record.name || ""
+        });
+        if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Data gaji belum terhapus online.");
+        closeDeleteModal();
+        await fetchPayrollEmployees({ manual: true });
+      } catch (error) {
+        if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script absensi terbaru sudah ditempel dan di-deploy.`;
+      }
+      return;
+    }
+
     if (isRemoteLocalRecordType(type)) {
       const record = getLocalArray(type)[index] || {};
       try {
@@ -4918,6 +4995,7 @@
 
     renderAttendanceTable(todayGroups, canEdit);
     renderAttendanceMonthlyTable(monthGroups, employees, workDays);
+    renderSalarySlipSummary();
   }
 
   function renderAttendanceTable(groups, canEdit) {
@@ -5062,6 +5140,323 @@
     } finally {
       endAppLoading(token);
     }
+  }
+
+  async function fetchPayrollEmployees(options = {}) {
+    const user = getCurrentUserRecord();
+    const canManage = isAdminUser(user);
+
+    [els.payrollEmployeeCard, els.salarySlipCard].forEach((card) => {
+      if (card) card.hidden = !canManage;
+    });
+
+    if (!canManage) return;
+
+    try {
+      if (options.manual && els.payrollStatusText) els.payrollStatusText.textContent = "Menyinkronkan data gaji...";
+      const payload = await postToAbsensiApi({
+        action: "listPayrollEmployees",
+        role: user.role || "",
+        username: user.username || user.name || ""
+      });
+
+      if (!payload || (payload.ok !== true && payload.success !== true)) {
+        throw new Error(payload?.message || "Endpoint data gaji belum aktif.");
+      }
+
+      state.payrollEmployees = (Array.isArray(payload.employees) ? payload.employees : [])
+        .map(normalizePayrollEmployee)
+        .filter((employee) => employee.nip || employee.name);
+      renderPayrollTable();
+      populateSalarySlipControls();
+      renderSalarySlipSummary();
+      if (els.payrollStatusText) els.payrollStatusText.textContent = `Menampilkan ${formatNumber(state.payrollEmployees.length)} data gaji karyawan.`;
+    } catch (error) {
+      console.warn("Gagal memuat data gaji:", error);
+      if (els.payrollStatusText) els.payrollStatusText.textContent = `${error.message || "Data gaji gagal dimuat."} Pastikan Apps Script absensi sudah diperbarui.`;
+      state.payrollEmployees = [];
+      renderPayrollTable();
+      populateSalarySlipControls();
+      renderSalarySlipSummary();
+    }
+  }
+
+  function renderPayrollTable() {
+    if (!els.payrollTableBody) return;
+
+    if (!state.payrollEmployees.length) {
+      els.payrollTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="12">Belum ada data gaji karyawan.</td></tr>`;
+      return;
+    }
+
+    els.payrollTableBody.innerHTML = state.payrollEmployees.map((employee, index) => `
+      <tr>
+        <td>${escapeHtml(employee.nip || "-")}</td>
+        <td><strong>${escapeHtml(employee.name || "-")}</strong></td>
+        <td>${escapeHtml(employee.job || "-")}</td>
+        <td>${formatPayrollMoney(employee.baseSalary)}</td>
+        <td>${formatPayrollMoney(employee.mealAllowance)}</td>
+        <td>${formatPayrollMoney(employee.overtime)}</td>
+        <td>${formatPayrollMoney(employee.allowance)}</td>
+        <td>${formatPayrollMoney(employee.bonus)}</td>
+        <td>${formatPayrollMoney(employee.loan)}</td>
+        <td>${formatPayrollMoney(employee.debt)}</td>
+        <td>${formatPayrollMoney(employee.other)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="table-action table-action-edit" type="button" data-payroll-action="edit" data-index="${index}" aria-label="Edit data gaji">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
+            </button>
+            <button class="table-action table-action-delete" type="button" data-payroll-action="delete" data-index="${index}" aria-label="Hapus data gaji">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function handlePayrollTableAction(event) {
+    const button = event.target.closest("[data-payroll-action]");
+    if (!button || !isAdminUser(getCurrentUserRecord())) return;
+
+    const index = Number(button.dataset.index);
+    const employee = state.payrollEmployees[index] || {};
+
+    if (button.dataset.payrollAction === "edit") openPayrollModal(index);
+    if (button.dataset.payrollAction === "delete") openDeleteModal("payroll", index, `data gaji ${employee.name || employee.nip || "karyawan"}`);
+  }
+
+  function openPayrollModal(index) {
+    if (!els.payrollModal || !isAdminUser(getCurrentUserRecord())) return;
+
+    state.payrollEditingIndex = index;
+    const employee = state.payrollEmployees[index] || {};
+    if (els.payrollModalTitle) els.payrollModalTitle.textContent = index >= 0 ? "Edit Data Gaji" : "Tambah Data Gaji";
+    setPayrollModalStatus("Data tersimpan ke sheet data_karyawan.", "info");
+
+    setInputValue(els.payrollNipInput, employee.nip);
+    setInputValue(els.payrollNameInput, employee.name);
+    setInputValue(els.payrollJobInput, employee.job);
+    setInputValue(els.payrollBaseSalaryInput, employee.baseSalary || "");
+    setInputValue(els.payrollMealAllowanceInput, employee.mealAllowance || "");
+    setInputValue(els.payrollOvertimeInput, employee.overtime || "");
+    setInputValue(els.payrollAllowanceInput, employee.allowance || "");
+    setInputValue(els.payrollBonusInput, employee.bonus || "");
+    setInputValue(els.payrollLoanInput, employee.loan || "");
+    setInputValue(els.payrollDebtInput, employee.debt || "");
+    setInputValue(els.payrollOtherInput, employee.other || "");
+    showModal(els.payrollModal);
+  }
+
+  function closePayrollModal() {
+    state.payrollEditingIndex = -1;
+    hideModal(els.payrollModal);
+  }
+
+  async function savePayrollEmployee(event) {
+    event.preventDefault();
+    if (!isAdminUser(getCurrentUserRecord())) return;
+
+    const user = getCurrentUserRecord();
+    const index = state.payrollEditingIndex;
+    const original = state.payrollEmployees[index] || {};
+    const employee = getPayrollFormData();
+    const token = startAppLoading("Menyimpan data gaji...", 0);
+
+    try {
+      if (!employee.nip || !employee.name) throw new Error("NIP dan nama karyawan wajib diisi.");
+
+      const result = await postToAbsensiApi({
+        action: "savePayrollEmployee",
+        role: user.role || "",
+        username: user.username || user.name || "",
+        originalNip: original.nip || "",
+        originalName: original.name || "",
+        employee
+      });
+
+      if (!result || (result.ok !== true && result.success !== true)) {
+        throw new Error(result?.message || "Data gaji gagal disimpan.");
+      }
+
+      setPayrollModalStatus("Data gaji berhasil disimpan.", "success");
+      closePayrollModal();
+      await fetchPayrollEmployees({ manual: true });
+    } catch (error) {
+      setPayrollModalStatus(error.message || "Data gaji gagal disimpan.", "error");
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  function getPayrollFormData() {
+    return {
+      nip: String(els.payrollNipInput?.value || "").trim(),
+      name: String(els.payrollNameInput?.value || "").trim(),
+      job: String(els.payrollJobInput?.value || "").trim(),
+      baseSalary: parsePayrollNumber(els.payrollBaseSalaryInput?.value),
+      mealAllowance: parsePayrollNumber(els.payrollMealAllowanceInput?.value),
+      overtime: parsePayrollNumber(els.payrollOvertimeInput?.value),
+      allowance: parsePayrollNumber(els.payrollAllowanceInput?.value),
+      bonus: parsePayrollNumber(els.payrollBonusInput?.value),
+      loan: parsePayrollNumber(els.payrollLoanInput?.value),
+      debt: parsePayrollNumber(els.payrollDebtInput?.value),
+      other: parsePayrollNumber(els.payrollOtherInput?.value)
+    };
+  }
+
+  function setPayrollModalStatus(message, type) {
+    if (!els.payrollModalStatus) return;
+    els.payrollModalStatus.textContent = message || "";
+    els.payrollModalStatus.dataset.type = type || "info";
+  }
+
+  function populateSalarySlipControls() {
+    const now = new Date();
+
+    if (els.salarySlipEmployeeSelect) {
+      const current = els.salarySlipEmployeeSelect.value;
+      els.salarySlipEmployeeSelect.innerHTML = state.payrollEmployees.length
+        ? state.payrollEmployees.map((employee) => `<option value="${escapeHtml(employee.nip || employee.name)}">${escapeHtml(employee.name || employee.nip)}${employee.nip ? ` - ${escapeHtml(employee.nip)}` : ""}</option>`).join("")
+        : `<option value="">Belum ada data gaji</option>`;
+      if (current && Array.from(els.salarySlipEmployeeSelect.options).some((option) => option.value === current)) {
+        els.salarySlipEmployeeSelect.value = current;
+      }
+    }
+
+    if (els.salarySlipMonthSelect && !els.salarySlipMonthSelect.dataset.ready) {
+      els.salarySlipMonthSelect.value = String(now.getMonth() + 1).padStart(2, "0");
+      els.salarySlipMonthSelect.dataset.ready = "1";
+    }
+
+    if (els.salarySlipYearSelect && !els.salarySlipYearSelect.options.length) {
+      const currentYear = now.getFullYear();
+      els.salarySlipYearSelect.innerHTML = Array.from({ length: 5 }, (_, index) => {
+        const year = currentYear - 2 + index;
+        return `<option value="${year}">${year}</option>`;
+      }).join("");
+      els.salarySlipYearSelect.value = String(currentYear);
+    }
+  }
+
+  function renderSalarySlipSummary() {
+    if (!els.salarySlipSummary) return;
+
+    const employee = getSelectedPayrollEmployee();
+    if (!employee) {
+      els.salarySlipSummary.innerHTML = `<span>Belum ada karyawan terpilih.</span>`;
+      if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = true;
+      return;
+    }
+
+    if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = false;
+    const summary = calculateSalarySlipPreview(employee);
+    els.salarySlipSummary.innerHTML = `
+      <span><small>Hadir</small><strong>${formatNumber(summary.present)} Hari</strong></span>
+      <span><small>Terlambat</small><strong>${formatNumber(summary.late)} Hari</strong></span>
+      <span><small>Shift Pagi</small><strong>${formatNumber(summary.shiftPagi)} Hari</strong></span>
+      <span><small>Shift Sore</small><strong>${formatNumber(summary.shiftSore)} Hari</strong></span>
+      <span><small>Estimasi Bersih</small><strong>${formatPayrollMoney(summary.netSalary)}</strong></span>
+    `;
+  }
+
+  function calculateSalarySlipPreview(employee) {
+    const monthKey = `${els.salarySlipYearSelect?.value || state.attendanceYear || new Date().getFullYear()}-${els.salarySlipMonthSelect?.value || state.attendanceMonth || getCurrentMonthValue()}`;
+    const groups = state.attendanceGroups.filter((group) => {
+      return normalizeSearch(group.name) === normalizeSearch(employee.name) && String(group.date || "").startsWith(monthKey);
+    });
+    const present = groups.filter((group) => group.datang).length;
+    const late = groups.filter(isLateAttendance).length;
+    const shiftPagi = groups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
+    const shiftSore = groups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+    const income = Number(employee.baseSalary || 0) + Number(employee.mealAllowance || 0) + Number(employee.overtime || 0) + Number(employee.allowance || 0) + Number(employee.bonus || 0);
+    const deductions = Number(employee.loan || 0) + Number(employee.debt || 0) + Number(employee.other || 0);
+
+    return {
+      present,
+      late,
+      shiftPagi,
+      shiftSore,
+      netSalary: income - deductions
+    };
+  }
+
+  async function generateSalarySlipPdf() {
+    const user = getCurrentUserRecord();
+    const employee = getSelectedPayrollEmployee();
+
+    if (!isAdminUser(user) || !employee) return;
+
+    const token = startAppLoading("Membuat PDF slip gaji...", 0);
+    state.salarySlipUrl = "";
+    if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = true;
+
+    try {
+      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = "Membuat PDF dari template Slip_Gaji...";
+      const result = await postToAbsensiApi({
+        action: "generateSalarySlip",
+        role: user.role || "",
+        username: user.username || user.name || "",
+        nip: employee.nip || "",
+        name: employee.name || "",
+        month: els.salarySlipMonthSelect?.value || getCurrentMonthValue(),
+        year: els.salarySlipYearSelect?.value || String(new Date().getFullYear())
+      });
+
+      if (!result || (result.ok !== true && result.success !== true)) {
+        throw new Error(result?.message || result?.error || "PDF slip gaji gagal dibuat.");
+      }
+
+      state.salarySlipUrl = result.fileUrl || result.printUrl || "";
+      if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = !state.salarySlipUrl;
+      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = result.message || "PDF slip gaji berhasil dibuat.";
+      renderSalarySlipSummary();
+      if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
+    } catch (error) {
+      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  function getSelectedPayrollEmployee() {
+    const value = els.salarySlipEmployeeSelect?.value || "";
+    return state.payrollEmployees.find((employee) => {
+      return normalizeSearch(employee.nip) === normalizeSearch(value) || normalizeSearch(employee.name) === normalizeSearch(value);
+    }) || null;
+  }
+
+  function normalizePayrollEmployee(value) {
+    return {
+      rowNumber: Number(value?.rowNumber || 0),
+      no: String(value?.no || "").trim(),
+      nip: String(value?.nip || value?.NIP || "").trim(),
+      name: String(value?.name || value?.nama || value?.namaKaryawan || "").trim(),
+      job: String(value?.job || value?.jabatan || "").trim(),
+      baseSalary: parsePayrollNumber(value?.baseSalary ?? value?.gajiPokok ?? value?.gaji_pokok),
+      mealAllowance: parsePayrollNumber(value?.mealAllowance ?? value?.uangMakan ?? value?.uang_makan),
+      overtime: parsePayrollNumber(value?.overtime ?? value?.lembur),
+      allowance: parsePayrollNumber(value?.allowance ?? value?.tunjangan),
+      bonus: parsePayrollNumber(value?.bonus),
+      loan: parsePayrollNumber(value?.loan ?? value?.pinjaman),
+      debt: parsePayrollNumber(value?.debt ?? value?.hutang),
+      other: parsePayrollNumber(value?.other ?? value?.lainLain ?? value?.lain_lain)
+    };
+  }
+
+  function parsePayrollNumber(value) {
+    const text = String(value ?? "").replace(/[^\d,-.]/g, "").replace(/\./g, "").replace(",", ".");
+    const number = Number(text || 0);
+    return Number.isFinite(number) ? number : 0;
+  }
+
+  function formatPayrollMoney(value) {
+    return `Rp. ${formatNumber(Math.round(Number(value || 0)))}`;
+  }
+
+  function setInputValue(input, value) {
+    if (input) input.value = value ?? "";
   }
 
   function getAttendanceIdentity(user) {
@@ -5242,6 +5637,7 @@
     if (viewName === "presensi") {
       renderAttendanceDashboard();
       fetchAttendanceRecords({ silent: true });
+      fetchPayrollEmployees({ silent: true });
     }
     if (viewName === "home") maybeShowHomePrayerReminder();
     setSidebarCollapsed(true);

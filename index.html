@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260607-dashboard-v56">
-  <script defer src="assets/auth-guard.js?v=20260607-dashboard-v56"></script>
-  <script defer src="assets/app.js?v=20260607-dashboard-v56"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260608-dashboard-v57">
+  <script defer src="assets/auth-guard.js?v=20260608-dashboard-v57"></script>
+  <script defer src="assets/app.js?v=20260608-dashboard-v57"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260607-dashboard-v56"></script>
+  <script defer src="assets/home-dashboard.js?v=20260608-dashboard-v57"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -439,6 +439,84 @@
                   <tbody id="attendanceMonthlyTableBody"></tbody>
                 </table>
               </div>
+            </article>
+
+            <article class="attendance-card payroll-card" id="payrollEmployeeCard">
+              <div class="attendance-card-head">
+                <div>
+                  <h3>Data Gaji Karyawan</h3>
+                  <p id="payrollStatusText">Tersambung dengan sheet data_karyawan.</p>
+                </div>
+                <div class="attendance-toolbar payroll-toolbar">
+                  <button class="filter-action" id="payrollRefreshButton" type="button">Refresh</button>
+                  <button class="secondary-action" id="payrollAddButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                    Tambah Data
+                  </button>
+                </div>
+              </div>
+              <div class="simple-table-wrap payroll-table-wrap">
+                <table class="simple-table payroll-table">
+                  <thead>
+                    <tr>
+                      <th>NIP</th>
+                      <th>Nama Karyawan</th>
+                      <th>Jabatan</th>
+                      <th>Gaji Pokok</th>
+                      <th>Uang Makan</th>
+                      <th>Lembur</th>
+                      <th>Tunjangan</th>
+                      <th>Bonus</th>
+                      <th>Pinjaman</th>
+                      <th>Hutang</th>
+                      <th>Lain-Lain</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payrollTableBody"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="attendance-card salary-slip-card" id="salarySlipCard">
+              <div class="attendance-card-head">
+                <div>
+                  <h3>Slip Gaji</h3>
+                  <p id="salarySlipStatusText">Pilih karyawan dan periode untuk membuat PDF.</p>
+                </div>
+              </div>
+              <div class="salary-slip-panel">
+                <label>Karyawan
+                  <select id="salarySlipEmployeeSelect"></select>
+                </label>
+                <label>Bulan
+                  <select id="salarySlipMonthSelect">
+                    <option value="01">Januari</option>
+                    <option value="02">Februari</option>
+                    <option value="03">Maret</option>
+                    <option value="04">April</option>
+                    <option value="05">Mei</option>
+                    <option value="06">Juni</option>
+                    <option value="07">Juli</option>
+                    <option value="08">Agustus</option>
+                    <option value="09">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                  </select>
+                </label>
+                <label>Tahun
+                  <select id="salarySlipYearSelect"></select>
+                </label>
+                <div class="salary-slip-actions">
+                  <button class="secondary-action" id="generateSalarySlipButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M12 18v-6"></path><path d="m9 15 3 3 3-3"></path></svg>
+                    Buat PDF
+                  </button>
+                  <button class="filter-action" id="openSalarySlipButton" type="button" disabled>Buka PDF</button>
+                </div>
+              </div>
+              <div class="salary-slip-summary" id="salarySlipSummary"></div>
             </article>
           </section>
         </section>
@@ -983,6 +1061,37 @@
       <div class="form-actions">
         <button class="text-button" id="cancelAttendanceEditButton" type="button">Batal</button>
         <button class="secondary-action" type="submit">Simpan Presensi</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="dashboard-modal" id="payrollModal" hidden>
+    <form class="modal-card record-modal-card payroll-modal-card" id="payrollForm">
+      <div class="modal-head">
+        <div>
+          <h2 id="payrollModalTitle">Tambah Data Gaji</h2>
+          <p id="payrollModalStatus">Data tersimpan ke sheet data_karyawan.</p>
+        </div>
+        <button class="icon-button" id="closePayrollModalButton" type="button" aria-label="Tutup">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+      <div class="form-grid payroll-form-grid">
+        <label>NIP<input id="payrollNipInput" name="nip" type="text" required></label>
+        <label>Nama Karyawan<input id="payrollNameInput" name="name" type="text" required></label>
+        <label class="span-2">Jabatan<input id="payrollJobInput" name="job" type="text"></label>
+        <label>Gaji Pokok<input id="payrollBaseSalaryInput" name="baseSalary" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Uang Makan<input id="payrollMealAllowanceInput" name="mealAllowance" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Lembur<input id="payrollOvertimeInput" name="overtime" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Tunjangan<input id="payrollAllowanceInput" name="allowance" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Bonus<input id="payrollBonusInput" name="bonus" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Pinjaman<input id="payrollLoanInput" name="loan" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Hutang<input id="payrollDebtInput" name="debt" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label>Lain-Lain<input id="payrollOtherInput" name="other" type="number" min="0" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="form-actions">
+        <button class="text-button" id="cancelPayrollButton" type="button">Batal</button>
+        <button class="secondary-action" type="submit">Simpan Data</button>
       </div>
     </form>
   </section>
