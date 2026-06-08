@@ -272,6 +272,7 @@
     editingAttendanceGroup: null,
     payrollEmployees: [],
     payrollEditingIndex: -1,
+    payrollEndpointReady: false,
     salarySlipUrl: "",
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
@@ -3272,6 +3273,7 @@
     if (type === "payroll") {
       const record = state.payrollEmployees[index] || {};
       try {
+        if (!state.payrollEndpointReady) throw new Error("Endpoint data gaji belum aktif.");
         const result = await postToAbsensiApi({
           action: "deletePayrollEmployee",
           role: getCurrentUserRecord().role || "",
@@ -5154,16 +5156,17 @@
 
     try {
       if (options.manual && els.payrollStatusText) els.payrollStatusText.textContent = "Menyinkronkan data gaji...";
-      const payload = await postToAbsensiApi({
+      const payload = await getAbsensiRecords({
         action: "listPayrollEmployees",
         role: user.role || "",
         username: user.username || user.name || ""
       });
 
-      if (!payload || (payload.ok !== true && payload.success !== true)) {
+      if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.employees)) {
         throw new Error(payload?.message || "Endpoint data gaji belum aktif.");
       }
 
+      state.payrollEndpointReady = true;
       state.payrollEmployees = (Array.isArray(payload.employees) ? payload.employees : [])
         .map(normalizePayrollEmployee)
         .filter((employee) => employee.nip || employee.name);
@@ -5173,6 +5176,7 @@
       if (els.payrollStatusText) els.payrollStatusText.textContent = `Menampilkan ${formatNumber(state.payrollEmployees.length)} data gaji karyawan.`;
     } catch (error) {
       console.warn("Gagal memuat data gaji:", error);
+      state.payrollEndpointReady = false;
       if (els.payrollStatusText) els.payrollStatusText.textContent = `${error.message || "Data gaji gagal dimuat."} Pastikan Apps Script absensi sudah diperbarui.`;
       state.payrollEmployees = [];
       renderPayrollTable();
@@ -5183,9 +5187,13 @@
 
   function renderPayrollTable() {
     if (!els.payrollTableBody) return;
+    if (els.payrollAddButton) els.payrollAddButton.disabled = !state.payrollEndpointReady;
 
     if (!state.payrollEmployees.length) {
-      els.payrollTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="12">Belum ada data gaji karyawan.</td></tr>`;
+      const message = state.payrollEndpointReady
+        ? "Belum ada data gaji karyawan."
+        : "Endpoint data gaji belum aktif. Update Apps Script absensi terlebih dahulu.";
+      els.payrollTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="12">${escapeHtml(message)}</td></tr>`;
       return;
     }
 
@@ -5257,6 +5265,10 @@
   async function savePayrollEmployee(event) {
     event.preventDefault();
     if (!isAdminUser(getCurrentUserRecord())) return;
+    if (!state.payrollEndpointReady) {
+      setPayrollModalStatus("Endpoint data gaji belum aktif. Update Apps Script absensi terlebih dahulu.", "error");
+      return;
+    }
 
     const user = getCurrentUserRecord();
     const index = state.payrollEditingIndex;
@@ -5350,7 +5362,7 @@
       return;
     }
 
-    if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = false;
+    if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = !state.payrollEndpointReady;
     const summary = calculateSalarySlipPreview(employee);
     els.salarySlipSummary.innerHTML = `
       <span><small>Hadir</small><strong>${formatNumber(summary.present)} Hari</strong></span>
@@ -5387,6 +5399,10 @@
     const employee = getSelectedPayrollEmployee();
 
     if (!isAdminUser(user) || !employee) return;
+    if (!state.payrollEndpointReady) {
+      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = "Endpoint slip gaji belum aktif. Update Apps Script absensi terlebih dahulu.";
+      return;
+    }
 
     const token = startAppLoading("Membuat PDF slip gaji...", 0);
     state.salarySlipUrl = "";
