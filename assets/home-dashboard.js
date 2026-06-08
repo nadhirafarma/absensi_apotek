@@ -4949,7 +4949,6 @@
       if (record.warningFlag && !item.warningFlag) item.warningFlag = record.warningFlag;
 
       if (record.status === "PULANG") {
-        if (record.shift && !item.shift) item.shift = record.shift;
         if (!item.pulang || record.time > item.pulang) {
           item.pulang = record.time;
           item.pulangRow = record.rowNumber;
@@ -5001,8 +5000,8 @@
     const lateToday = todayGroups.filter((group) => isLateAttendance(group)).length;
     const absentToday = Math.max(0, employeeCount - presentToday);
     const workDays = countWorkDaysInMonth(Number(state.attendanceYear), Number(state.attendanceMonth));
-    const pagi = regularMonthGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-    const sore = regularMonthGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+    const pagi = regularMonthGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
+    const sore = regularMonthGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
     const shiftTotal = Math.max(1, pagi + sore);
 
     document.body.classList.toggle("attendance-can-edit", canEdit);
@@ -5075,8 +5074,8 @@
       const hadir = regularGroups.filter((group) => group.datang).length;
       const terlambat = regularGroups.filter(isLateAttendance).length;
       const tidakHadir = Math.max(0, workDays - hadir);
-      const pagi = regularGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-      const sore = regularGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
+      const pagi = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
+      const sore = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
       const lembur = groups.filter((group) => group.lembur).length;
       const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
       return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${formatNumber(lembur)}</td><td>${percent}%</td></tr>`;
@@ -5448,10 +5447,10 @@
     const completeDays = regularGroups.filter((group) => group.datang && group.pulang).length;
     const overtimeDays = groups.filter((group) => group.lembur).length;
     const late = regularGroups.filter(isLateAttendance).length;
-    const shiftPagi = regularGroups.filter((group) => normalizeSearch(group.shift).includes("pagi")).length;
-    const shiftSore = regularGroups.filter((group) => normalizeSearch(group.shift).includes("sore")).length;
-    const baseSalary = getPayrollAmountByMode(employee.baseSalary, employee.baseSalaryMode, completeDays);
-    const mealAllowance = getPayrollAmountByMode(employee.mealAllowance, employee.mealAllowanceMode, completeDays);
+    const shiftPagi = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
+    const shiftSore = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
+    const baseSalary = getPayrollAmountByMode(employee.baseSalary, employee.baseSalaryMode, present);
+    const mealAllowance = getPayrollAmountByMode(employee.mealAllowance, employee.mealAllowanceMode, present);
     const overtime = getPayrollAmountByMode(employee.overtime, employee.overtimeMode, overtimeDays);
     const income = baseSalary + mealAllowance + overtime + Number(employee.allowance || 0) + Number(employee.bonus || 0);
     const deductions = Number(employee.loan || 0) + Number(employee.debt || 0) + Number(employee.other || 0);
