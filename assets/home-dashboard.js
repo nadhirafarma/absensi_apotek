@@ -511,6 +511,7 @@
       payrollOvertimeInput: document.getElementById("payrollOvertimeInput"),
       payrollOvertimeModeSelect: document.getElementById("payrollOvertimeModeSelect"),
       payrollAllowanceInput: document.getElementById("payrollAllowanceInput"),
+      payrollAllowanceModeSelect: document.getElementById("payrollAllowanceModeSelect"),
       payrollBonusInput: document.getElementById("payrollBonusInput"),
       payrollLoanInput: document.getElementById("payrollLoanInput"),
       payrollDebtInput: document.getElementById("payrollDebtInput"),
@@ -700,6 +701,10 @@
     if (els.payrollAddButton) els.payrollAddButton.addEventListener("click", () => openPayrollModal(-1));
     if (els.payrollTableBody) els.payrollTableBody.addEventListener("click", handlePayrollTableAction);
     if (els.payrollForm) els.payrollForm.addEventListener("submit", savePayrollEmployee);
+    getPayrollMoneyInputs().forEach((input) => {
+      input.addEventListener("input", () => formatPayrollMoneyInput(input));
+      input.addEventListener("blur", () => formatPayrollMoneyInput(input));
+    });
     [els.closePayrollModalButton, els.cancelPayrollButton].forEach((button) => {
       if (button) button.addEventListener("click", closePayrollModal);
     });
@@ -1463,7 +1468,7 @@
     }
 
     const detail = state.quickReport?.type === "expiring"
-      ? `Menampilkan obat yang akan expired dalam ${Number(state.quickReport.days || EXPIRING_DAYS)} hari.`
+      ? `Menampilkan obat aktif yang akan expired dalam ${Number(state.quickReport.days || EXPIRING_DAYS)} hari.`
       : "Lampiran data obat sesuai laporan dashboard.";
     els.quickReportTitle.hidden = false;
     els.quickReportTitle.innerHTML = `
@@ -1539,12 +1544,12 @@
     if (type === "all") return true;
     if (type === "active") return getEffectiveMedicineStatus(row) === "aktif";
     if (type === "inactive") return getEffectiveMedicineStatus(row) === "nonaktif";
-    if (type === "expired") return isExpired(row);
+    if (type === "expired") return isActiveExpiredMedicine(row);
     if (type === "empty" || type === "out") return parseNumber(row.stok) <= 0;
     if (type === "low") return isLowStock(row);
     if (type === "expiring") {
       const daysLeft = getExpiryDaysLeft(row);
-      return daysLeft !== null && daysLeft >= 0 && daysLeft <= (Number(filter.days) || EXPIRING_DAYS);
+      return isActiveMedicineForExpiryReport(row) && daysLeft !== null && daysLeft >= 0 && daysLeft <= (Number(filter.days) || EXPIRING_DAYS);
     }
     return true;
   }
@@ -5233,7 +5238,7 @@
         <td>${formatPayrollRate(employee.baseSalary, employee.baseSalaryMode)}</td>
         <td>${formatPayrollRate(employee.mealAllowance, employee.mealAllowanceMode)}</td>
         <td>${formatPayrollRate(employee.overtime, employee.overtimeMode)}</td>
-        <td>${formatPayrollMoney(employee.allowance)}</td>
+        <td>${formatPayrollRate(employee.allowance, employee.allowanceMode)}</td>
         <td>${formatPayrollMoney(employee.bonus)}</td>
         <td>${formatPayrollMoney(employee.loan)}</td>
         <td>${formatPayrollMoney(employee.debt)}</td>
@@ -5274,17 +5279,18 @@
     setInputValue(els.payrollNipInput, employee.nip);
     setInputValue(els.payrollNameInput, employee.name);
     setInputValue(els.payrollJobInput, employee.job);
-    setInputValue(els.payrollBaseSalaryInput, employee.baseSalary || "");
+    setPayrollMoneyInputValue(els.payrollBaseSalaryInput, employee.baseSalary);
     setInputValue(els.payrollBaseSalaryModeSelect, normalizePayrollMode(employee.baseSalaryMode, "monthly"));
-    setInputValue(els.payrollMealAllowanceInput, employee.mealAllowance || "");
+    setPayrollMoneyInputValue(els.payrollMealAllowanceInput, employee.mealAllowance);
     setInputValue(els.payrollMealAllowanceModeSelect, normalizePayrollMode(employee.mealAllowanceMode, "daily"));
-    setInputValue(els.payrollOvertimeInput, employee.overtime || "");
+    setPayrollMoneyInputValue(els.payrollOvertimeInput, employee.overtime);
     setInputValue(els.payrollOvertimeModeSelect, normalizePayrollMode(employee.overtimeMode, "daily"));
-    setInputValue(els.payrollAllowanceInput, employee.allowance || "");
-    setInputValue(els.payrollBonusInput, employee.bonus || "");
-    setInputValue(els.payrollLoanInput, employee.loan || "");
-    setInputValue(els.payrollDebtInput, employee.debt || "");
-    setInputValue(els.payrollOtherInput, employee.other || "");
+    setPayrollMoneyInputValue(els.payrollAllowanceInput, employee.allowance);
+    setInputValue(els.payrollAllowanceModeSelect, normalizePayrollMode(employee.allowanceMode, "monthly"));
+    setPayrollMoneyInputValue(els.payrollBonusInput, employee.bonus);
+    setPayrollMoneyInputValue(els.payrollLoanInput, employee.loan);
+    setPayrollMoneyInputValue(els.payrollDebtInput, employee.debt);
+    setPayrollMoneyInputValue(els.payrollOtherInput, employee.other);
     showModal(els.payrollModal);
   }
 
@@ -5349,6 +5355,7 @@
       overtime: parsePayrollNumber(els.payrollOvertimeInput?.value),
       overtimeMode: normalizePayrollMode(els.payrollOvertimeModeSelect?.value, "daily"),
       allowance: parsePayrollNumber(els.payrollAllowanceInput?.value),
+      allowanceMode: normalizePayrollMode(els.payrollAllowanceModeSelect?.value, "monthly"),
       bonus: parsePayrollNumber(els.payrollBonusInput?.value),
       loan: parsePayrollNumber(els.payrollLoanInput?.value),
       debt: parsePayrollNumber(els.payrollDebtInput?.value),
@@ -5452,7 +5459,8 @@
     const baseSalary = getPayrollAmountByMode(employee.baseSalary, employee.baseSalaryMode, present);
     const mealAllowance = getPayrollAmountByMode(employee.mealAllowance, employee.mealAllowanceMode, present);
     const overtime = getPayrollAmountByMode(employee.overtime, employee.overtimeMode, overtimeDays);
-    const income = baseSalary + mealAllowance + overtime + Number(employee.allowance || 0) + Number(employee.bonus || 0);
+    const allowance = getPayrollAmountByMode(employee.allowance, employee.allowanceMode, present);
+    const income = baseSalary + mealAllowance + overtime + allowance + Number(employee.bonus || 0);
     const deductions = Number(employee.loan || 0) + Number(employee.debt || 0) + Number(employee.other || 0);
 
     return {
@@ -5530,6 +5538,7 @@
       overtime: parsePayrollNumber(value?.overtime ?? value?.lembur),
       overtimeMode: normalizePayrollMode(value?.overtimeMode ?? value?.modeLembur ?? value?.mode_lembur, "daily"),
       allowance: parsePayrollNumber(value?.allowance ?? value?.tunjangan),
+      allowanceMode: normalizePayrollMode(value?.allowanceMode ?? value?.modeTunjangan ?? value?.mode_tunjangan ?? value?.tunjanganMode ?? value?.allowance_mode, "monthly"),
       bonus: parsePayrollNumber(value?.bonus),
       loan: parsePayrollNumber(value?.loan ?? value?.pinjaman),
       debt: parsePayrollNumber(value?.debt ?? value?.hutang),
@@ -5545,6 +5554,36 @@
 
   function formatPayrollMoney(value) {
     return `Rp. ${formatNumber(Math.round(Number(value || 0)))}`;
+  }
+
+  function getPayrollMoneyInputs() {
+    return [
+      els.payrollBaseSalaryInput,
+      els.payrollMealAllowanceInput,
+      els.payrollOvertimeInput,
+      els.payrollAllowanceInput,
+      els.payrollBonusInput,
+      els.payrollLoanInput,
+      els.payrollDebtInput,
+      els.payrollOtherInput
+    ].filter(Boolean);
+  }
+
+  function setPayrollMoneyInputValue(input, value) {
+    if (!input) return;
+    const amount = parsePayrollNumber(value);
+    input.value = amount ? formatPayrollMoney(amount) : "";
+  }
+
+  function formatPayrollMoneyInput(input) {
+    if (!input) return;
+    const raw = String(input.value || "");
+    if (!/\d/.test(raw)) {
+      input.value = "";
+      return;
+    }
+
+    input.value = formatPayrollMoney(parsePayrollNumber(raw));
   }
 
   function formatPayrollRate(value, mode) {
@@ -5738,8 +5777,8 @@
     if (!els.reportTotal) return;
     const active = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "aktif").length;
     const inactive = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "nonaktif").length;
-    const expiring = state.rows.filter(isExpiringSoon).length;
-    const expired = state.rows.filter(isExpired).length;
+    const expiring = state.rows.filter(isActiveExpiringMedicine).length;
+    const expired = state.rows.filter(isActiveExpiredMedicine).length;
     const empty = state.rows.filter((row) => parseNumber(row.stok) <= 0).length;
     const low = state.rows.filter(isLowStock).length;
     const out = state.rows.filter((row) => parseNumber(row.stok) === 0).length;
@@ -6053,6 +6092,18 @@
     if (!date) return false;
     const today = startOfToday();
     return date < today;
+  }
+
+  function isActiveMedicineForExpiryReport(row) {
+    return parseNumber(row.stok) > 0 && getEffectiveMedicineStatus(row) === "aktif";
+  }
+
+  function isActiveExpiredMedicine(row) {
+    return isActiveMedicineForExpiryReport(row) && isExpired(row);
+  }
+
+  function isActiveExpiringMedicine(row) {
+    return isActiveMedicineForExpiryReport(row) && isExpiringSoon(row);
   }
 
   function isExpiringSoon(row) {

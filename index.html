@@ -1082,7 +1082,7 @@
         <label class="span-2">Jabatan<input id="payrollJobInput" name="job" type="text"></label>
         <label class="payroll-rate-field">Gaji Pokok
           <span class="payroll-rate-row">
-            <input id="payrollBaseSalaryInput" name="baseSalary" type="number" min="0" step="1" inputmode="numeric">
+            <input id="payrollBaseSalaryInput" name="baseSalary" type="text" inputmode="numeric" autocomplete="off">
             <select id="payrollBaseSalaryModeSelect" name="baseSalaryMode" aria-label="Mode gaji pokok">
               <option value="monthly">Perbulan</option>
               <option value="daily">Perhari</option>
@@ -1091,7 +1091,7 @@
         </label>
         <label class="payroll-rate-field">Uang Makan
           <span class="payroll-rate-row">
-            <input id="payrollMealAllowanceInput" name="mealAllowance" type="number" min="0" step="1" inputmode="numeric">
+            <input id="payrollMealAllowanceInput" name="mealAllowance" type="text" inputmode="numeric" autocomplete="off">
             <select id="payrollMealAllowanceModeSelect" name="mealAllowanceMode" aria-label="Mode uang makan">
               <option value="daily">Perhari</option>
               <option value="monthly">Perbulan</option>
@@ -1100,18 +1100,26 @@
         </label>
         <label class="payroll-rate-field">Lembur
           <span class="payroll-rate-row">
-            <input id="payrollOvertimeInput" name="overtime" type="number" min="0" step="1" inputmode="numeric">
+            <input id="payrollOvertimeInput" name="overtime" type="text" inputmode="numeric" autocomplete="off">
             <select id="payrollOvertimeModeSelect" name="overtimeMode" aria-label="Mode lembur">
               <option value="daily">Perhari</option>
               <option value="monthly">Perbulan</option>
             </select>
           </span>
         </label>
-        <label>Tunjangan<input id="payrollAllowanceInput" name="allowance" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Bonus<input id="payrollBonusInput" name="bonus" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Pinjaman<input id="payrollLoanInput" name="loan" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Hutang<input id="payrollDebtInput" name="debt" type="number" min="0" step="1" inputmode="numeric"></label>
-        <label>Lain-Lain<input id="payrollOtherInput" name="other" type="number" min="0" step="1" inputmode="numeric"></label>
+        <label class="payroll-rate-field">Tunjangan
+          <span class="payroll-rate-row">
+            <input id="payrollAllowanceInput" name="allowance" type="text" inputmode="numeric" autocomplete="off">
+            <select id="payrollAllowanceModeSelect" name="allowanceMode" aria-label="Mode tunjangan">
+              <option value="monthly">Perbulan</option>
+              <option value="daily">Perhari</option>
+            </select>
+          </span>
+        </label>
+        <label>Bonus<input id="payrollBonusInput" name="bonus" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label>Pinjaman<input id="payrollLoanInput" name="loan" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label>Hutang<input id="payrollDebtInput" name="debt" type="text" inputmode="numeric" autocomplete="off"></label>
+        <label>Lain-Lain<input id="payrollOtherInput" name="other" type="text" inputmode="numeric" autocomplete="off"></label>
       </div>
       <div class="form-actions">
         <button class="text-button" id="cancelPayrollButton" type="button">Batal</button>
