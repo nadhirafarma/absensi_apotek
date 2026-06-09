@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Popup Data Obat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body data-page="medicine" class="has-search-popover">
+  <main class="shell search-shell">
+    <section class="search-panel" aria-labelledby="searchTitle">
+      <div class="search-heading">
+        <h1 id="searchTitle">Cari data obat</h1>
+      </div>
+
+      <div class="search-popover-anchor">
+        <form class="search-form" autocomplete="off">
+          <label class="sr-only" for="searchInput">Cari nama obat atau barcode</label>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="m15.2 15.2 4.8 4.8"></path>
+            </svg>
+            <input id="searchInput" type="search" value="Paracet" aria-label="Cari nama obat atau barcode">
+            <button class="search-scan-button" type="button" aria-label="Scan barcode" title="Scan barcode">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M7 8v8"></path>
+                <path d="M11 8v8"></path>
+                <path d="M14 8v8"></path>
+                <path d="M17 8v8"></path>
+              </svg>
+            </button>
+          </div>
+          <button class="filter-action" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16"></path>
+              <path d="M7 12h10"></path>
+              <path d="M10 18h4"></path>
+            </svg>
+            Filter
+          </button>
+        </form>
+
+        <section class="results-area" aria-live="polite">
+          <div class="results-popover" role="dialog" aria-label="Hasil pencarian obat">
+            <div class="results-popover-head">
+              <strong>Hasil pencarian</strong>
+              <button class="icon-button" type="button" aria-label="Tutup hasil pencarian" title="Tutup">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="results-list">
+              <article class="medicine-card">
+                <div class="medicine-main">
+                  <div class="medicine-title">
+                    <h2><span class="medicine-name-chip name-tone-1">PARACETAMOL 500 MG / PCT | PIM</span></h2>
+                    <p>8993515361167</p>
+                  </div>
+                  <span class="stock-pill success">Tersedia</span>
+                </div>
+                <div class="medicine-review">
+                  <dl class="medicine-summary">
+                    <div data-key="barcode"><dt>Barcode</dt><dd>8993515361167</dd></div>
+                    <div data-key="stock"><dt>Stok</dt><dd>42.4 Box</dd></div>
+                    <div data-key="purchaseUnit"><dt>Satuan Beli</dt><dd>Box</dd></div>
+                    <div data-key="expired"><dt>Expired</dt><dd>01 Des 2029</dd></div>
+                    <div data-key="status"><dt>Status</dt><dd>Aktif</dd></div>
+                  </dl>
+                  <div class="price-table" aria-label="Satuan dan harga">
+                    <div class="price-table-head">
+                      <span>Level</span>
+                      <span>Satuan</span>
+                      <span>Harga</span>
+                    </div>
+                    <div class="price-table-row">
+                      <span class="price-level">1</span>
+                      <strong class="price-unit">Strip</strong>
+                      <strong class="price-value">Rp 3.000</strong>
+                    </div>
+                    <div class="price-table-row">
+                      <span class="price-level">2</span>
+                      <strong class="price-unit">Box</strong>
+                      <strong class="price-value">Rp 20.000</strong>
+                    </div>
+                    <div class="price-table-row">
+                      <span class="price-level">3</span>
+                      <strong class="price-unit">Box Umum</strong>
+                      <strong class="price-value">Rp 22.000</strong>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="medicine-card">
+                <div class="medicine-main">
+                  <div class="medicine-title">
+                    <h2><span class="medicine-name-chip name-tone-2">PARACETAMOL BLISTER 500MG / PCT | MERSI</span></h2>
+                    <p>8993176111017</p>
+                  </div>
+                  <span class="stock-pill warning">Menipis</span>
+                </div>
+                <div class="medicine-review">
+                  <dl class="medicine-summary">
+                    <div data-key="stock"><dt>Stok</dt><dd>3 Box</dd></div>
+                    <div data-key="expired"><dt>Expired</dt><dd>30 Sep 2028</dd></div>
+                  </dl>
+                  <div class="price-table" aria-label="Satuan dan harga">
+                    <div class="price-table-row">
+                      <span class="price-level">1</span>
+                      <strong class="price-unit">Blister</strong>
+                      <strong class="price-value">Rp 3.000</strong>
+                    </div>
+                    <div class="price-table-row">
+                      <span class="price-level">2</span>
+                      <strong class="price-unit">Box</strong>
+                      <strong class="price-value">Rp 20.000</strong>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

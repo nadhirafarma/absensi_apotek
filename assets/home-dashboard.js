@@ -536,6 +536,7 @@
       reportExpired: document.getElementById("reportExpired"),
       reportEmpty: document.getElementById("reportEmpty"),
       reportLow: document.getElementById("reportLow"),
+      reportMinus: document.getElementById("reportMinus"),
       reportOut: document.getElementById("reportOut")
     });
   }
@@ -996,7 +997,7 @@
       no_batch: ["no_batch", "nobatch", "batch"],
       satuan_beli: ["satuan_beli", "satuanbeli"],
       harga_beli: ["harga_beli", "hargabeli"],
-      stok_min: ["stok_min", "stokmin"],
+      stok_min: ["stok_min", "stokmin", "stokminimum", "stokminimal", "minimumstok", "minstok", "stok_minimum", "stok_minimal"],
       satuan_stok_min: ["satuan_stok_min", "satuanstokmin", "satuan_stok_minimum"],
       laba_otomatis: ["laba_otomatis", "labaotomatis"],
       isi_resep_1: ["isi_resep_1", "isiresep1"],
@@ -1075,7 +1076,7 @@
     return {
       category: String(source.category || "").trim(),
       supplier: String(source.supplier || "").trim(),
-      stockLevel: ["", "empty", "low", "ready"].includes(source.stockLevel) ? source.stockLevel : "",
+      stockLevel: ["", "empty", "low", "minus", "ready"].includes(source.stockLevel) ? source.stockLevel : "",
       expiredLevel: ["", "expired", "soon", "safe", "blank"].includes(source.expiredLevel) ? source.expiredLevel : "",
       visibleColumns: visibleColumns.length ? visibleColumns : DEFAULT_VISIBLE_COLUMNS.slice(),
       updatedAt: String(source.updatedAt || "").trim(),
@@ -1348,6 +1349,7 @@
 
   function applyReportQuickFilter(type) {
     const previousView = state.activeView && state.activeView !== "cari-data-obat" ? state.activeView : "dashboard";
+    clearDataObatFilters();
     state.previousView = previousView;
     state.quickReport = {
       type: type || "all",
@@ -1368,6 +1370,13 @@
     state.quickReport = null;
     state.quickPage = 1;
     renderQuickReportTitle("");
+  }
+
+  function clearDataObatFilters() {
+    [els.filterCategory, els.filterSupplier, els.filterStockLevel, els.filterExpiredLevel].forEach((control) => {
+      if (control) control.value = "";
+    });
+    state.page = 1;
   }
 
   function handleQuickFilterChipClick(event) {
@@ -1435,8 +1444,9 @@
       active: "obat aktif",
       inactive: "obat nonaktif",
       expired: "obat expired",
-      empty: "obat kosong",
+      empty: "stok habis",
       low: "stok menipis",
+      minus: "stok minus",
       out: "stok habis"
     };
 
@@ -1450,8 +1460,9 @@
       active: "Obat Aktif",
       inactive: "Obat Nonaktif",
       expired: "Obat Expired",
-      empty: "Obat Kosong",
+      empty: "Stok Habis",
       low: "Stok Menipis",
+      minus: "Stok Minus",
       out: "Stok Habis",
       expiring: "Akan Expired"
     };
@@ -1545,7 +1556,9 @@
     if (type === "active") return getEffectiveMedicineStatus(row) === "aktif";
     if (type === "inactive") return getEffectiveMedicineStatus(row) === "nonaktif";
     if (type === "expired") return isActiveExpiredMedicine(row);
-    if (type === "empty" || type === "out") return parseNumber(row.stok) <= 0;
+    if (type === "empty") return parseNumber(row.stok) === 0;
+    if (type === "minus") return parseNumber(row.stok) < 0;
+    if (type === "out") return parseNumber(row.stok) === 0;
     if (type === "low") return isLowStock(row);
     if (type === "expiring") {
       const daysLeft = getExpiryDaysLeft(row);
@@ -5779,9 +5792,9 @@
     const inactive = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "nonaktif").length;
     const expiring = state.rows.filter(isActiveExpiringMedicine).length;
     const expired = state.rows.filter(isActiveExpiredMedicine).length;
-    const empty = state.rows.filter((row) => parseNumber(row.stok) <= 0).length;
+    const empty = state.rows.filter((row) => parseNumber(row.stok) === 0).length;
     const low = state.rows.filter(isLowStock).length;
-    const out = state.rows.filter((row) => parseNumber(row.stok) === 0).length;
+    const minus = state.rows.filter((row) => parseNumber(row.stok) < 0).length;
 
     els.reportTotal.textContent = formatNumber(state.rows.length);
     if (els.reportActive) els.reportActive.textContent = formatNumber(active);
@@ -5790,7 +5803,8 @@
     els.reportExpired.textContent = formatNumber(expired);
     els.reportEmpty.textContent = formatNumber(empty);
     els.reportLow.textContent = formatNumber(low);
-    els.reportOut.textContent = formatNumber(out);
+    if (els.reportMinus) els.reportMinus.textContent = formatNumber(minus);
+    if (els.reportOut) els.reportOut.textContent = formatNumber(empty);
 
   }
 
@@ -6123,7 +6137,8 @@
 
   function getStockStatus(row) {
     const stock = parseNumber(row.stok);
-    if (stock <= 0) return "empty";
+    if (stock < 0) return "minus";
+    if (stock === 0) return "empty";
     if (isLowStock(row)) return "low";
     return "ready";
   }
@@ -6145,7 +6160,8 @@
   }
 
   function getReportLabel(row) {
-    if (parseNumber(row.stok) <= 0) return "Stok kosong";
+    if (parseNumber(row.stok) < 0) return "Stok minus";
+    if (parseNumber(row.stok) === 0) return "Stok habis";
     if (isExpired(row)) return "Expired";
     if (isExpiringSoon(row)) return "Akan expired";
     if (isLowStock(row)) return "Stok menipis";
