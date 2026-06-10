@@ -477,7 +477,7 @@ body {
   font-family: "Poppins", Arial, sans-serif;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(238, 247, 255, 0.92)),
-    url("https://nadhirafarma.github.io/absensi_apotek/logo.png") left 8vw top 12vh / 170px auto no-repeat,
+    url("indo-apotek-mark.png") left 8vw top 12vh / 170px auto no-repeat,
     var(--bg);
 }
 
@@ -2454,7 +2454,7 @@ body.has-search-popover .footer {
 body[data-page="home"] {
   background:
     linear-gradient(180deg, rgba(248, 252, 255, 0.96), rgba(237, 247, 255, 0.96)),
-    url("https://nadhirafarma.github.io/absensi_apotek/logo.png") left 2vw top 150px / 170px auto no-repeat,
+    url("indo-apotek-mark.png") left 2vw top 150px / 170px auto no-repeat,
     var(--bg);
   overflow-x: hidden;
 }
@@ -5059,6 +5059,66 @@ body.sidebar-collapsed .sidebar-toggle {
 
 .profile-status[data-type="info"] {
   color: #1f7bea;
+}
+
+.pharmacy-identity-panel {
+  align-content: start;
+}
+
+.pharmacy-identity-head {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(187, 214, 247, 0.82);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(245, 249, 255, 0.98), rgba(255, 246, 252, 0.9));
+}
+
+.pharmacy-identity-head h3 {
+  margin: 0 0 4px;
+  color: #08245c;
+  font-size: 1.05rem;
+}
+
+.pharmacy-identity-head p {
+  margin: 0;
+  color: #63779d;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.pharmacy-logo-preview {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(185, 209, 244, 0.9);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(31, 98, 190, 0.12);
+}
+
+.pharmacy-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pharmacy-logo-actions,
+.gps-address-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.compact-action {
+  min-height: 42px;
+  padding-inline: 14px;
+  white-space: nowrap;
 }
 
 .security-form,
@@ -8941,6 +9001,24 @@ body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-acti
   border-color: rgba(74, 104, 154, 0.86) !important;
 }
 
+body.theme-dark .pharmacy-identity-head {
+  border-color: rgba(74, 104, 154, 0.86);
+  background: linear-gradient(135deg, rgba(16, 32, 62, 0.98), rgba(39, 22, 58, 0.92));
+}
+
+body.theme-dark .pharmacy-identity-head h3 {
+  color: #f4f8ff;
+}
+
+body.theme-dark .pharmacy-identity-head p {
+  color: #b9c8e3;
+}
+
+body.theme-dark .pharmacy-logo-preview {
+  border-color: rgba(91, 123, 175, 0.72);
+  background: rgba(8, 18, 37, 0.94);
+}
+
 @media (max-width: 760px) {
   .profile-modern-layout.profile-panel-open .profile-panel.is-active {
     left: 12px;
@@ -8973,6 +9051,27 @@ body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-acti
   .profile-modern-layout.profile-panel-open .profile-panel.is-active textarea {
     min-height: 40px;
     font-size: 0.9rem;
+  }
+
+  .pharmacy-identity-head {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .pharmacy-logo-preview {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+  }
+
+  .pharmacy-logo-actions,
+  .gps-address-row {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-action {
+    width: 100%;
   }
 
   .shift-rules-grid {
@@ -12703,5 +12802,1433 @@ body.notification-open .mobile-bottom-nav {
   .payroll-table th,
   .payroll-table td {
     padding: 10px 12px;
+  }
+}
+
+/* 20260610 restock page: local request workflow and mobile attendance table scroll. */
+.restock-page {
+  display: grid;
+  gap: 12px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  color: #071955;
+}
+
+.restock-hero,
+.restock-card,
+.restock-notifications,
+.restock-request-card,
+.restock-detail-card,
+.restock-empty-card {
+  border: 1px solid rgba(208, 224, 247, 0.92);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px rgba(25, 59, 112, 0.08);
+}
+
+.restock-hero {
+  display: inline-grid;
+  grid-template-columns: auto;
+  align-items: center;
+  justify-self: start;
+  padding: 8px;
+}
+
+.restock-hero-copy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.restock-hero h2 {
+  margin: 0;
+  color: #071955;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  line-height: 1.08;
+}
+
+.restock-hero p {
+  margin: 3px 0 0;
+  color: #61729d;
+  font-weight: 700;
+}
+
+.restock-hero p[data-type="success"] {
+  color: #129761;
+}
+
+.restock-hero p[data-type="error"] {
+  color: #ff2554;
+}
+
+.restock-back-button,
+.restock-bell-button,
+.restock-icon-button,
+.restock-kebab-button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(197, 216, 244, 0.94);
+  border-radius: 14px;
+  background: #fff;
+  color: #2248ec;
+  cursor: pointer;
+}
+
+.restock-back-button svg,
+.restock-bell-button svg,
+.restock-icon-button svg,
+.restock-kebab-button svg,
+.restock-primary-button svg,
+.restock-status-chip svg,
+.restock-detail-actions svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-bell-button {
+  position: relative;
+  color: #d9259c;
+  border-color: rgba(238, 157, 210, 0.8);
+}
+
+.restock-bell-button span {
+  position: absolute;
+  right: -8px;
+  top: -9px;
+  min-width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff3b71, #ce2adf);
+  font-size: 0.74rem;
+  font-weight: 900;
+  box-shadow: 0 12px 24px rgba(219, 46, 159, 0.28);
+}
+
+.restock-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.restock-stats article {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-height: 88px;
+  padding: 10px 8px;
+  border: 1px solid rgba(208, 224, 247, 0.9);
+  border-radius: 16px;
+  background: linear-gradient(160deg, #fff, #f8fbff);
+}
+
+.restock-stat-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+}
+
+.restock-stat-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-stat-icon.is-blue { color: #2368ff; background: #edf3ff; }
+.restock-stat-icon.is-purple { color: #8a34f7; background: #f5edff; }
+.restock-stat-icon.is-orange { color: #ff7b1c; background: #fff2e8; }
+.restock-stat-icon.is-green { color: #18b66b; background: #eafbf2; }
+
+.restock-stats small {
+  color: #52658f;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.restock-stats strong {
+  color: #071955;
+  font-size: 1.25rem;
+}
+
+.restock-primary-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(100deg, #285dff 0%, #7c3ff2 52%, #ef28a6 100%);
+  box-shadow: 0 16px 30px rgba(101, 73, 235, 0.22);
+  font: inherit;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.restock-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto 168px;
+  gap: 8px;
+  align-items: center;
+}
+
+.restock-search {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #cfe0ff;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.restock-search svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #5970a0;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-search input,
+.restock-toolbar select {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #071955;
+  font: inherit;
+  font-weight: 700;
+}
+
+.restock-toolbar select {
+  min-height: 46px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #cfe0ff;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.restock-icon-button.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #285dff, #a335ee);
+}
+
+.restock-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.restock-list {
+  display: grid;
+  gap: 12px;
+}
+
+.restock-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.restock-card.is-selected {
+  border-color: rgba(58, 92, 255, 0.75);
+  box-shadow: 0 18px 48px rgba(58, 92, 255, 0.16);
+}
+
+.restock-select-toggle {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #cfe0ff;
+  border-radius: 999px;
+  background: #fff;
+  color: #b5c2dd;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.88);
+  transition: opacity 0.18s ease, transform 0.18s ease, color 0.18s ease, background 0.18s ease;
+  cursor: pointer;
+}
+
+.restock-page.is-selecting .restock-select-toggle {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.restock-select-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-select-toggle.is-selected {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #285dff, #9a35ef);
+}
+
+.restock-select-toggle:disabled {
+  color: #c8d1e4;
+  background: #f5f7fb;
+  cursor: not-allowed;
+}
+
+.restock-card h3 {
+  margin: 8px 0 12px;
+  color: #071955;
+  font-size: 1.02rem;
+}
+
+.restock-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.restock-card-grid span {
+  display: grid;
+  gap: 3px;
+}
+
+.restock-card-grid small,
+.restock-detail-grid dt {
+  color: #61729d;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.restock-card-grid strong,
+.restock-detail-grid dd {
+  margin: 0;
+  color: #071955;
+  font-weight: 900;
+}
+
+.restock-card-grid .is-danger,
+.restock-detail-grid .is-danger {
+  color: #ff2554;
+}
+
+.restock-priority,
+.restock-status-label {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.restock-priority.is-urgent { color: #ff2554; background: #fff0f4; box-shadow: inset 0 0 0 1px #ffb8c6; }
+.restock-priority.is-important { color: #ff7b1c; background: #fff4eb; box-shadow: inset 0 0 0 1px #ffc99b; }
+.restock-priority.is-normal { color: #2368ff; background: #edf4ff; box-shadow: inset 0 0 0 1px #b9d2ff; }
+
+.restock-status-chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.restock-delete-toolbar-button {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffc3cf;
+  border-radius: 12px;
+  background: #fff6f8;
+  color: #ff2554;
+  cursor: pointer;
+}
+
+.restock-delete-toolbar-button.has-selection {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ff2554, #ef28a6);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(255, 37, 84, 0.24);
+}
+
+.restock-delete-toolbar-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-status-chip.is-pending,
+.restock-status-label.is-pending { color: #ff7b1c; background: #fff4eb; }
+.restock-status-chip.is-processing,
+.restock-status-label.is-processing { color: #2368ff; background: #eef5ff; }
+.restock-status-chip.is-done,
+.restock-status-label.is-done { color: #18a75f; background: #effcf5; }
+.restock-status-chip.is-rejected,
+.restock-status-label.is-rejected { color: #ff2554; background: #fff0f4; }
+
+.restock-status-label svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-notifications {
+  position: sticky;
+  top: calc(var(--desktop-dashboard-header-height, 86px) + 18px);
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.restock-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.restock-panel-head h3 {
+  margin: 0;
+  color: #071955;
+}
+
+.restock-notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.restock-notification-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #e2ecfb;
+  border-radius: 12px;
+  background: #fff;
+  color: #071955;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.restock-notification-item > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.restock-notification-item svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-notification-item strong,
+.restock-notification-item small {
+  grid-column: 2;
+}
+
+.restock-notification-item strong {
+  font-size: 0.8rem;
+}
+
+.restock-notification-item small {
+  color: #61729d;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.restock-notification-item em {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: end;
+  color: #285dff;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.restock-notification-item.is-pending { background: #fff8fb; }
+.restock-notification-item.is-processing { background: #f5f9ff; }
+.restock-notification-item.is-done { background: #f5fff9; }
+.restock-notification-item.is-rejected { background: #fff6f7; }
+
+.restock-soft-button,
+.restock-done-button,
+.restock-danger-button,
+.restock-cancel-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d8e5fb;
+  border-radius: 12px;
+  background: #fff;
+  color: #071955;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.restock-done-button {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #18b66b, #22d28a);
+}
+
+.restock-danger-button {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #ff2554, #ff4f7a);
+}
+
+.restock-cancel-button {
+  color: #ff2554;
+  border-color: #ffc3cf;
+  background: #fff6f8;
+}
+
+.restock-empty-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.restock-empty-card img {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+}
+
+.restock-empty-card strong {
+  font-size: 1rem;
+}
+
+.restock-empty-card p,
+.restock-empty-note {
+  margin: 0;
+  color: #61729d;
+  font-weight: 700;
+}
+
+.restock-request-card,
+.restock-detail-card,
+.restock-delete-card {
+  width: min(620px, calc(100vw - 28px));
+}
+
+.restock-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.restock-form-grid label {
+  display: grid;
+  gap: 7px;
+  color: #071955;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.restock-form-grid label span {
+  color: #ff2554;
+}
+
+.restock-form-grid .wide-field {
+  grid-column: 1 / -1;
+}
+
+.restock-medicine-search-field {
+  position: relative;
+}
+
+.restock-medicine-search {
+  position: relative;
+  display: flex;
+  min-height: 48px;
+  padding-right: 6px;
+}
+
+.restock-medicine-search input {
+  padding-right: 8px;
+}
+
+.restock-medicine-results {
+  position: absolute;
+  z-index: 9;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  display: grid;
+  gap: 8px;
+  max-height: min(320px, 46vh);
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #cfe0ff;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 20px 42px rgba(25, 59, 112, 0.16);
+}
+
+.restock-medicine-results[hidden] {
+  display: none;
+}
+
+.restock-medicine-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e3edff;
+  border-radius: 12px;
+  background: linear-gradient(150deg, #fff, #f8fbff);
+  color: #071955;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.restock-medicine-result span,
+.restock-medicine-empty {
+  display: grid;
+  gap: 3px;
+}
+
+.restock-medicine-result strong,
+.restock-medicine-empty strong {
+  font-size: 0.86rem;
+}
+
+.restock-medicine-result small,
+.restock-medicine-empty small {
+  color: #61729d;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.restock-medicine-result em {
+  color: #ff2554;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.restock-medicine-empty {
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.notification-item.is-restock .notification-number {
+  color: #285dff;
+  background: #edf3ff;
+}
+
+.notification-open-restock {
+  width: fit-content;
+  min-height: 30px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #c9d9ff;
+  border-radius: 999px;
+  background: #f5f8ff;
+  color: #285dff;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.restock-form-grid input,
+.restock-form-grid select,
+.restock-form-grid textarea {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid #cfe0ff;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: #fff;
+  color: #071955;
+  font: inherit;
+  font-weight: 700;
+}
+
+.restock-form-grid textarea {
+  min-height: 92px;
+  padding-top: 11px;
+  resize: vertical;
+}
+
+.restock-form-grid .restock-medicine-search input {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0 8px 0 0;
+  background: transparent;
+}
+
+.restock-upload-box {
+  min-height: 128px;
+  place-items: center;
+  border: 1px dashed #b7c9ea;
+  border-radius: 14px;
+  background: #f8fbff;
+  cursor: pointer;
+}
+
+.restock-upload-box input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.restock-upload-box svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: #5b6df7;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-upload-box small {
+  color: #61729d;
+}
+
+.restock-detail-body {
+  display: grid;
+  gap: 14px;
+}
+
+.restock-detail-summary {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.restock-detail-image {
+  width: 112px;
+  height: 112px;
+  border: 1px solid #e1ebf8;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f8fbff;
+}
+
+.restock-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.restock-detail-summary h3 {
+  margin: 10px 0 4px;
+  color: #071955;
+  font-size: 1.15rem;
+}
+
+.restock-detail-summary small {
+  color: #61729d;
+  font-weight: 800;
+}
+
+.restock-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #e1ebf8;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.restock-detail-grid div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.5fr) minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #e8f0fb;
+}
+
+.restock-detail-note {
+  padding: 13px;
+  border: 1px solid #e1ebf8;
+  border-radius: 14px;
+  background: #fbfdff;
+}
+
+.restock-detail-note strong,
+.restock-detail-note p {
+  margin: 0;
+}
+
+.restock-detail-note p {
+  margin-top: 6px;
+  color: #4f6290;
+  font-weight: 700;
+}
+
+.restock-detail-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 12px;
+}
+
+.restock-detail-actions > button {
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.84rem;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: 0 16px 30px rgba(39, 81, 238, 0.18);
+}
+
+.restock-detail-actions > button svg {
+  width: 26px;
+  height: 26px;
+}
+
+.restock-detail-actions .secondary-action {
+  background: linear-gradient(135deg, #2e67ff, #3156ee);
+}
+
+.restock-detail-actions .filter-action {
+  background: linear-gradient(135deg, #8844f4, #6a38e9);
+}
+
+.restock-detail-actions .restock-done-button {
+  background: linear-gradient(135deg, #18b66b, #20c979);
+}
+
+.restock-detail-actions .restock-danger-button {
+  background: linear-gradient(135deg, #ff315c, #ff4569);
+}
+
+.restock-detail-actions .restock-soft-button,
+.restock-detail-actions .restock-cancel-button {
+  min-height: 58px;
+  color: #071955;
+  border: 1px solid #dce7f8;
+  background: #fff;
+  box-shadow: none;
+}
+
+.restock-detail-actions .restock-cancel-button {
+  color: #ff2554;
+  border-color: #ffc3cf;
+  background: #fff6f8;
+}
+
+.restock-delete-card {
+  position: relative;
+  width: min(430px, calc(100vw - 28px));
+  padding: 22px 22px 16px;
+  border-radius: 24px;
+}
+
+.restock-delete-nav {
+  position: absolute;
+  top: 20px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #071955;
+  cursor: pointer;
+}
+
+.restock-delete-nav[hidden] {
+  display: none;
+}
+
+.restock-delete-back {
+  left: 20px;
+}
+
+.restock-delete-close {
+  right: 20px;
+}
+
+.restock-delete-nav svg,
+.restock-delete-method-card > svg,
+.restock-delete-submit svg,
+.restock-delete-warning svg,
+.restock-delete-date-input svg,
+.restock-delete-success-icon svg,
+.restock-delete-hero-icon svg,
+.restock-delete-method-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.restock-delete-heading {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 0 28px 10px;
+  text-align: center;
+}
+
+.restock-delete-heading h2 {
+  margin: 4px 0 0;
+  color: #071955;
+  font-size: clamp(1.12rem, 3.6vw, 1.34rem);
+  line-height: 1.15;
+}
+
+.restock-delete-heading p {
+  max-width: 310px;
+  margin: 0;
+  color: #61729d;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.restock-delete-hero-icon,
+.restock-delete-success-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #ff2554;
+  background: #fff0f6;
+  box-shadow: 0 16px 36px rgba(255, 37, 84, 0.18), inset 0 0 0 1px #ffd1dc;
+}
+
+.restock-delete-methods,
+.restock-delete-confirm-panel,
+.restock-delete-date-panel,
+.restock-delete-success-panel {
+  display: grid;
+  gap: 11px;
+}
+
+.restock-delete-methods[hidden],
+.restock-delete-confirm-panel[hidden],
+.restock-delete-date-panel[hidden],
+.restock-delete-success-panel[hidden] {
+  display: none;
+}
+
+.restock-delete-method-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 114px;
+  padding: 14px;
+  border: 1px solid #dfe8f7;
+  border-radius: 14px;
+  background: #fff;
+  color: #071955;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.restock-delete-method-card span:not(.restock-delete-method-icon) {
+  display: grid;
+  gap: 7px;
+}
+
+.restock-delete-method-card strong {
+  font-size: 0.94rem;
+}
+
+.restock-delete-method-card small {
+  color: #52658f;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.restock-delete-method-card > svg {
+  color: #071955;
+}
+
+.restock-delete-method-icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #3b53ff;
+  background: linear-gradient(160deg, #f2f0ff, #fff);
+  box-shadow: 0 14px 24px rgba(63, 71, 255, 0.14), inset 0 0 0 1px #e4ddff;
+}
+
+.restock-delete-method-icon.is-pink {
+  color: #ff2554;
+  background: linear-gradient(160deg, #fff0f6, #fff);
+  box-shadow: 0 14px 24px rgba(255, 37, 84, 0.12), inset 0 0 0 1px #ffd1dc;
+}
+
+.restock-delete-grid {
+  display: grid;
+  gap: 11px;
+}
+
+.restock-delete-grid label {
+  display: grid;
+  gap: 8px;
+  color: #52658f;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.restock-delete-date-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid #dce7f8;
+  border-radius: 12px;
+  background: #fff;
+  color: #071955;
+}
+
+.restock-delete-date-input svg {
+  color: #3b53ff;
+}
+
+.restock-delete-date-input input {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #071955;
+  font: inherit;
+  font-weight: 900;
+}
+
+.restock-delete-warning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid #ffc3cf;
+  border-radius: 14px;
+  background: #fff6f8;
+  color: #9d2440;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.restock-delete-warning span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #ff2554;
+}
+
+.restock-delete-warning p {
+  margin: 0;
+}
+
+.restock-delete-warning strong {
+  display: block;
+  color: #ff2554;
+}
+
+.restock-delete-submit,
+.restock-delete-cancel {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.restock-delete-submit {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #ff2554, #ff365d);
+  box-shadow: 0 16px 30px rgba(255, 37, 84, 0.22);
+}
+
+.restock-delete-cancel {
+  border: 1px solid #dce7f8;
+  background: #fff;
+  color: #071955;
+}
+
+.restock-delete-success-panel {
+  justify-items: center;
+  padding: 12px 0 8px;
+  text-align: center;
+}
+
+.restock-delete-success-icon {
+  color: #18b66b;
+  background: #edfff5;
+  box-shadow: 0 16px 36px rgba(24, 182, 107, 0.16), inset 0 0 0 1px #baf0d3;
+}
+
+.restock-delete-success-panel strong {
+  color: #071955;
+  font-size: 1.15rem;
+}
+
+.restock-delete-success-panel p {
+  margin: 0;
+  color: #52658f;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .restock-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .restock-notifications {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .mobile-home-icon.icon-presence::before {
+    background-image: url("mobile-menu/presensi.png") !important;
+  }
+
+  .mobile-home-icon.icon-users::before {
+    background-image: url("mobile-menu/manajemen-pengguna.png") !important;
+  }
+
+  .mobile-home-icon.icon-restock::before {
+    background-image: url("mobile-menu/restok-obat.png") !important;
+  }
+
+  #view-presensi,
+  #view-presensi.is-active,
+  #view-presensi .attendance-dashboard,
+  #view-presensi .attendance-card,
+  #view-presensi .attendance-monthly-card,
+  #view-presensi .payroll-card {
+    overflow: visible !important;
+  }
+
+  #view-presensi .attendance-table-wrap,
+  #view-presensi .attendance-monthly-card .simple-table-wrap,
+  #view-presensi .payroll-table-wrap {
+    display: block !important;
+    width: 100% !important;
+    max-width: calc(100vw - 28px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+  }
+
+  #view-presensi .attendance-table,
+  #view-presensi .attendance-monthly-table,
+  #view-presensi .payroll-table {
+    table-layout: auto !important;
+    width: max-content !important;
+  }
+
+  #view-presensi .attendance-monthly-table {
+    min-width: 980px !important;
+  }
+
+  .restock-page {
+    gap: 14px;
+  }
+
+  .restock-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .restock-hero h2 {
+    font-size: 1.32rem;
+  }
+
+  .restock-hero p {
+    font-size: 0.78rem;
+  }
+
+  .restock-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .restock-stats article {
+    min-height: 86px;
+    padding: 10px 5px;
+    border-radius: 13px;
+  }
+
+  .restock-stat-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+  }
+
+  .restock-stats small {
+    font-size: 0.64rem;
+  }
+
+  .restock-stats strong {
+    font-size: 1.2rem;
+  }
+
+  .restock-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .restock-toolbar select {
+    grid-column: 1 / -1;
+  }
+
+  .restock-primary-button {
+    padding: 0 12px;
+    font-size: 0.86rem;
+  }
+
+  .restock-card {
+    grid-template-columns: 1fr;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .restock-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .restock-status-chip {
+    justify-self: stretch;
+  }
+
+  .restock-notifications {
+    padding: 14px;
+  }
+
+  .restock-form-grid,
+  .restock-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restock-detail-summary {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .restock-detail-image {
+    width: 92px;
+    height: 92px;
+  }
+
+  .restock-detail-grid div {
+    grid-template-columns: minmax(96px, 0.46fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .restock-stats {
+    gap: 6px;
+  }
+
+  .restock-stats article {
+    min-height: 80px;
+  }
+
+  .restock-stats small {
+    font-size: 0.59rem;
+  }
+
+  .restock-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 20260610 sidebar icon refresh: colored modern app-menu accents. */
+.app-sidebar .sidebar-link,
+body.sidebar-collapsed .app-sidebar .sidebar-link {
+  --sidebar-icon-accent: #2368ff;
+  --sidebar-icon-bg: linear-gradient(145deg, rgba(35, 104, 255, 0.14), rgba(35, 104, 255, 0.03));
+}
+
+.app-sidebar .sidebar-link svg,
+body.sidebar-collapsed .app-sidebar .sidebar-link svg {
+  width: 34px !important;
+  min-width: 34px;
+  height: 34px !important;
+  min-height: 34px;
+  padding: 7px;
+  border: 1px solid rgba(205, 220, 248, 0.74);
+  border-radius: 13px;
+  color: var(--sidebar-icon-accent);
+  background: var(--sidebar-icon-bg);
+  filter: drop-shadow(0 10px 18px rgba(22, 55, 124, 0.11));
+  transition: transform 180ms ease, color 180ms ease, background 180ms ease, border-color 180ms ease, filter 180ms ease;
+}
+
+.app-sidebar .sidebar-link:hover svg {
+  transform: translateY(-1px) scale(1.03);
+  filter: drop-shadow(0 14px 22px rgba(22, 55, 124, 0.17));
+}
+
+.app-sidebar .sidebar-link.is-active svg,
+body.sidebar-collapsed .app-sidebar .sidebar-link.is-active svg {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.68);
+  background: linear-gradient(135deg, var(--sidebar-icon-accent), #e81798);
+  filter: drop-shadow(0 15px 24px rgba(216, 35, 169, 0.28));
+}
+
+.app-sidebar .sidebar-link[data-view-target="dashboard"] { --sidebar-icon-accent: #2563eb; --sidebar-icon-bg: linear-gradient(145deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.04)); }
+.app-sidebar .sidebar-link[data-access-key="absensi_face_id"] { --sidebar-icon-accent: #8b5cf6; --sidebar-icon-bg: linear-gradient(145deg, rgba(139, 92, 246, 0.18), rgba(139, 92, 246, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="presensi"] { --sidebar-icon-accent: #0ea5e9; --sidebar-icon-bg: linear-gradient(145deg, rgba(14, 165, 233, 0.18), rgba(14, 165, 233, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="cari-data-obat"] { --sidebar-icon-accent: #06b6d4; --sidebar-icon-bg: linear-gradient(145deg, rgba(6, 182, 212, 0.18), rgba(6, 182, 212, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="data-obat"] { --sidebar-icon-accent: #22c55e; --sidebar-icon-bg: linear-gradient(145deg, rgba(34, 197, 94, 0.18), rgba(34, 197, 94, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="data-karyawan"] { --sidebar-icon-accent: #f43f5e; --sidebar-icon-bg: linear-gradient(145deg, rgba(244, 63, 94, 0.18), rgba(244, 63, 94, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="data-supplier"] { --sidebar-icon-accent: #f97316; --sidebar-icon-bg: linear-gradient(145deg, rgba(249, 115, 22, 0.18), rgba(249, 115, 22, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="surat-pesanan"] { --sidebar-icon-accent: #14b8a6; --sidebar-icon-bg: linear-gradient(145deg, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="restok-obat"] { --sidebar-icon-accent: #ec4899; --sidebar-icon-bg: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="import-data-obat"] { --sidebar-icon-accent: #3b82f6; --sidebar-icon-bg: linear-gradient(145deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="akun-profil"] { --sidebar-icon-accent: #7c3aed; --sidebar-icon-bg: linear-gradient(145deg, rgba(124, 58, 237, 0.18), rgba(124, 58, 237, 0.04)); }
+.app-sidebar .sidebar-link[data-view-target="manajemen-pengguna"] { --sidebar-icon-accent: #0f766e; --sidebar-icon-bg: linear-gradient(145deg, rgba(15, 118, 110, 0.18), rgba(15, 118, 110, 0.04)); }
+
+body.theme-dark .app-sidebar .sidebar-link svg,
+body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link svg {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03));
+}
+
+@media (max-width: 760px) {
+  .restock-hero {
+    padding: 0 2px !important;
+  }
+}
+
+/* 20260610 restock heading without back navigation card. */
+.restock-hero {
+  display: block !important;
+  width: 100%;
+  justify-self: stretch;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.restock-hero h2 {
+  display: block;
+  margin: 0;
+  color: #071955;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+body.theme-dark .restock-hero h2 {
+  color: #f8fbff;
+}
+
+@media (max-width: 760px) {
+  .restock-hero h2 {
+    font-size: 1.22rem;
   }
 }

@@ -17,6 +17,7 @@
   const logoutButtons = Array.from(document.querySelectorAll("#logoutButton, [data-logout-button]"));
   let isLoggingOut = false;
   let routeLoadingOverlay = null;
+  let routeLoadingTimer = null;
 
   const dateFormatter = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
@@ -172,7 +173,7 @@
     window.setTimeout(function () {
       sessionStorage.removeItem(SESSION_KEY);
       window.location.replace(getLogoutUrl());
-    }, 420);
+    }, 560);
   }
 
   function showRouteLoading(message) {
@@ -181,7 +182,7 @@
       routeLoadingOverlay.className = "app-loading-overlay route-loading-overlay";
       routeLoadingOverlay.innerHTML = [
         '<div class="app-loading-card" role="status" aria-live="polite">',
-        '<span class="app-loading-orbit"><img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt=""></span>',
+        '<span class="app-loading-orbit"><img src="assets/indo-apotek-mark.png" alt=""></span>',
         '<strong id="routeLoadingText">Memproses...</strong>',
         '</div>'
       ].join("");
@@ -191,6 +192,10 @@
     const text = routeLoadingOverlay.querySelector("#routeLoadingText");
     if (text) text.textContent = message || "Memproses...";
     routeLoadingOverlay.hidden = false;
+    window.clearTimeout(routeLoadingTimer);
+    routeLoadingTimer = window.setTimeout(function () {
+      if (routeLoadingOverlay) routeLoadingOverlay.hidden = true;
+    }, 1500);
   }
 
   function logLogoutActivity(session) {
@@ -241,9 +246,9 @@
   }
 
   function getAccountMeta(session) {
-    if (!session) return "Nadhira Farma Digital";
+    if (!session) return "Indo Apotek";
 
-    return String(session.role || session.email || session.menu || "Nadhira Farma Digital").trim() || "Nadhira Farma Digital";
+    return String(session.role || session.email || session.menu || "Indo Apotek").trim() || "Indo Apotek";
   }
 
   function getInitials(value) {

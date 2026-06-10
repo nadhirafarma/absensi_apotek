@@ -868,6 +868,27 @@ svg {
   padding-block: 18px;
 }
 
+/* 20260610 minimal login header: public logo only. */
+.login-header {
+  min-height: 48px;
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.login-header .brand {
+  justify-self: center;
+}
+
+.login-header .brand img {
+  width: 46px;
+  height: 46px;
+}
+
+.login-header .brand span,
+.login-header .system-pill {
+  display: none !important;
+}
+
 .login-message {
   display: none !important;
 }

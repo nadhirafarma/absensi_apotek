@@ -12,15 +12,21 @@
   const SUPPLIER_KEY = "nadhira.supplierRecords";
   const USER_KEY = "nadhira.userRecords";
   const PO_KEY = "nadhira.purchaseOrders";
+  const RESTOCK_KEY = "nadhira.restockRequests";
+  const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
+  const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
+  const RESTOCK_PHOTO_MAX_LENGTH = 42000;
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
   const PROFILE_ACTIVITY_KEY = "nadhira.profileActivity";
   const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
+  const PHARMACY_PROFILE_KEY = "nadhira.pharmacyIdentity";
   const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
   const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
   const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
+  const PLATFORM_LOGO = "assets/indo-apotek-mark.png";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
   const DEFAULT_MEDICINE_UNIT_COUNT = 3;
@@ -39,6 +45,23 @@
     ["pagi", "Shift Pagi"],
     ["sore", "Shift Sore"]
   ];
+  const DEFAULT_PHARMACY_PROFILE = Object.freeze({
+    logo: PLATFORM_LOGO,
+    name: "Apotek Anda",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    latitude: "",
+    longitude: "",
+    gpsAccuracy: "",
+    licenseNumber: "",
+    licenseExpiry: "",
+    responsiblePharmacist: "",
+    sipaNumber: "",
+    updatedAt: "",
+    updatedBy: ""
+  });
 
   const DATA_COLUMNS = [
     { key: "kode", label: "Kode" },
@@ -151,6 +174,7 @@
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
+    "restok-obat": "Restok Obat",
     "surat-pesanan": "Surat Pesanan Pembelian",
     "import-data-obat": "Import Data Obat",
     "akun-profil": "Akun & Profil",
@@ -168,6 +192,7 @@
     { key: "hapus_obat", label: "Hapus Obat" },
     { key: "data_karyawan", label: "Data Karyawan" },
     { key: "data_supplier", label: "Data Supplier" },
+    { key: "restok_obat", label: "Restok Obat" },
     { key: "surat_pesanan", label: "Surat Pesanan Pembelian" },
     { key: "import_data_obat", label: "Import Data Obat" },
     { key: "akun_profil", label: "Akun & Profil" },
@@ -177,13 +202,13 @@
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"],
-    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "surat_pesanan", "import_data_obat", "akun_profil"],
-    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "akun_profil"]
+    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
+    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil"],
+    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"],
+    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"],
+    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil"],
+    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -236,6 +261,20 @@
     suppliers: [],
     purchaseItems: [],
     purchaseOrders: [],
+    restockRequests: [],
+    restockMineOnly: false,
+    restockDetailId: "",
+    restockEditingId: "",
+    restockSelectionMode: false,
+    selectedRestockIds: new Set(),
+    restockLongPressTimer: null,
+    restockLongPressTarget: "",
+    restockDeleteMode: "method",
+    restockDeleteSuccessTimer: null,
+    restockSelectedMedicineKey: "",
+    pendingRestockPhoto: "",
+    pendingRestockPhotoName: "",
+    pendingRestockPhotoPromise: null,
     importHeaders: [],
     importRows: [],
     scannerStream: null,
@@ -284,7 +323,11 @@
     touchStartY: 0,
     touchStartAt: 0,
     appLoadingTimer: null,
-    appLoadingToken: 0
+    appLoadingMaxTimer: null,
+    appLoadingShownAt: 0,
+    appLoadingToken: 0,
+    restockSyncTimer: null,
+    pendingPharmacyLogo: null
   };
 
   const els = {};
@@ -298,6 +341,7 @@
     if (!els.tableHead || !els.tableBody) return;
 
     applySavedSidebarState();
+    hydratePharmacyBrand();
     hydrateProfileName();
     bindEvents();
     if (!routeInitialViewFromQuery() && isMobileViewport()) switchView("home", { skipHistory: true });
@@ -311,8 +355,10 @@
     renderAttendanceShiftSettings();
     loadAttendanceShiftSettingsFromBackend({ silent: true });
     loadStoredModules();
+    fetchRestockRequests({ silent: true });
     fetchDataObat();
     fetchUsers();
+    fetchPharmacyProfile({ silent: true });
     fetchLocalRecords({ silent: true });
     fetchAttendanceRecords({ silent: true });
     fetchPayrollEmployees({ silent: true });
@@ -336,6 +382,14 @@
       sidebarScrim: document.getElementById("sidebarScrim"),
       appLoadingOverlay: document.getElementById("appLoadingOverlay"),
       appLoadingText: document.getElementById("appLoadingText"),
+      appLoadingLogo: document.getElementById("appLoadingLogo"),
+      sidebarPharmacyBrand: document.getElementById("sidebarPharmacyBrand"),
+      sidebarPharmacyLogo: document.getElementById("sidebarPharmacyLogo"),
+      sidebarPharmacyName: document.getElementById("sidebarPharmacyName"),
+      sidebarPharmacySubtitle: document.getElementById("sidebarPharmacySubtitle"),
+      mobileHomePharmacyLogo: document.getElementById("mobileHomePharmacyLogo"),
+      mobileHomePharmacyName: document.getElementById("mobileHomePharmacyName"),
+      mobileHomePharmacySubtitle: document.getElementById("mobileHomePharmacySubtitle"),
       viewTitle: document.getElementById("dashboardViewTitle"),
       viewButtons: Array.from(document.querySelectorAll("[data-view-target]")),
       views: Array.from(document.querySelectorAll(".dashboard-view")),
@@ -421,6 +475,59 @@
       poItemsList: document.getElementById("poItemsList"),
       poSavedList: document.getElementById("poSavedList"),
       poNumber: document.getElementById("poNumber"),
+      restockPage: document.querySelector(".restock-page"),
+      restockBackButton: document.getElementById("restockBackButton"),
+      restockStatusText: document.getElementById("restockStatusText"),
+      restockTotalCount: document.getElementById("restockTotalCount"),
+      restockPendingCount: document.getElementById("restockPendingCount"),
+      restockProcessCount: document.getElementById("restockProcessCount"),
+      restockDoneCount: document.getElementById("restockDoneCount"),
+      restockAddButton: document.getElementById("restockAddButton"),
+      restockDeleteButton: document.getElementById("restockDeleteButton"),
+      restockSearchInput: document.getElementById("restockSearchInput"),
+      restockMineButton: document.getElementById("restockMineButton"),
+      restockStatusFilter: document.getElementById("restockStatusFilter"),
+      restockList: document.getElementById("restockList"),
+      restockRequestModal: document.getElementById("restockRequestModal"),
+      restockRequestForm: document.getElementById("restockRequestForm"),
+      restockRequestTitle: document.getElementById("restockRequestTitle"),
+      restockRequestStatus: document.getElementById("restockRequestStatus"),
+      restockSubmitLabel: document.getElementById("restockSubmitLabel"),
+      closeRestockRequestButton: document.getElementById("closeRestockRequestButton"),
+      cancelRestockRequestButton: document.getElementById("cancelRestockRequestButton"),
+      restockMedicineInput: document.getElementById("restockMedicineInput"),
+      restockMedicineList: document.getElementById("restockMedicineList"),
+      restockMedicineResults: document.getElementById("restockMedicineResults"),
+      restockBarcodeButton: document.getElementById("restockBarcodeButton"),
+      restockCurrentStockInput: document.getElementById("restockCurrentStockInput"),
+      restockQtyInput: document.getElementById("restockQtyInput"),
+      restockUnitSelect: document.getElementById("restockUnitSelect"),
+      restockPrioritySelect: document.getElementById("restockPrioritySelect"),
+      restockNoteInput: document.getElementById("restockNoteInput"),
+      restockPhotoInput: document.getElementById("restockPhotoInput"),
+      restockPhotoLabel: document.getElementById("restockPhotoLabel"),
+      restockDetailModal: document.getElementById("restockDetailModal"),
+      restockDetailTitle: document.getElementById("restockDetailTitle"),
+      restockDetailStatus: document.getElementById("restockDetailStatus"),
+      restockDetailBody: document.getElementById("restockDetailBody"),
+      closeRestockDetailButton: document.getElementById("closeRestockDetailButton"),
+      restockDeleteModal: document.getElementById("restockDeleteModal"),
+      restockDeleteForm: document.getElementById("restockDeleteForm"),
+      restockDeleteTitle: document.getElementById("restockDeleteTitle"),
+      restockDeleteStatus: document.getElementById("restockDeleteStatus"),
+      restockDeleteScope: document.getElementById("restockDeleteScope"),
+      restockDeleteDateFrom: document.getElementById("restockDeleteDateFrom"),
+      restockDeleteDateTo: document.getElementById("restockDeleteDateTo"),
+      restockDeleteMethodPanel: document.getElementById("restockDeleteMethodPanel"),
+      restockDeleteConfirmPanel: document.getElementById("restockDeleteConfirmPanel"),
+      restockDeleteDatePanel: document.getElementById("restockDeleteDatePanel"),
+      restockDeleteSuccessPanel: document.getElementById("restockDeleteSuccessPanel"),
+      restockDeleteSuccessText: document.getElementById("restockDeleteSuccessText"),
+      restockDeletePrimaryLabel: document.getElementById("restockDeletePrimaryLabel"),
+      restockDeleteBackButton: document.getElementById("backRestockDeleteButton"),
+      restockDeleteSelectedMethod: document.getElementById("restockDeleteSelectedMethod"),
+      closeRestockDeleteButton: document.getElementById("closeRestockDeleteButton"),
+      cancelRestockDeleteButton: document.getElementById("cancelRestockDeleteButton"),
       importFileInput: document.getElementById("importFileInput"),
       importMode: document.getElementById("importMode"),
       importButton: document.getElementById("importButton"),
@@ -456,6 +563,22 @@
       profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
       profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
+      pharmacyIdentityForm: document.getElementById("pharmacyIdentityForm"),
+      pharmacyLogoPreview: document.getElementById("pharmacyLogoPreview"),
+      pharmacyLogoInput: document.getElementById("pharmacyLogoInput"),
+      pharmacyRemoveLogoButton: document.getElementById("pharmacyRemoveLogoButton"),
+      pharmacyNameInput: document.getElementById("pharmacyNameInput"),
+      pharmacyPhoneInput: document.getElementById("pharmacyPhoneInput"),
+      pharmacyAddressInput: document.getElementById("pharmacyAddressInput"),
+      pharmacyGpsButton: document.getElementById("pharmacyGpsButton"),
+      pharmacyLatitudeInput: document.getElementById("pharmacyLatitudeInput"),
+      pharmacyLongitudeInput: document.getElementById("pharmacyLongitudeInput"),
+      pharmacyLicenseInput: document.getElementById("pharmacyLicenseInput"),
+      pharmacyLicenseExpiryInput: document.getElementById("pharmacyLicenseExpiryInput"),
+      pharmacyResponsibleInput: document.getElementById("pharmacyResponsibleInput"),
+      pharmacySipaInput: document.getElementById("pharmacySipaInput"),
+      pharmacyEmailInput: document.getElementById("pharmacyEmailInput"),
+      pharmacyWebsiteInput: document.getElementById("pharmacyWebsiteInput"),
       shiftRulesForm: document.getElementById("shiftRulesForm"),
       shiftRulesGrid: document.getElementById("shiftRulesGrid"),
       resetShiftRulesButton: document.getElementById("resetShiftRulesButton"),
@@ -652,6 +775,44 @@
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
     if (els.poForm) els.poForm.addEventListener("submit", savePurchaseOrder);
     if (els.printPoButton) els.printPoButton.addEventListener("click", () => window.print());
+    if (els.restockBackButton) els.restockBackButton.addEventListener("click", () => switchView(isMobileViewport() ? "home" : "dashboard"));
+    if (els.restockAddButton) els.restockAddButton.addEventListener("click", openRestockRequestModal);
+    if (els.restockDeleteButton) els.restockDeleteButton.addEventListener("click", openRestockDeleteModal);
+    if (els.restockSearchInput) els.restockSearchInput.addEventListener("input", renderRestockPage);
+    if (els.restockStatusFilter) els.restockStatusFilter.addEventListener("change", renderRestockPage);
+    if (els.restockMineButton) els.restockMineButton.addEventListener("click", toggleRestockMineOnly);
+    if (els.restockList) els.restockList.addEventListener("click", handleRestockListAction);
+    if (els.restockList) els.restockList.addEventListener("pointerdown", startRestockLongPress);
+    if (els.restockList) els.restockList.addEventListener("pointerup", clearRestockLongPress);
+    if (els.restockList) els.restockList.addEventListener("pointerleave", clearRestockLongPress);
+    if (els.restockList) els.restockList.addEventListener("pointercancel", clearRestockLongPress);
+    if (els.restockList) els.restockList.addEventListener("contextmenu", handleRestockListContextMenu);
+    if (els.restockRequestForm) els.restockRequestForm.addEventListener("submit", saveRestockRequest);
+    if (els.restockMedicineInput) els.restockMedicineInput.addEventListener("input", handleRestockMedicineSearchInput);
+    if (els.restockMedicineInput) els.restockMedicineInput.addEventListener("focus", () => renderRestockMedicineResults());
+    if (els.restockMedicineResults) els.restockMedicineResults.addEventListener("click", handleRestockMedicineResultClick);
+    if (els.restockBarcodeButton) els.restockBarcodeButton.addEventListener("click", startDashboardScanner);
+    if (els.restockPhotoInput) els.restockPhotoInput.addEventListener("change", handleRestockPhotoChange);
+    [els.closeRestockRequestButton, els.cancelRestockRequestButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeRestockRequestModal);
+    });
+    if (els.closeRestockDetailButton) els.closeRestockDetailButton.addEventListener("click", closeRestockDetailModal);
+    if (els.restockDetailBody) els.restockDetailBody.addEventListener("click", handleRestockDetailAction);
+    if (els.restockDeleteForm) els.restockDeleteForm.addEventListener("submit", deleteRestockRequests);
+    if (els.restockDeleteForm) els.restockDeleteForm.addEventListener("click", handleRestockDeleteModalClick);
+    if (els.restockDeleteBackButton) els.restockDeleteBackButton.addEventListener("click", showRestockDeleteMethodPanel);
+    [els.closeRestockDeleteButton, els.cancelRestockDeleteButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeRestockDeleteModal);
+    });
+    [els.restockDeleteScope, els.restockDeleteDateFrom, els.restockDeleteDateTo].forEach((control) => {
+      if (control) control.addEventListener("change", updateRestockDeletePreview);
+      if (control) control.addEventListener("input", updateRestockDeletePreview);
+    });
+    [els.restockRequestModal, els.restockDetailModal, els.restockDeleteModal].forEach((modal) => {
+      if (modal) modal.addEventListener("click", (event) => {
+        if (event.target === modal) hideModal(modal);
+      });
+    });
     if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
     if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     if (els.profileForm) els.profileForm.addEventListener("submit", saveProfile);
@@ -668,6 +829,10 @@
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
+    if (els.pharmacyIdentityForm) els.pharmacyIdentityForm.addEventListener("submit", savePharmacyIdentity);
+    if (els.pharmacyLogoInput) els.pharmacyLogoInput.addEventListener("change", handlePharmacyLogoChange);
+    if (els.pharmacyRemoveLogoButton) els.pharmacyRemoveLogoButton.addEventListener("click", removePharmacyLogo);
+    if (els.pharmacyGpsButton) els.pharmacyGpsButton.addEventListener("click", detectPharmacyGps);
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     if (els.attendanceRefreshButton) els.attendanceRefreshButton.addEventListener("click", () => fetchAttendanceRecords({ manual: true }));
@@ -767,11 +932,15 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        if (state.restockSelectionMode) exitRestockSelectionMode();
         closeNotification();
         setSidebarCollapsed(true);
         closeMedicineModal();
         closeRecordModal();
         closeDeleteModal();
+        closeRestockRequestModal();
+        closeRestockDetailModal();
+        closeRestockDeleteModal();
         stopDashboardScanner();
         closeHomePrayerReminder();
       }
@@ -810,11 +979,13 @@
       populateFilterOptions();
       await loadDataObatFilterState();
       populateMedicineOptions();
+      populateRestockMedicineOptions();
       applyFilters();
       renderUploadInfo();
       updateNotificationState();
       renderSuppliers();
       renderReports();
+      renderRestockPage();
       setLoading(false, `${state.rows.length} data obat berhasil dimuat.`);
     } catch (error) {
       setLoading(false, `Gagal memuat data obat: ${error.message}`);
@@ -825,6 +996,7 @@
       renderUploadInfo();
       updateNotificationState();
       renderReports();
+      renderRestockPage();
     } finally {
       endAppLoading(loadingToken);
     }
@@ -834,6 +1006,7 @@
     window.addEventListener("focus", () => {
       fetchUsers({ silent: true });
       fetchLocalRecords({ silent: true });
+      fetchRestockRequests({ silent: true });
       fetchOwnerActivityLog({ silent: true });
       fetchAttendanceRecords({ silent: true });
     });
@@ -841,6 +1014,7 @@
       if (!document.hidden) {
         fetchUsers({ silent: true });
         fetchLocalRecords({ silent: true });
+        fetchRestockRequests({ silent: true });
         fetchOwnerActivityLog({ silent: true });
         fetchAttendanceRecords({ silent: true });
       }
@@ -848,6 +1022,7 @@
     window.setInterval(() => {
       fetchUsers({ silent: true });
       fetchLocalRecords({ silent: true });
+      fetchRestockRequests({ silent: true });
       fetchOwnerActivityLog({ silent: true });
       fetchAttendanceRecords({ silent: true });
     }, 15000);
@@ -2093,14 +2268,21 @@
     if (state.scannerLocked) return;
     state.scannerLocked = true;
     resetDashboardScanCandidate();
-    const targetInput = state.activeView === "cari-data-obat" && els.quickSearchInput
+    const isRestockSearchOpen = els.restockRequestModal && !els.restockRequestModal.hidden && els.restockMedicineInput;
+    const targetInput = isRestockSearchOpen
+      ? els.restockMedicineInput
+      : state.activeView === "cari-data-obat" && els.quickSearchInput
       ? els.quickSearchInput
       : els.searchInput;
 
     if (targetInput) {
       targetInput.value = value;
       state.page = 1;
-      if (targetInput === els.quickSearchInput) {
+      if (targetInput === els.restockMedicineInput) {
+        state.restockSelectedMedicineKey = "";
+        renderRestockMedicineResults(value, { force: true });
+        if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Barcode terbaca. Pilih obat dari hasil pencarian untuk mengisi data restok.";
+      } else if (targetInput === els.quickSearchInput) {
         renderQuickSearchResults();
       } else {
         applyFilters();
@@ -2494,11 +2676,33 @@
       });
     });
 
+    getRestockNotificationItems().forEach((item) => items.push(item));
+
     return items
       .filter((item, index, list) => list.findIndex((entry) => entry.key === item.key) === index)
       .filter((item) => !dismissed.has(item.key))
       .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
       .slice(0, 30);
+  }
+
+  function getRestockNotificationItems() {
+    return state.restockRequests
+      .map((request) => {
+        const item = normalizeRestockRequest(request);
+        const status = getRestockStatusMeta(item.status);
+        const at = item.updatedAt || item.createdAt || new Date().toISOString();
+        return {
+          key: ["restock", item.id, item.status, at].map((part) => String(part || "").replace(/\|/g, " ")).join("|"),
+          kind: "restock",
+          restockId: item.id,
+          title: status.notification,
+          detail: `${item.medicineName || "Obat"} - ${status.label} - ${formatNumber(item.qty)} ${item.unit}`,
+          actor: item.reporter || "Restok Obat",
+          at
+        };
+      })
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+      .slice(0, 20);
   }
 
   function buildActivityNotificationKey(item) {
@@ -2569,6 +2773,18 @@
       return;
     }
 
+    const restockButton = event.target.closest("[data-notification-restock]");
+    if (restockButton) {
+      event.preventDefault();
+      const id = restockButton.dataset.notificationRestock;
+      closeNotification();
+      if (canView("restok-obat")) {
+        if (state.activeView !== "restok-obat") switchView("restok-obat");
+        window.setTimeout(() => openRestockDetailModal(id), 0);
+      }
+      return;
+    }
+
     const deleteButton = event.target.closest("[data-notification-delete]");
     if (!deleteButton) return;
     event.preventDefault();
@@ -2612,12 +2828,16 @@
           const time = formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", "");
           const actor = item.actor ? ` oleh ${item.actor}` : "";
           const detail = item.detail ? `<span class="notification-detail">${escapeHtml(item.detail)}</span>` : "";
-          return `<li class="notification-item" data-notification-key="${escapeHtml(item.key)}">
+          const restockAction = item.kind === "restock" && item.restockId
+            ? `<button class="notification-open-restock" type="button" data-notification-restock="${escapeHtml(item.restockId)}">Lihat Detail</button>`
+            : "";
+          return `<li class="notification-item is-${escapeHtml(item.kind || "activity")}" data-notification-key="${escapeHtml(item.key)}">
             <span class="notification-number">${index + 1}</span>
             <span class="notification-body">
               <strong>${escapeHtml(item.title || "Aktivitas")}</strong>
               <small>${escapeHtml(time + actor)}</small>
               ${detail}
+              ${restockAction}
             </span>
             <button class="notification-delete" type="button" data-notification-delete="${escapeHtml(item.key)}" aria-label="Hapus notifikasi">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -3338,15 +3558,25 @@
   }
 
   function loadStoredModules() {
+    resetLegacyRestockRequests();
     state.employees = readStoredArray(EMPLOYEE_KEY);
     state.suppliers = readStoredArray(SUPPLIER_KEY);
     state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
     state.purchaseOrders = readStoredArray(PO_KEY);
+    state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
     renderEmployees();
     renderSuppliers();
     renderUsers();
     renderPurchaseOrders();
+    renderRestockPage();
     applyCurrentUserAccess();
+  }
+
+  function resetLegacyRestockRequests() {
+    const version = localStorage.getItem(RESTOCK_RESET_KEY);
+    if (version === RESTOCK_RESET_VERSION) return;
+    localStorage.removeItem(RESTOCK_KEY);
+    localStorage.setItem(RESTOCK_RESET_KEY, RESTOCK_RESET_VERSION);
   }
 
   function syncEmployeeSeed() {
@@ -3585,6 +3815,7 @@
     if (els.addMedicineButton) els.addMedicineButton.hidden = !access.has("edit_obat");
     renderTableBody();
     renderAttendanceDashboard();
+    renderRestockPage();
 
     if (state.activeView && !canView(state.activeView, access)) {
       const firstAllowed = ACCESS_MENUS.find((item) => access.has(item.key)) || ACCESS_MENUS[0];
@@ -3606,6 +3837,7 @@
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
       "data-supplier": "data_supplier",
+      "restok-obat": "restok_obat",
       "surat-pesanan": "surat_pesanan",
       "import-data-obat": "import_data_obat",
       "akun-profil": "akun_profil",
@@ -3621,6 +3853,7 @@
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
       data_supplier: "data-supplier",
+      restok_obat: "restok-obat",
       surat_pesanan: "surat-pesanan",
       import_data_obat: "import-data-obat",
       akun_profil: "akun-profil",
@@ -4093,6 +4326,967 @@
     `).join("");
   }
 
+  function normalizeRestockRequest(item = {}) {
+    const medicine = findMedicineForRestock(item.medicineName || item.nama || item.name || item.kode || item.code);
+    const createdAt = normalizeTimestamp(item.createdAt || item.date || new Date().toISOString()) || new Date().toISOString();
+    const updatedAt = normalizeTimestamp(item.updatedAt || createdAt) || createdAt;
+    const unit = String(item.unit || item.requestUnit || item.satuan || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs").trim() || "Pcs";
+    return {
+      id: String(item.id || `RST-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`),
+      code: String(item.code || item.kode || medicine?.kode || "").trim(),
+      medicineName: String(item.medicineName || item.nama || item.name || medicine?.nama || "").trim(),
+      currentStock: String(item.currentStock || item.stok || medicine?.stok || "0").trim(),
+      stockUnit: String(item.stockUnit || item.currentStockUnit || item.satuanStok || inferRestockStockUnit(medicine) || unit).trim() || unit,
+      unit,
+      qty: Math.max(1, Number(item.qty || item.requestQty || item.quantity || item.permintaan || 1) || 1),
+      priority: ["urgent", "important", "normal"].includes(item.priority) ? item.priority : "normal",
+      status: ["pending", "processing", "done", "rejected"].includes(item.status) ? item.status : "pending",
+      reporter: String(item.reporter || item.pelapor || getCurrentUserRecord().name || "Operator").trim(),
+      reporterKey: String(item.reporterKey || item.username || getCurrentUserRecord().username || getCurrentUserRecord().email || "").trim(),
+      note: String(item.note || item.catatan || "").trim(),
+      photo: String(item.photo || item.foto || "").trim(),
+      supplier: String(item.supplier || medicine?.suplier || "").trim(),
+      createdAt,
+      updatedAt,
+      history: Array.isArray(item.history) ? item.history : []
+    };
+  }
+
+  function seedRestockRequestsFromStock() {
+    return;
+  }
+
+  function persistRestockRequests(options = {}) {
+    writeStoredArray(RESTOCK_KEY, state.restockRequests);
+    updateNotificationState();
+    if (options.remote !== false) scheduleRestockSync();
+  }
+
+  function scheduleRestockSync() {
+    window.clearTimeout(state.restockSyncTimer);
+    state.restockSyncTimer = window.setTimeout(() => {
+      saveRestockRequestsToBackend({ silent: true });
+    }, 650);
+  }
+
+  async function fetchRestockRequests(options = {}) {
+    try {
+      const payload = await postToApi({ action: "listRestockRequests" });
+      if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.requests)) {
+        throw new Error(payload?.message || "Endpoint restok online belum aktif.");
+      }
+      state.restockRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
+      persistRestockRequests({ remote: false });
+      renderRestockPage();
+    } catch (error) {
+      if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
+    }
+  }
+
+  async function saveRestockRequestsToBackend(options = {}) {
+    window.clearTimeout(state.restockSyncTimer);
+    const user = getCurrentUserRecord();
+    try {
+      const payload = await postToApi({
+        action: "saveRestockRequests",
+        requests: state.restockRequests,
+        role: user.role || "",
+        username: user.username || "",
+        email: user.email || ""
+      });
+      if (!payload || (payload.success !== true && payload.ok !== true)) {
+        throw new Error(payload?.message || "Data restok belum tersimpan online.");
+      }
+      return payload;
+    } catch (error) {
+      if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
+      return null;
+    }
+  }
+
+  function populateRestockMedicineOptions() {
+    populateRestockUnitOptions();
+    renderRestockMedicineResults();
+  }
+
+  function populateRestockUnitOptions(selected = "") {
+    if (!els.restockUnitSelect) return;
+    const units = unique(state.rows.flatMap((row) => [
+      row.satuan_beli,
+      row.satuan_1,
+      row.satuan_2,
+      row.satuan_3,
+      row.satuan_stok_min
+    ])).filter(Boolean);
+    const values = units.length ? units : ["Box", "Strip", "Tablet", "Botol", "Pcs"];
+    const current = selected || els.restockUnitSelect.value || values[0] || "Pcs";
+    els.restockUnitSelect.innerHTML = values.map((unit) => `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`).join("");
+    els.restockUnitSelect.value = values.includes(current) ? current : values[0];
+  }
+
+  function inferRestockUnit(row) {
+    return String(row?.satuan_beli || row?.satuan_1 || row?.satuan_stok_min || "Pcs").trim() || "Pcs";
+  }
+
+  function inferRestockStockUnit(row) {
+    return String(row?.satuan_stok_min || row?.satuan_1 || row?.satuan_beli || "Pcs").trim() || "Pcs";
+  }
+
+  function getRestockMedicineKey(row) {
+    return normalizeSearch([row?.kode, row?.nama].filter(Boolean).join("|"));
+  }
+
+  function findMedicineForRestock(value) {
+    const key = normalizeSearch(value);
+    if (!key) return null;
+    return state.rows.find((row) => {
+      return [row.nama, row.kode, `${row.kode} ${row.nama}`].some((item) => normalizeSearch(item) === key);
+    }) || state.rows.find((row) => normalizeSearch(row.nama).includes(key) || normalizeSearch(row.kode).includes(key)) || null;
+  }
+
+  function getSelectedRestockMedicine() {
+    if (!state.restockSelectedMedicineKey) return null;
+    return state.rows.find((row) => getRestockMedicineKey(row) === state.restockSelectedMedicineKey) || null;
+  }
+
+  function getRestockMedicineSearchResults(query = els.restockMedicineInput?.value || "") {
+    const key = normalizeSearch(query);
+    if (!key) return [];
+    const terms = key.split(/\s+/).filter(Boolean);
+    return state.rows
+      .filter((row) => {
+        const haystack = normalizeSearch(Object.values(row || {}).join(" "));
+        return terms.every((term) => haystack.includes(term));
+      })
+      .sort((a, b) => {
+        const aName = normalizeSearch(a.nama || a.kode);
+        const bName = normalizeSearch(b.nama || b.kode);
+        const aExact = aName === key || normalizeSearch(a.kode) === key ? 0 : 1;
+        const bExact = bName === key || normalizeSearch(b.kode) === key ? 0 : 1;
+        return aExact - bExact || String(a.nama || a.kode).localeCompare(String(b.nama || b.kode), "id", { sensitivity: "base" });
+      })
+      .slice(0, 8);
+  }
+
+  function handleRestockMedicineSearchInput() {
+    state.restockSelectedMedicineKey = "";
+    if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = "";
+    renderRestockMedicineResults();
+    if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Pilih obat dari hasil pencarian untuk mengisi data restok.";
+  }
+
+  function renderRestockMedicineResults(query = els.restockMedicineInput?.value || "", options = {}) {
+    if (!els.restockMedicineResults) return;
+    const cleanQuery = String(query || "").trim();
+    if (!cleanQuery && !options.force) {
+      els.restockMedicineResults.hidden = true;
+      els.restockMedicineResults.innerHTML = "";
+      return;
+    }
+    const rows = getRestockMedicineSearchResults(cleanQuery);
+    els.restockMedicineResults.hidden = false;
+    if (!rows.length) {
+      els.restockMedicineResults.innerHTML = `
+        <div class="restock-medicine-empty">
+          <strong>Obat tidak ditemukan</strong>
+          <small>Coba nama, kode produk, atau barcode lain.</small>
+        </div>
+      `;
+      return;
+    }
+    els.restockMedicineResults.innerHTML = rows.map((row, index) => `
+      <button class="restock-medicine-result" type="button" data-restock-medicine-index="${index}">
+        <span>
+          <strong>${escapeHtml(row.nama || row.kode || "Obat")}</strong>
+          <small>${escapeHtml([row.kode, row.suplier].filter(Boolean).join(" - ") || "Data obat")}</small>
+        </span>
+        <em>${escapeHtml(formatCell(row.stok, "stok"))} ${escapeHtml(inferRestockStockUnit(row))}</em>
+      </button>
+    `).join("");
+    els.restockMedicineResults.dataset.query = cleanQuery;
+  }
+
+  function handleRestockMedicineResultClick(event) {
+    const button = event.target.closest("[data-restock-medicine-index]");
+    if (!button) return;
+    const rows = getRestockMedicineSearchResults(els.restockMedicineResults?.dataset.query || els.restockMedicineInput?.value || "");
+    const row = rows[Number(button.dataset.restockMedicineIndex)];
+    if (row) selectRestockMedicine(row);
+  }
+
+  function selectRestockMedicine(row) {
+    if (!row) return;
+    state.restockSelectedMedicineKey = getRestockMedicineKey(row);
+    if (els.restockMedicineInput) els.restockMedicineInput.value = row.nama || row.kode || "";
+    if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`;
+    populateRestockUnitOptions(inferRestockUnit(row));
+    if (els.restockMedicineResults) {
+      els.restockMedicineResults.hidden = true;
+      els.restockMedicineResults.innerHTML = "";
+    }
+    if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Obat dipilih. Lengkapi jumlah dan prioritas restok.";
+  }
+
+  function updateRestockMedicinePreview() {
+    const row = findMedicineForRestock(els.restockMedicineInput?.value || "");
+    if (els.restockCurrentStockInput) {
+      els.restockCurrentStockInput.value = row ? `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}` : "0";
+    }
+    if (row) populateRestockUnitOptions(inferRestockUnit(row));
+  }
+
+  function openRestockRequestModal(id = "") {
+    const editingItem = id ? state.restockRequests.find((request) => request.id === id) : null;
+    if (editingItem && !canEditRestockRequest(editingItem)) {
+      setRestockPageMessage("Data restok hanya bisa diedit oleh owner/admin, atau saat status masih pending.", "error");
+      return;
+    }
+    state.restockSelectedMedicineKey = "";
+    state.restockEditingId = editingItem ? editingItem.id : "";
+    state.pendingRestockPhoto = "";
+    state.pendingRestockPhotoName = "";
+    state.pendingRestockPhotoPromise = null;
+    if (els.restockRequestForm) els.restockRequestForm.reset();
+    if (els.restockRequestTitle) els.restockRequestTitle.textContent = editingItem ? "Edit Data Obat Restok" : "Tambah Permintaan Restok";
+    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = editingItem ? "Simpan Perubahan" : "Kirim Laporan";
+    if (els.restockRequestStatus) {
+      els.restockRequestStatus.textContent = editingItem
+        ? "Ubah jumlah, satuan, prioritas, atau catatan restok."
+        : "Isi kebutuhan restok obat yang stoknya kosong atau menipis.";
+    }
+    const row = editingItem ? findMedicineForRestock(editingItem.code || editingItem.medicineName) : null;
+    if (row) state.restockSelectedMedicineKey = getRestockMedicineKey(row);
+    if (els.restockMedicineInput) {
+      els.restockMedicineInput.value = editingItem ? (editingItem.medicineName || row?.nama || "") : "";
+    }
+    if (els.restockCurrentStockInput) {
+      els.restockCurrentStockInput.value = editingItem
+        ? `${formatCell(editingItem.currentStock, "stok")} ${editingItem.stockUnit || inferRestockStockUnit(row)}`
+        : "";
+    }
+    if (els.restockQtyInput) els.restockQtyInput.value = editingItem ? String(editingItem.qty || 1) : "1";
+    if (els.restockPrioritySelect) els.restockPrioritySelect.value = editingItem ? editingItem.priority || "urgent" : "urgent";
+    if (els.restockNoteInput) els.restockNoteInput.value = editingItem ? editingItem.note || "" : "";
+    if (els.restockPhotoLabel) els.restockPhotoLabel.textContent = "Upload Foto";
+    if (els.restockMedicineResults) {
+      els.restockMedicineResults.hidden = true;
+      els.restockMedicineResults.innerHTML = "";
+    }
+    populateRestockUnitOptions(editingItem ? editingItem.unit : "");
+    showModal(els.restockRequestModal);
+    window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
+  }
+
+  function closeRestockRequestModal() {
+    state.restockEditingId = "";
+    hideModal(els.restockRequestModal);
+  }
+
+  function closeRestockDetailModal() {
+    state.restockDetailId = "";
+    hideModal(els.restockDetailModal);
+  }
+
+  function handleRestockPhotoChange() {
+    const file = els.restockPhotoInput?.files?.[0];
+    state.pendingRestockPhoto = "";
+    state.pendingRestockPhotoName = "";
+    state.pendingRestockPhotoPromise = null;
+    if (!file) {
+      if (els.restockPhotoLabel) els.restockPhotoLabel.textContent = "Upload Foto";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Foto maksimal 2MB.";
+      if (els.restockPhotoInput) els.restockPhotoInput.value = "";
+      return;
+    }
+    state.pendingRestockPhotoPromise = compressRestockPhoto(file).then((dataUrl) => {
+      state.pendingRestockPhoto = dataUrl;
+      state.pendingRestockPhotoName = dataUrl ? file.name : "";
+      if (els.restockPhotoLabel) els.restockPhotoLabel.textContent = dataUrl ? file.name : "Upload Foto";
+      if (!dataUrl && els.restockRequestStatus) {
+        els.restockRequestStatus.textContent = "Foto terlalu besar untuk sinkron online. Laporan tetap bisa dikirim tanpa foto.";
+      }
+      return dataUrl;
+    });
+  }
+
+  function compressRestockPhoto(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onerror = () => resolve("");
+      reader.onload = () => {
+        const raw = String(reader.result || "");
+        const image = new Image();
+        image.onerror = () => resolve(raw.length <= RESTOCK_PHOTO_MAX_LENGTH ? raw : "");
+        image.onload = () => {
+          const sizes = [900, 720, 560, 420, 320];
+          const qualities = [0.72, 0.62, 0.52, 0.44, 0.36];
+          let best = "";
+
+          sizes.some((maxSide) => {
+            const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width || 1, image.naturalHeight || image.height || 1));
+            const width = Math.max(1, Math.round((image.naturalWidth || image.width || 1) * scale));
+            const height = Math.max(1, Math.round((image.naturalHeight || image.height || 1) * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d", { alpha: false });
+            context.fillStyle = "#fff";
+            context.fillRect(0, 0, width, height);
+            context.drawImage(image, 0, 0, width, height);
+
+            return qualities.some((quality) => {
+              const dataUrl = canvas.toDataURL("image/jpeg", quality);
+              if (!best || dataUrl.length < best.length) best = dataUrl;
+              if (dataUrl.length <= RESTOCK_PHOTO_MAX_LENGTH) {
+                best = dataUrl;
+                return true;
+              }
+              return false;
+            });
+          });
+
+          resolve(best && best.length <= RESTOCK_PHOTO_MAX_LENGTH ? best : "");
+        };
+        image.src = raw;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function saveRestockRequest(event) {
+    event.preventDefault();
+    const medicineText = String(els.restockMedicineInput?.value || "").trim();
+    const editingItem = state.restockEditingId
+      ? state.restockRequests.find((request) => request.id === state.restockEditingId)
+      : null;
+    const row = getSelectedRestockMedicine() || (editingItem ? findMedicineForRestock(editingItem.code || editingItem.medicineName) : null);
+    if (!medicineText) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Nama obat wajib diisi.";
+      return;
+    }
+    if (!editingItem && !row) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Pilih obat dari popup hasil pencarian terlebih dahulu.";
+      renderRestockMedicineResults(medicineText, { force: true });
+      return;
+    }
+    if (editingItem && !canEditRestockRequest(editingItem)) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Laporan ini tidak bisa diedit oleh akun ini.";
+      return;
+    }
+    const loadingToken = startAppLoading(editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok obat...", 0);
+    const user = getCurrentUserRecord();
+    try {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok...";
+      if (state.pendingRestockPhotoPromise) await state.pendingRestockPhotoPromise;
+      await delay(450);
+      const now = new Date().toISOString();
+      if (editingItem) {
+        Object.assign(editingItem, normalizeRestockRequest({
+          ...editingItem,
+          code: row?.kode || editingItem.code || "",
+          medicineName: row?.nama || medicineText || editingItem.medicineName,
+          currentStock: row?.stok || editingItem.currentStock || "0",
+          stockUnit: row ? inferRestockStockUnit(row) : editingItem.stockUnit,
+          unit: els.restockUnitSelect?.value || editingItem.unit,
+          qty: els.restockQtyInput?.value || editingItem.qty || 1,
+          priority: els.restockPrioritySelect?.value || editingItem.priority || "normal",
+          note: els.restockNoteInput?.value || "",
+          photo: state.pendingRestockPhoto || editingItem.photo || "",
+          supplier: row?.suplier || editingItem.supplier || "",
+          updatedAt: now,
+          history: (editingItem.history || []).concat({ status: "edited", at: now, by: user.name || "Operator" })
+        }));
+      } else {
+        const request = normalizeRestockRequest({
+          id: `RST-${Date.now()}`,
+          code: row.kode || "",
+          medicineName: row.nama || medicineText,
+          currentStock: row.stok || els.restockCurrentStockInput?.value || "0",
+          stockUnit: inferRestockStockUnit(row),
+          unit: els.restockUnitSelect?.value || inferRestockUnit(row),
+          qty: els.restockQtyInput?.value || 1,
+          priority: els.restockPrioritySelect?.value || "normal",
+          status: "pending",
+          reporter: user.name || user.username || "Operator",
+          reporterKey: user.username || user.email || "",
+          note: els.restockNoteInput?.value || "",
+          photo: state.pendingRestockPhoto,
+          supplier: row.suplier || "",
+          createdAt: now,
+          updatedAt: now,
+          history: [{ status: "pending", at: now, by: user.name || "Operator" }]
+        });
+        state.restockRequests.unshift(request);
+      }
+      persistRestockRequests({ remote: false });
+      const syncResult = await saveRestockRequestsToBackend({ silent: true });
+      addProfileActivity(editingItem ? "Data restok diperbarui" : "Permintaan restok dibuat", `${medicineText} - ${els.restockQtyInput?.value || 1} ${els.restockUnitSelect?.value || ""}`);
+      closeRestockRequestModal();
+      renderRestockPage();
+      setRestockPageMessage(
+        syncResult
+          ? (editingItem ? "Perubahan data restok berhasil disimpan online." : "Laporan restok berhasil dikirim dan disimpan online.")
+          : (editingItem ? "Perubahan data restok berhasil disimpan lokal." : "Laporan restok berhasil disimpan lokal."),
+        "success"
+      );
+    } catch (error) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = `Laporan gagal disimpan: ${error.message}`;
+    } finally {
+      endAppLoading(loadingToken);
+    }
+  }
+
+  function renderRestockPage() {
+    if (!els.restockList) return;
+    pruneRestockSelection();
+    const rows = getFilteredRestockRequests();
+    const total = state.restockRequests.length;
+    const pending = state.restockRequests.filter((item) => item.status === "pending").length;
+    const processing = state.restockRequests.filter((item) => item.status === "processing").length;
+    const done = state.restockRequests.filter((item) => item.status === "done").length;
+
+    setText(els.restockTotalCount, formatNumber(total));
+    setText(els.restockPendingCount, formatNumber(pending));
+    setText(els.restockProcessCount, formatNumber(processing));
+    setText(els.restockDoneCount, formatNumber(done));
+    if (els.restockStatusText) {
+      els.restockStatusText.removeAttribute("data-type");
+      els.restockStatusText.textContent = getRestockSelectionCount()
+        ? `${formatNumber(getRestockSelectionCount())} data restok dipilih. Ketuk ikon hapus untuk menghapus data terpilih.`
+        : total
+          ? `${formatNumber(rows.length)} dari ${formatNumber(total)} laporan restok ditampilkan.`
+          : "Belum ada laporan restok. Tambahkan obat habis dari tombol utama.";
+    }
+    if (els.restockMineButton) els.restockMineButton.classList.toggle("is-active", state.restockMineOnly);
+    if (els.restockPage) els.restockPage.classList.toggle("is-selecting", state.restockSelectionMode);
+    if (els.restockDeleteButton) {
+      const selectedCount = getRestockSelectionCount();
+      els.restockDeleteButton.classList.toggle("has-selection", selectedCount > 0);
+      els.restockDeleteButton.setAttribute("title", selectedCount ? `Hapus ${formatNumber(selectedCount)} data terpilih` : "Hapus data restok");
+      els.restockDeleteButton.setAttribute("aria-label", selectedCount ? `Hapus ${formatNumber(selectedCount)} data restok terpilih` : "Hapus data restok");
+    }
+
+    if (!rows.length) {
+      els.restockList.innerHTML = `
+        <article class="restock-empty-card">
+          <img src="assets/mobile-menu/restok-obat.png" alt="">
+          <strong>Belum ada laporan sesuai filter</strong>
+          <p>Gunakan tombol Tambah Obat Habis untuk membuat permintaan restok baru.</p>
+          <button class="restock-soft-button" type="button" data-restock-action="add">Tambah Laporan</button>
+        </article>
+      `;
+    } else {
+      els.restockList.innerHTML = rows.map(renderRestockCard).join("");
+    }
+
+    updateNotificationState();
+  }
+
+  function setRestockPageMessage(message, type) {
+    if (!els.restockStatusText) return;
+    els.restockStatusText.textContent = message || "";
+    if (type) els.restockStatusText.dataset.type = type;
+    else els.restockStatusText.removeAttribute("data-type");
+  }
+
+  function startRestockLongPress(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.target.closest(".restock-select-toggle")) return;
+    const card = event.target.closest(".restock-card");
+    if (!card || !card.dataset.restockId) return;
+    state.restockLongPressTarget = card.dataset.restockId;
+    window.clearTimeout(state.restockLongPressTimer);
+    state.restockLongPressTimer = window.setTimeout(() => {
+      const targetId = state.restockLongPressTarget;
+      state.restockLongPressTimer = null;
+      state.restockLongPressTarget = "";
+      if (targetId) enterRestockSelectionMode(targetId);
+    }, 550);
+  }
+
+  function clearRestockLongPress() {
+    window.clearTimeout(state.restockLongPressTimer);
+    state.restockLongPressTimer = null;
+    state.restockLongPressTarget = "";
+  }
+
+  function handleRestockListContextMenu(event) {
+    const card = event.target.closest(".restock-card");
+    if (!card || !card.dataset.restockId) return;
+    event.preventDefault();
+    enterRestockSelectionMode(card.dataset.restockId);
+  }
+
+  function enterRestockSelectionMode(id = "") {
+    const item = id ? state.restockRequests.find((request) => request.id === id) : null;
+    if (item && !canDeleteRestockRequest(item)) {
+      state.restockSelectionMode = false;
+      setRestockPageMessage("Akun ini hanya bisa memilih data restok yang masih pending.", "error");
+      return;
+    }
+    state.restockSelectionMode = true;
+    if (id) toggleRestockSelection(id, { keepMode: true });
+    else renderRestockPage();
+    if (window.navigator?.vibrate) window.navigator.vibrate(18);
+  }
+
+  function exitRestockSelectionMode() {
+    state.restockSelectionMode = false;
+    state.selectedRestockIds.clear();
+    renderRestockPage();
+  }
+
+  function toggleRestockSelection(id, options = {}) {
+    const item = state.restockRequests.find((request) => request.id === id);
+    if (!item) return;
+    if (!canDeleteRestockRequest(item)) {
+      setRestockPageMessage("Akun ini hanya bisa memilih data restok yang masih pending.", "error");
+      return;
+    }
+    if (state.selectedRestockIds.has(id)) state.selectedRestockIds.delete(id);
+    else state.selectedRestockIds.add(id);
+    if (!state.selectedRestockIds.size && !options.keepMode) state.restockSelectionMode = false;
+    renderRestockPage();
+  }
+
+  function pruneRestockSelection() {
+    const validIds = new Set(state.restockRequests.map((item) => item.id));
+    state.selectedRestockIds.forEach((id) => {
+      if (!validIds.has(id)) state.selectedRestockIds.delete(id);
+    });
+    if (!state.selectedRestockIds.size) state.restockSelectionMode = false;
+  }
+
+  function getRestockSelectionCount() {
+    pruneRestockSelection();
+    return state.selectedRestockIds.size;
+  }
+
+  function getSelectedRestockDeleteCandidates() {
+    return state.restockRequests.filter((item) => state.selectedRestockIds.has(item.id) && canDeleteRestockRequest(item));
+  }
+
+  function canEditRestockRequest(item) {
+    if (!item) return false;
+    const user = getCurrentUserRecord();
+    if (isAdminUser(user) || isOwnerUser(user)) return true;
+    return item.status === "pending";
+  }
+
+  function canDeleteRestockRequest(item) {
+    if (!item) return false;
+    const user = getCurrentUserRecord();
+    if (isAdminUser(user) || isOwnerUser(user)) return true;
+    return item.status === "pending";
+  }
+
+  function getFilteredRestockRequests() {
+    const query = normalizeSearch(els.restockSearchInput?.value || "");
+    const status = String(els.restockStatusFilter?.value || "").trim();
+    const user = getCurrentUserRecord();
+    const userKeys = [user.username, user.email, user.name].map(normalizeSearch).filter(Boolean);
+    return state.restockRequests.filter((item) => {
+      const haystack = normalizeSearch([item.medicineName, item.code, item.reporter, item.supplier, item.note].join(" "));
+      const searchMatch = !query || haystack.includes(query);
+      const statusMatch = !status || item.status === status;
+      const mineMatch = !state.restockMineOnly || userKeys.includes(normalizeSearch(item.reporterKey)) || userKeys.includes(normalizeSearch(item.reporter));
+      return searchMatch && statusMatch && mineMatch;
+    }).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+  }
+
+  function renderRestockCard(item) {
+    const status = getRestockStatusMeta(item.status);
+    const priority = getRestockPriorityMeta(item.priority);
+    const isSelected = state.selectedRestockIds.has(item.id);
+    const canDelete = canDeleteRestockRequest(item);
+    return `
+      <article class="restock-card ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
+        <button class="restock-select-toggle ${isSelected ? "is-selected" : ""}" type="button" data-restock-action="select" data-restock-id="${escapeHtml(item.id)}" aria-pressed="${isSelected ? "true" : "false"}" aria-label="${escapeHtml(isSelected ? "Batalkan pilihan" : "Pilih data restok")}" ${canDelete ? "" : "disabled"}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
+        </button>
+        <div class="restock-card-main">
+          <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
+          <h3>${escapeHtml(item.medicineName || "Obat")}</h3>
+          <div class="restock-card-grid">
+            <span><small>Stok Saat Ini</small><strong class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</strong></span>
+            <span><small>Permintaan</small><strong>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</strong></span>
+            <span><small>Pelapor</small><strong>${escapeHtml(item.reporter || "-")}</strong></span>
+            <span><small>Tanggal</small><strong>${escapeHtml(formatRestockDateTime(item.createdAt))}</strong></span>
+          </div>
+        </div>
+        <button class="restock-status-chip is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}">
+          ${status.icon}
+          <span>${escapeHtml(status.label)}</span>
+        </button>
+      </article>
+    `;
+  }
+
+  function toggleRestockMineOnly() {
+    state.restockMineOnly = !state.restockMineOnly;
+    renderRestockPage();
+  }
+
+  function handleRestockListAction(event) {
+    clearRestockLongPress();
+    const button = event.target.closest("[data-restock-action]");
+    if (state.restockSelectionMode) {
+      const card = event.target.closest(".restock-card");
+      const id = button?.dataset.restockId || card?.dataset.restockId || "";
+      if (id) {
+        event.preventDefault();
+        toggleRestockSelection(id);
+      }
+      return;
+    }
+    if (!button) return;
+    const action = button.dataset.restockAction;
+    if (action === "add") {
+      openRestockRequestModal();
+      return;
+    }
+    if (action === "select") {
+      enterRestockSelectionMode(button.dataset.restockId);
+      return;
+    }
+    if (action === "detail") openRestockDetailModal(button.dataset.restockId);
+  }
+
+  function openRestockDetailModal(id) {
+    const item = state.restockRequests.find((request) => request.id === id);
+    if (!item) return;
+    state.restockDetailId = id;
+    renderRestockDetail(item);
+    showModal(els.restockDetailModal);
+  }
+
+  function renderRestockDetail(item) {
+    const status = getRestockStatusMeta(item.status);
+    const priority = getRestockPriorityMeta(item.priority);
+    const row = findMedicineForRestock(item.code || item.medicineName);
+    const user = getCurrentUserRecord();
+    const isOwner = isOwnerUser(user);
+    const canManage = isAdminUser(user) || isOwner;
+    const statusLocked = item.status === "done" && !isOwner;
+    const canManageStatus = canManage && !statusLocked;
+    const canSendToDraft = canManageStatus && item.status !== "rejected";
+    const canCancel = item.status === "pending";
+    const canEditRestock = canEditRestockRequest(item);
+    if (els.restockDetailTitle) els.restockDetailTitle.textContent = "Detail Permintaan Restok";
+    if (els.restockDetailStatus) els.restockDetailStatus.textContent = status.label;
+    if (!els.restockDetailBody) return;
+    els.restockDetailBody.innerHTML = `
+      <div class="restock-detail-summary">
+        <div class="restock-detail-image">
+          ${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : `<img src="assets/mobile-menu/restok-obat.png" alt="">`}
+        </div>
+        <div>
+          <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
+          <span class="restock-status-label is-${status.key}">${status.icon}${escapeHtml(status.label)}</span>
+          <h3>${escapeHtml(item.medicineName)}</h3>
+          <small>${escapeHtml(item.unit || inferRestockUnit(row))}</small>
+        </div>
+      </div>
+      <dl class="restock-detail-grid">
+        <div><dt>Stok Saat Ini</dt><dd class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</dd></div>
+        <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
+        <div><dt>Satuan</dt><dd>${escapeHtml(item.unit)}</dd></div>
+        <div><dt>Prioritas</dt><dd>${escapeHtml(priority.label)}</dd></div>
+        <div><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
+        <div><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
+        <div><dt>Supplier</dt><dd>${escapeHtml(item.supplier || row?.suplier || "-")}</dd></div>
+        <div><dt>Kode</dt><dd>${escapeHtml(item.code || row?.kode || "-")}</dd></div>
+      </dl>
+      <div class="restock-detail-note">
+        <strong>Catatan</strong>
+        <p>${escapeHtml(item.note || "Tidak ada catatan.")}</p>
+      </div>
+      <div class="restock-detail-actions">
+        ${canSendToDraft ? `<button class="secondary-action" type="button" data-restock-detail-action="order">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>
+          Masukkan ke Draft Pesanan
+        </button>` : ""}
+        ${canManageStatus ? `
+          <button class="filter-action" type="button" data-restock-detail-action="processing">Tandai Diproses</button>
+          <button class="restock-done-button" type="button" data-restock-detail-action="done">Selesai</button>
+          <button class="restock-danger-button" type="button" data-restock-detail-action="rejected">Tolak</button>
+        ` : ""}
+        ${canEditRestock ? `<button class="restock-soft-button" type="button" data-restock-detail-action="edit-medicine">Edit Data Obat</button>` : ""}
+        ${canCancel ? `<button class="restock-cancel-button" type="button" data-restock-detail-action="cancel">Batalkan Laporan</button>` : ""}
+      </div>
+    `;
+  }
+
+  function handleRestockDetailAction(event) {
+    const button = event.target.closest("[data-restock-detail-action]");
+    if (!button || !state.restockDetailId) return;
+    const action = button.dataset.restockDetailAction;
+    if (action === "order") {
+      addRestockToPurchaseOrder(state.restockDetailId);
+      return;
+    }
+    if (action === "processing" || action === "done" || action === "rejected") {
+      updateRestockStatus(state.restockDetailId, action === "processing" ? "processing" : action);
+      return;
+    }
+    if (action === "cancel") {
+      cancelRestockRequest(state.restockDetailId);
+      return;
+    }
+    if (action === "edit-medicine") {
+      const editId = state.restockDetailId;
+      closeRestockDetailModal();
+      openRestockRequestModal(editId);
+    }
+  }
+
+  function updateRestockStatus(id, status) {
+    const item = state.restockRequests.find((request) => request.id === id);
+    if (!item) return;
+    const user = getCurrentUserRecord();
+    const isOwner = isOwnerUser(user);
+    const canManage = isAdminUser(user) || isOwner;
+    if (!canManage) {
+      setRestockPageMessage("Status restok hanya dapat diubah oleh owner/admin.", "error");
+      return;
+    }
+    if (item.status === "done" && !isOwner) {
+      setRestockPageMessage("Status selesai hanya dapat diedit kembali oleh owner.", "error");
+      return;
+    }
+    item.status = status;
+    item.updatedAt = new Date().toISOString();
+    item.history = (item.history || []).concat({ status, at: item.updatedAt, by: user.name || "Admin" });
+    persistRestockRequests();
+    addProfileActivity("Status restok diperbarui", `${item.medicineName} - ${getRestockStatusMeta(status).label}`);
+    renderRestockPage();
+    renderRestockDetail(item);
+  }
+
+  function cancelRestockRequest(id) {
+    const item = state.restockRequests.find((request) => request.id === id);
+    if (!item || item.status !== "pending") {
+      setRestockPageMessage("Laporan hanya bisa dibatalkan saat status masih pending.", "error");
+      return;
+    }
+    state.restockRequests = state.restockRequests.filter((request) => request.id !== id);
+    persistRestockRequests();
+    addProfileActivity("Laporan restok dibatalkan", item?.medicineName || "Restok obat");
+    closeRestockDetailModal();
+    renderRestockPage();
+  }
+
+  function openRestockDeleteModal() {
+    window.clearTimeout(state.restockDeleteSuccessTimer);
+    if (els.restockDeleteDateFrom) els.restockDeleteDateFrom.value = "";
+    if (els.restockDeleteDateTo) els.restockDeleteDateTo.value = "";
+    if (getRestockSelectionCount()) showRestockDeleteConfirmPanel("selected");
+    else showRestockDeleteMethodPanel();
+    showModal(els.restockDeleteModal);
+  }
+
+  function closeRestockDeleteModal() {
+    window.clearTimeout(state.restockDeleteSuccessTimer);
+    hideModal(els.restockDeleteModal);
+  }
+
+  function handleRestockDeleteModalClick(event) {
+    const modeButton = event.target.closest("[data-restock-delete-mode]");
+    if (modeButton) {
+      showRestockDeleteConfirmPanel(modeButton.dataset.restockDeleteMode);
+      return;
+    }
+    if (event.target.closest("[data-restock-delete-cancel]")) {
+      closeRestockDeleteModal();
+    }
+  }
+
+  function showRestockDeleteMethodPanel() {
+    state.restockDeleteMode = "method";
+    if (els.restockDeleteScope) els.restockDeleteScope.value = "all";
+    toggleRestockDeletePanels("method");
+    if (els.restockDeleteTitle) els.restockDeleteTitle.textContent = "Hapus Data Restok";
+    if (els.restockDeleteStatus) els.restockDeleteStatus.textContent = "Pilih metode penghapusan data yang ingin Anda lakukan.";
+    if (els.restockDeleteBackButton) els.restockDeleteBackButton.hidden = true;
+    if (els.restockDeleteSelectedMethod) {
+      const selectedCount = getRestockSelectionCount();
+      els.restockDeleteSelectedMethod.hidden = selectedCount <= 0;
+      const text = els.restockDeleteSelectedMethod.querySelector("small");
+      if (text) text.textContent = `${formatNumber(selectedCount)} data restok yang sudah dicentang.`;
+    }
+  }
+
+  function showRestockDeleteConfirmPanel(mode) {
+    state.restockDeleteMode = mode === "selected" ? "selected" : mode === "date" ? "date" : "all";
+    if (els.restockDeleteScope) els.restockDeleteScope.value = state.restockDeleteMode === "date" ? "date" : "all";
+    if (state.restockDeleteMode === "date") {
+      if (!els.restockDeleteDateFrom?.value) els.restockDeleteDateFrom.value = getTodayDateInputValue();
+      if (!els.restockDeleteDateTo?.value) els.restockDeleteDateTo.value = els.restockDeleteDateFrom?.value || getTodayDateInputValue();
+      toggleRestockDeletePanels("date");
+    } else {
+      toggleRestockDeletePanels("confirm");
+    }
+    if (els.restockDeleteBackButton) els.restockDeleteBackButton.hidden = false;
+    updateRestockDeletePreview();
+  }
+
+  function toggleRestockDeletePanels(activePanel) {
+    if (els.restockDeleteMethodPanel) els.restockDeleteMethodPanel.hidden = activePanel !== "method";
+    if (els.restockDeleteConfirmPanel) els.restockDeleteConfirmPanel.hidden = activePanel !== "confirm";
+    if (els.restockDeleteDatePanel) els.restockDeleteDatePanel.hidden = activePanel !== "date";
+    if (els.restockDeleteSuccessPanel) els.restockDeleteSuccessPanel.hidden = activePanel !== "success";
+  }
+
+  function updateRestockDeletePreview() {
+    if (!els.restockDeleteStatus) return;
+    const candidates = getRestockDeleteCandidates();
+    const user = getCurrentUserRecord();
+    const canManage = isAdminUser(user) || isOwnerUser(user);
+    const roleText = canManage ? "semua status" : "status pending saja";
+    const titleMap = {
+      selected: "Hapus Data Terpilih",
+      date: "Hapus Data Berdasarkan Tanggal",
+      all: "Hapus Semua Data Restok"
+    };
+    if (els.restockDeleteTitle) els.restockDeleteTitle.textContent = titleMap[state.restockDeleteMode] || "Hapus Data Restok";
+    if (els.restockDeletePrimaryLabel) els.restockDeletePrimaryLabel.textContent = "Hapus Data";
+    if (state.restockDeleteMode === "selected") {
+      els.restockDeleteStatus.textContent = `${formatNumber(candidates.length)} data restok terpilih ${roleText} akan dihapus.`;
+      return;
+    }
+    if (state.restockDeleteMode === "date") {
+      els.restockDeleteStatus.textContent = `${formatNumber(candidates.length)} data restok ${roleText} akan dihapus sesuai rentang tanggal.`;
+      return;
+    }
+    els.restockDeleteStatus.textContent = `${formatNumber(candidates.length)} data restok ${roleText} akan dihapus dari seluruh tanggal.`;
+  }
+
+  function getRestockDeleteCandidates() {
+    const scope = state.restockDeleteMode === "date" ? "date" : "all";
+    const from = String(els.restockDeleteDateFrom?.value || "").trim();
+    const to = String(els.restockDeleteDateTo?.value || "").trim();
+    const source = state.restockDeleteMode === "selected"
+      ? getSelectedRestockDeleteCandidates()
+      : state.restockRequests;
+    return source.filter((item) => {
+      if (!canDeleteRestockRequest(item)) return false;
+      if (scope !== "date") return true;
+      const dateKey = getRestockDateKey(item.createdAt || item.updatedAt);
+      if (!dateKey) return false;
+      if (from && dateKey < from) return false;
+      if (to && dateKey > to) return false;
+      return true;
+    });
+  }
+
+  function getRestockDateKey(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Jakarta"
+    }).format(date);
+  }
+
+  function getTodayDateInputValue() {
+    return new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Jakarta"
+    }).format(new Date());
+  }
+
+  function deleteRestockRequests(event) {
+    event.preventDefault();
+    const candidates = getRestockDeleteCandidates();
+    if (!candidates.length) {
+      if (els.restockDeleteStatus) els.restockDeleteStatus.textContent = "Tidak ada data yang cocok untuk dihapus.";
+      return;
+    }
+    const ids = new Set(candidates.map((item) => item.id));
+    state.restockRequests = state.restockRequests.filter((item) => !ids.has(item.id));
+    persistRestockRequests();
+    addProfileActivity("Hapus data restok", `${formatNumber(candidates.length)} laporan restok dihapus`);
+    if (state.restockDetailId && ids.has(state.restockDetailId)) closeRestockDetailModal();
+    state.selectedRestockIds.clear();
+    state.restockSelectionMode = false;
+    renderRestockPage();
+    showRestockDeleteSuccess(candidates.length);
+    setRestockPageMessage(`${formatNumber(candidates.length)} data restok berhasil dihapus.`, "success");
+  }
+
+  function showRestockDeleteSuccess(count) {
+    toggleRestockDeletePanels("success");
+    if (els.restockDeleteBackButton) els.restockDeleteBackButton.hidden = true;
+    if (els.restockDeleteTitle) els.restockDeleteTitle.textContent = "Berhasil Dihapus";
+    if (els.restockDeleteStatus) els.restockDeleteStatus.textContent = `${formatNumber(count)} data restok berhasil dihapus.`;
+    if (els.restockDeleteSuccessText) els.restockDeleteSuccessText.textContent = `${formatNumber(count)} data restok berhasil dihapus dari daftar.`;
+    window.clearTimeout(state.restockDeleteSuccessTimer);
+    state.restockDeleteSuccessTimer = window.setTimeout(closeRestockDeleteModal, 1100);
+  }
+
+  function addRestockToPurchaseOrder(id) {
+    const item = state.restockRequests.find((request) => request.id === id);
+    if (!item) return;
+    const user = getCurrentUserRecord();
+    const isOwner = isOwnerUser(user);
+    const canManage = isAdminUser(user) || isOwner;
+    if (!canManage || (item.status === "done" && !isOwner)) {
+      setRestockPageMessage("Draft pesanan hanya dapat dibuat oleh owner/admin.", "error");
+      return;
+    }
+    state.purchaseItems.push({
+      kode: item.code,
+      nama: item.medicineName,
+      qty: item.qty,
+      unit: item.unit
+    });
+    if (els.poSupplier && item.supplier) els.poSupplier.value = item.supplier;
+    updateRestockStatus(id, "processing");
+    closeRestockDetailModal();
+    renderPurchaseItems();
+    renderRestockPage();
+    setRestockPageMessage(`${item.medicineName} berhasil dimasukkan ke draft pesanan pembelian.`, "success");
+  }
+
+  function getRestockStatusMeta(status) {
+    const map = {
+      pending: { key: "pending", label: "Menunggu Admin", notification: "Permintaan Restok Baru", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' },
+      processing: { key: "processing", label: "Sedang Diproses", notification: "Status Restok Diperbarui", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>' },
+      done: { key: "done", label: "Selesai", notification: "Restok Selesai", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>' },
+      rejected: { key: "rejected", label: "Ditolak", notification: "Laporan Ditolak", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>' }
+    };
+    return map[status] || map.pending;
+  }
+
+  function getRestockPriorityMeta(priority) {
+    const map = {
+      urgent: { key: "urgent", label: "Mendesak" },
+      important: { key: "important", label: "Penting" },
+      normal: { key: "normal", label: "Normal" }
+    };
+    return map[priority] || map.normal;
+  }
+
+  function formatRestockDateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    const dateText = new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }).format(date);
+    return `${dateText}, ${formatRestockTime(value)} WIB`;
+  }
+
+  function formatRestockTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "--.--";
+    return new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(date).replace(":", ".");
+  }
+
   function renderProfile() {
     const profile = getProfileData();
     const previewProfile = state.pendingProfilePhoto !== null
@@ -4112,6 +5306,7 @@
     if (els.profilePhoneInput) els.profilePhoneInput.value = profile.phone || "";
     if (els.profileJobInput) els.profileJobInput.value = profile.role || profile.job || "";
     if (els.profileAddressInput) els.profileAddressInput.value = profile.address || "";
+    renderPharmacyIdentity();
     syncProfileActivityAccess();
   }
 
@@ -4153,6 +5348,321 @@
     return legacyIdentity && legacyIdentity === getProfileStorageIdentity()
       ? legacy
       : {};
+  }
+
+  async function fetchPharmacyProfile(options = {}) {
+    hydratePharmacyBrand();
+    renderPharmacyIdentity();
+
+    try {
+      const payload = await postToApi({ action: "getPharmacyProfile" });
+      if (!payload || (payload.success !== true && payload.ok !== true) || !payload.profile) return;
+
+      const profile = normalizePharmacyProfile(payload.profile);
+      localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify(profile));
+      hydratePharmacyBrand(profile);
+      renderPharmacyIdentity(profile);
+    } catch (error) {
+      if (!options.silent) {
+        setProfileStatus(`Identitas apotek online belum dapat dimuat: ${error.message}`, "info");
+      }
+    }
+  }
+
+  function getPharmacyProfile() {
+    return normalizePharmacyProfile(readObject(PHARMACY_PROFILE_KEY));
+  }
+
+  function normalizePharmacyProfile(value) {
+    value = value && typeof value === "object" ? value : {};
+    const logo = String(value.logo || value.logoUrl || value.logoData || DEFAULT_PHARMACY_PROFILE.logo).trim();
+    const name = String(value.name || value.namaApotek || value.pharmacyName || DEFAULT_PHARMACY_PROFILE.name).trim();
+    const address = String(value.address || value.alamat || value.pharmacyAddress || "").trim();
+
+    return {
+      logo: normalizePharmacyLogo(logo),
+      name: name || DEFAULT_PHARMACY_PROFILE.name,
+      address,
+      phone: String(value.phone || value.telepon || value.noHp || "").trim(),
+      email: String(value.email || "").trim(),
+      website: String(value.website || value.social || "").trim(),
+      latitude: String(value.latitude || value.lat || "").trim(),
+      longitude: String(value.longitude || value.lng || value.lon || "").trim(),
+      gpsAccuracy: String(value.gpsAccuracy || value.accuracy || "").trim(),
+      licenseNumber: String(value.licenseNumber || value.sia || value.suratIzinApotek || "").trim(),
+      licenseExpiry: String(value.licenseExpiry || value.siaExpiry || "").trim(),
+      responsiblePharmacist: String(value.responsiblePharmacist || value.apotekerPenanggungJawab || "").trim(),
+      sipaNumber: String(value.sipaNumber || value.sipa || "").trim(),
+      updatedAt: String(value.updatedAt || "").trim(),
+      updatedBy: String(value.updatedBy || "").trim()
+    };
+  }
+
+  function normalizePharmacyLogo(value) {
+    const logo = String(value || "").trim();
+    if (/^(data:image\/|https?:\/\/|assets\/)/i.test(logo)) return logo;
+    return DEFAULT_PHARMACY_PROFILE.logo;
+  }
+
+  function hydratePharmacyBrand(profile = getPharmacyProfile()) {
+    const pharmacy = normalizePharmacyProfile(profile);
+    const logo = pharmacy.logo || PLATFORM_LOGO;
+    const name = pharmacy.name || DEFAULT_PHARMACY_PROFILE.name;
+    const subtitle = pharmacy.address || "Sistem Informasi Apotek Digital";
+
+    setImageSource(els.sidebarPharmacyLogo, logo);
+    setImageSource(els.mobileHomePharmacyLogo, logo);
+    setImageSource(els.appLoadingLogo, logo);
+    if (els.sidebarPharmacyName) els.sidebarPharmacyName.textContent = name;
+    if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
+    if (els.sidebarPharmacySubtitle) els.sidebarPharmacySubtitle.textContent = subtitle;
+    if (els.mobileHomePharmacySubtitle) els.mobileHomePharmacySubtitle.textContent = subtitle;
+    if (els.sidebarPharmacyBrand) els.sidebarPharmacyBrand.setAttribute("aria-label", name);
+    document.title = `${name} - Dashboard`;
+  }
+
+  function setImageSource(element, src) {
+    if (!element) return;
+    element.src = src || PLATFORM_LOGO;
+  }
+
+  function renderPharmacyIdentity(profile = getPharmacyProfile()) {
+    const user = getCurrentUserRecord();
+    const isOwner = isOwnerUser(user);
+    const current = normalizePharmacyProfile(profile);
+    const preview = state.pendingPharmacyLogo !== null
+      ? normalizePharmacyProfile({ ...current, logo: state.pendingPharmacyLogo || PLATFORM_LOGO })
+      : current;
+
+    renderPharmacyLogoPreview(preview);
+    if (els.pharmacyNameInput) els.pharmacyNameInput.value = current.name === DEFAULT_PHARMACY_PROFILE.name ? "" : current.name;
+    if (els.pharmacyPhoneInput) els.pharmacyPhoneInput.value = current.phone || "";
+    if (els.pharmacyAddressInput) els.pharmacyAddressInput.value = current.address || "";
+    if (els.pharmacyLatitudeInput) els.pharmacyLatitudeInput.value = current.latitude || "";
+    if (els.pharmacyLongitudeInput) els.pharmacyLongitudeInput.value = current.longitude || "";
+    if (els.pharmacyLicenseInput) els.pharmacyLicenseInput.value = current.licenseNumber || "";
+    if (els.pharmacyLicenseExpiryInput) els.pharmacyLicenseExpiryInput.value = current.licenseExpiry || "";
+    if (els.pharmacyResponsibleInput) els.pharmacyResponsibleInput.value = current.responsiblePharmacist || "";
+    if (els.pharmacySipaInput) els.pharmacySipaInput.value = current.sipaNumber || "";
+    if (els.pharmacyEmailInput) els.pharmacyEmailInput.value = current.email || "";
+    if (els.pharmacyWebsiteInput) els.pharmacyWebsiteInput.value = current.website || "";
+
+    if (els.pharmacyIdentityForm) {
+      els.pharmacyIdentityForm.querySelectorAll("input, button").forEach((control) => {
+        if (control.hasAttribute("data-profile-panel-close")) return;
+        control.disabled = !isOwner;
+      });
+    }
+    syncProfileActivityAccess();
+  }
+
+  async function savePharmacyIdentity(event) {
+    event.preventDefault();
+    const user = getCurrentUserRecord();
+    if (!isOwnerUser(user)) {
+      setProfileStatus("Identitas apotek hanya dapat diubah oleh Owner.", "error");
+      return;
+    }
+
+    const current = getPharmacyProfile();
+    const profile = normalizePharmacyProfile({
+      logo: state.pendingPharmacyLogo !== null ? state.pendingPharmacyLogo : current.logo,
+      name: els.pharmacyNameInput?.value || current.name,
+      phone: els.pharmacyPhoneInput?.value || "",
+      address: els.pharmacyAddressInput?.value || "",
+      latitude: els.pharmacyLatitudeInput?.value || "",
+      longitude: els.pharmacyLongitudeInput?.value || "",
+      gpsAccuracy: current.gpsAccuracy || "",
+      licenseNumber: els.pharmacyLicenseInput?.value || "",
+      licenseExpiry: els.pharmacyLicenseExpiryInput?.value || "",
+      responsiblePharmacist: els.pharmacyResponsibleInput?.value || "",
+      sipaNumber: els.pharmacySipaInput?.value || "",
+      email: els.pharmacyEmailInput?.value || "",
+      website: els.pharmacyWebsiteInput?.value || "",
+      updatedAt: new Date().toISOString(),
+      updatedBy: user.name || user.username || "Owner"
+    });
+
+    if (!profile.name || profile.name === DEFAULT_PHARMACY_PROFILE.name) {
+      setProfileStatus("Nama apotek wajib diisi.", "error");
+      return;
+    }
+
+    const loadingToken = startAppLoading("Menyimpan identitas apotek...", 0);
+    let onlineSaved = false;
+    let savedProfile = profile;
+
+    try {
+      localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify(profile));
+      hydratePharmacyBrand(profile);
+
+      try {
+        const result = await postToApi({
+          action: "savePharmacyProfile",
+          profile,
+          role: user.role || "",
+          username: user.username || user.name || "",
+          email: user.email || ""
+        });
+        if (result && (result.success === true || result.ok === true)) {
+          savedProfile = normalizePharmacyProfile(result.profile || profile);
+          localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify(savedProfile));
+          onlineSaved = true;
+        }
+      } catch (error) {
+        onlineSaved = false;
+      }
+
+      await delay(560);
+      state.pendingPharmacyLogo = null;
+      hydratePharmacyBrand(savedProfile);
+      renderPharmacyIdentity(savedProfile);
+      addProfileActivity("Identitas apotek diperbarui", `${savedProfile.name} disimpan sebagai identitas homepage`);
+      switchProfileTab("profil", { openPanel: false });
+      setProfileStatus(
+        onlineSaved
+          ? "Identitas apotek berhasil disimpan online."
+          : "Identitas apotek tersimpan di perangkat ini. Deploy Apps Script terbaru agar tersimpan online.",
+        onlineSaved ? "success" : "info"
+      );
+    } finally {
+      endAppLoading(loadingToken);
+    }
+  }
+
+  async function handlePharmacyLogoChange(event) {
+    const user = getCurrentUserRecord();
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (!isOwnerUser(user)) {
+      setProfileStatus("Logo apotek hanya dapat diubah oleh Owner.", "error");
+      event.target.value = "";
+      return;
+    }
+    if (!/^image\//.test(file.type || "")) {
+      setProfileStatus("File logo harus berupa gambar.", "error");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileStatus("Ukuran logo maksimal 2MB.", "error");
+      event.target.value = "";
+      return;
+    }
+
+    const loadingToken = startAppLoading("Menyiapkan logo apotek...", 0);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const logo = await resizePharmacyLogo(dataUrl);
+      if (logo.length > 48000) {
+        setProfileStatus("Logo masih terlalu besar. Coba gambar yang lebih ringan.", "error");
+        return;
+      }
+      state.pendingPharmacyLogo = logo;
+      renderPharmacyLogoPreview();
+      setProfileStatus("Logo apotek siap disimpan. Klik Simpan Identitas Apotek.", "info");
+    } catch (error) {
+      setProfileStatus(`Logo gagal dibaca: ${error.message}`, "error");
+    } finally {
+      endAppLoading(loadingToken);
+      event.target.value = "";
+    }
+  }
+
+  function removePharmacyLogo() {
+    if (!isOwnerUser(getCurrentUserRecord())) {
+      setProfileStatus("Logo apotek hanya dapat diubah oleh Owner.", "error");
+      return;
+    }
+    state.pendingPharmacyLogo = "";
+    renderPharmacyLogoPreview();
+    setProfileStatus("Logo akan kembali ke Indo Apotek setelah disimpan.", "info");
+  }
+
+  function renderPharmacyLogoPreview(profile = getPharmacyProfile()) {
+    if (!els.pharmacyLogoPreview) return;
+    const current = normalizePharmacyProfile(profile);
+    const logo = state.pendingPharmacyLogo !== null
+      ? normalizePharmacyLogo(state.pendingPharmacyLogo || PLATFORM_LOGO)
+      : current.logo;
+    els.pharmacyLogoPreview.innerHTML = `<img src="${escapeHtml(logo || PLATFORM_LOGO)}" alt="">`;
+  }
+
+  function resizePharmacyLogo(dataUrl) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 220;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        let logo = canvas.toDataURL("image/webp", 0.78);
+        if (!/^data:image\/webp/i.test(logo)) logo = canvas.toDataURL("image/jpeg", 0.72);
+        resolve(logo);
+      };
+      image.onerror = () => resolve(dataUrl);
+      image.src = dataUrl;
+    });
+  }
+
+  async function detectPharmacyGps() {
+    if (!isOwnerUser(getCurrentUserRecord())) {
+      setProfileStatus("Lokasi apotek hanya dapat diubah oleh Owner.", "error");
+      return;
+    }
+    if (!navigator.geolocation) {
+      setProfileStatus("GPS tidak tersedia di browser ini.", "error");
+      return;
+    }
+
+    const loadingToken = startAppLoading("Mendeteksi lokasi apotek...", 0);
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0
+        });
+      });
+      const lat = Number(position.coords.latitude).toFixed(6);
+      const lng = Number(position.coords.longitude).toFixed(6);
+      if (els.pharmacyLatitudeInput) els.pharmacyLatitudeInput.value = lat;
+      if (els.pharmacyLongitudeInput) els.pharmacyLongitudeInput.value = lng;
+      const accuracy = Number(position.coords.accuracy || 0);
+      const address = await lookupGpsAddress(lat, lng);
+      if (els.pharmacyAddressInput && (!els.pharmacyAddressInput.value.trim() || address)) {
+        els.pharmacyAddressInput.value = address || `Lokasi GPS: ${lat}, ${lng}`;
+      }
+      const current = getPharmacyProfile();
+      localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify({
+        ...current,
+        latitude: lat,
+        longitude: lng,
+        gpsAccuracy: accuracy ? `${Math.round(accuracy)} m` : ""
+      }));
+      setProfileStatus(`Lokasi GPS berhasil dideteksi${accuracy ? `, akurasi sekitar ${Math.round(accuracy)} m` : ""}.`, "success");
+    } catch (error) {
+      setProfileStatus("GPS gagal mendeteksi lokasi. Izinkan akses lokasi lalu coba lagi.", "error");
+    } finally {
+      endAppLoading(loadingToken);
+    }
+  }
+
+  async function lookupGpsAddress(lat, lng) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=id`;
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) return "";
+      const payload = await response.json();
+      return String(payload.display_name || "").trim();
+    } catch (error) {
+      return "";
+    }
   }
 
   async function saveProfile(event) {
@@ -4408,6 +5918,9 @@
 
   function switchProfileTab(tabName, options) {
     if (!tabName) return;
+    if (tabName === "identitas-apotek" && !isOwnerUser(getCurrentUserRecord())) {
+      tabName = "profil";
+    }
     if (tabName === "shift-absensi" && !canManageAttendanceShift(getCurrentUserRecord())) {
       tabName = "profil";
     }
@@ -4800,13 +6313,19 @@
     const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
     const shiftTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "shift-absensi");
     const shiftPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "shift-absensi");
+    const pharmacyTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "identitas-apotek");
+    const pharmacyPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "identitas-apotek");
+    const isOwner = isOwnerUser(user);
 
     if (activityTab) activityTab.hidden = true;
     if (activityPanel) activityPanel.hidden = true;
     if (shiftTab) shiftTab.hidden = !canManageShift;
     if (shiftPanel) shiftPanel.hidden = !canManageShift;
+    if (pharmacyTab) pharmacyTab.hidden = !isOwner;
+    if (pharmacyPanel) pharmacyPanel.hidden = !isOwner;
 
     if ((activityTab?.classList.contains("is-active")) ||
+        (!isOwner && pharmacyTab?.classList.contains("is-active")) ||
         (!canManageShift && shiftTab?.classList.contains("is-active"))) {
       switchProfileTab("profil", { openPanel: false });
     }
@@ -5834,6 +7353,7 @@
       fetchAttendanceRecords({ silent: true });
       fetchPayrollEmployees({ silent: true });
     }
+    if (viewName === "restok-obat") renderRestockPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
     setSidebarCollapsed(true);
   }
@@ -6015,10 +7535,16 @@
     const token = Date.now() + Math.random();
     state.appLoadingToken = token;
     window.clearTimeout(state.appLoadingTimer);
+    window.clearTimeout(state.appLoadingMaxTimer);
+    state.appLoadingShownAt = 0;
     const show = () => {
       if (state.appLoadingToken !== token || !els.appLoadingOverlay) return;
       if (els.appLoadingText) els.appLoadingText.textContent = message || "Memproses...";
+      state.appLoadingShownAt = Date.now();
       els.appLoadingOverlay.hidden = false;
+      state.appLoadingMaxTimer = window.setTimeout(() => {
+        endAppLoading(token, { force: true });
+      }, 1500);
     };
     if (Number(delayMs) <= 0) {
       show();
@@ -6026,15 +7552,23 @@
     }
     state.appLoadingTimer = window.setTimeout(() => {
       show();
-    }, 500);
+    }, Math.min(500, Math.max(250, Number(delayMs) || 350)));
     return token;
   }
 
-  function endAppLoading(token) {
+  function endAppLoading(token, options = {}) {
     if (token && state.appLoadingToken !== token) return;
     window.clearTimeout(state.appLoadingTimer);
+    window.clearTimeout(state.appLoadingMaxTimer);
     state.appLoadingTimer = null;
+    state.appLoadingMaxTimer = null;
+    const elapsed = state.appLoadingShownAt ? Date.now() - state.appLoadingShownAt : 0;
+    if (!options.force && elapsed > 0 && elapsed < 500) {
+      state.appLoadingTimer = window.setTimeout(() => endAppLoading(token, { force: true }), 500 - elapsed);
+      return;
+    }
     state.appLoadingToken = 0;
+    state.appLoadingShownAt = 0;
     if (els.appLoadingOverlay) els.appLoadingOverlay.hidden = true;
   }
 

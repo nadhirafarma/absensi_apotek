@@ -1250,9 +1250,9 @@
         <section class="attendance-card result-card">
           <header class="attendance-header result-header">
             <a class="brand-link" href="index.html" aria-label="Kembali ke menu utama">
-              <img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt="">
+              <img src="assets/indo-apotek-mark.png" alt="">
               <span>
-                <strong>Nadhira Farma Digital</strong>
+                <strong>INDO APOTEK</strong>
                 <small>Absensi Face ID</small>
               </span>
             </a>

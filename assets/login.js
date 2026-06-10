@@ -25,6 +25,7 @@
 
   let loginUsers = [];
   let routeLoadingOverlay = null;
+  let routeLoadingTimer = null;
 
   if (new URLSearchParams(window.location.search).get("logout") === "1") {
     sessionStorage.removeItem(SESSION_KEY);
@@ -150,7 +151,7 @@
 
       setStatus("Login berhasil. Membuka menu...", "success");
       showRouteLoading("Membuka dashboard...");
-      await delay(360);
+      await delay(560);
       window.location.assign(getSafeNextUrl());
     } catch (error) {
       setStatus(error.message || "Login gagal. Coba lagi.", "error");
@@ -412,7 +413,7 @@
       routeLoadingOverlay.className = "login-loading-overlay";
       routeLoadingOverlay.innerHTML = [
         '<div class="login-loading-card" role="status" aria-live="polite">',
-        '<span class="login-loading-orbit"><img src="https://nadhirafarma.github.io/absensi_apotek/logo.png" alt=""></span>',
+        '<span class="login-loading-orbit"><img src="assets/indo-apotek-mark.png" alt=""></span>',
         '<strong id="loginLoadingText">Memproses...</strong>',
         '</div>'
       ].join("");
@@ -422,9 +423,13 @@
     const text = routeLoadingOverlay.querySelector("#loginLoadingText");
     if (text) text.textContent = message || "Memproses...";
     routeLoadingOverlay.hidden = false;
+    window.clearTimeout(routeLoadingTimer);
+    routeLoadingTimer = null;
   }
 
   function hideRouteLoading() {
+    window.clearTimeout(routeLoadingTimer);
+    routeLoadingTimer = null;
     if (routeLoadingOverlay) routeLoadingOverlay.hidden = true;
   }
 

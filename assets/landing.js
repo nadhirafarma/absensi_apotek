@@ -1,89 +1,111 @@
 (function () {
   const SESSION_KEY = "nadhira.authSession";
+  const THEME_KEY = "nadhira.landingTheme";
   const loginLink = document.getElementById("landingLoginLink");
   const languageSelect = document.getElementById("languageSelect");
-  const menuButton = document.getElementById("landingMenuButton");
-  const header = document.querySelector(".landing-header");
+  const themeToggle = document.getElementById("themeToggle");
   const popup = document.getElementById("landingPopup");
   const popupTitle = document.getElementById("landingPopupTitle");
   const popupText = document.getElementById("landingPopupText");
   const popupClose = document.getElementById("landingPopupClose");
   const popupOk = document.getElementById("landingPopupOk");
-  const adPopup = document.getElementById("landingAdPopup");
-  const adClose = document.getElementById("landingAdClose");
 
   const text = {
     id: {
       login: "Login",
       register: "Daftar Akun",
       shop: "Belanja",
-      headline: "Sehat dimulai dari pilihan yang tepat",
-      subhead: "Belanja obat asli dan terpercaya kini semakin mudah. Pilih, pesan, dan kami antar langsung ke rumah Anda.",
-      feature1Title: "Lengkap & Original",
-      feature1Text: "Ribuan produk obat original dan bergaransi.",
-      feature2Title: "Aman & Terpercaya",
-      feature2Text: "Transaksi aman, privasi terjaga.",
-      feature3Title: "Pengiriman Cepat",
-      feature3Text: "Diantar langsung ke rumah Anda.",
-      feature4Title: "Harga Bersahabat",
-      feature4Text: "Harga kompetitif dengan kualitas terbaik.",
-      quote: "Bersama, kita wujudkan pelayanan terbaik untuk kesehatan yang lebih baik.",
-      value1Title: "Tanggung Jawab",
-      value1Text: "Setiap tugas adalah amanah yang dijalankan dengan sepenuh hati.",
-      value2Title: "Integritas Kerja",
-      value2Text: "Kejujuran dan disiplin adalah pondasi kepercayaan dalam setiap pekerjaan.",
-      value3Title: "Kerja Sama",
-      value3Text: "Bersinergi, saling mendukung, dan tumbuh bersama untuk mencapai tujuan bersama.",
-      quranTitle: "Allah berfirman dalam Al-Qur'an:",
-      quranText: "Sesungguhnya shalat itu adalah kewajiban yang ditentukan waktunya atas orang-orang yang beriman.",
-      trust1: "Produk asli dengan kualitas terjamin",
-      trust2Title: "Transaksi Aman",
-      trust2: "Sistem aman dan terenkripsi",
-      trust3Title: "Konsultasi Apoteker",
-      trust3: "Gratis konsultasi seputar obat",
-      trust4Title: "Layanan Pelanggan",
-      trust4: "Siap membantu setiap saat",
-      waTitle: "Mulai Bertanya",
-      soonTitle: "Segera Launching",
-      accountSoon: "Pendaftaran akun mandiri sedang kami siapkan. Untuk sementara, akun dibuat oleh administrator Nadhira Farma Digital.",
-      shopSoon: "Menu belanja online sedang kami rapikan agar katalog dan transaksi berjalan nyaman.",
-      ok: "Mengerti"
+      welcome: "Selamat Datang",
+      headline: 'Kelola Apotek Anda<br>dengan <span>Lebih Mudah</span>',
+      subhead: "Sistem informasi apotek digital lengkap untuk manajemen data obat, stok, presensi, dan laporan dalam satu platform terintegrasi.",
+      feature1Title: "Aman & Terpercaya",
+      feature1Text: "Keamanan data terjamin dengan standar perlindungan berlapis.",
+      feature2Title: "Operasional Cepat",
+      feature2Text: "Pencarian, stok, supplier, dan laporan tersedia dalam satu alur kerja.",
+      feature3Title: "Efisien & Praktis",
+      feature3Text: "Mengurangi pekerjaan berulang dan memudahkan pengawasan data.",
+      feature4Title: "Data Terintegrasi",
+      feature4Text: "Informasi penting tersimpan rapi dan dapat diakses sesuai hak pengguna.",
+      infoTitle: "Info Penting",
+      info1Title: "Stok Obat Real-time",
+      info1Text: "Pantau ketersediaan stok secara langsung dan akurat.",
+      info2Title: "Laporan Otomatis",
+      info2Text: "Dapatkan laporan data dan aktivitas secara otomatis.",
+      info3Title: "Akses Multi Perangkat",
+      info3Text: "Gunakan sistem dari berbagai perangkat sesuai kebutuhan.",
+      hoursTitle: "Jam Operasional",
+      hoursText: "Senin - Sabtu: 08.00 - 20.00 WIB<br>Minggu & Hari Libur: 09.00 - 17.00 WIB",
+      privacyTitle: "Kebijakan & Privasi Pengguna",
+      privacyIntro: "Kami berkomitmen melindungi data dan memberikan layanan terbaik bagi pengguna.",
+      privacy1Title: "Kerahasiaan Data",
+      privacy1Text: "Data pribadi dan informasi bisnis dijaga oleh sistem keamanan berlapis.",
+      privacy2Title: "Penggunaan Data",
+      privacy2Text: "Data hanya digunakan untuk operasional sistem dan peningkatan layanan.",
+      privacy3Title: "Transaksi Aman",
+      privacy3Text: "Seluruh proses penting dilindungi untuk menjaga keamanan informasi.",
+      privacy4Title: "Hak Pengguna",
+      privacy4Text: "Pengguna memiliki hak akses, koreksi, dan penghapusan data sesuai kewenangan.",
+      privacy5Title: "Persetujuan",
+      privacy5Text: "Penggunaan sistem berarti pengguna menyetujui kebijakan dan ketentuan layanan.",
+      copyright: "Semua hak dilindungi.",
+      privacyLink: "Kebijakan Privasi",
+      termsLink: "Syarat & Ketentuan",
+      helpLink: "Bantuan",
+      waTitle: "Hubungi Kami",
+      soonTitle: "Segera Tersedia",
+      accountSoon: "Pendaftaran akun mandiri sedang disiapkan. Untuk sementara, akun dibuat oleh administrator Indo Apotek.",
+      shopSoon: "Menu belanja sedang disiapkan agar katalog dan proses transaksi dapat digunakan dengan nyaman.",
+      ok: "Mengerti",
+      darkMode: "Aktifkan mode gelap",
+      lightMode: "Aktifkan mode terang"
     },
     en: {
       login: "Login",
       register: "Create Account",
-      shop: "Shopping",
-      headline: "Health starts with the right choice",
-      subhead: "Buying authentic and trusted medicine is now easier. Choose, order, and we deliver it directly to your home.",
-      feature1Title: "Complete & Original",
-      feature1Text: "Thousands of authentic guaranteed products.",
-      feature2Title: "Safe & Trusted",
-      feature2Text: "Secure transactions and protected privacy.",
-      feature3Title: "Fast Delivery",
-      feature3Text: "Delivered directly to your home.",
-      feature4Title: "Friendly Prices",
-      feature4Text: "Competitive prices with excellent quality.",
-      quote: "Together, we create better service for better health.",
-      value1Title: "Responsibility",
-      value1Text: "Every task is a trust carried out wholeheartedly.",
-      value2Title: "Work Integrity",
-      value2Text: "Honesty and discipline are the foundation of trust in every job.",
-      value3Title: "Teamwork",
-      value3Text: "Collaborating, supporting each other, and growing together toward shared goals.",
-      quranTitle: "Allah says in the Qur'an:",
-      quranText: "Indeed, prayer has been decreed upon the believers a decree of specified times.",
-      trust1: "Authentic products with guaranteed quality",
-      trust2Title: "Secure Transactions",
-      trust2: "Safe and encrypted system",
-      trust3Title: "Pharmacist Consultation",
-      trust3: "Free medicine consultation",
-      trust4Title: "Customer Service",
-      trust4: "Ready to help anytime",
-      waTitle: "Start Chat",
-      soonTitle: "Launching Soon",
-      accountSoon: "Self-service account registration is being prepared. For now, accounts are created by the Nadhira Farma Digital administrator.",
-      shopSoon: "The online shopping menu is being refined so the catalogue and transaction flow feel comfortable.",
-      ok: "Got it"
+      shop: "Shop",
+      welcome: "Welcome",
+      headline: 'Manage Your Pharmacy<br><span>More Easily</span>',
+      subhead: "A complete digital pharmacy information system for medicine data, stock, attendance, and reports in one integrated platform.",
+      feature1Title: "Safe & Trusted",
+      feature1Text: "Layered protection keeps important pharmacy data secure.",
+      feature2Title: "Faster Operations",
+      feature2Text: "Search, stock, suppliers, and reports are available in one workflow.",
+      feature3Title: "Efficient & Practical",
+      feature3Text: "Reduce repetitive work and simplify daily data supervision.",
+      feature4Title: "Integrated Data",
+      feature4Text: "Important information stays organized and follows user access rights.",
+      infoTitle: "Important Info",
+      info1Title: "Real-time Medicine Stock",
+      info1Text: "Monitor stock availability directly and accurately.",
+      info2Title: "Automatic Reports",
+      info2Text: "Receive data and activity reports automatically.",
+      info3Title: "Multi-device Access",
+      info3Text: "Use the system from different devices as needed.",
+      hoursTitle: "Operating Hours",
+      hoursText: "Monday - Saturday: 08:00 - 20:00<br>Sunday & Holidays: 09:00 - 17:00",
+      privacyTitle: "User Policy & Privacy",
+      privacyIntro: "We are committed to protecting data and delivering reliable service.",
+      privacy1Title: "Data Confidentiality",
+      privacy1Text: "Personal and business information is protected by layered security.",
+      privacy2Title: "Data Usage",
+      privacy2Text: "Data is only used for system operations and service improvement.",
+      privacy3Title: "Secure Transactions",
+      privacy3Text: "Important processes are protected to maintain information security.",
+      privacy4Title: "User Rights",
+      privacy4Text: "Users have access, correction, and deletion rights according to authority.",
+      privacy5Title: "Consent",
+      privacy5Text: "Using the system means agreeing to its policies and terms.",
+      copyright: "All rights reserved.",
+      privacyLink: "Privacy Policy",
+      termsLink: "Terms & Conditions",
+      helpLink: "Help",
+      waTitle: "Contact Us",
+      soonTitle: "Coming Soon",
+      accountSoon: "Self-service account registration is being prepared. For now, accounts are created by the Indo Apotek administrator.",
+      shopSoon: "The shopping menu is being prepared so the catalogue and transaction process can be used comfortably.",
+      ok: "Got it",
+      darkMode: "Enable dark mode",
+      lightMode: "Enable light mode"
     }
   };
 
@@ -94,7 +116,15 @@
   }
 
   updateLoginHref();
+  applyTheme(getInitialTheme());
   applyLanguage(localStorage.getItem("nadhira.landingLanguage") || "id");
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      applyTheme(nextTheme);
+    });
+  }
 
   if (languageSelect) {
     languageSelect.addEventListener("change", () => {
@@ -102,20 +132,12 @@
     });
   }
 
-  if (menuButton && header) {
-    menuButton.addEventListener("click", () => {
-      const open = !header.classList.contains("is-open");
-      header.classList.toggle("is-open", open);
-      menuButton.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-  }
-
   document.querySelectorAll("[data-coming-soon]").forEach((button) => {
     button.addEventListener("click", () => {
-      const lang = document.body.closest(".landing-page")?.dataset.lang || "id";
+      const lang = document.querySelector(".landing-page")?.dataset.lang || "id";
       const dictionary = text[lang] || text.id;
-      const type = button.dataset.comingSoon;
-      showPopup(dictionary.soonTitle, type === "account" ? dictionary.accountSoon : dictionary.shopSoon, dictionary.ok);
+      const message = button.dataset.comingSoon === "account" ? dictionary.accountSoon : dictionary.shopSoon;
+      showPopup(dictionary.soonTitle, message, dictionary.ok);
     });
   });
 
@@ -123,20 +145,15 @@
     if (button) button.addEventListener("click", hidePopup);
   });
 
-  if (adClose) adClose.addEventListener("click", hideAdPopup);
-
   if (popup) {
     popup.addEventListener("click", (event) => {
       if (event.target === popup) hidePopup();
     });
   }
 
-  if (adPopup) {
-    adPopup.addEventListener("click", (event) => {
-      if (event.target === adPopup) hideAdPopup();
-    });
-    window.setTimeout(showAdPopup, 900);
-  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hidePopup();
+  });
 
   function updateLoginHref() {
     if (!loginLink) return;
@@ -145,25 +162,48 @@
     loginLink.href = `login.html?next=${encodeURIComponent(getSafeNext(next))}`;
   }
 
+  function applyTheme(theme) {
+    const selectedTheme = theme === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = selectedTheme;
+    localStorage.setItem(THEME_KEY, selectedTheme);
+    updateThemeButton();
+  }
+
+  function updateThemeButton() {
+    if (!themeToggle) return;
+    const language = document.querySelector(".landing-page")?.dataset.lang || "id";
+    const dictionary = text[language] || text.id;
+    const isDark = document.documentElement.dataset.theme === "dark";
+    const label = isDark ? dictionary.lightMode : dictionary.darkMode;
+    themeToggle.setAttribute("aria-label", label);
+    themeToggle.setAttribute("title", label);
+  }
+
+  function getInitialTheme() {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
   function applyLanguage(lang) {
     const language = lang === "en" ? "en" : "id";
     const dictionary = text[language] || text.id;
     const page = document.querySelector(".landing-page");
     if (page) page.dataset.lang = language;
+    document.documentElement.lang = language;
     if (languageSelect) languageSelect.value = language;
     localStorage.setItem("nadhira.landingLanguage", language);
 
     document.querySelectorAll("[data-i18n]").forEach((element) => {
       const key = element.dataset.i18n;
-      if (dictionary[key]) element.textContent = dictionary[key];
+      if (!dictionary[key]) return;
+      if (key === "hoursText") element.innerHTML = dictionary[key];
+      else element.textContent = dictionary[key];
     });
 
     const title = document.getElementById("landingTitle");
-    if (title && language === "id") {
-      title.innerHTML = 'Sehat dimulai<br>dari pilihan yang <b>tepat</b>';
-    } else if (title) {
-      title.innerHTML = 'Health starts<br>with the <b>right choice</b>';
-    }
+    if (title) title.innerHTML = dictionary.headline;
+    updateThemeButton();
   }
 
   function showPopup(title, message, okText) {
@@ -178,26 +218,15 @@
     if (popup) popup.hidden = true;
   }
 
-  function showAdPopup() {
-    if (!adPopup || sessionStorage.getItem("nadhira.landingPrayerAdClosed") === "1") return;
-    adPopup.hidden = false;
-  }
-
-  function hideAdPopup() {
-    if (!adPopup) return;
-    adPopup.hidden = true;
-    sessionStorage.setItem("nadhira.landingPrayerAdClosed", "1");
-  }
-
   function readSession() {
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
-      const session = raw ? JSON.parse(raw) : null;
-      if (!session || !session.expiresAt || Date.now() > Number(session.expiresAt)) {
+      const sessionValue = raw ? JSON.parse(raw) : null;
+      if (!sessionValue || !sessionValue.expiresAt || Date.now() > Number(sessionValue.expiresAt)) {
         sessionStorage.removeItem(SESSION_KEY);
         return null;
       }
-      return session;
+      return sessionValue;
     } catch (error) {
       sessionStorage.removeItem(SESSION_KEY);
       return null;
