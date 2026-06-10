@@ -327,7 +327,8 @@
     appLoadingShownAt: 0,
     appLoadingToken: 0,
     restockSyncTimer: null,
-    pendingPharmacyLogo: null
+    pendingPharmacyLogo: null,
+    viewportIsMobile: isHomeMobileViewport()
   };
 
   const els = {};
@@ -344,7 +345,9 @@
     hydratePharmacyBrand();
     hydrateProfileName();
     bindEvents();
-    if (!routeInitialViewFromQuery()) switchView("home", { skipHistory: true });
+    if (!routeInitialViewFromQuery()) {
+      switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true });
+    }
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
@@ -7468,7 +7471,19 @@
   }
 
   function handleViewportRoute() {
-    if (!state.activeView) switchView("home", { skipHistory: true });
+    const viewportIsMobile = isHomeMobileViewport();
+
+    if (viewportIsMobile === state.viewportIsMobile) return;
+    state.viewportIsMobile = viewportIsMobile;
+
+    if (viewportIsMobile && state.activeView === "dashboard") {
+      switchView("home", { skipHistory: true });
+      return;
+    }
+
+    if (!viewportIsMobile && state.activeView === "home") {
+      switchView("dashboard", { skipHistory: true });
+    }
   }
 
   function applySavedSidebarState() {
@@ -7517,6 +7532,10 @@
 
   function isMobileViewport() {
     return window.matchMedia("(max-width: 900px)").matches;
+  }
+
+  function isHomeMobileViewport() {
+    return window.matchMedia("(max-width: 760px)").matches;
   }
 
   function persistMeta() {

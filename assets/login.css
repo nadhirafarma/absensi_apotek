@@ -263,6 +263,253 @@ body::before {
   }
 }
 
+/* 20260611 responsive scale correction: compact desktop and phone login. */
+@media (min-width: 761px) {
+  .login-page {
+    padding: 20px !important;
+  }
+
+  .login-layout {
+    width: min(100%, 420px) !important;
+  }
+
+  .login-card {
+    padding: 28px 32px 22px !important;
+    border-width: 1.5px !important;
+    border-radius: 28px !important;
+  }
+
+  .card-logo {
+    width: 72px !important;
+    height: 72px !important;
+    margin: 0 auto 12px !important;
+  }
+
+  .welcome-text {
+    margin: 0 0 8px !important;
+    font-size: 1rem !important;
+  }
+
+  .login-card h1 {
+    font-size: 1.9rem !important;
+  }
+
+  .login-copy {
+    width: min(100%, 340px) !important;
+    margin: 12px auto 22px !important;
+    font-size: 0.88rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .login-form {
+    gap: 10px !important;
+  }
+
+  .login-form > label {
+    font-size: 0.8rem !important;
+  }
+
+  .input-shell {
+    min-height: 50px !important;
+    padding: 0 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .input-shell svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  .input-shell select,
+  .input-shell input {
+    min-height: 48px !important;
+    font-size: 0.86rem !important;
+  }
+
+  .form-row {
+    margin: 0 0 8px !important;
+    gap: 10px !important;
+  }
+
+  .remember-row,
+  .form-row a {
+    font-size: 0.78rem !important;
+  }
+
+  .remember-row input {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 7px !important;
+  }
+
+  .login-button {
+    min-height: 54px !important;
+    border-radius: 16px !important;
+    font-size: 1.05rem !important;
+  }
+
+  .login-button svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .internal-note {
+    min-height: 60px !important;
+    margin: 20px 0 16px !important;
+    padding: 12px 15px !important;
+    gap: 12px !important;
+    border-radius: 14px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .internal-note svg {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 7px !important;
+  }
+
+  .login-footer {
+    padding-top: 14px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .login-page {
+    min-height: 100dvh !important;
+    padding: 16px 14px !important;
+    align-items: start !important;
+  }
+
+  .login-layout {
+    width: min(100%, 394px) !important;
+  }
+
+  .login-card {
+    padding: 26px 26px 18px !important;
+    border-width: 1.5px !important;
+    border-radius: 32px !important;
+  }
+
+  .card-logo {
+    width: 68px !important;
+    height: 68px !important;
+    margin: 0 auto 18px !important;
+  }
+
+  .welcome-text {
+    margin: 0 0 8px !important;
+    font-size: 1rem !important;
+  }
+
+  .login-card h1 {
+    font-size: 1.72rem !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
+  }
+
+  .login-copy {
+    width: min(100%, 310px) !important;
+    margin: 12px auto 24px !important;
+    font-size: 0.84rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .login-form {
+    gap: 10px !important;
+  }
+
+  .login-form > label {
+    font-size: 0.82rem !important;
+  }
+
+  .input-shell {
+    min-height: 54px !important;
+    padding: 0 16px !important;
+    border-radius: 15px !important;
+  }
+
+  .input-shell svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .input-shell select,
+  .input-shell input {
+    min-height: 52px !important;
+    font-size: 0.86rem !important;
+  }
+
+  .form-row {
+    margin: 0 0 8px !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .remember-row,
+  .form-row a {
+    font-size: 0.76rem !important;
+  }
+
+  .remember-row input {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 7px !important;
+  }
+
+  .login-button {
+    min-height: 58px !important;
+    border-radius: 17px !important;
+    font-size: 1.05rem !important;
+  }
+
+  .login-button svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  .internal-note {
+    min-height: 64px !important;
+    margin: 20px 0 16px !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    border-radius: 15px !important;
+    font-size: 0.69rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .internal-note svg {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 7px !important;
+  }
+
+  .login-footer {
+    padding-top: 14px !important;
+    font-size: 0.74rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-page {
+    padding-inline: 10px !important;
+  }
+
+  .login-card {
+    padding-inline: 20px !important;
+  }
+
+  .login-card h1 {
+    font-size: 1.55rem !important;
+  }
+
+  .remember-row,
+  .form-row a {
+    font-size: 0.7rem !important;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
