@@ -13,18 +13,12 @@
 </head>
 <body>
   <main class="login-page">
-    <header class="login-header" aria-label="Indo Apotek">
-      <a class="brand" href="beranda.html" aria-label="Indo Apotek">
-        <img src="assets/indo-apotek-mark.png" alt="">
-      </a>
-    </header>
-
     <section class="login-layout" aria-label="Login internal">
       <section class="login-card" aria-labelledby="loginTitle">
-        <img class="card-logo" src="assets/indo-apotek-mark.png" alt="">
+        <img class="card-logo" src="assets/indo-apotek-mark-transparent.png" alt="">
         <p class="welcome-text">Selamat Datang Kembali</p>
         <h1 id="loginTitle">Login ke <span>Akun Anda</span></h1>
-        <p class="login-copy">Masukkan email dan password untuk mengakses sistem.</p>
+        <p class="login-copy">Masukkan email atau username dan password untuk mengakses sistem.</p>
 
         <form class="login-form" id="loginForm" autocomplete="on">
           <label for="usernameInput">Email atau Username</label>
@@ -72,13 +66,19 @@
           </button>
         </form>
 
-        <p class="internal-note">Website ini digunakan untuk kebutuhan internal. Dilarang menyebarluaskan informasi tanpa izin.</p>
+        <p class="internal-note">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 10v6"></path>
+            <path d="M12 7h.01"></path>
+          </svg>
+          <span>Website ini digunakan untuk kebutuhan internal.<br>Dilarang menyebarluaskan informasi tanpa izin.</span>
+        </p>
+        <footer class="login-footer">
+          <span>Created by <strong>Yolan Alfarel</strong></span>
+        </footer>
       </section>
     </section>
-
-    <footer class="login-footer">
-      <span>Created by Yolan Alfarel</span>
-    </footer>
   </main>
 
   <div class="reset-modal" id="resetPasswordModal" hidden>

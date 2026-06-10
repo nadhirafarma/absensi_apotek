@@ -5,6 +5,11 @@
   const LANDING_PAGE = "beranda.html";
   const dateLabel = document.getElementById("todayLabel");
   const clockLabel = document.getElementById("clockLabel");
+  const homeDateLabel = document.getElementById("todayLabelHome");
+  const homeClockLabel = document.getElementById("clockLabelHome");
+  const homeGreeting = document.getElementById("homeGreeting");
+  const homeProfileName = document.getElementById("homeProfileName");
+  const homeProfileRole = document.getElementById("homeProfileRole");
   const connectionStatus = document.getElementById("connectionStatus");
   const profileMenu = document.getElementById("profileMenu");
   const profileMenuButton = document.getElementById("profileMenuButton");
@@ -37,13 +42,15 @@
   function updateClock() {
     const now = new Date();
 
-    if (dateLabel) {
-      dateLabel.textContent = dateFormatter.format(now);
-    }
+    [dateLabel, homeDateLabel].forEach(function (label) {
+      if (label) label.textContent = dateFormatter.format(now);
+    });
 
-    if (clockLabel) {
-      clockLabel.textContent = `${timeFormatter.format(now)} WIB`;
-    }
+    [clockLabel, homeClockLabel].forEach(function (label) {
+      if (label) label.textContent = `${timeFormatter.format(now)} WIB`;
+    });
+
+    if (homeGreeting) homeGreeting.textContent = getGreeting(now);
   }
 
   function updateConnection() {
@@ -69,6 +76,8 @@
     setAvatarContent(profileMiniAvatar, profilePhoto, initials);
     if (profileAccountName) profileAccountName.textContent = accountName;
     if (profileAccountMeta) profileAccountMeta.textContent = accountMeta;
+    if (homeProfileName) homeProfileName.textContent = accountName;
+    if (homeProfileRole) homeProfileRole.textContent = accountMeta;
 
     profileMenuButton.setAttribute("aria-label", `Akun ${accountName}`);
     profileMenuButton.title = `Akun ${accountName}`;
@@ -263,6 +272,20 @@
     }
 
     return (parts[0] || "AK").slice(0, 2).toUpperCase();
+  }
+
+  function getGreeting(now) {
+    const parts = new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Jakarta"
+    }).formatToParts(now || new Date());
+    const hour = Number((parts.find(function (part) { return part.type === "hour"; }) || {}).value || 0);
+
+    if (hour >= 4 && hour < 11) return "Selamat Pagi 👋";
+    if (hour >= 11 && hour < 15) return "Selamat Siang 👋";
+    if (hour >= 15 && hour < 18) return "Selamat Sore 👋";
+    return "Selamat Malam 👋";
   }
 
   function setAvatarContent(element, photo, initials) {

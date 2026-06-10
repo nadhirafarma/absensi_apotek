@@ -160,6 +160,13 @@
     <div class="dashboard-main">
       <header class="dashboard-topbar">
         <div class="dashboard-title">
+          <a class="home-brand-link" href="index.html" aria-label="Indo Apotek">
+            <img id="homeHeaderPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
+            <span class="home-brand-copy">
+              <strong id="homeHeaderPharmacyName">Apotek Anda</strong>
+              <small id="homeHeaderPharmacySubtitle">Sistem Informasi Apotek Digital</small>
+            </span>
+          </a>
           <h1 id="dashboardViewTitle">Dashboard</h1>
         </div>
 
@@ -186,6 +193,23 @@
               <path d="M10 21h4"></path>
             </svg>
             <span class="notification-dot" id="homeNotificationDot" hidden></span>
+          </button>
+
+          <button class="theme-action" id="homeThemeToggle" type="button" aria-label="Aktifkan mode gelap" title="Mode terang">
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v3"></path>
+              <path d="M12 19v3"></path>
+              <path d="M2 12h3"></path>
+              <path d="M19 12h3"></path>
+              <path d="m4.9 4.9 2.1 2.1"></path>
+              <path d="m17 17 2.1 2.1"></path>
+              <path d="m19.1 4.9-2.1 2.1"></path>
+              <path d="m7 17-2.1 2.1"></path>
+            </svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"></path>
+            </svg>
           </button>
 
           <div class="profile-menu header-profile-menu" id="profileMenu">
@@ -220,16 +244,43 @@
 
       <main class="dashboard-content">
         <section class="dashboard-view mobile-home-view" id="view-home" data-view="home">
-          <section class="mobile-home-shell" aria-label="Menu home mobile">
-            <div class="mobile-home-brand">
-              <img id="mobileHomePharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
-              <span>
-                <strong id="mobileHomePharmacyName">Apotek Anda</strong>
-                <small id="mobileHomePharmacySubtitle">Sistem Informasi Apotek Digital</small>
-              </span>
+          <section class="mobile-home-shell home-shell" aria-label="Beranda utama">
+            <div class="home-hero">
+              <div class="home-hero-copy">
+                <p class="home-greeting" id="homeGreeting">Selamat Malam 👋</p>
+                <h2 id="homeProfileName">Yolan Alfarel</h2>
+                <span class="home-role-pill" id="homeProfileRole">Owner</span>
+              </div>
+              <div class="home-hero-art">
+                <img src="assets/landing-apotek.png" alt="">
+              </div>
             </div>
 
-            <div class="mobile-home-grid">
+            <div class="home-metrics">
+              <article class="home-metric-card">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 2v4"></path>
+                  <path d="M16 2v4"></path>
+                  <path d="M3 10h18"></path>
+                  <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                </svg>
+                <strong id="todayLabelHome">Rabu, 10 Juni 2026</strong>
+              </article>
+              <article class="home-metric-card">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 7v5l3 2"></path>
+                </svg>
+                <strong id="clockLabelHome">22.45 WIB</strong>
+              </article>
+            </div>
+
+            <div class="home-section-head">
+              <h3>Menu Utama</h3>
+              <span></span>
+            </div>
+
+            <div class="mobile-home-grid home-menu-grid">
               <button class="mobile-home-card" type="button" data-view-target="dashboard" data-access-key="dashboard">
                 <span class="mobile-home-icon icon-dashboard">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -342,6 +393,11 @@
                 </span>
                 <strong>Manajemen<br>Pengguna</strong>
               </button>
+              <span class="home-menu-spacer" aria-hidden="true"></span>
+              <a class="apoteker-ai-fab" id="apotekerAiButton" href="https://chatgpt.com/?q=Anda%20adalah%20Apoteker%20AI.%20Bantu%20saya%20menjawab%20pertanyaan%20operasional%20apotek%20secara%20ringkas%20dan%20aman." target="_blank" rel="noopener" aria-label="Apoteker AI">
+                <img src="assets/apoteker-ai.png" alt="">
+                <span>Apoteker AI</span>
+              </a>
             </div>
           </section>
 
@@ -975,16 +1031,6 @@
 
               <section class="profile-panel" data-profile-panel="preferensi">
                 <button class="profile-panel-close" type="button" data-profile-panel-close aria-label="Tutup preferensi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
-                <label class="setting-row">
-                  <span>
-                    <strong>Tema Tampilan</strong>
-                    <small>Pilih mode terang atau gelap untuk perangkat ini.</small>
-                  </span>
-                  <select id="profileThemeSelect">
-                    <option value="light">Terang</option>
-                    <option value="dark">Gelap</option>
-                  </select>
-                </label>
                 <label class="setting-row">
                   <span>
                     <strong>Mode Ringkas</strong>

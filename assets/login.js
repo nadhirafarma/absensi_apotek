@@ -299,7 +299,7 @@
     loginUsers = uniqueUsers;
 
     usernameInput.innerHTML = "";
-    usernameInput.appendChild(createOption("", uniqueUsers.length ? "Pilih nama user" : "Daftar user belum tersedia"));
+    usernameInput.appendChild(createOption("", uniqueUsers.length ? "Masukkan email atau username" : "Daftar user belum tersedia"));
 
     uniqueUsers.forEach((username) => {
       usernameInput.appendChild(createOption(username, username));
@@ -413,7 +413,7 @@
       routeLoadingOverlay.className = "login-loading-overlay";
       routeLoadingOverlay.innerHTML = [
         '<div class="login-loading-card" role="status" aria-live="polite">',
-        '<span class="login-loading-orbit"><img src="assets/indo-apotek-mark.png" alt=""></span>',
+        '<span class="login-loading-orbit"><img src="assets/indo-apotek-mark-transparent.png" alt=""></span>',
         '<strong id="loginLoadingText">Memproses...</strong>',
         '</div>'
       ].join("");

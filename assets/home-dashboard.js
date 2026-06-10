@@ -344,7 +344,7 @@
     hydratePharmacyBrand();
     hydrateProfileName();
     bindEvents();
-    if (!routeInitialViewFromQuery() && isMobileViewport()) switchView("home", { skipHistory: true });
+    if (!routeInitialViewFromQuery()) switchView("home", { skipHistory: true });
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
@@ -364,7 +364,6 @@
     fetchPayrollEmployees({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
-    window.setTimeout(maybeShowHomePrayerReminder, 900);
   }
 
   function routeInitialViewFromQuery() {
@@ -387,9 +386,15 @@
       sidebarPharmacyLogo: document.getElementById("sidebarPharmacyLogo"),
       sidebarPharmacyName: document.getElementById("sidebarPharmacyName"),
       sidebarPharmacySubtitle: document.getElementById("sidebarPharmacySubtitle"),
+      homeHeaderPharmacyLogo: document.getElementById("homeHeaderPharmacyLogo"),
+      homeHeaderPharmacyName: document.getElementById("homeHeaderPharmacyName"),
+      homeHeaderPharmacySubtitle: document.getElementById("homeHeaderPharmacySubtitle"),
       mobileHomePharmacyLogo: document.getElementById("mobileHomePharmacyLogo"),
       mobileHomePharmacyName: document.getElementById("mobileHomePharmacyName"),
       mobileHomePharmacySubtitle: document.getElementById("mobileHomePharmacySubtitle"),
+      homeThemeToggle: document.getElementById("homeThemeToggle"),
+      homeProfileName: document.getElementById("homeProfileName"),
+      homeProfileRole: document.getElementById("homeProfileRole"),
       viewTitle: document.getElementById("dashboardViewTitle"),
       viewButtons: Array.from(document.querySelectorAll("[data-view-target]")),
       views: Array.from(document.querySelectorAll(".dashboard-view")),
@@ -826,6 +831,7 @@
       button.addEventListener("click", togglePasswordVisibility);
     });
     if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
+    if (els.homeThemeToggle) els.homeThemeToggle.addEventListener("click", toggleDashboardTheme);
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
@@ -5295,6 +5301,8 @@
 
     renderProfileAvatars(previewProfile);
     hydrateProfileHeader(profile);
+    if (els.homeProfileName) els.homeProfileName.textContent = profile.name || "Akun";
+    if (els.homeProfileRole) els.homeProfileRole.textContent = profile.role || "Operator";
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
@@ -5411,11 +5419,14 @@
     const subtitle = pharmacy.address || "Sistem Informasi Apotek Digital";
 
     setImageSource(els.sidebarPharmacyLogo, logo);
+    setImageSource(els.homeHeaderPharmacyLogo, logo);
     setImageSource(els.mobileHomePharmacyLogo, logo);
     setImageSource(els.appLoadingLogo, logo);
     if (els.sidebarPharmacyName) els.sidebarPharmacyName.textContent = name;
+    if (els.homeHeaderPharmacyName) els.homeHeaderPharmacyName.textContent = name;
     if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
     if (els.sidebarPharmacySubtitle) els.sidebarPharmacySubtitle.textContent = subtitle;
+    if (els.homeHeaderPharmacySubtitle) els.homeHeaderPharmacySubtitle.textContent = "Sistem Informasi Apotek Digital";
     if (els.mobileHomePharmacySubtitle) els.mobileHomePharmacySubtitle.textContent = subtitle;
     if (els.sidebarPharmacyBrand) els.sidebarPharmacyBrand.setAttribute("aria-label", name);
     document.title = `${name} - Dashboard`;
@@ -6015,6 +6026,7 @@
     const prefs = Object.keys(userPrefs).length ? userPrefs : localPrefs;
     const theme = prefs.theme === "dark" ? "dark" : "light";
     document.body.classList.toggle("theme-dark", theme === "dark");
+    updateThemeToggle(theme);
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
     delete document.body.dataset.menuIconSize;
     delete document.body.dataset.menuImageSize;
@@ -6024,11 +6036,29 @@
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.checked = prefs.startDashboard !== false;
   }
 
-  async function saveProfilePreferences() {
+  function updateThemeToggle(theme) {
+    if (!els.homeThemeToggle) return;
+    const isDark = theme === "dark";
+    els.homeThemeToggle.classList.toggle("is-dark", isDark);
+    els.homeThemeToggle.setAttribute("aria-label", isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap");
+    els.homeThemeToggle.title = isDark ? "Mode gelap" : "Mode terang";
+  }
+
+  function toggleDashboardTheme() {
+    const nextTheme = document.body.classList.contains("theme-dark") ? "light" : "dark";
+    saveProfilePreferences({ theme: nextTheme });
+  }
+
+  async function saveProfilePreferences(overrides = {}) {
+    if (overrides && overrides.type) overrides = {};
+    const userPrefs = getCurrentUserRecord()?.preferences || {};
+    const localPrefs = readObject(PROFILE_PREFS_KEY);
+    const currentPrefs = { ...localPrefs, ...userPrefs };
+    const theme = overrides.theme || els.profileThemeSelect?.value || currentPrefs.theme || "light";
     const prefs = {
-      theme: els.profileThemeSelect?.value === "dark" ? "dark" : "light",
-      compact: Boolean(els.profileCompactToggle?.checked),
-      startDashboard: els.profileStartDashboardToggle ? Boolean(els.profileStartDashboardToggle.checked) : true,
+      theme: theme === "dark" ? "dark" : "light",
+      compact: els.profileCompactToggle ? Boolean(els.profileCompactToggle.checked) : currentPrefs.compact === true,
+      startDashboard: els.profileStartDashboardToggle ? Boolean(els.profileStartDashboardToggle.checked) : currentPrefs.startDashboard !== false,
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify(prefs));
@@ -7339,6 +7369,7 @@
       state.previousView = options.previousView || previousView || (isMobileViewport() ? "home" : "dashboard");
     }
     state.activeView = viewName;
+    document.body.classList.toggle("home-view-active", viewName === "home");
     els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
     els.viewButtons.forEach((button) => {
       const active = button.dataset.viewTarget === viewName;
@@ -7359,6 +7390,7 @@
   }
 
   function maybeShowHomePrayerReminder() {
+    return;
     if (!els.homePrayerReminderModal || state.activeView !== "home") return;
     const user = getCurrentUserRecord();
     const key = `${HOME_PRAYER_REMINDER_KEY}.${getProfileStorageIdentity() || user.username || "guest"}`;
@@ -7436,9 +7468,7 @@
   }
 
   function handleViewportRoute() {
-    if (!isMobileViewport() && state.activeView === "home") {
-      switchView("dashboard", { skipHistory: true });
-    }
+    if (!state.activeView) switchView("home", { skipHistory: true });
   }
 
   function applySavedSidebarState() {
