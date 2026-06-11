@@ -6,12 +6,13 @@
   const REMEMBER_ENABLED_KEY = "nadhira.rememberCredentials";
   const LOGIN_USERS_CACHE_KEY = "nadhira.loginUsersCache";
   const DASHBOARD_USERS_KEY = "nadhira.userRecords";
-  const LOGIN_USERS_TIMEOUT_MS = 5500;
+  const CACHED_AUTH_KEY = "nadhira.cachedLoginAuth";
+  const LOGIN_USERS_TIMEOUT_MS = 2500;
+  const LOGIN_TIMEOUT_MS = 18000;
   const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
 
   const form = document.getElementById("loginForm");
   const usernameInput = document.getElementById("usernameInput");
-  const loginUserOptions = document.getElementById("loginUserOptions");
   const passwordInput = document.getElementById("passwordInput");
   const rememberInput = document.getElementById("rememberInput");
   const togglePasswordButton = document.getElementById("togglePasswordButton");
@@ -120,6 +121,14 @@
     showRouteLoading("Memeriksa akun...");
 
     try {
+      const cachedSession = await getCachedLoginSession(username, password);
+      if (cachedSession) {
+        finishLogin(cachedSession, username, password);
+        showRouteSuccess("Login berhasil.");
+        window.setTimeout(() => window.location.assign(getSafeNextUrl()), 380);
+        return;
+      }
+
       const result = await login(username, password);
 
       if (!result || result.success !== true) {
@@ -140,22 +149,11 @@
         expiresAt: Date.now() + SESSION_DURATION_MS
       };
 
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      logLoginActivity(session);
-
-      if (rememberInput.checked) {
-        localStorage.setItem(REMEMBER_ENABLED_KEY, "true");
-        localStorage.setItem(REMEMBER_KEY, username);
-        localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
-      } else {
-        localStorage.removeItem(REMEMBER_ENABLED_KEY);
-        localStorage.removeItem(REMEMBER_KEY);
-        localStorage.removeItem(REMEMBER_PASSWORD_KEY);
-      }
+      await finishLogin(session, username, password);
 
       setStatus("Login berhasil. Membuka menu...", "success");
-      showRouteLoading("Membuka dashboard...");
-      await delay(560);
+      showRouteSuccess("Login berhasil.");
+      await delay(380);
       window.location.assign(getSafeNextUrl());
     } catch (error) {
       setStatus(error.message || "Login gagal. Coba lagi.", "error");
@@ -165,6 +163,8 @@
   });
 
   async function login(username, password) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
     const response = await fetch(AUTH_API_URL, {
       method: "POST",
       headers: {
@@ -174,7 +174,16 @@
         action: "login",
         username,
         password
-      })
+      }),
+      signal: controller.signal,
+      cache: "no-store"
+    }).catch((error) => {
+      if (error && error.name === "AbortError") {
+        throw new Error("Login online belum merespons. Coba lagi sebentar.");
+      }
+      throw new Error("Koneksi login belum stabil. Coba lagi sebentar.");
+    }).finally(() => {
+      window.clearTimeout(timeout);
     });
 
     if (!response.ok) {
@@ -320,19 +329,32 @@
     uniqueUsers.sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
     loginUsers = uniqueUsers;
 
-    if (loginUserOptions) {
-      loginUserOptions.innerHTML = "";
-      uniqueUsers.forEach((username) => {
-        loginUserOptions.appendChild(createOption(username, username));
-      });
-    }
+    const selectedExists = selected && uniqueUsers.some((username) => username.toLowerCase() === selected.toLowerCase());
+    const options = uniqueUsers.slice();
+    if (selected && !selectedExists) options.unshift(selected);
+
+    renderSelectOptions(usernameInput, options, selected, options.length ? "Pilih user" : "Daftar user belum tersedia");
+    renderSelectOptions(resetUsernameInput, options, resetUsernameInput.value || selected, "Pilih username");
 
     if (selected) usernameInput.value = selected;
   }
 
   function renderResetUserOptions(users) {
+    renderSelectOptions(resetUsernameInput, users, resetUsernameInput.value || usernameInput.value, "Pilih username");
     if (!resetUsernameInput.value && users.length === 1) {
       resetUsernameInput.value = users[0];
+    }
+  }
+
+  function renderSelectOptions(select, values, selectedValue, placeholder) {
+    if (!select) return;
+    const selected = String(selectedValue || "").trim();
+    select.innerHTML = `<option value="">${placeholder || "Pilih user"}</option>`;
+    values.forEach((username) => {
+      select.appendChild(createOption(username, username, selected));
+    });
+    if (selected && Array.from(select.options).some((option) => option.value === selected)) {
+      select.value = selected;
     }
   }
 
@@ -383,6 +405,64 @@
     option.textContent = label;
 
     return option;
+  }
+
+  async function finishLogin(session, username, password) {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    logLoginActivity(session);
+
+    if (rememberInput.checked) {
+      localStorage.setItem(REMEMBER_ENABLED_KEY, "true");
+      localStorage.setItem(REMEMBER_KEY, username);
+      localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
+      await cacheSuccessfulLogin(username, password, session);
+    } else {
+      localStorage.removeItem(REMEMBER_ENABLED_KEY);
+      localStorage.removeItem(REMEMBER_KEY);
+      localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+      localStorage.removeItem(CACHED_AUTH_KEY);
+    }
+  }
+
+  async function cacheSuccessfulLogin(username, password, session) {
+    const passwordHash = await digestText(`${normalizeLoginKey(username)}::${password}`);
+    localStorage.setItem(CACHED_AUTH_KEY, JSON.stringify({
+      username: normalizeLoginKey(username),
+      passwordHash,
+      session: {
+        ...session,
+        expiresAt: Date.now() + SESSION_DURATION_MS
+      },
+      savedAt: Date.now()
+    }));
+  }
+
+  async function getCachedLoginSession(username, password) {
+    if (!rememberInput.checked) return null;
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHED_AUTH_KEY) || "{}");
+      if (!cached || cached.username !== normalizeLoginKey(username) || !cached.passwordHash || !cached.session) return null;
+      const passwordHash = await digestText(`${normalizeLoginKey(username)}::${password}`);
+      if (passwordHash !== cached.passwordHash) return null;
+      return {
+        ...cached.session,
+        loginAt: Date.now(),
+        expiresAt: Date.now() + SESSION_DURATION_MS
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function digestText(value) {
+    if (!window.crypto?.subtle) return btoa(unescape(encodeURIComponent(String(value || ""))));
+    const bytes = new TextEncoder().encode(String(value || ""));
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  function normalizeLoginKey(value) {
+    return String(value || "").trim().toLowerCase();
   }
 
   function readSession() {
@@ -461,9 +541,18 @@
 
     const text = routeLoadingOverlay.querySelector("#loginLoadingText");
     if (text) text.textContent = message || "Memproses...";
+    routeLoadingOverlay.classList.remove("is-success", "is-error");
     routeLoadingOverlay.hidden = false;
     window.clearTimeout(routeLoadingTimer);
     routeLoadingTimer = null;
+  }
+
+  function showRouteSuccess(message) {
+    if (!routeLoadingOverlay) showRouteLoading(message || "Login berhasil.");
+    const text = routeLoadingOverlay.querySelector("#loginLoadingText");
+    if (text) text.textContent = message || "Login berhasil.";
+    routeLoadingOverlay.classList.add("is-success");
+    routeLoadingOverlay.hidden = false;
   }
 
   function hideRouteLoading() {

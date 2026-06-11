@@ -13481,7 +13481,7 @@ body.notification-open .mobile-bottom-nav {
 }
 
 .restock-medicine-result em {
-  color: #ff2554;
+  color: #33446f;
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
@@ -16038,6 +16038,7 @@ body.home-menu-reordering {
   body.home-view-active .theme-action,
   body.home-view-active .profile-chip,
   body.home-view-active .header-profile-menu,
+  body.home-view-active .dashboard-status .profile-menu,
   body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
     width: 40px !important;
     height: 40px !important;
@@ -16266,4 +16267,170 @@ body.home-menu-reordering {
   width: 100%;
   margin-top: 10px;
   min-height: 42px;
+}
+
+/* Mobile home header: keep pharmacy identity left and actions right. */
+@media (max-width: 760px) {
+  body.home-view-active .dashboard-topbar {
+    display: grid !important;
+    grid-template-columns: calc(100% - 132px) 124px !important;
+    align-items: center !important;
+    column-gap: 8px !important;
+    min-height: 68px !important;
+    height: 68px !important;
+    padding: 8px 12px !important;
+  }
+
+  body.home-view-active .dashboard-title {
+    position: static !important;
+    inset: auto !important;
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: calc(100vw - 148px) !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  body.home-view-active .home-brand-link {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+
+  body.home-view-active .home-brand-link img {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    border-radius: 50% !important;
+  }
+
+  body.home-view-active .home-brand-copy {
+    min-width: 0 !important;
+    display: block !important;
+  }
+
+  body.home-view-active .home-brand-copy strong {
+    display: -webkit-box !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: #071955 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+    text-overflow: ellipsis !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  body.home-view-active .home-brand-copy small {
+    display: none !important;
+  }
+
+  body.home-view-active .dashboard-status {
+    position: static !important;
+    inset: auto !important;
+    grid-column: 2 !important;
+    width: 124px !important;
+    max-width: 124px !important;
+    min-width: 124px !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 38px) !important;
+    align-items: center !important;
+    justify-content: end !important;
+    gap: 5px !important;
+    transform: none !important;
+  }
+
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .profile-chip,
+  body.home-view-active .header-profile-menu,
+  body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    margin: 0 !important;
+    border-radius: 11px !important;
+  }
+
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .header-profile-menu {
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  body.home-view-active .dashboard-status .profile-menu {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    justify-self: auto !important;
+    align-self: center !important;
+  }
+
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action {
+    position: relative !important;
+  }
+
+  body.home-view-active .profile-chip .profile-avatar {
+    border-radius: 10px !important;
+  }
+
+  body.home-view-active .notification-dot {
+    top: -5px !important;
+    right: -5px !important;
+    z-index: 2 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.home-view-active .dashboard-topbar {
+    column-gap: 6px !important;
+    grid-template-columns: calc(100% - 122px) 116px !important;
+    padding-inline: 10px !important;
+  }
+
+  body.home-view-active .home-brand-link {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  body.home-view-active .home-brand-link img,
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .profile-chip,
+  body.home-view-active .header-profile-menu,
+  body.home-view-active .dashboard-status .profile-menu,
+  body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+  }
+
+  body.home-view-active .dashboard-status {
+    grid-template-columns: repeat(3, 36px) !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    gap: 4px !important;
+  }
+
+  body.home-view-active .dashboard-title {
+    max-width: calc(100vw - 132px) !important;
+  }
+
+  body.home-view-active .home-brand-copy strong {
+    font-size: 0.66rem !important;
+  }
 }

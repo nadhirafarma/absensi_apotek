@@ -28,6 +28,7 @@
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
   const HOME_MENU_ORDER_KEY = "nadhira.homeMenuOrder";
   const SALARY_HISTORY_KEY = "nadhira.salarySlipHistory";
+  const REPORT_CACHE_KEY = "nadhira.reportCache";
   const PLATFORM_LOGO = "assets/indo-apotek-mark.png";
   const LOADING_LOGO = "assets/indo-apotek-mark-transparent.png";
   const BACKGROUND_SYNC_INTERVAL_MS = 120000;
@@ -345,6 +346,7 @@
     backgroundSyncPromise: null,
     lastBackgroundSyncAt: 0,
     reportSignature: "",
+    appLoadingSuccessTimer: null,
     actionToastTimer: null,
     viewportIsMobile: isHomeMobileViewport()
   };
@@ -3651,6 +3653,7 @@
     renderUsers();
     renderPurchaseOrders();
     renderRestockPage();
+    renderReportsFromCache();
     applyCurrentUserAccess();
   }
 
@@ -7613,14 +7616,21 @@
   }
 
   function showActionToast(message, type = "success") {
+    if (!message) message = "Data berhasil disimpan.";
+
+    if (state.appLoadingToken && els.appLoadingOverlay) {
+      showAppLoadingSuccess(message, type);
+      return;
+    }
+
     if (!els.actionToast || !els.actionToastMessage) return;
     window.clearTimeout(state.actionToastTimer);
     els.actionToast.className = `action-toast is-${type}`;
-    els.actionToastMessage.textContent = message || "Data berhasil disimpan.";
+    els.actionToastMessage.textContent = message;
     els.actionToast.hidden = false;
     state.actionToastTimer = window.setTimeout(() => {
       if (els.actionToast) els.actionToast.hidden = true;
-    }, 1800);
+    }, type === "error" ? 2400 : 1400);
   }
 
   function renderReports() {
@@ -7645,7 +7655,42 @@
     els.reportLow.textContent = formatNumber(low);
     if (els.reportMinus) els.reportMinus.textContent = formatNumber(minus);
     if (els.reportOut) els.reportOut.textContent = formatNumber(empty);
+    persistReportCache({ signature, active, inactive, expiring, expired, empty, low, minus, total: state.rows.length, uploadedAt: state.uploadedAt });
 
+  }
+
+  function renderReportsFromCache() {
+    if (!els.reportTotal) return;
+    const snapshot = readReportCache();
+    if (!snapshot) return;
+    state.reportSignature = snapshot.signature || state.reportSignature;
+    els.reportTotal.textContent = formatNumber(snapshot.total || 0);
+    if (els.reportActive) els.reportActive.textContent = formatNumber(snapshot.active || 0);
+    if (els.reportInactive) els.reportInactive.textContent = formatNumber(snapshot.inactive || 0);
+    if (els.reportExpiring) els.reportExpiring.textContent = formatNumber(snapshot.expiring || 0);
+    if (els.reportExpired) els.reportExpired.textContent = formatNumber(snapshot.expired || 0);
+    if (els.reportEmpty) els.reportEmpty.textContent = formatNumber(snapshot.empty || 0);
+    if (els.reportLow) els.reportLow.textContent = formatNumber(snapshot.low || 0);
+    if (els.reportMinus) els.reportMinus.textContent = formatNumber(snapshot.minus || 0);
+    if (els.reportOut) els.reportOut.textContent = formatNumber(snapshot.empty || 0);
+  }
+
+  function persistReportCache(snapshot) {
+    try {
+      localStorage.setItem(REPORT_CACHE_KEY, JSON.stringify({
+        ...snapshot,
+        savedAt: new Date().toISOString()
+      }));
+    } catch (error) {}
+  }
+
+  function readReportCache() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(REPORT_CACHE_KEY) || "null");
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   function getReportSignature(rows, uploadedAt) {
@@ -8010,7 +8055,10 @@
     state.appLoadingToken = token;
     window.clearTimeout(state.appLoadingTimer);
     window.clearTimeout(state.appLoadingMaxTimer);
+    window.clearTimeout(state.appLoadingSuccessTimer);
+    state.appLoadingSuccessTimer = null;
     state.appLoadingShownAt = 0;
+    if (els.appLoadingOverlay) els.appLoadingOverlay.classList.remove("is-success", "is-error");
     const show = () => {
       if (state.appLoadingToken !== token || !els.appLoadingOverlay) return;
       if (els.appLoadingText) els.appLoadingText.textContent = message || "Memproses...";
@@ -8018,7 +8066,7 @@
       els.appLoadingOverlay.hidden = false;
       state.appLoadingMaxTimer = window.setTimeout(() => {
         endAppLoading(token, { force: true });
-      }, 1500);
+      }, 60000);
     };
     if (Number(delayMs) <= 0) {
       show();
@@ -8032,8 +8080,11 @@
 
   function endAppLoading(token, options = {}) {
     if (token && state.appLoadingToken !== token) return;
+    if (!options.force && state.appLoadingSuccessTimer) return;
     window.clearTimeout(state.appLoadingTimer);
     window.clearTimeout(state.appLoadingMaxTimer);
+    window.clearTimeout(state.appLoadingSuccessTimer);
+    state.appLoadingSuccessTimer = null;
     state.appLoadingTimer = null;
     state.appLoadingMaxTimer = null;
     const elapsed = state.appLoadingShownAt ? Date.now() - state.appLoadingShownAt : 0;
@@ -8043,7 +8094,20 @@
     }
     state.appLoadingToken = 0;
     state.appLoadingShownAt = 0;
+    if (els.appLoadingOverlay) els.appLoadingOverlay.classList.remove("is-success", "is-error");
     if (els.appLoadingOverlay) els.appLoadingOverlay.hidden = true;
+  }
+
+  function showAppLoadingSuccess(message, type = "success") {
+    if (!els.appLoadingOverlay || !els.appLoadingText) return;
+    window.clearTimeout(state.appLoadingSuccessTimer);
+    els.appLoadingOverlay.classList.toggle("is-success", type !== "error");
+    els.appLoadingOverlay.classList.toggle("is-error", type === "error");
+    els.appLoadingText.textContent = message || "Berhasil.";
+    els.appLoadingOverlay.hidden = false;
+    state.appLoadingSuccessTimer = window.setTimeout(() => {
+      endAppLoading(state.appLoadingToken, { force: true });
+    }, type === "error" ? 1800 : 1100);
   }
 
   function delay(ms) {
