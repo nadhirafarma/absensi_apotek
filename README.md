@@ -11,6 +11,10 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-11 17:45 WIB: menyinkronkan akses menu mobile dengan hak akses pengguna, termasuk role Administrator, dan menambahkan guard klik untuk menu yang tidak dicentang owner.
+- 2026-06-11 17:45 WIB: merapikan header mobile semua halaman agar logo/nama apotek berada di kiri dan ikon notifikasi, tema, serta foto user berada di kanan tanpa bertumpuk.
+- 2026-06-11 17:45 WIB: menyembunyikan teks native `No file chosen` pada unggah foto profil, menampilkan label file custom, dan memindahkan tombol simpan profil menjadi tombol kecil di kanan bawah area pengaturan akun.
+- 2026-06-11 17:45 WIB: menaikkan cache busting asset `index.html` dan `login.html` ke `20260611-ui-v7`.
 - 2026-06-11 14:20 WIB: memperbaiki header mobile homepage agar logo/nama apotek berada di kiri dan ikon notifikasi, tema, foto user rapi di kanan.
 - 2026-06-11 14:20 WIB: menaikkan timeout login online agar Google Apps Script tidak diputus terlalu cepat dan mengganti pesan error timeout menjadi lebih netral.
 - 2026-06-11 14:20 WIB: mengganti warna teks stok/kode pada popup pencarian obat restok dari merah menjadi netral.

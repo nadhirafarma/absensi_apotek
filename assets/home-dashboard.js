@@ -584,6 +584,7 @@
       profileJobInput: document.getElementById("profileJobInput"),
       profileAddressInput: document.getElementById("profileAddressInput"),
       profilePhotoInput: document.getElementById("profilePhotoInput"),
+      profilePhotoFileName: document.getElementById("profilePhotoFileName"),
       profileRemovePhotoButton: document.getElementById("profileRemovePhotoButton"),
       profileOverviewSaveButton: document.getElementById("profileOverviewSaveButton"),
       profilePasswordForm: document.getElementById("profilePasswordForm"),
@@ -709,9 +710,21 @@
     els.viewButtons.forEach((button) => {
       button.addEventListener("click", () => {
         if (button.dataset.viewTarget === "cari-data-obat") resetQuickReportFilter();
+        if (!canView(button.dataset.viewTarget)) {
+          showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
+          return;
+        }
         switchView(button.dataset.viewTarget);
       });
     });
+
+    document.addEventListener("click", (event) => {
+      const accessElement = event.target.closest("[data-access-key]");
+      if (!accessElement || canAccess(accessElement.dataset.accessKey)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
+    }, true);
 
     if (els.searchInput) {
       els.searchInput.addEventListener("input", () => {
@@ -3890,7 +3903,9 @@
     }
 
     document.querySelectorAll("[data-access-key]").forEach((element) => {
-      element.hidden = !access.has(element.dataset.accessKey);
+      const allowed = access.has(element.dataset.accessKey);
+      element.hidden = !allowed;
+      element.toggleAttribute("aria-disabled", !allowed);
     });
 
     if (els.filterButton) {
@@ -5400,6 +5415,9 @@
     if (els.profilePhoneInput) els.profilePhoneInput.value = profile.phone || "";
     if (els.profileJobInput) els.profileJobInput.value = profile.role || profile.job || "";
     if (els.profileAddressInput) els.profileAddressInput.value = profile.address || "";
+    if (els.profilePhotoFileName) {
+      els.profilePhotoFileName.textContent = state.pendingProfilePhotoName || (profile.photo ? "Foto profil tersimpan" : "Belum ada foto dipilih");
+    }
     renderPharmacyIdentity();
     syncProfileActivityAccess();
   }
@@ -5846,6 +5864,7 @@
 
     if (!/^image\//.test(file.type || "")) {
       setProfileStatus("File foto harus berupa gambar.", "error");
+      if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Belum ada foto dipilih";
       event.target.value = "";
       return;
     }
@@ -5858,12 +5877,14 @@
       if (photo.length > 42000) {
         state.pendingProfilePhoto = null;
         state.pendingProfilePhotoName = "";
+        if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Belum ada foto dipilih";
         setProfileStatus("Foto masih terlalu besar untuk database. Coba foto lain yang lebih kecil.", "error");
         return;
       }
 
       state.pendingProfilePhoto = photo;
       state.pendingProfilePhotoName = file.name || "foto profil";
+      if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = state.pendingProfilePhotoName;
       renderProfile();
       setProfileStatus("Foto profil siap disimpan. Klik Simpan Profil untuk menerapkan perubahan.", "info");
     } catch (error) {
@@ -5876,7 +5897,8 @@
 
   function removeProfilePhoto() {
     state.pendingProfilePhoto = "";
-    state.pendingProfilePhotoName = "";
+    state.pendingProfilePhotoName = "Foto akan dihapus";
+    if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Foto akan dihapus";
     renderProfile();
     setProfileStatus("Foto profil akan dihapus setelah tombol Simpan Profil diklik.", "info");
   }
@@ -7721,6 +7743,10 @@
 
   function switchView(viewName, options = {}) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
+    if (viewName !== "home" && !options.skipAccessCheck && !canView(viewName)) {
+      showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
+      return;
+    }
     const previousView = state.activeView;
     if (!options.fromHistory && !options.skipHistory && previousView && previousView !== viewName) {
       state.viewHistory.push(previousView);
