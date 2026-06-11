@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/login.css?v=20260611-ui-v7">
-  <script defer src="assets/login.js?v=20260611-ui-v7"></script>
+  <link rel="stylesheet" href="assets/login.css?v=20260611-ui-v8">
+  <script defer src="assets/login.js?v=20260611-ui-v8"></script>
 </head>
 <body>
   <main class="login-page">
@@ -27,9 +27,8 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <select id="usernameInput" name="username" autocomplete="username" required>
-              <option value="">Memuat daftar user...</option>
-            </select>
+            <input id="usernameInput" name="username" type="text" list="loginUserList" placeholder="Masukkan email atau username" autocomplete="username" required>
+            <datalist id="loginUserList"></datalist>
           </div>
 
           <label for="passwordInput">Password</label>
@@ -100,9 +99,8 @@
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          <select id="resetUsernameInput" name="resetUsername" autocomplete="username" required>
-            <option value="">Pilih username</option>
-          </select>
+          <input id="resetUsernameInput" name="resetUsername" type="text" list="resetUserList" placeholder="Pilih atau ketik username" autocomplete="username" required>
+          <datalist id="resetUserList"></datalist>
         </div>
 
         <label for="resetEmailInput">Email Terdaftar</label>

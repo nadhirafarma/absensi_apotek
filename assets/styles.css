@@ -3307,6 +3307,215 @@ body[data-page="home"] .primary-action.accent {
   }
 }
 
+/* 20260611 public sync and mobile header hardening. */
+.profile-photo-picker input#profilePhotoInput {
+  display: none !important;
+}
+
+.table-action-status.is-deactivate {
+  color: #f04772;
+  background: #fff0f5;
+  border-color: #ffc1d5;
+}
+
+.table-action-status.is-activate {
+  color: #18a957;
+  background: #ebfff3;
+  border-color: #baf0cf;
+}
+
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483590;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(9, 20, 45, 0.34);
+  backdrop-filter: blur(10px);
+}
+
+.confirm-dialog {
+  width: min(100%, 360px);
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid rgba(187, 214, 247, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #061957;
+  box-shadow: 0 28px 70px rgba(15, 45, 95, 0.22);
+  text-align: center;
+}
+
+.confirm-dialog-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border-radius: 18px;
+  background: #fff4e9;
+  color: #f07a18;
+}
+
+.confirm-dialog-icon svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.confirm-dialog strong {
+  font-size: 1rem;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: #526894;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.confirm-dialog-actions button {
+  min-width: 92px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.confirm-cancel {
+  background: #ecfff0;
+  color: #13773d;
+}
+
+.confirm-ok {
+  background: linear-gradient(120deg, #2769ff, #c827cf);
+  color: #fff;
+}
+
+.app-loading-overlay.is-success .app-loading-card,
+.app-loading-overlay.is-error .app-loading-card {
+  gap: 12px !important;
+  color: #071955 !important;
+  text-align: center !important;
+}
+
+.app-loading-overlay.is-success .app-loading-orbit,
+.app-loading-overlay.is-error .app-loading-orbit {
+  display: none !important;
+}
+
+.app-loading-overlay.is-success .app-loading-card::before,
+.app-loading-overlay.is-error .app-loading-card::before {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 2.1rem;
+  font-weight: 900;
+  box-shadow: 0 20px 44px rgba(31, 123, 234, 0.2);
+}
+
+.app-loading-overlay.is-success .app-loading-card::before {
+  content: "\2713";
+  background: linear-gradient(135deg, #16c784, #28d17c);
+}
+
+.app-loading-overlay.is-error .app-loading-card::before {
+  content: "!";
+  background: linear-gradient(135deg, #ff4b6e, #ee2b45);
+}
+
+.app-loading-overlay.is-success .app-loading-card > strong,
+.app-loading-overlay.is-error .app-loading-card > strong {
+  position: static !important;
+  width: min(78vw, 320px) !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+  border: 0 !important;
+  opacity: 1 !important;
+  color: #071955 !important;
+  pointer-events: auto !important;
+  font-size: 0.96rem !important;
+  line-height: 1.4 !important;
+}
+
+@media (max-width: 760px) {
+  .dashboard-topbar,
+  body.home-view-active .dashboard-topbar {
+    overflow: visible !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .dashboard-status,
+  body.home-view-active .dashboard-status {
+    height: 36px !important;
+    grid-auto-flow: column !important;
+    grid-auto-rows: 36px !important;
+    align-content: center !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-status .profile-menu,
+  .dashboard-status .header-profile-menu,
+  body.home-view-active .dashboard-status .profile-menu,
+  body.home-view-active .dashboard-status .header-profile-menu {
+    position: static !important;
+    inset: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    align-self: center !important;
+    justify-self: end !important;
+    float: none !important;
+    transform: none !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+  }
+
+  .dashboard-status .profile-menu .profile-chip,
+  .dashboard-status .header-profile-menu .profile-chip,
+  body.home-view-active .dashboard-status .profile-menu .profile-chip,
+  body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  .home-brand-link,
+  .home-brand-copy strong {
+    text-decoration: none !important;
+    border-bottom: 0 !important;
+  }
+
+  .mobile-home-card.is-access-hidden,
+  .apoteker-ai-fab.is-access-hidden {
+    display: none !important;
+  }
+}
+
 body.dashboard-page {
   min-height: 100vh;
   background:
@@ -16715,4 +16924,20 @@ body.home-menu-reordering {
   body.home-view-active .home-brand-copy strong {
     font-size: 0.62rem !important;
   }
+}
+
+/* 20260611 public sync polish. */
+.restock-medicine-result,
+.restock-medicine-result strong,
+.restock-medicine-empty strong {
+  color: #071955 !important;
+}
+
+.restock-medicine-result small,
+.restock-medicine-empty small {
+  color: #61729d !important;
+}
+
+.restock-medicine-result em {
+  color: #33446f !important;
 }

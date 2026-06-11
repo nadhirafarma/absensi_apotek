@@ -7,8 +7,8 @@
   const LOGIN_USERS_CACHE_KEY = "nadhira.loginUsersCache";
   const DASHBOARD_USERS_KEY = "nadhira.userRecords";
   const CACHED_AUTH_KEY = "nadhira.cachedLoginAuth";
-  const LOGIN_USERS_TIMEOUT_MS = 2500;
-  const LOGIN_TIMEOUT_MS = 18000;
+  const LOGIN_USERS_TIMEOUT_MS = 8000;
+  const LOGIN_TIMEOUT_MS = 10000;
   const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
 
   const form = document.getElementById("loginForm");
@@ -139,6 +139,7 @@
         username: result.username || username,
         email: result.email || "",
         role: result.role || "",
+        status: result.status || "Aktif",
         menu: result.menu || "",
         name: result.name || result.nama || result.fullName || result.username || username,
         phone: result.phone || result.noHp || "",
@@ -223,17 +224,29 @@
   }
 
   async function fetchLoginUsers() {
+    try {
+      const result = await requestLoginUsers("GET");
+      if (result && result.success === true) return result;
+    } catch (error) {
+      // Fallback to POST for Apps Script deployments that do not have the GET helper yet.
+    }
+
+    return requestLoginUsers("POST");
+  }
+
+  async function requestLoginUsers(method) {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), LOGIN_USERS_TIMEOUT_MS);
     let response;
 
     try {
-      response = await fetch(AUTH_API_URL, {
-        method: "POST",
-        headers: {
+      const isGet = method === "GET";
+      response = await fetch(isGet ? `${AUTH_API_URL}?action=listLoginUsers&t=${Date.now()}` : AUTH_API_URL, {
+        method: isGet ? "GET" : "POST",
+        headers: isGet ? undefined : {
           "Content-Type": "text/plain;charset=utf-8"
         },
-        body: JSON.stringify({
+        body: isGet ? undefined : JSON.stringify({
           action: "listLoginUsers"
         }),
         signal: controller.signal,
@@ -317,7 +330,8 @@
     const seen = new Set();
 
     users.forEach((item) => {
-      const username = String(item?.username || "").trim();
+      if (!isLoginUserActive(item)) return;
+      const username = getLoginUsername(item);
       const key = username.toLowerCase();
 
       if (!username || seen.has(key)) return;
@@ -333,8 +347,8 @@
     const options = uniqueUsers.slice();
     if (selected && !selectedExists) options.unshift(selected);
 
-    renderSelectOptions(usernameInput, options, selected, options.length ? "Pilih user" : "Daftar user belum tersedia");
-    renderSelectOptions(resetUsernameInput, options, resetUsernameInput.value || selected, "Pilih username");
+    renderSelectOptions(usernameInput, options, selected, options.length ? "Pilih atau ketik user" : "Masukkan email atau username");
+    renderSelectOptions(resetUsernameInput, options, resetUsernameInput.value || selected, "Pilih atau ketik username");
 
     if (selected) usernameInput.value = selected;
   }
@@ -349,6 +363,19 @@
   function renderSelectOptions(select, values, selectedValue, placeholder) {
     if (!select) return;
     const selected = String(selectedValue || "").trim();
+    if (select.tagName && select.tagName.toLowerCase() === "input") {
+      const listId = select.getAttribute("list") || "";
+      const list = listId ? document.getElementById(listId) : null;
+      if (list) {
+        list.innerHTML = "";
+        values.forEach((username) => {
+          list.appendChild(createOption(username, username));
+        });
+      }
+      select.placeholder = placeholder || "Masukkan email atau username";
+      if (selected) select.value = selected;
+      return;
+    }
     select.innerHTML = `<option value="">${placeholder || "Pilih user"}</option>`;
     values.forEach((username) => {
       select.appendChild(createOption(username, username, selected));
@@ -366,9 +393,21 @@
 
   function cacheLoginUsers(users) {
     const normalized = (users || []).map((user) => ({
-      username: String(user?.username || user?.name || "").trim()
-    })).filter((user) => user.username);
+      username: getLoginUsername(user),
+      status: String(user?.status || "Aktif").trim() || "Aktif"
+    })).filter((user) => user.username && isLoginUserActive(user));
     localStorage.setItem(LOGIN_USERS_CACHE_KEY, JSON.stringify(normalized));
+  }
+
+  function getLoginUsername(user) {
+    if (typeof user === "string") return user.trim();
+    return String(user?.username || user?.name || user?.email || "").trim();
+  }
+
+  function isLoginUserActive(user) {
+    if (typeof user === "string") return true;
+    const key = normalizeLoginKey(user?.status || "Aktif").replace(/\s+/g, "");
+    return !["nonaktif", "inactive", "nonactive", "tidakaktif", "keluar", "resign", "cuti"].includes(key);
   }
 
   function readStoredArray(key) {
@@ -438,6 +477,7 @@
   }
 
   async function getCachedLoginSession(username, password) {
+    return null;
     if (!rememberInput.checked) return null;
     try {
       const cached = JSON.parse(localStorage.getItem(CACHED_AUTH_KEY) || "{}");

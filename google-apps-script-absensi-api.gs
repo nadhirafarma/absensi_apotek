@@ -57,7 +57,8 @@ var PAYROLL_DEFAULT_HEADERS = [
   'Bonus',
   'Pinjaman',
   'Hutang',
-  'Lain-Lain'
+  'Lain-Lain',
+  'Status'
 ];
 var PAYROLL_MONTHS_ID = [
   'Januari',
@@ -179,6 +180,14 @@ function doPost(e) {
     var timestamp = new Date();
     var displayName = normalizeDisplayName_(nama);
     var status = normalizeAbsensiStatus_(payload.jenis_absen || payload.jenisAbsen || payload.status_kehadiran || payload.statusKehadiran || payload.status || 'DATANG');
+
+    if (!isAttendanceEmployeeActive_(spreadsheet, displayName)) {
+      return jsonAbsensi_({
+        ok: false,
+        success: false,
+        message: 'Akun/karyawan sedang nonaktif. Absensi tidak dapat dilakukan.'
+      });
+    }
 
     if ((status == 'DATANG' && check.datang) || (status == 'PULANG' && check.pulang) || (status == 'LEMBUR' && check.lembur)) {
       return jsonAbsensi_({
@@ -423,6 +432,40 @@ function getOrCreateAbsensiFolder_() {
   }
 
   return DriveApp.createFolder(ABSENSI_PHOTO_FOLDER_NAME);
+}
+
+function isAttendanceEmployeeActive_(spreadsheet, name) {
+  var target = normalizeAbsensiKey_(name || '');
+  if (!target) return false;
+
+  try {
+    var sheet = spreadsheet.getSheetByName(PAYROLL_SHEET_NAME);
+    if (!sheet) return true;
+
+    var employees = readPayrollEmployees_(sheet);
+    for (var i = 0; i < employees.length; i += 1) {
+      var employee = employees[i];
+      var keys = [
+        employee.name,
+        employee.nip,
+        employee.email,
+        employee.phone
+      ].map(normalizeAbsensiKey_).filter(Boolean);
+
+      if (keys.indexOf(target) >= 0) {
+        return !isInactiveEmployeeStatus_(employee.status);
+      }
+    }
+  } catch (error) {
+    return true;
+  }
+
+  return true;
+}
+
+function isInactiveEmployeeStatus_(value) {
+  var key = normalizeAbsensiKey_(value || 'Aktif').replace(/\s+/g, '');
+  return key == 'nonaktif' || key == 'inactive' || key == 'nonactive' || key == 'tidakaktif' || key == 'keluar' || key == 'resign' || key == 'cuti';
 }
 
 function handleListAttendanceRecords_(params, sheet) {
@@ -976,6 +1019,7 @@ function readPayrollEmployeeFromRow_(row, normalizedHeaders) {
     nip: pickPayrollValue_(row, normalizedHeaders, ['nip', 'idkaryawan', 'nik', 'kode']),
     name: pickPayrollValue_(row, normalizedHeaders, ['namakaryawan', 'nama', 'name', 'karyawan']),
     job: pickPayrollValue_(row, normalizedHeaders, ['jabatan', 'job', 'posisi', 'role']),
+    status: pickPayrollValue_(row, normalizedHeaders, ['status', 'aktif', 'keterangan']) || 'Aktif',
     baseSalary: pickPayrollMoney_(row, normalizedHeaders, ['gajipokok', 'gaji'], nipColumn, 3),
     baseSalaryMode: sanitizePayrollMode_(pickPayrollValue_(row, normalizedHeaders, ['modegajipokok', 'modegaji', 'gajipokokmode']), 'monthly'),
     mealAllowance: pickPayrollMoney_(row, normalizedHeaders, ['uangmakan', 'makan'], nipColumn, 4),
@@ -1000,6 +1044,7 @@ function sanitizePayrollEmployee_(value) {
     nip: String(value.nip || value.NIP || value.id || '').trim(),
     name: String(value.name || value.nama || value.namaKaryawan || value.nama_karyawan || '').trim(),
     job: String(value.job || value.jabatan || value.role || '').trim(),
+    status: isInactiveEmployeeStatus_(value.status || value.aktif || value.keterangan) ? 'Non Aktif' : 'Aktif',
     baseSalary: parsePayrollMoney_(value.baseSalary || value.gajiPokok || value.gaji_pokok || value.gaji || 0),
     baseSalaryMode: sanitizePayrollMode_(value.baseSalaryMode || value.modeGajiPokok || value.mode_gaji_pokok || value.gajiPokokMode, 'monthly'),
     mealAllowance: parsePayrollMoney_(value.mealAllowance || value.uangMakan || value.uang_makan || 0),
@@ -1024,6 +1069,7 @@ function writePayrollEmployeeRow_(sheet, headerInfo, rowNumber, employee) {
     nip: employee.nip,
     namakaryawan: employee.name,
     jabatan: employee.job,
+    status: employee.status || 'Aktif',
     gajipokok: employee.baseSalary,
     modegajipokok: employee.baseSalaryMode,
     uangmakan: employee.mealAllowance,
@@ -1113,6 +1159,7 @@ function getPayrollHeaderAliases_(key) {
     nip: ['nip', 'idkaryawan', 'idpegawai', 'nik', 'kode'],
     namakaryawan: ['namakaryawan', 'nama', 'name', 'karyawan', 'namapegawai', 'pegawai'],
     jabatan: ['jabatan', 'job', 'posisi', 'role'],
+    status: ['status', 'aktif', 'keterangan'],
     gajipokok: ['gajipokok', 'gaji', 'salary', 'basesalary'],
     modegajipokok: ['modegajipokok', 'modegaji', 'gajipokokmode', 'basesalarymode'],
     uangmakan: ['uangmakan', 'makan', 'mealallowance'],

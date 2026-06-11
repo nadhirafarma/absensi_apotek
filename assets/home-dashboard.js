@@ -227,7 +227,8 @@
         { key: "phone", label: "No. HP" },
         { key: "address", label: "Alamat", wide: true },
         { key: "job", label: "Jabatan" },
-        { key: "email", label: "Email", type: "email" }
+        { key: "email", label: "Email", type: "email" },
+        { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] }
       ]
     },
     supplier: {
@@ -1103,7 +1104,7 @@
           name: String(user.name || user.username || user.email || "").trim(),
           username: String(user.username || user.name || "").trim(),
           role: String(user.role || "Operator").trim() || "Operator",
-          status: String(user.status || "Aktif").trim() || "Aktif",
+          status: normalizeRecordStatus(user.status),
           email: String(user.email || "").trim(),
           phone: normalizePhoneNumber(user.phone || user.noHp || ""),
           address: String(user.address || user.alamat || "").trim(),
@@ -1113,7 +1114,11 @@
         })).filter((user) => user.name || user.username);
 
         state.lastUserSyncAt = Date.now();
-        if (getUserListSignature(nextUsers) === getUserListSignature(state.users)) return;
+        if (getUserListSignature(nextUsers) === getUserListSignature(state.users)) {
+          renderProfile();
+          applyCurrentUserAccess();
+          return;
+        }
         state.users = nextUsers;
         writeStoredArray(USER_KEY, state.users);
         syncEmployeeSeed();
@@ -3580,6 +3585,7 @@
 
     if (type === "medicine") {
       const row = state.rows[index];
+      const token = startAppLoading("Menghapus data obat...", 0);
       try {
         const result = await postToApi({ action: "delete_data_obat", rowNumber: row._row, kode: row.kode });
         if (!result || result.success !== true) throw new Error(result?.message || "Apps Script belum menerima hapus data_obat.");
@@ -3589,12 +3595,16 @@
         showActionToast("Data obat berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan kode Apps Script terbaru sudah ditempel dan di-deploy.`;
+        showActionToast(error.message || "Data obat gagal dihapus.", "error");
+      } finally {
+        endAppLoading(token);
       }
       return;
     }
 
     if (type === "user") {
       const record = state.users[index] || {};
+      const token = startAppLoading("Menghapus pengguna...", 0);
       try {
         const result = await postToApi({ action: "deleteLoginUser", username: record.username || record.name, email: record.email || "" });
         if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Apps Script belum menerima hapus operator.");
@@ -3603,12 +3613,16 @@
         showActionToast("Data pengguna berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
+        showActionToast(error.message || "Data pengguna gagal dihapus.", "error");
+      } finally {
+        endAppLoading(token);
       }
       return;
     }
 
     if (type === "payroll") {
       const record = state.payrollEmployees[index] || {};
+      const token = startAppLoading("Menghapus data gaji...", 0);
       try {
         if (!state.payrollEndpointReady) throw new Error("Endpoint data gaji belum aktif.");
         const result = await postToAbsensiApi({
@@ -3624,12 +3638,16 @@
         showActionToast("Data gaji berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script absensi terbaru sudah ditempel dan di-deploy.`;
+        showActionToast(error.message || "Data gaji gagal dihapus.", "error");
+      } finally {
+        endAppLoading(token);
       }
       return;
     }
 
     if (isRemoteLocalRecordType(type)) {
       const record = getLocalArray(type)[index] || {};
+      const token = startAppLoading(`Menghapus ${type === "employee" ? "karyawan" : "supplier"}...`, 0);
       try {
         const result = await postToApi({
           action: "deleteLocalRecord",
@@ -3646,6 +3664,9 @@
         showActionToast(`Data ${type === "employee" ? "karyawan" : "supplier"} berhasil dihapus.`);
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`;
+        showActionToast(error.message || "Data gagal dihapus.", "error");
+      } finally {
+        endAppLoading(token);
       }
       return;
     }
@@ -3656,8 +3677,8 @@
 
   function loadStoredModules() {
     resetLegacyRestockRequests();
-    state.employees = readStoredArray(EMPLOYEE_KEY);
-    state.suppliers = readStoredArray(SUPPLIER_KEY);
+    state.employees = readStoredArray(EMPLOYEE_KEY).map(normalizeEmployeeRecord);
+    state.suppliers = readStoredArray(SUPPLIER_KEY).map(normalizeSupplierRecord);
     state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
     state.purchaseOrders = readStoredArray(PO_KEY);
     state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
@@ -3692,7 +3713,8 @@
         phone: user.phone,
         address: user.address,
         job: user.role || "",
-        email: user.email || ""
+        email: user.email || "",
+        status: user.status || "Aktif"
       });
       const keys = [employee.email, employee.name, employee.phone].map(normalizeSearch).filter(Boolean);
       const existingKey = keys.find((key) => byKey.has(key));
@@ -3775,7 +3797,7 @@
       name: String(user?.name || user?.username || "").trim(),
       username: String(user?.username || user?.name || "").trim(),
       role,
-      status: String(user?.status || "Aktif").trim() || "Aktif",
+      status: normalizeRecordStatus(user?.status),
       email: String(user?.email || "").trim(),
       phone: normalizePhoneNumber(user?.phone || user?.noHp || ""),
       address: String(user?.address || user?.alamat || "").trim(),
@@ -3791,7 +3813,8 @@
       phone: normalizePhoneNumber(record?.phone || record?.noHp || record?.no_hp || record?.telepon || ""),
       address: String(record?.address || record?.alamat || "").trim(),
       job: String(record?.job || record?.jabatan || record?.role || "").trim(),
-      email: String(record?.email || record?.gmail || "").trim()
+      email: String(record?.email || record?.gmail || "").trim(),
+      status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan)
     };
   }
 
@@ -3807,6 +3830,20 @@
   function isAyuNovaliaUser(user) {
     const identity = normalizeSearch(`${user?.name || ""} ${user?.username || ""} ${user?.email || ""}`);
     return identity.includes("ayu novalia");
+  }
+
+  function normalizeRecordStatus(value) {
+    const text = String(value || "Aktif").trim();
+    return isInactiveStatus(text) ? "Non Aktif" : "Aktif";
+  }
+
+  function isInactiveStatus(value) {
+    const key = normalizeSearch(value || "").replace(/\s+/g, "");
+    return ["nonaktif", "inactive", "nonactive", "tidakaktif", "keluar", "resign", "cuti"].includes(key);
+  }
+
+  function isActiveRecord(record) {
+    return !isInactiveStatus(record?.status);
   }
 
   function normalizeProfilePreferences(value) {
@@ -3855,9 +3892,13 @@
 
   function getCurrentUserRecord() {
     const session = readSession() || {};
-    const sessionKey = normalizeSearch(session.username || session.email || session.name || "");
+    const sessionKeys = [session.username, session.email, session.name]
+      .map((value) => normalizeSearch(value))
+      .filter(Boolean);
     const found = state.users.find((user) => {
-      return [user.username, user.email, user.name].some((value) => normalizeSearch(value) === sessionKey);
+      return [user.username, user.email, user.name]
+        .map((value) => normalizeSearch(value))
+        .some((value) => value && sessionKeys.includes(value));
     });
 
     if (!found) {
@@ -3869,6 +3910,7 @@
         phone: normalizePhoneNumber(session.phone || ""),
         address: session.address || "",
         photo: session.profilePhoto || session.photo || "",
+        status: session.status || "Aktif",
         access: session.menu || ""
       });
     }
@@ -3883,6 +3925,7 @@
       username: found.username || session.username || "",
       role,
       email: found.email || session.email || "",
+      status: found.status || session.status || "Aktif",
       access: found.access && found.access.length
         ? found.access
         : (sessionMenu || getDefaultAccessForRole(role))
@@ -3891,14 +3934,25 @@
 
   function canAccess(key) {
     const user = getCurrentUserRecord();
+    if (!isActiveRecord(user)) return false;
     if (isOwnerUser(user)) return true;
     return user.access.includes(key);
   }
 
   function applyCurrentUserAccess() {
     const user = getCurrentUserRecord();
+    if (!isActiveRecord(user) && readSession()) {
+      sessionStorage.removeItem(SESSION_KEY);
+      showActionToast("Akun ini nonaktif. Silakan hubungi Owner/Admin.", "error");
+      window.setTimeout(() => {
+        window.location.replace("login.html?logout=1");
+      }, 900);
+      return;
+    }
     const access = new Set(user.access);
-    if (isOwnerUser(user)) {
+    if (!isActiveRecord(user)) {
+      access.clear();
+    } else if (isOwnerUser(user)) {
       ACCESS_MENUS.forEach((item) => access.add(item.key));
     }
 
@@ -3907,6 +3961,8 @@
       element.hidden = !allowed;
       element.toggleAttribute("aria-disabled", !allowed);
     });
+
+    syncMobileHomeMenuAccess(access);
 
     if (els.filterButton) {
       els.filterButton.hidden = !access.has("filter_data_obat");
@@ -3921,6 +3977,16 @@
       const firstAllowed = ACCESS_MENUS.find((item) => access.has(item.key)) || ACCESS_MENUS[0];
       switchView(access.has("dashboard") ? "dashboard" : accessKeyToView(firstAllowed.key));
     }
+  }
+
+  function syncMobileHomeMenuAccess(access) {
+    const allowed = access || new Set();
+    document.querySelectorAll(".mobile-home-card[data-access-key], .mobile-bottom-nav [data-access-key], .apoteker-ai-fab[data-access-key]").forEach((element) => {
+      const canShow = allowed.has(element.dataset.accessKey);
+      element.hidden = !canShow;
+      element.classList.toggle("is-access-hidden", !canShow);
+      element.toggleAttribute("aria-disabled", !canShow);
+    });
   }
 
   function canView(viewName, access) {
@@ -3990,15 +4056,29 @@
 
   function renderSimpleRows(tbody, rows, type, keys) {
     if (!tbody) return;
+    const isEmployeeTable = type === "employee";
 
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td class="empty-table-cell" colspan="${keys.length + 1}">Belum ada data.</td></tr>`;
+      tbody.innerHTML = `<tr><td class="empty-table-cell" colspan="${isEmployeeTable ? 3 : keys.length + 1}">Belum ada data.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = rows.map((row, index) => {
       const nameKey = keys[0] || "name";
       const label = formatCell(row[nameKey]);
+      const inactive = isInactiveStatus(row.status);
+      const statusCell = isEmployeeTable
+        ? `<td><span class="status-badge ${inactive ? "is-inactive" : ""}">${escapeHtml(normalizeRecordStatus(row.status))}</span></td>`
+        : "";
+      const toggleButton = isEmployeeTable
+        ? `
+            <button class="table-action table-action-status ${inactive ? "is-activate" : "is-deactivate"}" type="button" data-local-action="toggle-status" data-type="${type}" data-index="${index}" aria-label="${inactive ? "Aktifkan karyawan" : "Nonaktifkan karyawan"}" title="${inactive ? "Aktifkan" : "Nonaktifkan"}">
+              ${inactive
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M10 8v8"></path><path d="M14 8v8"></path></svg>'}
+            </button>
+          `
+        : "";
       return `
       <tr>
         <td>
@@ -4006,8 +4086,10 @@
             ${escapeHtml(label)}
           </button>
         </td>
+        ${statusCell}
         <td>
           <div class="row-actions">
+            ${toggleButton}
             <button class="table-action table-action-edit" type="button" data-local-action="edit" data-type="${type}" data-index="${index}" aria-label="Edit">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
             </button>
@@ -4086,6 +4168,7 @@
     const index = Number(button.dataset.index);
     if (button.dataset.localAction === "edit") openRecordModal(type, index);
     if (button.dataset.localAction === "delete") openDeleteModal(type, index, getLocalRecordLabel(type, index));
+    if (button.dataset.localAction === "toggle-status") toggleEmployeeStatus(index);
   }
 
   function openRecordModal(type, index) {
@@ -4208,6 +4291,10 @@
       Object.assign(record, normalizeUserRecord(record));
     }
 
+    if (state.recordType === "employee") {
+      Object.assign(record, normalizeEmployeeRecord(record));
+    }
+
     const target = getLocalArray(state.recordType);
     const isEdit = state.recordIndex >= 0;
     const previousRecord = isEdit ? target[state.recordIndex] || {} : {};
@@ -4241,6 +4328,7 @@
           els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
           els.recordModalStatus.dataset.type = "error";
         }
+        showActionToast(error.message || "Hak akses gagal disimpan.", "error");
         return;
       } finally {
         endAppLoading(loadingToken);
@@ -4264,11 +4352,15 @@
         }
         persistLocalArray(state.recordType, target);
         await fetchLocalRecords({ silent: true });
+        if (state.recordType === "employee") {
+          await syncEmployeeStatusToUser(record, previousRecord);
+        }
       } catch (error) {
         if (els.recordModalStatus) {
           els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`;
           els.recordModalStatus.dataset.type = "error";
         }
+        showActionToast(error.message || `${schema.title} gagal disimpan.`, "error");
         return;
       } finally {
         endAppLoading(loadingToken);
@@ -4315,6 +4407,72 @@
     return type === "employee"
       ? normalizeEmployeeRecord(result.record || record)
       : normalizeSupplierRecord(result.record || record);
+  }
+
+  async function toggleEmployeeStatus(index) {
+    const employee = state.employees[index];
+    if (!employee) return;
+
+    const nextStatus = isInactiveStatus(employee.status) ? "Aktif" : "Non Aktif";
+    const nextEmployee = normalizeEmployeeRecord({
+      ...employee,
+      status: nextStatus
+    });
+    const token = startAppLoading(`${nextStatus === "Aktif" ? "Mengaktifkan" : "Menonaktifkan"} karyawan...`, 0);
+
+    try {
+      const saved = await saveRemoteLocalRecord("employee", nextEmployee, employee);
+      state.employees[index] = saved;
+      persistLocalArray("employee", state.employees);
+      await syncEmployeeStatusToUser(saved, employee);
+      await fetchLocalRecords({ silent: true });
+      renderEmployees();
+      renderUsers();
+      applyCurrentUserAccess();
+      showActionToast(`Karyawan berhasil ${nextStatus === "Aktif" ? "diaktifkan" : "dinonaktifkan"}.`);
+    } catch (error) {
+      showActionToast(error.message || "Status karyawan gagal diubah.", "error");
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  async function syncEmployeeStatusToUser(employee, previousEmployee = {}) {
+    const keys = [
+      employee.email,
+      employee.name,
+      employee.phone,
+      previousEmployee.email,
+      previousEmployee.name,
+      previousEmployee.phone
+    ].map((value) => normalizeSearch(value)).filter(Boolean);
+
+    if (!keys.length) return null;
+
+    const user = state.users.find((item) => {
+      return [item.email, item.name, item.username, item.phone]
+        .map((value) => normalizeSearch(value))
+        .some((value) => value && keys.includes(value));
+    });
+
+    if (!user) return null;
+
+    const nextUser = normalizeUserRecord({
+      ...user,
+      status: normalizeRecordStatus(employee.status)
+    });
+    const result = await postToApi({
+      action: "saveLoginUser",
+      user: nextUser,
+      originalUsername: user.username || "",
+      originalEmail: user.email || ""
+    });
+
+    if (!result || (result.success !== true && result.ok !== true)) {
+      throw new Error(result?.message || "Status login user belum tersinkron.");
+    }
+
+    return upsertUserRecord(result.user || nextUser, user);
   }
 
   function deleteLocalRecord(type, index) {
@@ -5853,6 +6011,7 @@
       showActionToast("Profil dan foto berhasil disimpan.");
     } catch (error) {
       setProfileStatus(`Profil gagal disimpan: ${error.message}`, "error");
+      showActionToast(error.message || "Profil gagal disimpan.", "error");
     } finally {
       endAppLoading(loadingToken);
     }
@@ -6782,10 +6941,11 @@
     const user = getCurrentUserRecord();
     const employees = state.employees.length
       ? state.employees
-      : state.users.map((item) => ({ name: item.name, email: item.email, phone: item.phone, job: item.role }));
-    if (isAdminUser(user)) return employees.filter((employee) => employee.name);
+      : state.users.map((item) => ({ name: item.name, email: item.email, phone: item.phone, job: item.role, status: item.status }));
+    const activeEmployees = employees.filter(isActiveRecord);
+    if (isAdminUser(user)) return activeEmployees.filter((employee) => employee.name);
     const keys = getAttendanceIdentityKeys(user);
-    const filtered = employees.filter((employee) => {
+    const filtered = activeEmployees.filter((employee) => {
       return [employee.name, employee.email, employee.phone].some((value) => keys.has(normalizeSearch(value)));
     });
     return filtered.length ? filtered : [{ name: user.name || user.username || "Akun" }];
@@ -6992,7 +7152,7 @@
     const user = getCurrentUserRecord();
     const index = state.payrollEditingIndex;
     const original = state.payrollEmployees[index] || {};
-    const employee = getPayrollFormData();
+    const employee = normalizePayrollEmployee(getPayrollFormData());
     const token = startAppLoading("Menyimpan data gaji...", 0);
 
     try {
@@ -7021,6 +7181,7 @@
       showActionToast("Data gaji berhasil disimpan.");
     } catch (error) {
       setPayrollModalStatus(error.message || "Data gaji gagal disimpan.", "error");
+      showActionToast(error.message || "Data gaji gagal disimpan.", "error");
     } finally {
       endAppLoading(token);
     }
@@ -7042,7 +7203,8 @@
       bonus: parsePayrollNumber(els.payrollBonusInput?.value),
       loan: parsePayrollNumber(els.payrollLoanInput?.value),
       debt: parsePayrollNumber(els.payrollDebtInput?.value),
-      other: parsePayrollNumber(els.payrollOtherInput?.value)
+      other: parsePayrollNumber(els.payrollOtherInput?.value),
+      status: "Aktif"
     };
   }
 
@@ -7303,7 +7465,8 @@
 
     const item = state.salarySlipHistory[Number(button.dataset.salaryHistoryDelete)];
     if (!item) return;
-    if (!window.confirm(`Hapus histori slip gaji ${item.name || item.period || ""}?`)) return;
+    const confirmed = await showConfirmDialog(`Hapus histori slip gaji ${item.name || item.period || "ini"}?`);
+    if (!confirmed) return;
 
     const user = getCurrentUserRecord();
     const token = startAppLoading("Menghapus histori slip gaji...", 0);
@@ -7327,8 +7490,10 @@
       renderSalarySlipHistory();
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = "Histori slip gaji berhasil dihapus.";
       if (state.salaryHistoryEndpointReady) await fetchSalarySlipHistory({ silent: true });
+      showActionToast("Histori slip gaji berhasil dihapus.");
     } catch (error) {
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji gagal dihapus.";
+      showActionToast(error.message || "Histori slip gaji gagal dihapus.", "error");
     } finally {
       endAppLoading(token);
     }
@@ -7406,7 +7571,8 @@
       bonus: parsePayrollNumber(value?.bonus),
       loan: parsePayrollNumber(value?.loan ?? value?.pinjaman),
       debt: parsePayrollNumber(value?.debt ?? value?.hutang),
-      other: parsePayrollNumber(value?.other ?? value?.lainLain ?? value?.lain_lain)
+      other: parsePayrollNumber(value?.other ?? value?.lainLain ?? value?.lain_lain),
+      status: normalizeRecordStatus(value?.status || value?.aktif || value?.keterangan)
     };
   }
 
@@ -7485,7 +7651,7 @@
 
   function resolveAttendanceEmployeeName(user) {
     const keys = getAttendanceIdentityKeys(user);
-    const employee = state.employees.find((item) => {
+    const employee = state.employees.filter(isActiveRecord).find((item) => {
       return [item.name, item.email, item.phone].some((value) => keys.has(normalizeSearch(value)));
     });
     return String(employee?.name || user?.name || user?.username || "").trim();
@@ -7637,10 +7803,48 @@
     if (element) element.textContent = value;
   }
 
+  function showConfirmDialog(message, options = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("section");
+      overlay.className = "confirm-dialog-overlay";
+      overlay.innerHTML = `
+        <div class="confirm-dialog" role="dialog" aria-modal="true">
+          <span class="confirm-dialog-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 9v4"></path>
+              <path d="M12 17h.01"></path>
+              <path d="M10.3 3.7 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z"></path>
+            </svg>
+          </span>
+          <strong>${escapeHtml(options.title || "Konfirmasi")}</strong>
+          <p>${escapeHtml(message || "Lanjutkan tindakan ini?")}</p>
+          <div class="confirm-dialog-actions">
+            <button class="confirm-cancel" type="button">${escapeHtml(options.cancelLabel || "Batal")}</button>
+            <button class="confirm-ok" type="button">${escapeHtml(options.confirmLabel || "OK")}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.body.classList.add("dashboard-modal-open");
+
+      const finish = (answer) => {
+        overlay.remove();
+        syncModalOpenState();
+        resolve(answer);
+      };
+
+      overlay.querySelector(".confirm-cancel")?.addEventListener("click", () => finish(false));
+      overlay.querySelector(".confirm-ok")?.addEventListener("click", () => finish(true));
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) finish(false);
+      });
+    });
+  }
+
   function showActionToast(message, type = "success") {
     if (!message) message = "Data berhasil disimpan.";
 
-    if (state.appLoadingToken && els.appLoadingOverlay) {
+    if (els.appLoadingOverlay) {
       showAppLoadingSuccess(message, type);
       return;
     }
@@ -8130,6 +8334,7 @@
     els.appLoadingOverlay.classList.toggle("is-success", type !== "error");
     els.appLoadingOverlay.classList.toggle("is-error", type === "error");
     els.appLoadingText.textContent = message || "Berhasil.";
+    state.appLoadingShownAt = Date.now();
     els.appLoadingOverlay.hidden = false;
     state.appLoadingSuccessTimer = window.setTimeout(() => {
       endAppLoading(state.appLoadingToken, { force: true });

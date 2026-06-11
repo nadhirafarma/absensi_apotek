@@ -15,8 +15,9 @@ var DATA_OBAT_LAST_UPLOAD_PROPERTY = 'DATA_OBAT_LAST_UPLOAD_AT';
 var DATA_OBAT_FILTER_PROPERTY = 'DATA_OBAT_GLOBAL_FILTER';
 var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
 var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
+var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
-var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'updated_at'];
+var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'status', 'updated_at'];
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
@@ -122,6 +123,20 @@ function doGet(e) {
 
     if (e.parameter.page == 'reset') {
       return renderResetPasswordPage_(e.parameter.email || '');
+    }
+
+    if (String(e.parameter.action || '').trim() == 'listLoginUsers') {
+      var loginSheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
+
+      if (!loginSheet) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: 'Sheet user tidak ditemukan'
+        });
+      }
+
+      return handleListLoginUsers_(readUserRows_(loginSheet));
     }
 
     var sheetName = String(e.parameter.sheet || 'user').trim();
@@ -314,6 +329,7 @@ function doPost(e) {
 function handleLogin_(data, users) {
   var loginKey = normalizeLoginKey_(data.username || data.email || '');
   var password = String(data.password || '');
+  var employeeStatusMap = getEmployeeStatusMap_();
 
   if (!loginKey || !password) {
     return jsonOutput_({
@@ -329,6 +345,14 @@ function handleLogin_(data, users) {
     var emailKey = normalizeLoginKey_(user.email);
 
     if ((usernameKey == loginKey || emailKey == loginKey) && String(user.password || '') == password) {
+      if (isLoginUserInactive_(user, employeeStatusMap)) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: 'Akun/karyawan sedang nonaktif. Silakan hubungi Owner/Admin.'
+        });
+      }
+
       return jsonOutput_({
         success: true,
         ok: true,
@@ -358,12 +382,14 @@ function handleLogin_(data, users) {
 function handleListLoginUsers_(users) {
   var seen = {};
   var list = [];
+  var employeeStatusMap = getEmployeeStatusMap_();
 
   users.forEach(function(user) {
     var username = String(user.username || '').trim();
     var key = normalizeLoginKey_(username);
 
     if (!username || seen[key]) return;
+    if (isLoginUserInactive_(user, employeeStatusMap)) return;
 
     seen[key] = true;
     list.push({
@@ -392,6 +418,64 @@ function handleListLoginUsers_(users) {
     ok: true,
     users: list
   });
+}
+
+function getEmployeeStatusMap_() {
+  var map = {};
+
+  try {
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get(EMPLOYEE_STATUS_CACHE_KEY);
+
+    if (cached) {
+      return JSON.parse(cached) || {};
+    }
+
+    readLocalRecordsByConfig_(getLocalRecordConfig_('employee')).forEach(function(employee) {
+      var status = employee.status || 'Aktif';
+      [
+        employee.email,
+        employee.name,
+        employee.phone
+      ].map(normalizeLoginKey_).filter(Boolean).forEach(function(key) {
+        map[key] = status;
+      });
+    });
+
+    cache.put(EMPLOYEE_STATUS_CACHE_KEY, JSON.stringify(map), 120);
+  } catch (error) {}
+
+  return map;
+}
+
+function clearEmployeeStatusCache_() {
+  try {
+    CacheService.getScriptCache().remove(EMPLOYEE_STATUS_CACHE_KEY);
+  } catch (error) {}
+}
+
+function isLoginUserInactive_(user, employeeStatusMap) {
+  if (isInactiveStatus_(user.status)) return true;
+
+  var keys = [
+    user.email,
+    user.name,
+    user.username,
+    user.phone
+  ].map(normalizeLoginKey_).filter(Boolean);
+
+  for (var i = 0; i < keys.length; i += 1) {
+    if (employeeStatusMap[keys[i]] && isInactiveStatus_(employeeStatusMap[keys[i]])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isInactiveStatus_(value) {
+  var key = normalizeHeaderKey_(value || 'Aktif');
+  return key == 'nonaktif' || key == 'inactive' || key == 'nonactive' || key == 'tidakaktif' || key == 'keluar' || key == 'resign' || key == 'cuti';
 }
 
 function handleSaveLoginUser_(data, userSheet) {
@@ -1452,6 +1536,10 @@ function handleSaveLocalRecord_(data) {
 
   SpreadsheetApp.flush();
 
+  if (config.type == 'employee') {
+    clearEmployeeStatusCache_();
+  }
+
   headers = ensureLocalRecordHeaders_(sheet, config);
   values = sheet.getDataRange().getDisplayValues();
   var saved = readLocalRecordFromRow_(headers, values[rowNumber - 1], config);
@@ -1492,6 +1580,10 @@ function handleDeleteLocalRecord_(data) {
   sheet.deleteRow(rowIndex + 1);
   SpreadsheetApp.flush();
 
+  if (config.type == 'employee') {
+    clearEmployeeStatusCache_();
+  }
+
   return jsonOutput_({
     success: true,
     ok: true,
@@ -1516,6 +1608,7 @@ function getLocalRecordConfig_(type) {
         address: ['address', 'alamat'],
         job: ['job', 'jabatan', 'role', 'posisi'],
         email: ['email', 'gmail', 'alamatemail'],
+        status: ['status', 'aktif', 'keterangan'],
         updated_at: ['updated_at', 'updatedat', 'updated']
       }
     };
@@ -1601,6 +1694,7 @@ function readLocalRecordFromRow_(headers, row, config) {
       address: pickDataValue_(raw, config.aliases.address),
       job: pickDataValue_(raw, config.aliases.job),
       email: pickDataValue_(raw, config.aliases.email),
+      status: pickDataValue_(raw, config.aliases.status) || 'Aktif',
       updatedAt: pickDataValue_(raw, config.aliases.updated_at)
     };
   }

@@ -11,6 +11,11 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-11 21:55 WIB: memperbaiki login perangkat baru agar tetap bisa input username manual saat daftar user online belum tersedia, menyaring user/karyawan nonaktif dari daftar login, dan memblokir login/absensi untuk status nonaktif.
+- 2026-06-11 21:55 WIB: menambahkan endpoint GET ringan untuk daftar user login dan cache status karyawan di Apps Script agar perangkat baru lebih cepat menerima daftar username dari Google Sheet.
+- 2026-06-11 21:55 WIB: menambahkan tombol aktif/nonaktif di Data Karyawan, menyinkronkan status ke akses login/user, serta menyembunyikan menu mobile sesuai akses yang dicentang owner.
+- 2026-06-11 21:55 WIB: mengganti dialog hapus browser-native dengan dialog aplikasi, menstandarkan popup loading/sukses/gagal di tengah layar, dan mengunci header mobile halaman fungsi agar sama dengan homepage.
+- 2026-06-11 21:55 WIB: memperbaiki sinkron profil foto lintas perangkat melalui sheet user, merapikan input unggah foto profil, dan menaikkan cache busting asset `index.html` dan `login.html` ke `20260611-ui-v8`.
 - 2026-06-11 17:45 WIB: menyinkronkan akses menu mobile dengan hak akses pengguna, termasuk role Administrator, dan menambahkan guard klik untuk menu yang tidak dicentang owner.
 - 2026-06-11 17:45 WIB: merapikan header mobile semua halaman agar logo/nama apotek berada di kiri dan ikon notifikasi, tema, serta foto user berada di kanan tanpa bertumpuk.
 - 2026-06-11 17:45 WIB: menyembunyikan teks native `No file chosen` pada unggah foto profil, menampilkan label file custom, dan memindahkan tombol simpan profil menjadi tombol kecil di kanan bawah area pengaturan akun.
