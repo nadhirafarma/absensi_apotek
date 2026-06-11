@@ -25,6 +25,8 @@ var RESTOCK_REQUEST_HEADERS = [
   'medicineName',
   'currentStock',
   'stockUnit',
+  'realStock',
+  'realStockUnit',
   'unit',
   'qty',
   'priority',
@@ -1213,6 +1215,8 @@ function readRestockRequestFromRow_(headers, row) {
     medicineName: pickDataValue_(raw, ['medicinename', 'nama', 'namaobat']),
     currentStock: pickDataValue_(raw, ['currentstock', 'stok']),
     stockUnit: pickDataValue_(raw, ['stockunit', 'satuanstok']),
+    realStock: pickDataValue_(raw, ['realstock', 'stokreal', 'stokfisik', 'physicalstock']),
+    realStockUnit: pickDataValue_(raw, ['realstockunit', 'satuanstokreal']),
     unit: pickDataValue_(raw, ['unit', 'satuan']),
     qty: pickDataValue_(raw, ['qty', 'requestqty', 'permintaan']),
     priority: pickDataValue_(raw, ['priority', 'prioritas']),
@@ -1268,6 +1272,19 @@ function sanitizeRestockRequest_(item) {
   var updatedAt = sanitizeRestockTimestamp_(item.updatedAt || item.updated_at, createdAt);
   var history = parseRestockHistory_(item.history);
   var photo = String(item.photo || item.foto || '').trim();
+  var realStock = item.realStock;
+
+  if (realStock == null || realStock === '') {
+    realStock = item.stokReal != null && item.stokReal !== '' ? item.stokReal : item.stok_real;
+  }
+
+  if (realStock == null || realStock === '') {
+    realStock = item.physicalStock != null && item.physicalStock !== '' ? item.physicalStock : item.stokFisik;
+  }
+
+  if (realStock == null || realStock === '') {
+    realStock = item.stok_fisik;
+  }
 
   if (photo.length > 48000 || !/^(data:image\/|https?:\/\/|assets\/)/i.test(photo)) {
     photo = '';
@@ -1279,6 +1296,8 @@ function sanitizeRestockRequest_(item) {
     medicineName: String(item.medicineName || item.nama || item.name || '').trim().slice(0, 220),
     currentStock: String(item.currentStock || item.stok || '0').trim().slice(0, 80),
     stockUnit: String(item.stockUnit || item.currentStockUnit || item.satuanStok || item.unit || 'Pcs').trim().slice(0, 60) || 'Pcs',
+    realStock: String(realStock == null ? '' : realStock).trim().slice(0, 80),
+    realStockUnit: String(item.realStockUnit || item.stokRealUnit || item.stok_real_unit || item.stockUnit || item.currentStockUnit || item.satuanStok || item.unit || 'Pcs').trim().slice(0, 60) || 'Pcs',
     unit: String(item.unit || item.requestUnit || item.satuan || 'Pcs').trim().slice(0, 60) || 'Pcs',
     qty: Math.max(1, Number(item.qty || item.requestQty || item.quantity || item.permintaan || 1) || 1),
     priority: normalizeRestockPriority_(item.priority || item.prioritas),

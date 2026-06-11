@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260611-ui-v9">
-  <script defer src="assets/auth-guard.js?v=20260611-ui-v9"></script>
-  <script defer src="assets/app.js?v=20260611-ui-v9"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260612-ui-v10">
+  <script defer src="assets/auth-guard.js?v=20260612-ui-v10"></script>
+  <script defer src="assets/app.js?v=20260612-ui-v10"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260611-ui-v9"></script>
+  <script defer src="assets/home-dashboard.js?v=20260612-ui-v10"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -1196,6 +1196,9 @@
             </label>
         <label>Stok Saat Ini
           <input id="restockCurrentStockInput" type="text" readonly>
+        </label>
+        <label>Stok Real <span>*</span>
+          <input id="restockRealStockInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Isi stok fisik saat dicek" required>
         </label>
         <label>Qty Restok yang Dibutuhkan <span>*</span>
           <input id="restockQtyInput" type="number" min="1" step="1" value="1" required>

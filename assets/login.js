@@ -313,27 +313,10 @@
   }
 
   async function loadLoginUsers(selectedUsername) {
-    const cachedUsers = readCachedLoginUsers();
-    renderUserOptions(cachedUsers, selectedUsername);
-    renderResetUserOptions(loginUsers);
-
-    try {
-      const result = await fetchLoginUsers();
-
-      if (!result || result.success !== true) {
-        throw new Error(result?.message || "Daftar user tidak bisa dibaca.");
-      }
-
-      const users = result.users || [];
-      renderUserOptions(users, usernameInput.value || selectedUsername);
-      renderResetUserOptions(loginUsers);
-      cacheLoginUsers(users);
-      setStatus("", "");
-    } catch (error) {
-      if (!loginUsers.length) {
-        setStatus("Daftar user online belum tersedia. Username tetap dapat diketik manual.", "info");
-      }
-    }
+    loginUsers = [];
+    renderUserOptions([], selectedUsername);
+    renderResetUserOptions([]);
+    setStatus("", "");
   }
 
   function renderUserOptions(users, selectedUsername) {
@@ -359,14 +342,14 @@
     const options = uniqueUsers.slice();
     if (selected && !selectedExists) options.unshift(selected);
 
-    renderSelectOptions(usernameInput, options, selected, options.length ? "Pilih atau ketik user" : "Masukkan email atau username");
-    renderSelectOptions(resetUsernameInput, options, resetUsernameInput.value || selected, "Pilih atau ketik username");
+    renderSelectOptions(usernameInput, options, selected, "Masukkan email atau username");
+    renderSelectOptions(resetUsernameInput, options, resetUsernameInput.value || selected, "Masukkan username atau email");
 
     if (selected) usernameInput.value = selected;
   }
 
   function renderResetUserOptions(users) {
-    renderSelectOptions(resetUsernameInput, users, resetUsernameInput.value || usernameInput.value, "Pilih username");
+    renderSelectOptions(resetUsernameInput, users, resetUsernameInput.value || usernameInput.value, "Masukkan username atau email");
     if (!resetUsernameInput.value && users.length === 1) {
       resetUsernameInput.value = users[0];
     }
