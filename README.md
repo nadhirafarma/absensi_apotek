@@ -11,6 +11,8 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-11 22:15 WIB: mempercepat pemuatan daftar user login di perangkat baru dengan mencoba endpoint GET dan POST secara paralel, sehingga backend Apps Script lama tidak lagi menahan fallback daftar username.
+- 2026-06-11 22:15 WIB: menaikkan cache busting asset `index.html` dan `login.html` ke `20260611-ui-v9`, lalu memicu rebuild GitHub Pages.
 - 2026-06-11 21:55 WIB: memperbaiki login perangkat baru agar tetap bisa input username manual saat daftar user online belum tersedia, menyaring user/karyawan nonaktif dari daftar login, dan memblokir login/absensi untuk status nonaktif.
 - 2026-06-11 21:55 WIB: menambahkan endpoint GET ringan untuk daftar user login dan cache status karyawan di Apps Script agar perangkat baru lebih cepat menerima daftar username dari Google Sheet.
 - 2026-06-11 21:55 WIB: menambahkan tombol aktif/nonaktif di Data Karyawan, menyinkronkan status ke akses login/user, serta menyembunyikan menu mobile sesuai akses yang dicentang owner.

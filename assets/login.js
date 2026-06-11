@@ -224,14 +224,26 @@
   }
 
   async function fetchLoginUsers() {
-    try {
-      const result = await requestLoginUsers("GET");
+    const ensureSuccess = (result) => {
       if (result && result.success === true) return result;
-    } catch (error) {
-      // Fallback to POST for Apps Script deployments that do not have the GET helper yet.
-    }
+      throw new Error((result && result.message) || "Daftar user online belum tersedia.");
+    };
 
-    return requestLoginUsers("POST");
+    return new Promise((resolve, reject) => {
+      const errors = [];
+      var pending = 2;
+
+      function handleError(error) {
+        errors.push(error);
+        pending -= 1;
+        if (pending <= 0) {
+          reject(errors[errors.length - 1] || new Error("Daftar user online belum tersedia."));
+        }
+      }
+
+      requestLoginUsers("GET").then(ensureSuccess).then(resolve).catch(handleError);
+      requestLoginUsers("POST").then(ensureSuccess).then(resolve).catch(handleError);
+    });
   }
 
   async function requestLoginUsers(method) {
