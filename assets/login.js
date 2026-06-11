@@ -4,10 +4,14 @@
   const REMEMBER_KEY = "nadhira.rememberedUsername";
   const REMEMBER_PASSWORD_KEY = "nadhira.rememberedPassword";
   const REMEMBER_ENABLED_KEY = "nadhira.rememberCredentials";
+  const LOGIN_USERS_CACHE_KEY = "nadhira.loginUsersCache";
+  const DASHBOARD_USERS_KEY = "nadhira.userRecords";
+  const LOGIN_USERS_TIMEOUT_MS = 5500;
   const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
 
   const form = document.getElementById("loginForm");
   const usernameInput = document.getElementById("usernameInput");
+  const loginUserOptions = document.getElementById("loginUserOptions");
   const passwordInput = document.getElementById("passwordInput");
   const rememberInput = document.getElementById("rememberInput");
   const togglePasswordButton = document.getElementById("togglePasswordButton");
@@ -210,15 +214,30 @@
   }
 
   async function fetchLoginUsers() {
-    const response = await fetch(AUTH_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify({
-        action: "listLoginUsers"
-      })
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGIN_USERS_TIMEOUT_MS);
+    let response;
+
+    try {
+      response = await fetch(AUTH_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: "listLoginUsers"
+        }),
+        signal: controller.signal,
+        cache: "no-store"
+      });
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        throw new Error("Daftar user online terlalu lama merespons.");
+      }
+      throw new Error("Daftar user online belum dapat dihubungi.");
+    } finally {
+      window.clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       throw new Error(`Server daftar user tidak merespons (${response.status}).`);
@@ -260,7 +279,9 @@
   }
 
   async function loadLoginUsers(selectedUsername) {
-    usernameInput.disabled = true;
+    const cachedUsers = readCachedLoginUsers();
+    renderUserOptions(cachedUsers, selectedUsername);
+    renderResetUserOptions(loginUsers);
 
     try {
       const result = await fetchLoginUsers();
@@ -269,14 +290,15 @@
         throw new Error(result?.message || "Daftar user tidak bisa dibaca.");
       }
 
-      renderUserOptions(result.users || [], selectedUsername);
+      const users = result.users || [];
+      renderUserOptions(users, usernameInput.value || selectedUsername);
       renderResetUserOptions(loginUsers);
+      cacheLoginUsers(users);
       setStatus("", "");
     } catch (error) {
-      renderUserOptions([], selectedUsername);
-      setStatus(error.message || "Daftar user tidak bisa dimuat.", "error");
-    } finally {
-      usernameInput.disabled = false;
+      if (!loginUsers.length) {
+        setStatus("Daftar user online belum tersedia. Username tetap dapat diketik manual.", "info");
+      }
     }
   }
 
@@ -298,25 +320,42 @@
     uniqueUsers.sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
     loginUsers = uniqueUsers;
 
-    usernameInput.innerHTML = "";
-    usernameInput.appendChild(createOption("", uniqueUsers.length ? "Masukkan email atau username" : "Daftar user belum tersedia"));
-
-    uniqueUsers.forEach((username) => {
-      usernameInput.appendChild(createOption(username, username));
-    });
-
-    if (selected && seen.has(selected.toLowerCase())) {
-      usernameInput.value = selected;
+    if (loginUserOptions) {
+      loginUserOptions.innerHTML = "";
+      uniqueUsers.forEach((username) => {
+        loginUserOptions.appendChild(createOption(username, username));
+      });
     }
+
+    if (selected) usernameInput.value = selected;
   }
 
   function renderResetUserOptions(users) {
-    resetUsernameInput.innerHTML = "";
-    resetUsernameInput.appendChild(createOption("", users.length ? "Pilih nama user" : "Daftar user belum tersedia"));
+    if (!resetUsernameInput.value && users.length === 1) {
+      resetUsernameInput.value = users[0];
+    }
+  }
 
-    users.forEach((username) => {
-      resetUsernameInput.appendChild(createOption(username, username));
-    });
+  function readCachedLoginUsers() {
+    const cached = readStoredArray(LOGIN_USERS_CACHE_KEY);
+    const dashboardUsers = readStoredArray(DASHBOARD_USERS_KEY);
+    return cached.concat(dashboardUsers);
+  }
+
+  function cacheLoginUsers(users) {
+    const normalized = (users || []).map((user) => ({
+      username: String(user?.username || user?.name || "").trim()
+    })).filter((user) => user.username);
+    localStorage.setItem(LOGIN_USERS_CACHE_KEY, JSON.stringify(normalized));
+  }
+
+  function readStoredArray(key) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      return [];
+    }
   }
 
   function openResetModal() {

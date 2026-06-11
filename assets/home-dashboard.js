@@ -29,6 +29,10 @@
   const HOME_MENU_ORDER_KEY = "nadhira.homeMenuOrder";
   const SALARY_HISTORY_KEY = "nadhira.salarySlipHistory";
   const PLATFORM_LOGO = "assets/indo-apotek-mark.png";
+  const LOADING_LOGO = "assets/indo-apotek-mark-transparent.png";
+  const BACKGROUND_SYNC_INTERVAL_MS = 120000;
+  const BACKGROUND_SYNC_MIN_GAP_MS = 45000;
+  const USER_SYNC_MIN_GAP_MS = 300000;
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
   const DEFAULT_MEDICINE_UNIT_COUNT = 3;
@@ -336,6 +340,12 @@
     homeMenuDragItem: null,
     homeMenuLongPressed: false,
     homeMenuSuppressClickUntil: 0,
+    usersFetchPromise: null,
+    lastUserSyncAt: 0,
+    backgroundSyncPromise: null,
+    lastBackgroundSyncAt: 0,
+    reportSignature: "",
+    actionToastTimer: null,
     viewportIsMobile: isHomeMobileViewport()
   };
 
@@ -395,6 +405,8 @@
       appLoadingOverlay: document.getElementById("appLoadingOverlay"),
       appLoadingText: document.getElementById("appLoadingText"),
       appLoadingLogo: document.getElementById("appLoadingLogo"),
+      actionToast: document.getElementById("actionToast"),
+      actionToastMessage: document.getElementById("actionToastMessage"),
       sidebarPharmacyBrand: document.getElementById("sidebarPharmacyBrand"),
       sidebarPharmacyLogo: document.getElementById("sidebarPharmacyLogo"),
       sidebarPharmacyName: document.getElementById("sidebarPharmacyName"),
@@ -571,6 +583,7 @@
       profileAddressInput: document.getElementById("profileAddressInput"),
       profilePhotoInput: document.getElementById("profilePhotoInput"),
       profileRemovePhotoButton: document.getElementById("profileRemovePhotoButton"),
+      profileOverviewSaveButton: document.getElementById("profileOverviewSaveButton"),
       profilePasswordForm: document.getElementById("profilePasswordForm"),
       profileNewPasswordInput: document.getElementById("profileNewPasswordInput"),
       profileConfirmPasswordInput: document.getElementById("profileConfirmPasswordInput"),
@@ -838,6 +851,9 @@
     if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
     if (els.importButton) els.importButton.addEventListener("click", importExcelToGoogleSheet);
     if (els.profileForm) els.profileForm.addEventListener("submit", saveProfile);
+    if (els.profileOverviewSaveButton) {
+      els.profileOverviewSaveButton.addEventListener("click", () => els.profileForm?.requestSubmit());
+    }
     if (els.profilePhotoInput) els.profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
     if (els.profileRemovePhotoButton) els.profileRemovePhotoButton.addEventListener("click", removeProfilePhoto);
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
@@ -1027,69 +1043,102 @@
   }
 
   function bindUserAccessSync() {
-    window.addEventListener("focus", () => {
-      fetchUsers({ silent: true });
-      fetchLocalRecords({ silent: true });
-      fetchRestockRequests({ silent: true });
-      fetchOwnerActivityLog({ silent: true });
-      fetchAttendanceRecords({ silent: true });
-      fetchSalarySlipHistory({ silent: true });
-    });
+    window.addEventListener("focus", () => syncBackgroundModules());
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        fetchUsers({ silent: true });
-        fetchLocalRecords({ silent: true });
-        fetchRestockRequests({ silent: true });
-        fetchOwnerActivityLog({ silent: true });
-        fetchAttendanceRecords({ silent: true });
-        fetchSalarySlipHistory({ silent: true });
-      }
+      if (!document.hidden) syncBackgroundModules();
     });
-    window.setInterval(() => {
-      fetchUsers({ silent: true });
-      fetchLocalRecords({ silent: true });
-      fetchRestockRequests({ silent: true });
-      fetchOwnerActivityLog({ silent: true });
-      fetchAttendanceRecords({ silent: true });
-      fetchSalarySlipHistory({ silent: true });
-    }, 15000);
+    window.setInterval(() => syncBackgroundModules(), BACKGROUND_SYNC_INTERVAL_MS);
+  }
+
+  async function syncBackgroundModules(options = {}) {
+    const now = Date.now();
+    if (document.hidden) return;
+    if (state.backgroundSyncPromise) return state.backgroundSyncPromise;
+    if (!options.force && now - state.lastBackgroundSyncAt < BACKGROUND_SYNC_MIN_GAP_MS) return;
+
+    state.lastBackgroundSyncAt = now;
+    state.backgroundSyncPromise = Promise.allSettled([
+      fetchRestockRequests({ silent: true }),
+      fetchOwnerActivityLog({ silent: true }),
+      fetchAttendanceRecords({ silent: true }),
+      fetchSalarySlipHistory({ silent: true }),
+      fetchUsers({ silent: true }),
+      fetchLocalRecords({ silent: true })
+    ]);
+
+    try {
+      await state.backgroundSyncPromise;
+    } finally {
+      state.backgroundSyncPromise = null;
+    }
   }
 
   async function fetchUsers(options = {}) {
-    try {
-      const payload = await postToApi({ action: "listLoginUsers" });
-      if (!payload || payload.success !== true || !Array.isArray(payload.users)) return;
+    const now = Date.now();
+    if (state.usersFetchPromise) return state.usersFetchPromise;
+    if (!options.force && state.users.length && now - state.lastUserSyncAt < USER_SYNC_MIN_GAP_MS) return;
 
-      state.users = payload.users.map((user, index) => ({
-        id: `sheet-user-${index}`,
-        name: String(user.name || user.username || user.email || "").trim(),
-        username: String(user.username || user.name || "").trim(),
-        role: String(user.role || "Operator").trim() || "Operator",
-        status: String(user.status || "Aktif").trim() || "Aktif",
-        email: String(user.email || "").trim(),
-        phone: normalizePhoneNumber(user.phone || user.noHp || ""),
-        address: String(user.address || user.alamat || "").trim(),
-        photo: String(user.profilePhoto || user.photo || "").trim(),
-        access: normalizeAccessList(user.access || user.menu, user.role || "Operator"),
-        preferences: normalizeProfilePreferences(user.preferences || user.profilePreferences || user.profile_preferences)
-      })).filter((user) => user.name || user.username);
+    state.usersFetchPromise = (async () => {
+      try {
+        const payload = await postToApi({ action: "listLoginUsers" });
+        if (!payload || payload.success !== true || !Array.isArray(payload.users)) return;
 
-      syncEmployeeSeed();
-      syncUserSeed();
-      renderEmployees();
-      renderUsers();
-      renderProfile();
-      applyCurrentUserAccess();
-    } catch (error) {
-      if (!options.silent) {
-        console.warn("Gagal menyinkronkan data user:", error);
+        const nextUsers = payload.users.map((user, index) => ({
+          id: `sheet-user-${index}`,
+          name: String(user.name || user.username || user.email || "").trim(),
+          username: String(user.username || user.name || "").trim(),
+          role: String(user.role || "Operator").trim() || "Operator",
+          status: String(user.status || "Aktif").trim() || "Aktif",
+          email: String(user.email || "").trim(),
+          phone: normalizePhoneNumber(user.phone || user.noHp || ""),
+          address: String(user.address || user.alamat || "").trim(),
+          photo: String(user.profilePhoto || user.photo || "").trim(),
+          access: normalizeAccessList(user.access || user.menu, user.role || "Operator"),
+          preferences: normalizeProfilePreferences(user.preferences || user.profilePreferences || user.profile_preferences)
+        })).filter((user) => user.name || user.username);
+
+        state.lastUserSyncAt = Date.now();
+        if (getUserListSignature(nextUsers) === getUserListSignature(state.users)) return;
+        state.users = nextUsers;
+        writeStoredArray(USER_KEY, state.users);
+        syncEmployeeSeed();
+        syncUserSeed();
+        renderEmployees();
+        renderUsers();
+        renderProfile();
+        applyCurrentUserAccess();
+      } catch (error) {
+        state.lastUserSyncAt = Date.now();
+        if (!options.silent) {
+          console.warn("Gagal menyinkronkan data user:", error);
+        }
+        syncEmployeeSeed();
+        syncUserSeed();
+        renderEmployees();
+        renderUsers();
+        applyCurrentUserAccess();
       }
-      syncEmployeeSeed();
-      syncUserSeed();
-      renderEmployees();
-      renderUsers();
-      applyCurrentUserAccess();
+    })();
+
+    try {
+      await state.usersFetchPromise;
+    } finally {
+      state.usersFetchPromise = null;
     }
+  }
+
+  function getUserListSignature(users) {
+    return JSON.stringify((users || []).map((user) => [
+      user.username,
+      user.name,
+      user.email,
+      user.role,
+      user.status,
+      user.phone,
+      user.photo,
+      (user.access || []).join(","),
+      JSON.stringify(user.preferences || {})
+    ]));
   }
 
   async function fetchLocalRecords(options = {}) {
@@ -2526,6 +2575,7 @@
       const total = Number(result.total || state.importRows.length || 0);
       setImportStatus(`Import selesai. ${formatNumber(total)} data berhasil dikirim ke Google Sheet.`, "success");
       addProfileActivity("Import data obat berhasil", `${formatNumber(total)} data dikirim ke Google Sheet`);
+      showActionToast("Import data obat berhasil.");
     } catch (error) {
       setImportStatus(`Upload gagal: ${error.message}.`, "error");
     } finally {
@@ -3469,6 +3519,7 @@
       addProfileActivity(mode === "add" ? "Tambah data obat" : "Edit data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
       await fetchDataObat({ manual: true });
       closeMedicineModal();
+      showActionToast(mode === "add" ? "Data obat berhasil ditambahkan." : "Data obat berhasil diubah.");
     } catch (error) {
       setMedicineStatus(`${error.message} Pastikan kode Apps Script terbaru sudah ditempel dan di-deploy.`, "error");
     }
@@ -3520,6 +3571,7 @@
         addProfileActivity("Hapus data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
         closeDeleteModal();
         await fetchDataObat({ manual: true });
+        showActionToast("Data obat berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan kode Apps Script terbaru sudah ditempel dan di-deploy.`;
       }
@@ -3533,6 +3585,7 @@
         if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Apps Script belum menerima hapus operator.");
         deleteLocalRecord(type, index);
         closeDeleteModal();
+        showActionToast("Data pengguna berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
       }
@@ -3553,6 +3606,7 @@
         if (!result || (result.success !== true && result.ok !== true)) throw new Error(result?.message || "Data gaji belum terhapus online.");
         closeDeleteModal();
         await fetchPayrollEmployees({ manual: true });
+        showActionToast("Data gaji berhasil dihapus.");
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script absensi terbaru sudah ditempel dan di-deploy.`;
       }
@@ -3574,6 +3628,7 @@
         deleteLocalRecord(type, index);
         closeDeleteModal();
         await fetchLocalRecords({ silent: true });
+        showActionToast(`Data ${type === "employee" ? "karyawan" : "supplier"} berhasil dihapus.`);
       } catch (error) {
         if (els.deleteModalText) els.deleteModalText.textContent = `${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`;
       }
@@ -4162,7 +4217,7 @@
 
         record = normalizeUserRecord(result.user || record);
         upsertUserRecord(record, previousRecord);
-        await fetchUsers({ silent: true });
+        await fetchUsers({ silent: true, force: true });
       } catch (error) {
         if (els.recordModalStatus) {
           els.recordModalStatus.textContent = `${error.message} Pastikan Apps Script terbaru sudah di-deploy.`;
@@ -4218,6 +4273,7 @@
     renderUsers();
     applyCurrentUserAccess();
     populateMedicineOptions();
+    showActionToast(`${schema.title} berhasil ${isEdit ? "diubah" : "disimpan"}.`);
   }
 
   function isRemoteLocalRecordType(type) {
@@ -4309,6 +4365,7 @@
     addProfileActivity("Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
     renderPurchaseItems();
     renderPurchaseOrders();
+    showActionToast("Surat pesanan berhasil disimpan.");
   }
 
   function renderPurchaseItems() {
@@ -4759,6 +4816,7 @@
           : (editingItem ? "Perubahan data restok berhasil disimpan lokal." : "Laporan restok berhasil disimpan lokal."),
         "success"
       );
+      showActionToast(editingItem ? "Data restok berhasil diubah." : "Laporan restok berhasil disimpan.");
     } catch (error) {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = `Laporan gagal disimpan: ${error.message}`;
     } finally {
@@ -5091,6 +5149,7 @@
     addProfileActivity("Status restok diperbarui", `${item.medicineName} - ${getRestockStatusMeta(status).label}`);
     renderRestockPage();
     renderRestockDetail(item);
+    showActionToast(`Status restok ${getRestockStatusMeta(status).label.toLowerCase()} berhasil disimpan.`);
   }
 
   function cancelRestockRequest(id) {
@@ -5104,6 +5163,7 @@
     addProfileActivity("Laporan restok dibatalkan", item?.medicineName || "Restok obat");
     closeRestockDetailModal();
     renderRestockPage();
+    showActionToast("Laporan restok berhasil dibatalkan.");
   }
 
   function openRestockDeleteModal() {
@@ -5246,6 +5306,7 @@
     renderRestockPage();
     showRestockDeleteSuccess(candidates.length);
     setRestockPageMessage(`${formatNumber(candidates.length)} data restok berhasil dihapus.`, "success");
+    showActionToast(`${formatNumber(candidates.length)} data restok berhasil dihapus.`);
   }
 
   function showRestockDeleteSuccess(count) {
@@ -5280,6 +5341,7 @@
     renderPurchaseItems();
     renderRestockPage();
     setRestockPageMessage(`${item.medicineName} berhasil dimasukkan ke draft pesanan pembelian.`, "success");
+    showActionToast("Obat berhasil masuk ke draft pesanan.");
   }
 
   function getRestockStatusMeta(status) {
@@ -5442,7 +5504,7 @@
     setImageSource(els.sidebarPharmacyLogo, logo);
     setImageSource(els.homeHeaderPharmacyLogo, logo);
     setImageSource(els.mobileHomePharmacyLogo, logo);
-    setImageSource(els.appLoadingLogo, logo);
+    setImageSource(els.appLoadingLogo, LOADING_LOGO);
     if (els.sidebarPharmacyName) els.sidebarPharmacyName.textContent = name;
     if (els.homeHeaderPharmacyName) els.homeHeaderPharmacyName.textContent = name;
     if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
@@ -5557,6 +5619,7 @@
           : "Identitas apotek tersimpan di perangkat ini. Deploy Apps Script terbaru agar tersimpan online.",
         onlineSaved ? "success" : "info"
       );
+      showActionToast("Identitas apotek berhasil disimpan.");
     } finally {
       endAppLoading(loadingToken);
     }
@@ -5765,6 +5828,8 @@
       renderProfile();
       setProfileStatus("Profil berhasil disimpan", "success");
       addProfileActivity("Profil diperbarui", "Informasi profil disimpan ke Google Sheet");
+      closeProfilePanel();
+      showActionToast("Profil dan foto berhasil disimpan.");
     } catch (error) {
       setProfileStatus(`Profil gagal disimpan: ${error.message}`, "error");
     } finally {
@@ -5925,6 +5990,8 @@
       updateProfilePasswordIndicators();
       setProfileStatus("Password baru berhasil disimpan.", "success");
       addProfileActivity("Password diperbarui", "Password akun berhasil disimpan ke Google Sheet");
+      closeProfilePanel();
+      showActionToast("Password berhasil diubah.");
     } catch (error) {
       setProfileStatus(`Password gagal disimpan: ${error.message}`, "error");
     } finally {
@@ -6039,6 +6106,7 @@
     localStorage.removeItem(PROFILE_ACTIVITY_KEY);
     renderProfileActivity();
     setProfileStatus("Riwayat aktivitas perangkat ini sudah dibersihkan.", "success");
+    showActionToast("Riwayat aktivitas berhasil dibersihkan.");
   }
 
   function applyProfilePreferences() {
@@ -6197,6 +6265,8 @@
       renderAttendanceShiftSettings();
       setProfileStatus("Pengaturan shift absensi berhasil disimpan online dan siap dipakai lintas perangkat.", "success");
       addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang Face ID tersimpan di backend.");
+      closeProfilePanel();
+      showActionToast("Pengaturan shift berhasil disimpan.");
     } catch (error) {
       setProfileStatus(`${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`, "error");
     } finally {
@@ -6230,6 +6300,8 @@
       renderAttendanceShiftSettings();
       setProfileStatus("Pengaturan shift absensi dikembalikan ke default dan tersimpan online.", "success");
       addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi Face ID kembali ke jadwal default di backend.");
+      closeProfilePanel();
+      showActionToast("Pengaturan shift berhasil direset.");
     } catch (error) {
       setProfileStatus(`${error.message} Pastikan Apps Script terbaru sudah ditempel dan di-deploy.`, "error");
     } finally {
@@ -6753,6 +6825,7 @@
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Catatan berhasil disimpan online.";
       closeAttendanceEditModal();
       await fetchAttendanceRecords({ manual: true });
+      showActionToast("Catatan kehadiran berhasil diubah.");
     } catch (error) {
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = error.message || "Catatan kehadiran gagal disimpan.";
     } finally {
@@ -6920,6 +6993,7 @@
       populateSalarySlipControls();
       renderSalarySlipSummary();
       if (els.payrollStatusText) els.payrollStatusText.textContent = `Data gaji ${employee.name || employee.nip} berhasil disimpan.`;
+      showActionToast("Data gaji berhasil disimpan.");
     } catch (error) {
       setPayrollModalStatus(error.message || "Data gaji gagal disimpan.", "error");
     } finally {
@@ -7107,6 +7181,7 @@
         : (result.message || "PDF slip gaji berhasil dibuat, tetapi link file belum diterima.");
       renderSalarySlipSummary();
       await fetchSalarySlipHistory({ silent: true });
+      showActionToast("PDF slip gaji berhasil dibuat.");
     } catch (error) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
     } finally {
@@ -7537,8 +7612,22 @@
     if (element) element.textContent = value;
   }
 
+  function showActionToast(message, type = "success") {
+    if (!els.actionToast || !els.actionToastMessage) return;
+    window.clearTimeout(state.actionToastTimer);
+    els.actionToast.className = `action-toast is-${type}`;
+    els.actionToastMessage.textContent = message || "Data berhasil disimpan.";
+    els.actionToast.hidden = false;
+    state.actionToastTimer = window.setTimeout(() => {
+      if (els.actionToast) els.actionToast.hidden = true;
+    }, 1800);
+  }
+
   function renderReports() {
     if (!els.reportTotal) return;
+    const signature = getReportSignature(state.rows, state.uploadedAt);
+    if (signature === state.reportSignature) return;
+    state.reportSignature = signature;
     const active = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "aktif").length;
     const inactive = state.rows.filter((row) => getEffectiveMedicineStatus(row) === "nonaktif").length;
     const expiring = state.rows.filter(isActiveExpiringMedicine).length;
@@ -7557,6 +7646,32 @@
     if (els.reportMinus) els.reportMinus.textContent = formatNumber(minus);
     if (els.reportOut) els.reportOut.textContent = formatNumber(empty);
 
+  }
+
+  function getReportSignature(rows, uploadedAt) {
+    let totalStok = 0;
+    let totalMinus = 0;
+    let totalEmpty = 0;
+    let totalLow = 0;
+    let totalActive = 0;
+    let totalInactive = 0;
+    let totalExpiring = 0;
+    let totalExpired = 0;
+
+    (rows || []).forEach((row) => {
+      const stock = parseNumber(row.stok);
+      const status = getEffectiveMedicineStatus(row);
+      if (status === "aktif") totalActive += 1;
+      if (status === "nonaktif") totalInactive += 1;
+      if (isActiveExpiringMedicine(row)) totalExpiring += 1;
+      if (isActiveExpiredMedicine(row)) totalExpired += 1;
+      if (stock === 0) totalEmpty += 1;
+      if (isLowStock(row)) totalLow += 1;
+      if (stock < 0) totalMinus += 1;
+      totalStok += stock || 0;
+    });
+
+    return [uploadedAt || "", rows.length, totalStok, totalActive, totalInactive, totalExpiring, totalExpired, totalEmpty, totalLow, totalMinus].join("|");
   }
 
   function switchView(viewName, options = {}) {
