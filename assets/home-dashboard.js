@@ -4715,6 +4715,11 @@
     return state.rows.find((row) => getRestockMedicineKey(row) === state.restockSelectedMedicineKey) || null;
   }
 
+  function formatRestockNumberInputValue(value) {
+    const numeric = parseNumber(value);
+    return Number.isFinite(numeric) ? String(numeric) : "";
+  }
+
   function getRestockMedicineSearchResults(query = els.restockMedicineInput?.value || "") {
     const key = normalizeSearch(query);
     if (!key) return [];
@@ -4797,7 +4802,7 @@
     state.restockSuppressMedicineResultsUntil = Date.now() + 700;
     if (els.restockMedicineInput) els.restockMedicineInput.value = row.nama || row.kode || "";
     if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`;
-    if (els.restockRealStockInput) els.restockRealStockInput.value = formatCell(row.stok, "stok");
+    if (els.restockRealStockInput) els.restockRealStockInput.value = formatRestockNumberInputValue(row.stok);
     populateRestockUnitOptions(inferRestockUnit(row));
     if (els.restockMedicineResults) {
       els.restockMedicineResults.hidden = true;
@@ -4847,8 +4852,11 @@
         : "";
     }
     if (els.restockRealStockInput) {
+      const realStockSource = editingItem
+        ? (hasRestockRealStock(editingItem) ? editingItem.realStock : editingItem.currentStock)
+        : "";
       els.restockRealStockInput.value = editingItem
-        ? formatCell(editingItem.realStock || editingItem.currentStock || "", "stok")
+        ? formatRestockNumberInputValue(realStockSource)
         : "";
     }
     if (els.restockQtyInput) els.restockQtyInput.value = editingItem ? String(editingItem.qty || 1) : "1";
