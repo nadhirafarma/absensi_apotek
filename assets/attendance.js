@@ -5,6 +5,7 @@
   const DASHBOARD_API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
   const PROFILE_KEY = "nadhira.localProfile";
+  const PHARMACY_PROFILE_KEY = "nadhira.pharmacyIdentity";
   const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
 
   const APOTEK_LAT = -3.2733637;
@@ -54,6 +55,7 @@
   async function init() {
     bindElements();
     bindEvents();
+    hydrateAttendanceBrand();
     startClock();
 
     const profileStatus = validateProfileCompleteness();
@@ -294,6 +296,27 @@
     } catch (error) {
       return {};
     }
+  }
+
+  function getAttendancePharmacyProfile() {
+    const stored = readObject(PHARMACY_PROFILE_KEY);
+    const logo = String(stored.logo || stored.logoUrl || "assets/indo-apotek-mark.png").trim();
+    const name = String(stored.name || stored.namaApotek || stored.pharmacyName || "Apotek Anda").trim();
+    return {
+      logo: /^(data:image\/|https?:\/\/|assets\/)/i.test(logo) ? logo : "assets/indo-apotek-mark.png",
+      name: name || "Apotek Anda"
+    };
+  }
+
+  function hydrateAttendanceBrand() {
+    const pharmacy = getAttendancePharmacyProfile();
+    document.querySelectorAll(".brand-link img").forEach((image) => {
+      image.src = pharmacy.logo;
+      image.alt = pharmacy.name;
+    });
+    const brandName = document.querySelector(".attendance-header .brand-link small");
+    if (brandName) brandName.textContent = pharmacy.name;
+    document.title = `Absensi Face ID - ${pharmacy.name}`;
   }
 
   function startClock() {
@@ -1244,15 +1267,16 @@
       `;
     const primaryMessage = typeof message === "string" ? message : message.primary;
     const secondaryMessage = typeof message === "string" ? "" : message.secondary;
+    const pharmacy = getAttendancePharmacyProfile();
 
     document.body.innerHTML = `
       <main class="attendance-shell">
         <section class="attendance-card result-card">
           <header class="attendance-header result-header">
             <a class="brand-link" href="index.html" aria-label="Kembali ke menu utama">
-              <img src="assets/indo-apotek-mark.png" alt="">
+              <img src="${escapeHtml(pharmacy.logo)}" alt="${escapeHtml(pharmacy.name)}">
               <span>
-                <strong>INDO APOTEK</strong>
+                <strong>${escapeHtml(pharmacy.name)}</strong>
                 <small>Absensi Face ID</small>
               </span>
             </a>

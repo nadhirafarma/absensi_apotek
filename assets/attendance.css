@@ -375,6 +375,30 @@ video {
   font-weight: 800;
 }
 
+.result-header .brand-link {
+  width: min(100%, 320px);
+  grid-template-columns: auto minmax(0, auto);
+  justify-content: center;
+  justify-items: center;
+}
+
+.result-header .brand-link img {
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.result-header .brand-link span {
+  min-width: 0;
+  text-align: center;
+}
+
+.result-header .brand-link strong {
+  display: block;
+  max-width: 230px;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
 .attendance-choice-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

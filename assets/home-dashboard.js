@@ -26,6 +26,8 @@
   const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
   const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
+  const HOME_MENU_ORDER_KEY = "nadhira.homeMenuOrder";
+  const SALARY_HISTORY_KEY = "nadhira.salarySlipHistory";
   const PLATFORM_LOGO = "assets/indo-apotek-mark.png";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
@@ -313,6 +315,8 @@
     payrollEditingIndex: -1,
     payrollEndpointReady: false,
     salarySlipUrl: "",
+    salarySlipHistory: [],
+    salaryHistoryEndpointReady: false,
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
     quickPage: 1,
@@ -328,6 +332,10 @@
     appLoadingToken: 0,
     restockSyncTimer: null,
     pendingPharmacyLogo: null,
+    homeMenuLongPressTimer: null,
+    homeMenuDragItem: null,
+    homeMenuLongPressed: false,
+    homeMenuSuppressClickUntil: 0,
     viewportIsMobile: isHomeMobileViewport()
   };
 
@@ -345,6 +353,7 @@
     hydratePharmacyBrand();
     hydrateProfileName();
     bindEvents();
+    setupHomeMenuReorder();
     if (!routeInitialViewFromQuery()) {
       switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true });
     }
@@ -365,6 +374,7 @@
     fetchLocalRecords({ silent: true });
     fetchAttendanceRecords({ silent: true });
     fetchPayrollEmployees({ silent: true });
+    fetchSalarySlipHistory({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
   }
@@ -396,6 +406,7 @@
       mobileHomePharmacyName: document.getElementById("mobileHomePharmacyName"),
       mobileHomePharmacySubtitle: document.getElementById("mobileHomePharmacySubtitle"),
       homeThemeToggle: document.getElementById("homeThemeToggle"),
+      homeMenuGrid: document.querySelector(".home-menu-grid"),
       homeProfileName: document.getElementById("homeProfileName"),
       homeProfileRole: document.getElementById("homeProfileRole"),
       viewTitle: document.getElementById("dashboardViewTitle"),
@@ -655,6 +666,9 @@
       generateSalarySlipButton: document.getElementById("generateSalarySlipButton"),
       openSalarySlipButton: document.getElementById("openSalarySlipButton"),
       salarySlipSummary: document.getElementById("salarySlipSummary"),
+      salarySlipHistoryCard: document.getElementById("salarySlipHistoryCard"),
+      salarySlipHistoryStatus: document.getElementById("salarySlipHistoryStatus"),
+      salarySlipHistoryList: document.getElementById("salarySlipHistoryList"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
@@ -897,6 +911,7 @@
       });
     });
     if (els.generateSalarySlipButton) els.generateSalarySlipButton.addEventListener("click", generateSalarySlipPdf);
+    if (els.salarySlipHistoryList) els.salarySlipHistoryList.addEventListener("click", handleSalarySlipHistoryAction);
     if (els.openSalarySlipButton) els.openSalarySlipButton.addEventListener("click", () => {
       if (state.appLoadingToken) endAppLoading(state.appLoadingToken);
       if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
@@ -1018,6 +1033,7 @@
       fetchRestockRequests({ silent: true });
       fetchOwnerActivityLog({ silent: true });
       fetchAttendanceRecords({ silent: true });
+      fetchSalarySlipHistory({ silent: true });
     });
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
@@ -1026,6 +1042,7 @@
         fetchRestockRequests({ silent: true });
         fetchOwnerActivityLog({ silent: true });
         fetchAttendanceRecords({ silent: true });
+        fetchSalarySlipHistory({ silent: true });
       }
     });
     window.setInterval(() => {
@@ -1034,6 +1051,7 @@
       fetchRestockRequests({ silent: true });
       fetchOwnerActivityLog({ silent: true });
       fetchAttendanceRecords({ silent: true });
+      fetchSalarySlipHistory({ silent: true });
     }, 15000);
   }
 
@@ -2589,7 +2607,7 @@
       : "Tidak ada notifikasi terbaru";
 
     els.notificationDot.hidden = count < 1;
-    els.notificationDot.textContent = count > 9 ? "9+" : String(count);
+    els.notificationDot.textContent = count > 0 ? (count > 9 ? "9+" : String(count)) : "";
     els.notificationButton.classList.toggle("has-unread", count > 0);
     els.notificationButton.title = label;
     els.notificationButton.setAttribute("aria-label", label);
@@ -6749,6 +6767,7 @@
     [els.payrollEmployeeCard, els.salarySlipCard].forEach((card) => {
       if (card) card.hidden = !canManage;
     });
+    if (els.salarySlipHistoryCard) els.salarySlipHistoryCard.hidden = false;
 
     if (!canManage) return;
 
@@ -7070,16 +7089,196 @@
       }
 
       state.salarySlipUrl = result.fileUrl || result.printUrl || "";
+      appendSalarySlipHistory({
+        id: result.fileId || `${employee.nip || employee.name}-${Date.now()}`,
+        rowNumber: Number(result.rowNumber || 0),
+        issuedAt: new Date().toISOString(),
+        period: result.period?.label || `${getMonthName(els.salarySlipMonthSelect?.value)} ${els.salarySlipYearSelect?.value || ""}`.trim(),
+        nip: employee.nip || "",
+        name: employee.name || "",
+        netSalary: Number(result.salary?.netSalary || calculateSalarySlipPreview(employee).netSalary || 0),
+        fileId: result.fileId || "",
+        fileName: result.fileName || "",
+        fileUrl: state.salarySlipUrl
+      });
       if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = !state.salarySlipUrl;
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = state.salarySlipUrl
         ? "PDF slip gaji siap dibuka."
         : (result.message || "PDF slip gaji berhasil dibuat, tetapi link file belum diterima.");
       renderSalarySlipSummary();
+      await fetchSalarySlipHistory({ silent: true });
     } catch (error) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
     } finally {
       endAppLoading(token);
     }
+  }
+
+  async function fetchSalarySlipHistory(options = {}) {
+    if (!els.salarySlipHistoryList) return;
+    const user = getCurrentUserRecord();
+    const localHistory = readStoredArray(getSalarySlipHistoryKey()).map(normalizeSalarySlipHistoryItem);
+
+    if (!options.silent && els.salarySlipHistoryStatus) {
+      els.salarySlipHistoryStatus.textContent = "Menyinkronkan histori slip gaji...";
+    }
+
+    try {
+      const payload = await getAbsensiRecords({
+        action: "listSalarySlipHistory",
+        role: user.role || "",
+        username: user.username || user.name || "",
+        name: user.name || user.username || ""
+      });
+
+      if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.history)) {
+        throw new Error(payload?.message || "Endpoint histori slip gaji belum aktif.");
+      }
+
+      state.salaryHistoryEndpointReady = true;
+      state.salarySlipHistory = mergeSalarySlipHistory(payload.history, localHistory);
+      writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory.slice(0, 120));
+    } catch (error) {
+      state.salaryHistoryEndpointReady = false;
+      state.salarySlipHistory = mergeSalarySlipHistory(localHistory, state.salarySlipHistory);
+      if (!options.silent) console.warn("Gagal memuat histori slip gaji:", error);
+    }
+
+    renderSalarySlipHistory();
+  }
+
+  function renderSalarySlipHistory() {
+    if (!els.salarySlipHistoryList) return;
+    const user = getCurrentUserRecord();
+    const canDelete = isAdminUser(user);
+    const history = state.salarySlipHistory
+      .slice()
+      .sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0));
+
+    if (els.salarySlipHistoryStatus) {
+      els.salarySlipHistoryStatus.textContent = history.length
+        ? `${formatNumber(history.length)} slip gaji tersimpan. Setiap periode disimpan sebagai histori terpisah.`
+        : "Belum ada slip gaji PDF yang diterbitkan.";
+    }
+
+    if (!history.length) {
+      els.salarySlipHistoryList.innerHTML = `
+        <div class="salary-history-empty">
+          <strong>Belum ada histori PDF</strong>
+          <span>Slip yang dibuat akan tampil di sini tanpa menimpa periode sebelumnya.</span>
+        </div>
+      `;
+      return;
+    }
+
+    els.salarySlipHistoryList.innerHTML = history.map((item, index) => `
+      <article class="salary-history-item">
+        <span class="salary-history-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 14h8"></path><path d="M8 18h5"></path></svg>
+        </span>
+        <span class="salary-history-copy">
+          <strong>${escapeHtml(item.name || item.fileName || "Slip Gaji")}</strong>
+          <small>${escapeHtml(item.period || "Periode tidak tersedia")} - ${escapeHtml(formatSalaryHistoryDate(item.issuedAt))}</small>
+          <em>${formatPayrollMoney(item.netSalary)}</em>
+        </span>
+        <span class="salary-history-actions">
+          ${item.fileUrl ? `
+            <a class="table-action salary-history-open" href="${escapeHtml(item.fileUrl)}" target="_blank" rel="noopener" aria-label="Buka PDF slip gaji" title="Buka PDF">
+              <svg viewBox="0 0 24 24"><path d="M14 3h7v7"></path><path d="m10 14 11-11"></path><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path></svg>
+            </a>
+          ` : ""}
+          ${canDelete ? `
+            <button class="table-action table-action-delete" type="button" data-salary-history-delete="${index}" aria-label="Hapus histori slip gaji" title="Hapus histori">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
+            </button>
+          ` : ""}
+        </span>
+      </article>
+    `).join("");
+  }
+
+  async function handleSalarySlipHistoryAction(event) {
+    const button = event.target.closest("[data-salary-history-delete]");
+    if (!button || !isAdminUser(getCurrentUserRecord())) return;
+
+    const item = state.salarySlipHistory[Number(button.dataset.salaryHistoryDelete)];
+    if (!item) return;
+    if (!window.confirm(`Hapus histori slip gaji ${item.name || item.period || ""}?`)) return;
+
+    const user = getCurrentUserRecord();
+    const token = startAppLoading("Menghapus histori slip gaji...", 0);
+
+    try {
+      if (item.rowNumber && state.salaryHistoryEndpointReady) {
+        const result = await postToAbsensiApi({
+          action: "deleteSalarySlipHistory",
+          role: user.role || "",
+          username: user.username || user.name || "",
+          rowNumber: item.rowNumber,
+          fileId: item.fileId || ""
+        });
+        if (!result || (result.ok !== true && result.success !== true)) {
+          throw new Error(result?.message || "Histori slip gaji gagal dihapus.");
+        }
+      }
+
+      state.salarySlipHistory = state.salarySlipHistory.filter((entry) => entry !== item);
+      writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory);
+      renderSalarySlipHistory();
+      if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = "Histori slip gaji berhasil dihapus.";
+      if (state.salaryHistoryEndpointReady) await fetchSalarySlipHistory({ silent: true });
+    } catch (error) {
+      if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji gagal dihapus.";
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  function appendSalarySlipHistory(value) {
+    const item = normalizeSalarySlipHistoryItem(value);
+    state.salarySlipHistory = mergeSalarySlipHistory([item], state.salarySlipHistory);
+    writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory.slice(0, 120));
+    renderSalarySlipHistory();
+  }
+
+  function mergeSalarySlipHistory() {
+    const merged = Array.from(arguments).flat().map(normalizeSalarySlipHistoryItem);
+    const seen = new Set();
+    return merged.filter((item) => {
+      const key = item.fileId || item.fileUrl || `${item.name}|${item.period}|${item.issuedAt}`;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0));
+  }
+
+  function normalizeSalarySlipHistoryItem(value) {
+    return {
+      id: String(value?.id || value?.fileId || "").trim(),
+      rowNumber: Number(value?.rowNumber || 0),
+      issuedAt: String(value?.issuedAt || value?.createdAt || new Date().toISOString()).trim(),
+      period: String(value?.period || value?.periode || "").trim(),
+      nip: String(value?.nip || "").trim(),
+      name: String(value?.name || value?.nama || "").trim(),
+      netSalary: parsePayrollNumber(value?.netSalary ?? value?.gajiBersih),
+      fileId: String(value?.fileId || "").trim(),
+      fileName: String(value?.fileName || "").trim(),
+      fileUrl: String(value?.fileUrl || value?.url || "").trim()
+    };
+  }
+
+  function getSalarySlipHistoryKey() {
+    return `${SALARY_HISTORY_KEY}.${getProfileStorageIdentity()}`;
+  }
+
+  function formatSalaryHistoryDate(value) {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) return String(value || "Tanggal tidak tersedia");
+    return new Intl.DateTimeFormat("id-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Asia/Jakarta"
+    }).format(date).replace(/\./g, ":");
   }
 
   function getSelectedPayrollEmployee() {
@@ -7386,6 +7585,7 @@
       renderAttendanceDashboard();
       fetchAttendanceRecords({ silent: true });
       fetchPayrollEmployees({ silent: true });
+      fetchSalarySlipHistory({ silent: true });
     }
     if (viewName === "restok-obat") renderRestockPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
@@ -7414,6 +7614,116 @@
   function goHomeFromPrayerReminder() {
     closeHomePrayerReminder();
     if (state.activeView !== "home" && canView("home")) switchView("home");
+  }
+
+  function setupHomeMenuReorder() {
+    const grid = els.homeMenuGrid;
+    if (!grid) return;
+
+    getHomeMenuOrderItems().forEach((item) => {
+      item.dataset.homeMenuKey = getHomeMenuItemKey(item);
+    });
+    applySavedHomeMenuOrder();
+
+    grid.addEventListener("click", (event) => {
+      if (Date.now() >= state.homeMenuSuppressClickUntil) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+
+    grid.addEventListener("pointerdown", (event) => {
+      if (!isHomeMobileViewport() || event.button > 0) return;
+      const item = event.target.closest(".mobile-home-card, .apoteker-ai-fab");
+      if (!item || !grid.contains(item)) return;
+
+      window.clearTimeout(state.homeMenuLongPressTimer);
+      state.homeMenuLongPressed = false;
+      state.homeMenuLongPressTimer = window.setTimeout(() => {
+        state.homeMenuLongPressed = true;
+        state.homeMenuDragItem = item;
+        item.classList.add("is-dragging");
+        grid.classList.add("is-reordering");
+        document.body.classList.add("home-menu-reordering");
+        if (navigator.vibrate) navigator.vibrate(35);
+      }, 520);
+    });
+
+    document.addEventListener("pointermove", (event) => {
+      const item = state.homeMenuDragItem;
+      if (!item || !state.homeMenuLongPressed || !isHomeMobileViewport()) return;
+      event.preventDefault();
+      const target = document.elementFromPoint(event.clientX, event.clientY)
+        ?.closest(".mobile-home-card, .apoteker-ai-fab");
+      if (!target || target === item || !grid.contains(target)) return;
+
+      const targetRect = target.getBoundingClientRect();
+      const placeAfter = event.clientY > targetRect.top + targetRect.height / 2
+        || (
+          Math.abs(event.clientY - (targetRect.top + targetRect.height / 2)) < targetRect.height / 3
+          && event.clientX > targetRect.left + targetRect.width / 2
+        );
+      grid.insertBefore(item, placeAfter ? target.nextSibling : target);
+    }, { passive: false });
+
+    const finishReorder = () => {
+      window.clearTimeout(state.homeMenuLongPressTimer);
+      state.homeMenuLongPressTimer = null;
+      if (!state.homeMenuDragItem) return;
+
+      state.homeMenuSuppressClickUntil = Date.now() + 650;
+      state.homeMenuDragItem.classList.remove("is-dragging");
+      state.homeMenuDragItem = null;
+      state.homeMenuLongPressed = false;
+      grid.classList.remove("is-reordering");
+      document.body.classList.remove("home-menu-reordering");
+      saveHomeMenuOrder();
+    };
+
+    document.addEventListener("pointerup", finishReorder);
+    document.addEventListener("pointercancel", finishReorder);
+  }
+
+  function getHomeMenuOrderItems() {
+    if (!els.homeMenuGrid) return [];
+    return Array.from(els.homeMenuGrid.querySelectorAll(".mobile-home-card, .apoteker-ai-fab"));
+  }
+
+  function getHomeMenuItemKey(item) {
+    if (!item) return "";
+    if (item.id) return item.id;
+    if (item.dataset.viewTarget) return `view:${item.dataset.viewTarget}`;
+    if (item.getAttribute("href")) return `href:${item.getAttribute("href").split("?")[0]}`;
+    return String(item.textContent || "").trim().replace(/\s+/g, "-").toLowerCase();
+  }
+
+  function getHomeMenuOrderStorageKey() {
+    return `${HOME_MENU_ORDER_KEY}.${getProfileStorageIdentity()}`;
+  }
+
+  function applySavedHomeMenuOrder() {
+    const grid = els.homeMenuGrid;
+    if (!grid) return;
+    const saved = readStoredArray(getHomeMenuOrderStorageKey()).map(String);
+    const items = getHomeMenuOrderItems();
+    const itemByKey = new Map(items.map((item) => [item.dataset.homeMenuKey || getHomeMenuItemKey(item), item]));
+
+    saved.forEach((key) => {
+      const item = itemByKey.get(key);
+      if (item) grid.appendChild(item);
+    });
+    items.forEach((item) => {
+      if (!saved.includes(item.dataset.homeMenuKey)) grid.appendChild(item);
+    });
+
+    const spacer = grid.querySelector(".home-menu-spacer");
+    if (spacer) grid.appendChild(spacer);
+  }
+
+  function saveHomeMenuOrder() {
+    const order = getHomeMenuOrderItems()
+      .map((item) => item.dataset.homeMenuKey || getHomeMenuItemKey(item))
+      .filter(Boolean);
+    writeStoredArray(getHomeMenuOrderStorageKey(), order);
   }
 
   function handleGlobalTouchStart(event) {

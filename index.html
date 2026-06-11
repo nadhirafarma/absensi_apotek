@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260610-ui-v2">
-  <script defer src="assets/auth-guard.js?v=20260610-ui-v2"></script>
-  <script defer src="assets/app.js?v=20260610-ui-v2"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260611-ui-v3">
+  <script defer src="assets/auth-guard.js?v=20260611-ui-v3"></script>
+  <script defer src="assets/app.js?v=20260611-ui-v3"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260610-ui-v2"></script>
+  <script defer src="assets/home-dashboard.js?v=20260611-ui-v3"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -595,6 +595,16 @@
                 </div>
               </div>
               <div class="salary-slip-summary" id="salarySlipSummary"></div>
+            </article>
+
+            <article class="attendance-card salary-history-card" id="salarySlipHistoryCard">
+              <div class="attendance-card-head">
+                <div>
+                  <h3>Histori Slip Gaji PDF</h3>
+                  <p id="salarySlipHistoryStatus">Memuat histori slip gaji yang pernah diterbitkan.</p>
+                </div>
+              </div>
+              <div class="salary-history-list" id="salarySlipHistoryList"></div>
             </article>
           </section>
         </section>

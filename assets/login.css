@@ -1283,6 +1283,39 @@ svg {
   }
 }
 
+/* 20260611 transparent loading: keep only the rotating pharmacy logo. */
+.login-loading-card {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.login-loading-card > strong {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.login-loading-orbit {
+  width: 88px !important;
+  height: 88px !important;
+  filter: drop-shadow(0 14px 28px rgba(55, 78, 226, 0.3));
+}
+
+.login-loading-orbit img {
+  width: 50px !important;
+  height: 50px !important;
+}
+
 @media (max-width: 460px) {
   .login-page {
     padding: 18px 12px 20px;

@@ -93,6 +93,10 @@ function doGet(e) {
       return handleGenerateSalarySlip_(params, spreadsheet);
     }
 
+    if (action == 'listSalarySlipHistory') {
+      return handleListSalarySlipHistory_(params, spreadsheet);
+    }
+
     var nama = params.nama || params.nama_karyawan || params.namaKaryawan || '';
     var check = checkAbsensiHariIni_(sheet, nama);
 
@@ -153,6 +157,14 @@ function doPost(e) {
 
     if (action == 'generateSalarySlip') {
       return handleGenerateSalarySlip_(payload, spreadsheet);
+    }
+
+    if (action == 'listSalarySlipHistory') {
+      return handleListSalarySlipHistory_(payload, spreadsheet);
+    }
+
+    if (action == 'deleteSalarySlipHistory') {
+      return handleDeleteSalarySlipHistory_(payload, spreadsheet);
     }
 
     if (action) {
@@ -719,7 +731,7 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     spreadsheet.deleteSheet(exportSheet);
   }
 
-  writePayrollLog_(spreadsheet, employee, period, summary, salary, file);
+  writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload);
 
   return jsonAbsensi_({
     ok: true,
@@ -733,6 +745,151 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     fileName: file.getName(),
     fileUrl: file.getUrl(),
     printUrl: file.getUrl()
+  });
+}
+
+function handleListSalarySlipHistory_(params, spreadsheet) {
+  var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME);
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return jsonAbsensi_({
+      ok: true,
+      success: true,
+      history: [],
+      total: 0
+    });
+  }
+
+  var values = sheet.getDataRange().getValues();
+  var displayValues = sheet.getDataRange().getDisplayValues();
+  var headers = displayValues[0].map(normalizeAbsensiHeader_);
+  var timestampColumn = findHeaderIndex_(headers, ['timestamp', 'diterbitkan', 'tanggal']);
+  var periodColumn = findHeaderIndex_(headers, ['periode']);
+  var nipColumn = findHeaderIndex_(headers, ['nip']);
+  var nameColumn = findHeaderIndex_(headers, ['nama', 'namakaryawan']);
+  var netSalaryColumn = findHeaderIndex_(headers, ['gajibersih', 'netsalary']);
+  var fileColumn = findHeaderIndex_(headers, ['file']);
+  var fileIdColumn = findHeaderIndex_(headers, ['fileid']);
+  var fileUrlColumn = findHeaderIndex_(headers, ['fileurl', 'url']);
+  var isAdmin = isAbsensiAdmin_(params);
+  var identityKeys = [
+    params.name,
+    params.nama,
+    params.nama_karyawan,
+    params.username
+  ].map(normalizeAbsensiKey_).filter(Boolean);
+  var history = [];
+
+  if (!isAdmin && !identityKeys.length) {
+    return jsonAbsensi_({
+      ok: true,
+      success: true,
+      history: [],
+      total: 0,
+      canDelete: false
+    });
+  }
+
+  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    var row = values[rowIndex];
+    var displayRow = displayValues[rowIndex];
+    var name = nameColumn >= 0 ? String(displayRow[nameColumn] || '').trim() : '';
+    var nip = nipColumn >= 0 ? String(displayRow[nipColumn] || '').trim() : '';
+    var rowIdentity = normalizeAbsensiKey_([name, nip].join(' '));
+
+    if (!isAdmin && identityKeys.length && !identityKeys.some(function(key) {
+      return key && rowIdentity.indexOf(key) >= 0;
+    })) {
+      continue;
+    }
+
+    var fileText = fileColumn >= 0 ? String(displayRow[fileColumn] || '').trim() : '';
+    var fileParts = fileText.split('|');
+    var fileName = String(fileParts[0] || '').trim();
+    var fileUrl = fileUrlColumn >= 0
+      ? String(displayRow[fileUrlColumn] || '').trim()
+      : String(fileParts.slice(1).join('|') || '').trim();
+    var fileId = fileIdColumn >= 0
+      ? String(displayRow[fileIdColumn] || '').trim()
+      : extractDriveFileId_(fileUrl);
+    var timestampValue = timestampColumn >= 0 ? row[timestampColumn] : '';
+    var issuedAt = timestampValue instanceof Date && !isNaN(timestampValue.getTime())
+      ? timestampValue.toISOString()
+      : String(timestampColumn >= 0 ? displayRow[timestampColumn] || '' : '').trim();
+
+    history.push({
+      id: fileId || ('row-' + (rowIndex + 1)),
+      rowNumber: rowIndex + 1,
+      issuedAt: issuedAt,
+      period: periodColumn >= 0 ? String(displayRow[periodColumn] || '').trim() : '',
+      nip: nip,
+      name: name,
+      netSalary: netSalaryColumn >= 0 ? Number(row[netSalaryColumn] || 0) : 0,
+      fileId: fileId,
+      fileName: fileName,
+      fileUrl: fileUrl
+    });
+  }
+
+  history.sort(function(a, b) {
+    return new Date(b.issuedAt || 0).getTime() - new Date(a.issuedAt || 0).getTime();
+  });
+
+  return jsonAbsensi_({
+    ok: true,
+    success: true,
+    history: history,
+    total: history.length,
+    canDelete: isAdmin
+  });
+}
+
+function handleDeleteSalarySlipHistory_(payload, spreadsheet) {
+  if (!isAbsensiAdmin_(payload)) {
+    return jsonAbsensi_({
+      ok: false,
+      success: false,
+      message: 'Hanya owner/admin yang dapat menghapus histori slip gaji.'
+    });
+  }
+
+  var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME);
+  var rowNumber = Number(payload.rowNumber || 0);
+
+  if (!sheet || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    return jsonAbsensi_({
+      ok: false,
+      success: false,
+      message: 'Histori slip gaji tidak ditemukan.'
+    });
+  }
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(normalizeAbsensiHeader_);
+  var row = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  var fileColumn = findHeaderIndex_(headers, ['file']);
+  var fileIdColumn = findHeaderIndex_(headers, ['fileid']);
+  var fileUrlColumn = findHeaderIndex_(headers, ['fileurl', 'url']);
+  var fileText = fileColumn >= 0 ? String(row[fileColumn] || '').trim() : '';
+  var fileUrl = fileUrlColumn >= 0
+    ? String(row[fileUrlColumn] || '').trim()
+    : String(fileText.split('|').slice(1).join('|') || '').trim();
+  var fileId = String(payload.fileId || (fileIdColumn >= 0 ? row[fileIdColumn] : '') || extractDriveFileId_(fileUrl)).trim();
+
+  if (fileId) {
+    try {
+      DriveApp.getFileById(fileId).setTrashed(true);
+    } catch (error) {
+      // Log tetap boleh dihapus jika file Drive sudah tidak tersedia.
+    }
+  }
+
+  sheet.deleteRow(rowNumber);
+  SpreadsheetApp.flush();
+
+  return jsonAbsensi_({
+    ok: true,
+    success: true,
+    message: 'Histori slip gaji berhasil dihapus.'
   });
 }
 
@@ -1250,7 +1407,7 @@ function exportPayrollSlipPdf_(spreadsheet, templateSheet, folder, employee, per
   return file;
 }
 
-function writePayrollLog_(spreadsheet, employee, period, summary, salary, file) {
+function writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload) {
   var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME) || spreadsheet.insertSheet(PAYROLL_LOG_SHEET_NAME);
 
   if (sheet.getLastRow() < 1) {
@@ -1267,8 +1424,21 @@ function writePayrollLog_(spreadsheet, employee, period, summary, salary, file) 
       'Pulang Cepat',
       'Lembur',
       'Gaji Bersih',
-      'File'
+      'File',
+      'File ID',
+      'File URL',
+      'Diterbitkan Oleh'
     ]);
+  } else {
+    var requiredHeaders = ['File ID', 'File URL', 'Diterbitkan Oleh'];
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+    var normalizedHeaders = headers.map(normalizeAbsensiHeader_);
+    requiredHeaders.forEach(function(header) {
+      if (normalizedHeaders.indexOf(normalizeAbsensiHeader_(header)) >= 0) return;
+      sheet.getRange(1, headers.length + 1).setValue(header);
+      headers.push(header);
+      normalizedHeaders.push(normalizeAbsensiHeader_(header));
+    });
   }
 
   sheet.appendRow([
@@ -1284,8 +1454,17 @@ function writePayrollLog_(spreadsheet, employee, period, summary, salary, file) 
     summary.earlyReturn,
     summary.overtimeDays,
     salary.netSalary,
-    file.getName() + ' | ' + file.getUrl()
+    file.getName() + ' | ' + file.getUrl(),
+    file.getId(),
+    file.getUrl(),
+    String((payload && (payload.username || payload.actor)) || '').trim()
   ]);
+}
+
+function extractDriveFileId_(value) {
+  var text = String(value || '').trim();
+  var match = text.match(/\/d\/([a-zA-Z0-9_-]+)/) || text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : '';
 }
 
 function getPayloadAttendanceDate_(payload, timestamp) {

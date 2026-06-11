@@ -15155,6 +15155,606 @@ body.theme-dark.home-view-active .theme-action {
   }
 }
 
+/* 20260611 mobile header, loading, menu ordering, and salary history. */
+.app-loading-card,
+body.theme-dark .app-loading-card {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
+}
+
+.app-loading-card > strong {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.app-loading-orbit {
+  width: 86px !important;
+  height: 86px !important;
+  filter: drop-shadow(0 14px 28px rgba(41, 92, 224, 0.28));
+}
+
+.app-loading-orbit img {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.secondary-action,
+.primary-action,
+.data-workspace > .data-toolbar .secondary-action,
+#view-data-obat.is-active .data-workspace > .data-toolbar .secondary-action {
+  border-color: transparent !important;
+  background: linear-gradient(110deg, #2563ff 0%, #6a4df4 52%, #c927c9 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(81, 74, 226, 0.2) !important;
+}
+
+.secondary-action svg,
+.primary-action svg,
+.data-workspace > .data-toolbar .secondary-action svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.salary-history-card {
+  display: grid;
+  gap: 14px;
+}
+
+.salary-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.salary-history-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dce8f8;
+  border-radius: 8px;
+  background: rgba(249, 252, 255, 0.96);
+}
+
+.salary-history-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e8f2ff, #f3eaff);
+  color: #514ff0;
+}
+
+.salary-history-icon svg,
+.salary-history-open svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.salary-history-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.salary-history-copy strong,
+.salary-history-copy small,
+.salary-history-copy em {
+  overflow-wrap: anywhere;
+}
+
+.salary-history-copy strong {
+  color: #071955;
+  font-size: 0.9rem;
+}
+
+.salary-history-copy small {
+  color: #63749e;
+  font-size: 0.74rem;
+}
+
+.salary-history-copy em {
+  color: #2368ff;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.salary-history-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.salary-history-empty {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 24px 16px;
+  border: 1px dashed #ccdff7;
+  border-radius: 8px;
+  color: #6678a4;
+  text-align: center;
+}
+
+.salary-history-empty strong {
+  color: #071955;
+}
+
+.home-menu-grid.is-reordering .mobile-home-card,
+.home-menu-grid.is-reordering .apoteker-ai-fab {
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.home-menu-grid.is-reordering .mobile-home-card:not(.is-dragging),
+.home-menu-grid.is-reordering .apoteker-ai-fab:not(.is-dragging) {
+  opacity: 0.72;
+}
+
+.home-menu-grid .is-dragging {
+  position: relative;
+  z-index: 30;
+  transform: scale(1.08);
+  opacity: 1 !important;
+  filter: drop-shadow(0 16px 24px rgba(53, 73, 160, 0.28));
+}
+
+body.home-menu-reordering {
+  user-select: none;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --mobile-dashboard-header-height: 70px;
+  }
+
+  .global-sidebar-toggle,
+  body.sidebar-open .global-sidebar-toggle,
+  .app-sidebar,
+  body.sidebar-open .app-sidebar,
+  .sidebar-scrim {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  .dashboard-main,
+  body.sidebar-open .dashboard-main,
+  body.sidebar-collapsed .dashboard-main,
+  body.home-view-active .dashboard-main {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: var(--mobile-dashboard-header-height) 0 92px !important;
+  }
+
+  .dashboard-topbar,
+  body.home-view-active .dashboard-topbar {
+    position: fixed !important;
+    inset: 0 0 auto 0 !important;
+    z-index: 1520 !important;
+    width: 100% !important;
+    min-height: var(--mobile-dashboard-header-height) !important;
+    height: var(--mobile-dashboard-header-height) !important;
+    margin: 0 !important;
+    padding: 10px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    border-bottom: 1px solid rgba(198, 216, 243, 0.74) !important;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(19, 120, 238, 0.11), transparent 34%),
+      radial-gradient(circle at 88% 24%, rgba(232, 23, 152, 0.11), transparent 36%),
+      linear-gradient(135deg, rgba(246, 251, 255, 0.97), rgba(255, 255, 255, 0.96) 50%, rgba(255, 242, 251, 0.97)) !important;
+    box-shadow: 0 8px 24px rgba(17, 69, 134, 0.08) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+
+  .dashboard-title,
+  body.home-view-active .dashboard-title {
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .dashboard-title h1 {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    color: #071955;
+    font-size: 1.22rem !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.home-view-active .dashboard-title h1 {
+    display: none !important;
+  }
+
+  .dashboard-status,
+  body.home-view-active .dashboard-status {
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    transform: none !important;
+  }
+
+  .dashboard-status .status-item {
+    display: none !important;
+  }
+
+  .dashboard-status .notification-action,
+  .dashboard-status .theme-action,
+  .dashboard-status .profile-chip,
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .profile-chip {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1px solid rgba(204, 220, 245, 0.94) !important;
+    box-shadow: none !important;
+  }
+
+  .dashboard-status .notification-action svg,
+  .dashboard-status .theme-action svg,
+  body.home-view-active .notification-action svg,
+  body.home-view-active .theme-action svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .header-profile-menu,
+  body.home-view-active .header-profile-menu {
+    position: relative !important;
+    inset: auto !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 1530 !important;
+  }
+
+  .dashboard-status .header-profile-menu .profile-chip,
+  body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  .dashboard-status .profile-name,
+  .dashboard-status .profile-chip > svg {
+    display: none !important;
+  }
+
+  .profile-chip .profile-avatar,
+  body.home-view-active .profile-chip .profile-avatar {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 11px !important;
+  }
+
+  .notification-dot,
+  body.home-view-active .notification-dot {
+    top: -5px !important;
+    right: -5px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    padding: 0 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid #fff !important;
+    border-radius: 999px !important;
+    background: #ff2e63 !important;
+    color: #fff !important;
+    font-size: 0.58rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+
+  .notification-dot[hidden] {
+    display: none !important;
+  }
+
+  .dashboard-content,
+  body.home-view-active .dashboard-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 14px 14px 96px !important;
+    overflow-x: hidden !important;
+  }
+
+  .data-workspace > .data-toolbar,
+  .dashboard-view .data-toolbar {
+    top: var(--mobile-dashboard-header-height) !important;
+  }
+
+  body.home-view-active .home-brand-link {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  body.home-view-active .home-brand-link img {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 999px !important;
+    clip-path: circle(50%) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.home-view-active .home-brand-copy {
+    min-width: 0 !important;
+    gap: 1px !important;
+  }
+
+  body.home-view-active .home-brand-copy strong,
+  body.home-view-active .home-brand-copy small {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.home-view-active .home-brand-copy strong {
+    font-size: 0.72rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.home-view-active .home-brand-copy small {
+    font-size: 0.52rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.home-view-active .dashboard-title {
+    max-width: calc(100% - 132px) !important;
+  }
+
+  body.home-view-active .dashboard-content {
+    padding: 0 0 92px !important;
+  }
+
+  body.home-view-active .home-shell {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 18px 18px !important;
+  }
+
+  body.home-view-active .home-hero {
+    min-height: 54px !important;
+  }
+
+  body.home-view-active .home-hero-copy {
+    grid-template-columns: auto auto !important;
+    justify-content: start !important;
+    gap: 5px 7px !important;
+  }
+
+  body.home-view-active .home-greeting {
+    justify-self: start !important;
+    font-size: 0.78rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.home-view-active .home-hero h2 {
+    justify-self: start !important;
+    font-size: 1.02rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.home-view-active .home-role-pill {
+    min-height: 22px !important;
+    padding: 0 9px !important;
+    font-size: 0.62rem !important;
+    box-shadow: none !important;
+  }
+
+  body.home-view-active .home-metrics {
+    margin-top: 14px !important;
+    gap: 10px !important;
+  }
+
+  body.home-view-active .home-metric-card {
+    min-height: 50px !important;
+    padding: 7px 9px !important;
+    gap: 7px !important;
+    justify-content: center !important;
+    border-radius: 13px !important;
+    text-align: center !important;
+  }
+
+  body.home-view-active .home-metric-card svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+  }
+
+  body.home-view-active .home-metric-card strong {
+    width: auto !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+    font-size: 0.68rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.home-view-active .home-section-head {
+    margin-top: 22px !important;
+  }
+
+  body.home-view-active .home-menu-spacer {
+    display: none !important;
+  }
+
+  .simple-table-wrap,
+  .payroll-table-wrap,
+  .attendance-monthly-card .simple-table-wrap,
+  .attendance-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  .attendance-monthly-table {
+    width: max-content !important;
+    min-width: 920px !important;
+  }
+
+  .payroll-toolbar {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .payroll-toolbar .filter-action,
+  .payroll-toolbar .secondary-action {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    justify-content: center !important;
+    padding-inline: 10px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .salary-history-item {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .salary-history-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .salary-history-copy strong {
+    font-size: 0.8rem;
+  }
+
+  .salary-history-copy small,
+  .salary-history-copy em {
+    font-size: 0.66rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .dashboard-topbar,
+  body.home-view-active .dashboard-topbar {
+    padding-inline: 10px !important;
+    gap: 7px !important;
+  }
+
+  .dashboard-status,
+  body.home-view-active .dashboard-status {
+    gap: 4px !important;
+  }
+
+  .dashboard-status .notification-action,
+  .dashboard-status .theme-action,
+  .dashboard-status .profile-chip,
+  .header-profile-menu,
+  .dashboard-status .header-profile-menu .profile-chip,
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .profile-chip {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+  }
+
+  body.home-view-active .dashboard-title {
+    max-width: calc(100% - 116px) !important;
+  }
+
+  body.home-view-active .home-brand-link {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+  }
+
+  body.home-view-active .home-brand-link img {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  body.home-view-active .home-brand-copy strong {
+    font-size: 0.66rem !important;
+  }
+
+  body.home-view-active .home-brand-copy small {
+    font-size: 0.48rem !important;
+  }
+
+  body.home-view-active .home-shell {
+    padding-inline: 14px !important;
+  }
+
+  body.home-view-active .home-metric-card {
+    gap: 5px !important;
+    padding-inline: 6px !important;
+  }
+
+  body.home-view-active .home-metric-card strong {
+    font-size: 0.61rem !important;
+  }
+}
+
 @media (max-width: 760px) {
   .restock-hero h2 {
     font-size: 1.22rem;
@@ -15474,5 +16074,125 @@ body.theme-dark.home-view-active .theme-action {
 
   body.home-view-active .mobile-home-card strong {
     font-size: 0.7rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-view-active .global-sidebar-toggle,
+  body.home-view-active.sidebar-open .global-sidebar-toggle {
+    display: none !important;
+  }
+
+  body.home-view-active .dashboard-topbar {
+    min-height: 70px !important;
+    height: 70px !important;
+    padding: 8px 14px !important;
+  }
+
+  body.home-view-active .dashboard-content {
+    padding-top: 14px !important;
+  }
+
+  body.home-view-active .home-shell {
+    padding-top: 10px !important;
+  }
+
+  body.home-view-active .home-greeting {
+    margin-top: 0 !important;
+  }
+
+  body.home-view-active .home-brand-copy strong {
+    max-width: 100% !important;
+    font-size: 0.72rem !important;
+    line-height: 1.08 !important;
+    white-space: normal !important;
+  }
+
+  body.home-view-active .home-brand-copy small {
+    display: none !important;
+  }
+
+  body.home-view-active .home-brand-link {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  body.home-view-active .home-brand-link img,
+  body.home-view-active .notification-action,
+  body.home-view-active .theme-action,
+  body.home-view-active .profile-chip {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  body.home-view-active .header-profile-menu,
+  body.home-view-active .dashboard-status .header-profile-menu .profile-chip {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  body.home-view-active .home-hero {
+    min-height: 54px !important;
+  }
+
+  body.home-view-active .home-hero-copy {
+    gap: 5px 7px !important;
+  }
+
+  body.home-view-active .home-greeting {
+    font-size: 0.78rem !important;
+  }
+
+  body.home-view-active .home-hero h2 {
+    font-size: 1.02rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.home-view-active .home-role-pill {
+    min-height: 22px !important;
+    padding: 0 9px !important;
+    font-size: 0.62rem !important;
+    box-shadow: none !important;
+  }
+
+  body.home-view-active .home-metrics {
+    margin-top: 14px !important;
+    gap: 10px !important;
+  }
+
+  body.home-view-active .home-metric-card {
+    min-height: 50px !important;
+    padding: 7px 9px !important;
+    gap: 7px !important;
+    justify-content: center !important;
+    border-radius: 13px !important;
+    text-align: center !important;
+  }
+
+  body.home-view-active .home-metric-card svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+  }
+
+  body.home-view-active .home-metric-card strong {
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+    font-size: 0.68rem !important;
+  }
+
+  body.home-view-active .home-section-head {
+    margin-top: 22px !important;
+  }
+
+  .notification-dot[hidden],
+  body.home-view-active .notification-dot[hidden] {
+    display: none !important;
   }
 }
