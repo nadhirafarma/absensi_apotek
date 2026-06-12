@@ -11,6 +11,7 @@ var USER_SHEET_NAME = 'user';
 var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
 var FACE_ID_FOLDER_NAME = 'DATABASE_WAJAH';
+var RESTOCK_PHOTO_FOLDER_NAME = 'foto_restock_obat';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
 var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
 var DATA_OBAT_LAST_UPLOAD_PROPERTY = 'DATA_OBAT_LAST_UPLOAD_AT';
@@ -52,6 +53,15 @@ var PURCHASE_ORDER_HEADERS = [
   'city',
   'recipient',
   'purpose',
+  'paymentMethod',
+  'dueDate',
+  'note',
+  'additionalNote',
+  'discount',
+  'taxRate',
+  'subtotal',
+  'tax',
+  'total',
   'date',
   'status',
   'source',
@@ -1416,6 +1426,15 @@ function readPurchaseOrderFromRow_(headers, row) {
     city: pickDataValue_(raw, ['city', 'kota']),
     recipient: pickDataValue_(raw, ['recipient', 'kepada', 'yth']),
     purpose: pickDataValue_(raw, ['purpose', 'kebutuhan']),
+    paymentMethod: pickDataValue_(raw, ['paymentmethod', 'metodepembayaran', 'payment']),
+    dueDate: pickDataValue_(raw, ['duedate', 'jatuhtempo']),
+    note: pickDataValue_(raw, ['note', 'catatan']),
+    additionalNote: pickDataValue_(raw, ['additionalnote', 'catatantambahan']),
+    discount: pickDataValue_(raw, ['discount', 'diskon']),
+    taxRate: pickDataValue_(raw, ['taxrate', 'ppnrate']),
+    subtotal: pickDataValue_(raw, ['subtotal']),
+    tax: pickDataValue_(raw, ['tax', 'ppn']),
+    total: pickDataValue_(raw, ['total', 'grandtotal']),
     date: pickDataValue_(raw, ['date', 'tanggal']),
     status: pickDataValue_(raw, ['status']),
     source: pickDataValue_(raw, ['source', 'sumber']),
@@ -1465,6 +1484,27 @@ function sanitizePurchaseOrder_(order) {
   var createdAt = sanitizeRestockTimestamp_(order.createdAt || order.date || order.tanggal, now);
   var updatedAt = sanitizeRestockTimestamp_(order.updatedAt || order.updated_at, createdAt);
   var items = parsePurchaseOrderItems_(order.items || order.itemsJson);
+  var subtotal = Math.max(0, parsePurchaseMoney_(order.subtotal));
+  var discount = Math.max(0, parsePurchaseMoney_(order.discount || order.diskon));
+  var taxRate = Number(order.taxRate != null && order.taxRate !== '' ? order.taxRate : 0.11);
+
+  if (!isFinite(taxRate) || taxRate < 0) taxRate = 0.11;
+
+  if (!subtotal) {
+    subtotal = items.reduce(function(sum, item) {
+      return sum + Math.max(0, Number(item.subtotal || 0));
+    }, 0);
+  }
+
+  var tax = Math.max(0, parsePurchaseMoney_(order.tax || order.ppn));
+  if (!tax && subtotal > 0) {
+    tax = Math.round(Math.max(0, subtotal - discount) * taxRate);
+  }
+
+  var total = Math.max(0, parsePurchaseMoney_(order.total || order.grandTotal));
+  if (!total && subtotal > 0) {
+    total = Math.max(0, subtotal - discount + tax);
+  }
 
   return {
     number: String(order.number || order.nomor || ('SP-' + new Date().getTime())).trim().slice(0, 90),
@@ -1476,6 +1516,15 @@ function sanitizePurchaseOrder_(order) {
     city: String(order.city || order.kota || 'S.P. Padang').trim().slice(0, 120) || 'S.P. Padang',
     recipient: String(order.recipient || order.kepada || order.yth || '').trim().slice(0, 180),
     purpose: String(order.purpose || order.kebutuhan || '').trim().slice(0, 260),
+    paymentMethod: String(order.paymentMethod || order.metodePembayaran || order.payment || 'Tunai').trim().slice(0, 80) || 'Tunai',
+    dueDate: String(order.dueDate || order.jatuhTempo || '').trim().slice(0, 20),
+    note: String(order.note || order.catatan || '').trim().slice(0, 1200),
+    additionalNote: String(order.additionalNote || order.catatanTambahan || '').trim().slice(0, 1200),
+    discount: discount,
+    taxRate: taxRate,
+    subtotal: subtotal,
+    tax: tax,
+    total: total,
     date: String(order.date || order.tanggal || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd')).trim().slice(0, 20),
     status: normalizePurchaseOrderStatus_(order.status),
     source: String(order.source || order.sumber || '').trim().slice(0, 80),
@@ -1503,11 +1552,23 @@ function parsePurchaseOrderItems_(value) {
 
   return items.map(function(item) {
     item = item && typeof item == 'object' ? item : {};
+    var qty = Math.max(1, Number(item.qty || item.quantity || 1) || 1);
+    var buyPrice = Math.max(0, parsePurchaseMoney_(item.buyPrice || item.hargaBeli || item.harga_beli || item.price));
+    var subtotal = Math.max(0, parsePurchaseMoney_(item.subtotal));
+    if (!subtotal && buyPrice) subtotal = qty * buyPrice;
+
     return {
       kode: String(item.kode || item.code || '').trim().slice(0, 120),
       nama: String(item.nama || item.name || item.medicineName || 'Obat').trim().slice(0, 220),
-      qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
+      qty: qty,
       unit: String(item.unit || item.satuan || 'Pcs').trim().slice(0, 60) || 'Pcs',
+      currentStock: String(item.currentStock || item.stok || '').trim().slice(0, 80),
+      currentStockUnit: String(item.currentStockUnit || item.stockUnit || item.satuanStok || '').trim().slice(0, 60),
+      realStock: String(item.realStock || item.stokReal || '').trim().slice(0, 80),
+      realStockUnit: String(item.realStockUnit || item.stokRealUnit || '').trim().slice(0, 60),
+      supplier: String(item.supplier || item.suplier || '').trim().slice(0, 180),
+      buyPrice: buyPrice,
+      subtotal: subtotal,
       activeSubstance: String(item.activeSubstance || item.zatAktif || item.zat_aktif || '').trim().slice(0, 160),
       dosageForm: String(item.dosageForm || item.bentukSediaan || item.bentuk_sediaan || '').trim().slice(0, 160),
       strength: String(item.strength || item.kekuatan || item.spec || item.spesifikasi || '').trim().slice(0, 160),
@@ -1523,6 +1584,8 @@ function normalizePurchaseOrderType_(value) {
   var key = normalizeLoginKey_(value || '');
   if (key.indexOf('prekursor') >= 0) return 'prekursor';
   if (key == 'ott' || key.indexOf('obatobattertentu') >= 0 || key.indexOf('obattertentu') >= 0) return 'ott';
+  if (key.indexOf('psikotropika') >= 0) return 'psikotropika';
+  if (key.indexOf('narkotika') >= 0) return 'narkotika';
   if (key.indexOf('alkes') >= 0 || key.indexOf('alatkesehatan') >= 0) return 'alkes';
   return 'regular';
 }
@@ -1530,9 +1593,20 @@ function normalizePurchaseOrderType_(value) {
 function normalizePurchaseOrderStatus_(value) {
   var key = normalizeLoginKey_(value || '');
   if (key == 'draft' || key == 'draf') return 'draft';
-  if (key == 'sent' || key == 'terkirim') return 'sent';
-  if (key == 'done' || key == 'selesai') return 'done';
-  return 'saved';
+  if (key == 'processing' || key == 'process' || key == 'diproses' || key == 'sent' || key == 'terkirim') return 'processing';
+  if (key == 'received' || key == 'diterima' || key == 'done' || key == 'selesai') return 'received';
+  if (key == 'cancelled' || key == 'canceled' || key == 'dibatalkan' || key == 'batal') return 'cancelled';
+  if (key == 'rejected' || key == 'ditolak' || key == 'tolak') return 'rejected';
+  return 'open';
+}
+
+function parsePurchaseMoney_(value) {
+  if (typeof value == 'number') return isFinite(value) ? value : 0;
+
+  var normalized = normalizeDataObatPriceNumber_(value, 'hargabeli');
+  var number = Number(normalized);
+
+  return isFinite(number) ? number : 0;
 }
 
 function getRestockRequestsSheet_() {
@@ -1589,7 +1663,11 @@ function sanitizeRestockRequest_(item) {
     realStock = item.stok_fisik;
   }
 
-  if (photo.length > 48000 || !/^(data:image\/|https?:\/\/|assets\/)/i.test(photo)) {
+  if (/^data:image\//i.test(photo)) {
+    photo = saveRestockPhotoIfNeeded_(photo, item);
+  }
+
+  if (photo.length > 500000 || !/^(https?:\/\/|assets\/)/i.test(photo)) {
     photo = '';
   }
 
@@ -1614,6 +1692,33 @@ function sanitizeRestockRequest_(item) {
     updatedAt: updatedAt,
     history: history.slice(0, 80)
   };
+}
+
+function saveRestockPhotoIfNeeded_(photo, item) {
+  photo = String(photo || '').trim();
+
+  if (!/^data:image\//i.test(photo)) {
+    return photo;
+  }
+
+  var parsed = parseImageDataUrl_(photo);
+  var folder = getOrCreateRestockPhotoFolder_();
+  var fileName = 'restock_' + buildFaceIdLabel_(item.medicineName || item.nama || item.name || item.code || 'obat') + '_' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') + '.jpg';
+  var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return buildDriveImageUrl_(file.getId()) || file.getUrl();
+}
+
+function getOrCreateRestockPhotoFolder_() {
+  var folders = DriveApp.getFoldersByName(RESTOCK_PHOTO_FOLDER_NAME);
+
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+
+  return DriveApp.createFolder(RESTOCK_PHOTO_FOLDER_NAME);
 }
 
 function normalizeRestockPriority_(value) {

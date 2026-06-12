@@ -15,7 +15,7 @@
   const RESTOCK_KEY = "nadhira.restockRequests";
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
-  const RESTOCK_PHOTO_MAX_LENGTH = 46000;
+  const RESTOCK_PHOTO_MAX_LENGTH = 220000;
   const EMPLOYEE_FACE_ID_MAX_LENGTH = 180000;
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
@@ -275,6 +275,12 @@
     localRecordBootstrapRunning: false,
     purchaseItems: [],
     purchaseOrders: [],
+    purchaseMode: "list",
+    purchaseEditingNumber: "",
+    purchaseSelectedNumber: "",
+    purchaseDraftPickedIds: new Set(),
+    purchaseProductSearches: {},
+    purchaseProductResults: {},
     restockRequests: [],
     restockMineOnly: false,
     restockDetailId: "",
@@ -510,14 +516,47 @@
       supplierTableBody: document.getElementById("supplierTableBody"),
       addSupplierButton: document.getElementById("addSupplierButton"),
       poForm: document.getElementById("purchaseOrderForm"),
+      purchaseListView: document.getElementById("purchaseListView"),
+      purchaseFormView: document.getElementById("purchaseFormView"),
+      poNewButton: document.getElementById("poNewButton"),
+      poBackButton: document.getElementById("poBackButton"),
+      poSaveDraftButton: document.getElementById("poSaveDraftButton"),
+      poSaveOrderButton: document.getElementById("poSaveOrderButton"),
+      poImportDraftButton: document.getElementById("poImportDraftButton"),
+      poExportButton: document.getElementById("poExportButton"),
+      poFilterButton: document.getElementById("poFilterButton"),
+      poFormTitle: document.getElementById("poFormTitle"),
+      poOrdersTableBody: document.getElementById("poOrdersTableBody"),
+      poDetailPanel: document.getElementById("poDetailPanel"),
+      poDetailContent: document.getElementById("poDetailContent"),
+      poCloseDetailButton: document.getElementById("poCloseDetailButton"),
+      poEditSelectedButton: document.getElementById("poEditSelectedButton"),
+      poMarkProcessButton: document.getElementById("poMarkProcessButton"),
+      poReceiveButton: document.getElementById("poReceiveButton"),
+      poCancelButton: document.getElementById("poCancelButton"),
+      poOpenCount: document.getElementById("poOpenCount"),
+      poProcessCount: document.getElementById("poProcessCount"),
+      poDoneCount: document.getElementById("poDoneCount"),
+      poTotalValue: document.getElementById("poTotalValue"),
+      poListStatus: document.getElementById("poListStatus"),
+      poSearchInput: document.getElementById("poSearchInput"),
+      poStatusFilter: document.getElementById("poStatusFilter"),
+      poSupplierFilter: document.getElementById("poSupplierFilter"),
+      poDateFilter: document.getElementById("poDateFilter"),
+      poResetFilter: document.getElementById("poResetFilter"),
       poType: document.getElementById("poType"),
       poManualNumber: document.getElementById("poManualNumber"),
       poSupplier: document.getElementById("poSupplier"),
       poDate: document.getElementById("poDate"),
+      poPaymentMethod: document.getElementById("poPaymentMethod"),
+      poDueDate: document.getElementById("poDueDate"),
       poSupplierAddress: document.getElementById("poSupplierAddress"),
       poSupplierPhone: document.getElementById("poSupplierPhone"),
       poCity: document.getElementById("poCity"),
       poRecipient: document.getElementById("poRecipient"),
+      poDiscount: document.getElementById("poDiscount"),
+      poNote: document.getElementById("poNote"),
+      poAdditionalNote: document.getElementById("poAdditionalNote"),
       poReferenceFilter: document.getElementById("poReferenceFilter"),
       poRestockReference: document.getElementById("poRestockReference"),
       poMedicine: document.getElementById("poMedicine"),
@@ -534,6 +573,16 @@
       poItemsList: document.getElementById("poItemsList"),
       poSavedList: document.getElementById("poSavedList"),
       poNumber: document.getElementById("poNumber"),
+      poProductHead: document.getElementById("poProductHead"),
+      poProductRows: document.getElementById("poProductRows"),
+      poDraftList: document.getElementById("poDraftList"),
+      poSummaryItems: document.getElementById("poSummaryItems"),
+      poSummaryQty: document.getElementById("poSummaryQty"),
+      poSummarySubtotal: document.getElementById("poSummarySubtotal"),
+      poSummaryDiscount: document.getElementById("poSummaryDiscount"),
+      poSummaryTax: document.getElementById("poSummaryTax"),
+      poSummaryTotal: document.getElementById("poSummaryTotal"),
+      poAddSupplierButton: document.getElementById("poAddSupplierButton"),
       restockPage: document.querySelector(".restock-page"),
       restockBackButton: document.getElementById("restockBackButton"),
       restockStatusText: document.getElementById("restockStatusText"),
@@ -851,12 +900,47 @@
       if (control) control.addEventListener("change", renderUsers);
     });
 
+    if (els.poNewButton) els.poNewButton.addEventListener("click", () => openPurchaseOrderForm());
+    if (els.poBackButton) els.poBackButton.addEventListener("click", showPurchaseOrderList);
+    if (els.poSaveDraftButton) els.poSaveDraftButton.addEventListener("click", () => savePurchaseOrder(null, "draft"));
+    if (els.poSaveOrderButton) els.poSaveOrderButton.addEventListener("click", () => savePurchaseOrder(null, "open"));
+    if (els.poImportDraftButton) els.poImportDraftButton.addEventListener("click", () => {
+      openPurchaseOrderForm();
+      els.poReferenceFilter?.focus();
+      renderPurchaseDraftList();
+    });
+    if (els.poExportButton) els.poExportButton.addEventListener("click", exportPurchaseOrdersCsv);
+    if (els.poFilterButton) els.poFilterButton.addEventListener("click", () => els.poSearchInput?.focus());
+    if (els.poOrdersTableBody) els.poOrdersTableBody.addEventListener("click", handlePurchaseOrderTableClick);
+    if (els.poDetailContent) els.poDetailContent.addEventListener("click", handlePurchaseDetailClick);
+    if (els.poCloseDetailButton) els.poCloseDetailButton.addEventListener("click", () => {
+      state.purchaseSelectedNumber = "";
+      renderPurchaseOrders();
+    });
+    if (els.poEditSelectedButton) els.poEditSelectedButton.addEventListener("click", editSelectedPurchaseOrder);
+    if (els.poMarkProcessButton) els.poMarkProcessButton.addEventListener("click", () => updateSelectedPurchaseStatus("processing"));
+    if (els.poReceiveButton) els.poReceiveButton.addEventListener("click", () => updateSelectedPurchaseStatus("done"));
+    if (els.poCancelButton) els.poCancelButton.addEventListener("click", () => updateSelectedPurchaseStatus("cancelled"));
+    [els.poSearchInput, els.poStatusFilter, els.poSupplierFilter, els.poDateFilter].filter(Boolean).forEach((field) => {
+      field.addEventListener("input", renderPurchaseOrders);
+      field.addEventListener("change", renderPurchaseOrders);
+    });
+    if (els.poResetFilter) els.poResetFilter.addEventListener("click", resetPurchaseOrderFilters);
+    if (els.poProductRows) els.poProductRows.addEventListener("input", handlePurchaseProductInput);
+    if (els.poProductRows) els.poProductRows.addEventListener("change", handlePurchaseProductInput);
+    if (els.poProductRows) els.poProductRows.addEventListener("click", handlePurchaseProductClick);
+    if (els.poDraftList) els.poDraftList.addEventListener("click", handlePurchaseDraftClick);
+    if (els.poAddSupplierButton) els.poAddSupplierButton.addEventListener("click", () => openRecordModal("supplier"));
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
-    if (els.poForm) els.poForm.addEventListener("submit", savePurchaseOrder);
+    if (els.poForm) els.poForm.addEventListener("submit", (event) => savePurchaseOrder(event, "open"));
     if (els.poType) els.poType.addEventListener("change", updatePurchaseOrderTypeFields);
     if (els.poMedicine) els.poMedicine.addEventListener("change", fillPurchaseMedicineFields);
     if (els.poSupplier) els.poSupplier.addEventListener("change", fillPurchaseSupplierFields);
-    if (els.poReferenceFilter) els.poReferenceFilter.addEventListener("input", populatePurchaseRestockReferences);
+    if (els.poDiscount) els.poDiscount.addEventListener("input", renderPurchaseItems);
+    if (els.poReferenceFilter) els.poReferenceFilter.addEventListener("input", () => {
+      populatePurchaseRestockReferences();
+      renderPurchaseDraftList();
+    });
     if (els.poRestockReference) els.poRestockReference.addEventListener("change", applyPurchaseRestockReference);
     if (els.printPoButton) els.printPoButton.addEventListener("click", printPurchaseOrder);
     if (els.restockBackButton) els.restockBackButton.addEventListener("click", () => switchView(isMobileViewport() ? "home" : "dashboard"));
@@ -1367,7 +1451,9 @@
   }
 
   function populateMedicineOptions() {
-    setSelectOptions(els.poSupplier, uniqueValues("suplier"), "Pilih supplier");
+    const suppliers = uniqueValues("suplier");
+    setSelectOptions(els.poSupplier, suppliers, "Pilih supplier");
+    setSelectOptions(els.poSupplierFilter, suppliers, "Semua Supplier");
 
     if (els.poMedicine) {
       const options = state.rows
@@ -1382,6 +1468,8 @@
 
     populatePurchaseRestockReferences();
     updatePurchaseOrderTypeFields();
+    renderPurchaseItems();
+    renderPurchaseOrders();
   }
 
   function setSelectOptions(select, values, placeholder) {
@@ -4729,12 +4817,28 @@
       nama: String(item.nama || item.name || item.medicineName || "Obat").trim(),
       qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
       unit: String(item.unit || item.satuan || "Pcs").trim() || "Pcs",
+      currentStock: String(item.currentStock || item.stok || "").trim(),
+      currentStockUnit: String(item.currentStockUnit || item.stockUnit || item.satuanStok || "").trim(),
+      realStock: String(item.realStock || item.stokReal || "").trim(),
+      realStockUnit: String(item.realStockUnit || item.stokRealUnit || "").trim(),
+      supplier: String(item.supplier || item.suplier || "").trim(),
+      buyPrice: Math.max(0, parseNumber(item.buyPrice ?? item.hargaBeli ?? item.harga_beli ?? item.price ?? 0)),
+      subtotal: Math.max(0, parseNumber(item.subtotal ?? 0)),
       activeSubstance: String(item.activeSubstance || item.zatAktif || item.zat_aktif || "").trim(),
       dosageForm: String(item.dosageForm || item.bentukSediaan || item.bentuk_sediaan || "").trim(),
       strength: String(item.strength || item.kekuatan || item.spec || item.spesifikasi || "").trim(),
       note: String(item.note || item.keterangan || "").trim(),
       sourceRestockId: String(item.sourceRestockId || item.restockId || "").trim()
-    })).filter((item) => item.nama);
+    })).filter((item) => item.nama).map((item) => ({
+      ...item,
+      subtotal: item.subtotal || (Math.max(0, Number(item.qty) || 0) * Math.max(0, Number(item.buyPrice) || 0))
+    }));
+    const subtotal = items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+    const discount = Math.max(0, parseNumber(order.discount || order.diskon || 0));
+    const taxRate = Math.max(0, Number(order.taxRate ?? order.ppn ?? 0.11));
+    const taxable = Math.max(0, subtotal - discount);
+    const tax = Math.round(taxable * taxRate);
+    const total = Math.max(0, taxable + tax);
 
     return {
       number: String(order.number || order.nomor || `SP-${Date.now()}-${index + 1}`).trim(),
@@ -4746,8 +4850,17 @@
       city: String(order.city || order.kota || "S.P. Padang").trim() || "S.P. Padang",
       recipient: String(order.recipient || order.kepada || order.yth || "").trim(),
       purpose: String(order.purpose || order.kebutuhan || "Untuk membantu kebutuhan Apotek Nadhira Farma").trim(),
+      paymentMethod: String(order.paymentMethod || order.metodePembayaran || order.payment || "Tunai").trim() || "Tunai",
+      dueDate: String(order.dueDate || order.jatuhTempo || "").slice(0, 10),
+      note: String(order.note || order.catatan || "").trim(),
+      additionalNote: String(order.additionalNote || order.catatanTambahan || "").trim(),
+      discount,
+      taxRate,
+      subtotal,
+      tax,
+      total,
       date: String(order.date || new Date().toISOString().slice(0, 10)).slice(0, 10),
-      status: String(order.status || "saved").trim() || "saved",
+      status: normalizePurchaseOrderStatus(order.status || "open"),
       source: String(order.source || "").trim(),
       createdAt,
       updatedAt,
@@ -4760,18 +4873,42 @@
     const key = normalizeSearch(value);
     if (key.includes("prekursor")) return "prekursor";
     if (key === "ott" || key.includes("obatobattertentu") || key.includes("obattertentu")) return "ott";
+    if (key.includes("psikotropika")) return "psikotropika";
+    if (key.includes("narkotika")) return "narkotika";
     if (key.includes("alkes") || key.includes("alatkesehatan")) return "alkes";
     return "regular";
   }
 
   function getPurchaseOrderTypeMeta(type) {
     const map = {
-      regular: { key: "regular", label: "Surat Pesanan Biasa", prefix: "SP" },
-      prekursor: { key: "prekursor", label: "Surat Pesanan Prekursor Farmasi", prefix: "SPP" },
-      ott: { key: "ott", label: "Surat Pesanan Obat-Obat Tertentu", prefix: "OTT" },
-      alkes: { key: "alkes", label: "Surat Pesanan Alat Kesehatan", prefix: "ALK" }
+      regular: { key: "regular", label: "Biasa", printTitle: "SURAT PESANAN", prefix: "SP" },
+      prekursor: { key: "prekursor", label: "Prekursor", printTitle: "SURAT PESANAN PREKURSOR", prefix: "SPP" },
+      ott: { key: "ott", label: "Obat-Obat Tertentu", printTitle: "SURAT PESANAN OBAT-OBAT TERTENTU", prefix: "OTT" },
+      psikotropika: { key: "psikotropika", label: "Psikotropika", printTitle: "SURAT PESANAN PSIKOTROPIKA", prefix: "PSI" },
+      narkotika: { key: "narkotika", label: "Narkotika", printTitle: "SURAT PESANAN NARKOTIKA", prefix: "NAR" },
+      alkes: { key: "alkes", label: "Alkes", printTitle: "SURAT PESANAN ALAT KESEHATAN", prefix: "ALK" }
     };
     return map[normalizePurchaseOrderType(type)] || map.regular;
+  }
+
+  function normalizePurchaseOrderStatus(value) {
+    const key = normalizeSearch(value);
+    if (key === "draft" || key === "draf") return "draft";
+    if (key === "processing" || key === "diproses" || key === "process") return "processing";
+    if (key === "done" || key === "selesai" || key === "received" || key === "diterima") return "done";
+    if (key === "cancelled" || key === "canceled" || key === "batal" || key === "dibatalkan" || key === "ditolak") return "cancelled";
+    return "open";
+  }
+
+  function getPurchaseOrderStatusMeta(status) {
+    const map = {
+      open: { key: "open", label: "Open", className: "is-open" },
+      processing: { key: "processing", label: "Diproses", className: "is-processing" },
+      done: { key: "done", label: "Diterima", className: "is-done" },
+      draft: { key: "draft", label: "Draft", className: "is-draft" },
+      cancelled: { key: "cancelled", label: "Dibatalkan", className: "is-cancelled" }
+    };
+    return map[normalizePurchaseOrderStatus(status)] || map.open;
   }
 
   function safeParseJsonArray(value) {
@@ -4797,34 +4934,25 @@
       if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.orders)) {
         throw new Error(payload?.message || "Endpoint surat pesanan online belum aktif.");
       }
-      const remoteOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
-      const localOrders = state.purchaseOrders.length
-        ? state.purchaseOrders.map(normalizePurchaseOrder).filter((order) => order.number)
-        : readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
-      const merged = new Map();
-
-      localOrders.forEach((order) => merged.set(order.number, order));
-      remoteOrders.forEach((order) => merged.set(order.number, order));
-
-      state.purchaseOrders = Array.from(merged.values())
+      state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number)
         .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
       writeStoredArray(PO_KEY, state.purchaseOrders);
-      renderPurchaseOrders();
-
-      if (localOrders.some((order) => !remoteOrders.some((remote) => remote.number === order.number))) {
-        savePurchaseOrdersToBackend({ silent: true });
+      if (!state.purchaseSelectedNumber && state.purchaseOrders.length) {
+        state.purchaseSelectedNumber = state.purchaseOrders[0].number;
       }
+      renderPurchaseOrders();
     } catch (error) {
-      if (!options.silent) showActionToast(`${error.message} Data lokal tetap tersedia.`, "error");
+      if (!options.silent) showActionToast(`${error.message} Data online belum dapat dimuat.`, "error");
     }
   }
 
   async function savePurchaseOrdersToBackend(options = {}) {
     const user = getCurrentUserRecord();
+    const orders = Array.isArray(options.orders) ? options.orders.map(normalizePurchaseOrder).filter((order) => order.number) : state.purchaseOrders;
     try {
       const payload = await postToApi({
         action: "savePurchaseOrders",
-        orders: state.purchaseOrders,
+        orders,
         role: user.role || "",
         username: user.username || "",
         email: user.email || ""
@@ -4846,8 +4974,10 @@
 
   function getPurchaseOrderRestockOptions() {
     const query = normalizeSearch(els.poReferenceFilter?.value || "");
+    const picked = state.purchaseDraftPickedIds || new Set();
     return state.restockRequests
       .filter((item) => item.status !== "rejected" && item.status !== "done")
+      .filter((item) => !picked.has(item.id))
       .filter((item) => {
         const haystack = normalizeSearch([item.medicineName, item.code, item.supplier, item.reporter].join(" "));
         return !query || haystack.includes(query);
@@ -4881,12 +5011,50 @@
     fillPurchaseMedicineFields();
   }
 
+  function showPurchaseOrderList() {
+    state.purchaseMode = "list";
+    if (els.purchaseListView) els.purchaseListView.hidden = false;
+    if (els.purchaseFormView) els.purchaseFormView.hidden = true;
+    renderPurchaseOrders();
+  }
+
+  function openPurchaseOrderForm(order = null) {
+    const editing = order ? normalizePurchaseOrder(order) : null;
+    state.purchaseMode = "form";
+    state.purchaseEditingNumber = editing ? editing.number : "";
+    state.purchaseDraftPickedIds = new Set();
+    state.purchaseProductSearches = {};
+    state.purchaseProductResults = {};
+    state.purchaseItems = editing ? editing.items.map((item) => ({ ...item })) : [];
+    if (els.purchaseListView) els.purchaseListView.hidden = true;
+    if (els.purchaseFormView) els.purchaseFormView.hidden = false;
+    if (els.poFormTitle) els.poFormTitle.textContent = editing ? "Edit Pesanan" : "Pesanan Baru";
+    if (els.poType) els.poType.value = editing?.type || "regular";
+    if (els.poManualNumber) els.poManualNumber.value = editing?.manualNumber || editing?.number || "";
+    if (els.poSupplier) els.poSupplier.value = editing?.supplier || "";
+    if (els.poDate) els.poDate.value = editing?.date || new Date().toISOString().slice(0, 10);
+    if (els.poPaymentMethod) els.poPaymentMethod.value = editing?.paymentMethod || "Tunai";
+    if (els.poDueDate) els.poDueDate.value = editing?.dueDate || "";
+    if (els.poSupplierAddress) els.poSupplierAddress.value = editing?.supplierAddress || "";
+    if (els.poSupplierPhone) els.poSupplierPhone.value = editing?.supplierPhone || "";
+    if (els.poCity) els.poCity.value = editing?.city || "S.P. Padang";
+    if (els.poRecipient) els.poRecipient.value = editing?.recipient || "";
+    if (els.poDiscount) els.poDiscount.value = String(editing?.discount || 0);
+    if (els.poNote) els.poNote.value = editing?.note || "";
+    if (els.poAdditionalNote) els.poAdditionalNote.value = editing?.additionalNote || "";
+    if (els.poPurpose) els.poPurpose.value = editing?.purpose || "Untuk membantu kebutuhan Apotek Nadhira Farma";
+    if (!editing) fillPurchaseSupplierFields();
+    updatePurchaseOrderTypeFields();
+    renderPurchaseItems();
+    renderPurchaseDraftList();
+  }
+
   function updatePurchaseOrderTypeFields() {
     const type = normalizePurchaseOrderType(els.poType?.value || "regular");
     document.querySelectorAll(".po-controlled-field").forEach((field) => {
       const key = field.dataset.poField || "";
       field.hidden = key === "regulated"
-        ? type === "regular" || type === "alkes"
+        ? !isControlledPurchaseOrderType(type)
         : key === "alkes"
           ? type !== "alkes"
           : false;
@@ -4894,6 +5062,11 @@
     if (els.poPurpose) {
       els.poPurpose.closest("label")?.toggleAttribute("hidden", type === "regular" || type === "alkes");
     }
+    renderPurchaseItems();
+  }
+
+  function isControlledPurchaseOrderType(type) {
+    return ["prekursor", "ott", "psikotropika", "narkotika"].includes(normalizePurchaseOrderType(type));
   }
 
   function fillPurchaseMedicineFields() {
@@ -4928,130 +5101,567 @@
     const medicineIndex = Number(els.poMedicine ? els.poMedicine.value : -1);
     const medicine = state.rows[medicineIndex];
     const restockItem = state.restockRequests.find((request) => request.id === els.poRestockReference?.value);
-    const qty = Math.max(1, Number(els.poQty ? els.poQty.value : 1) || 1);
-    const unit = String(els.poUnit ? els.poUnit.value : "").trim() || restockItem?.unit || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs";
-
-    if (!medicine && !restockItem) return;
-
-    state.purchaseItems.push({
-      kode: medicine?.kode || restockItem?.code || "",
-      nama: medicine?.nama || restockItem?.medicineName || "Obat",
-      qty,
-      unit,
-      activeSubstance: String(els.poActiveSubstance?.value || "").trim(),
-      dosageForm: String(els.poDosageForm?.value || "").trim(),
-      strength: String(els.poDeviceSpec?.value || els.poStrength?.value || "").trim(),
-      note: String(els.poItemNote?.value || "").trim(),
-      sourceRestockId: restockItem?.id || ""
-    });
-    renderPurchaseItems();
+    if (medicine || restockItem) {
+      addPurchaseItemFromSource(medicine, restockItem);
+    }
   }
 
-  async function savePurchaseOrder(event) {
-    event.preventDefault();
-    if (!state.purchaseItems.length) return;
+  function addPurchaseItemFromSource(medicine = null, restockItem = null) {
+    const item = buildPurchaseItem(medicine, restockItem);
+    const existingIndex = state.purchaseItems.findIndex((candidate) => {
+      return (item.sourceRestockId && candidate.sourceRestockId === item.sourceRestockId)
+        || (item.kode && candidate.kode && normalizeSearch(candidate.kode) === normalizeSearch(item.kode));
+    });
+    if (existingIndex >= 0) state.purchaseItems[existingIndex] = { ...state.purchaseItems[existingIndex], ...item };
+    else state.purchaseItems.push(item);
+    if (item.sourceRestockId) state.purchaseDraftPickedIds.add(item.sourceRestockId);
+    delete state.purchaseProductSearches[state.purchaseItems.length];
+    delete state.purchaseProductResults[state.purchaseItems.length];
+    renderPurchaseItems();
+    renderPurchaseDraftList();
+  }
+
+  function buildPurchaseItem(medicine = null, restockItem = null) {
+    const qty = Math.max(1, Number(restockItem?.qty || 1) || 1);
+    const unit = String(restockItem?.unit || medicine?.satuan_beli || medicine?.satuan_1 || medicine?.satuan_stok_min || "Pcs").trim() || "Pcs";
+    const buyPrice = Math.max(0, parseNumber(medicine?.harga_beli || medicine?.hargabeli || 0));
+    const stockUnit = inferRestockStockUnit(medicine);
+    return {
+      kode: String(medicine?.kode || restockItem?.code || "").trim(),
+      nama: String(medicine?.nama || restockItem?.medicineName || "Obat").trim(),
+      qty,
+      unit,
+      currentStock: String(medicine?.stok || restockItem?.currentStock || "").trim(),
+      currentStockUnit: String(stockUnit || restockItem?.stockUnit || unit).trim() || unit,
+      realStock: String(restockItem?.realStock || medicine?.stok || "").trim(),
+      realStockUnit: String(restockItem?.realStockUnit || inferRestockRealStockUnit(medicine) || stockUnit || unit).trim() || unit,
+      supplier: String(restockItem?.supplier || medicine?.suplier || "").trim(),
+      buyPrice,
+      subtotal: qty * buyPrice,
+      activeSubstance: String(medicine?.komposisi || restockItem?.activeSubstance || "").trim(),
+      dosageForm: String(medicine?.kategori || restockItem?.dosageForm || "").trim(),
+      strength: String(medicine?.kekuatan || restockItem?.strength || "").trim(),
+      note: String(restockItem?.note || (medicine?.no_batch ? `Batch ${medicine.no_batch}` : "")).trim(),
+      sourceRestockId: String(restockItem?.id || "").trim()
+    };
+  }
+
+  function getPurchaseProductColumns() {
+    const type = normalizePurchaseOrderType(els.poType?.value || "regular");
+    const columns = [
+      { key: "no", label: "No.", className: "is-no" },
+      { key: "product", label: type === "alkes" ? "Alat Kesehatan" : "Produk" }
+    ];
+    if (isControlledPurchaseOrderType(type)) {
+      columns.push({ key: "activeSubstance", label: "Zat Aktif" }, { key: "dosageForm", label: "Bentuk Sediaan" });
+    }
+    if (type === "alkes") columns.push({ key: "strength", label: "Spesifikasi" });
+    columns.push(
+      { key: "currentStock", label: "Stok Sistem" },
+      { key: "qty", label: "Kuantitas / Qty" },
+      { key: "realStock", label: "Stok Real" },
+      { key: "buyPrice", label: "Harga Beli Satuan" },
+      { key: "subtotal", label: "Sub Total" },
+      { key: "action", label: "Aksi" }
+    );
+    return columns;
+  }
+
+  function renderPurchaseItems() {
+    renderPurchaseSummary();
+    if (!els.poProductRows || !els.poProductHead) {
+      if (els.poItemsList) els.poItemsList.innerHTML = state.purchaseItems.length
+        ? state.purchaseItems.map((item) => `<div class="po-item"><span><strong>${escapeHtml(item.nama)}</strong><small>${escapeHtml(item.kode || "")}</small></span><em>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</em></div>`).join("")
+        : "<p>Belum ada item pesanan.</p>";
+      return;
+    }
+    const columns = getPurchaseProductColumns();
+    els.poProductHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr>`;
+    const rows = state.purchaseItems.concat([null]);
+    els.poProductRows.innerHTML = rows.map((item, index) => buildPurchaseProductRow(item, index, columns)).join("");
+  }
+
+  function buildPurchaseProductRow(item, index, columns) {
+    const isBlank = !item;
+    return `<tr data-po-row="${index}"${isBlank ? ' class="is-empty-row"' : ""}>${columns.map((column) => {
+      if (column.key === "no") return `<td>${isBlank ? '<button class="purchase-row-icon-button" type="button" data-po-empty-row aria-label="Baris baru">+</button>' : index + 1}</td>`;
+      if (column.key === "product") return `<td>${buildPurchaseProductSearchCell(item, index)}</td>`;
+      if (column.key === "currentStock") return `<td>${isBlank ? "-" : `${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.currentStockUnit || "")}`}</td>`;
+      if (column.key === "qty") return `<td><input data-po-field="qty" data-po-index="${index}" type="number" min="1" value="${escapeHtml(isBlank ? "0" : item.qty)}"><small>${escapeHtml(item?.unit || "Pcs")}</small></td>`;
+      if (column.key === "realStock") return `<td>${isBlank ? "-" : `${escapeHtml(formatCell(item.realStock, "stok"))} ${escapeHtml(item.realStockUnit || item.currentStockUnit || "")}`}</td>`;
+      if (column.key === "buyPrice") return `<td><input data-po-field="buyPrice" data-po-index="${index}" type="number" min="0" value="${escapeHtml(isBlank ? "0" : item.buyPrice)}"></td>`;
+      if (column.key === "subtotal") return `<td data-po-subtotal="${index}">${isBlank ? "Rp 0" : formatRupiah(getPurchaseItemSubtotal(item))}</td>`;
+      if (column.key === "activeSubstance") return `<td><input data-po-field="activeSubstance" data-po-index="${index}" type="text" value="${escapeHtml(item?.activeSubstance || "")}"></td>`;
+      if (column.key === "dosageForm") return `<td><input data-po-field="dosageForm" data-po-index="${index}" type="text" value="${escapeHtml(item?.dosageForm || "")}"></td>`;
+      if (column.key === "strength") return `<td><input data-po-field="strength" data-po-index="${index}" type="text" value="${escapeHtml(item?.strength || "")}"></td>`;
+      return `<td>${isBlank ? "" : `<button class="purchase-row-icon-button" type="button" data-po-remove="${index}" aria-label="Hapus item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button>`}</td>`;
+    }).join("")}</tr>`;
+  }
+
+  function buildPurchaseProductSearchCell(item, index) {
+    const value = item?.nama || state.purchaseProductSearches[index] || "";
+    const results = state.purchaseProductResults[index] || [];
+    return `
+      <div class="purchase-product-search">
+        <input data-po-field="productSearch" data-po-index="${index}" type="search" value="${escapeHtml(value)}" placeholder="Cari obat / barcode">
+        <div class="purchase-product-results" data-po-results="${index}" ${results.length ? "" : "hidden"}>
+          ${results.map((row, resultIndex) => `
+            <button class="purchase-product-result" type="button" data-po-select-product="${index}" data-po-result-index="${resultIndex}">
+              <strong>${escapeHtml(row.nama || row.kode || "Obat")}</strong>
+              <small>${escapeHtml([row.kode, `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`, row.suplier].filter(Boolean).join(" - "))}</small>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function handlePurchaseProductInput(event) {
+    const target = event.target;
+    const index = Number(target.dataset.poIndex);
+    const field = target.dataset.poField;
+    if (!field || !Number.isFinite(index)) return;
+    if (field === "productSearch") {
+      const query = String(target.value || "");
+      state.purchaseProductSearches[index] = query;
+      state.purchaseProductResults[index] = getPurchaseProductSearchResults(query);
+      renderPurchaseProductResultList(index);
+      return;
+    }
+    const item = state.purchaseItems[index];
+    if (!item) return;
+    if (field === "qty") item.qty = Math.max(1, Number(target.value || 1) || 1);
+    else if (field === "buyPrice") item.buyPrice = Math.max(0, parseNumber(target.value));
+    else item[field] = String(target.value || "").trim();
+    item.subtotal = getPurchaseItemSubtotal(item);
+    const subtotalCell = els.poProductRows?.querySelector(`[data-po-subtotal="${index}"]`);
+    if (subtotalCell) subtotalCell.textContent = formatRupiah(item.subtotal);
+    renderPurchaseSummary();
+  }
+
+  function renderPurchaseProductResultList(index) {
+    const container = els.poProductRows?.querySelector(`[data-po-results="${index}"]`);
+    if (!container) return;
+    const results = state.purchaseProductResults[index] || [];
+    container.hidden = !results.length;
+    container.innerHTML = results.map((row, resultIndex) => `
+      <button class="purchase-product-result" type="button" data-po-select-product="${index}" data-po-result-index="${resultIndex}">
+        <strong>${escapeHtml(row.nama || row.kode || "Obat")}</strong>
+        <small>${escapeHtml([row.kode, `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`, row.suplier].filter(Boolean).join(" - "))}</small>
+      </button>
+    `).join("");
+  }
+
+  function getPurchaseProductSearchResults(query) {
+    const key = normalizeSearch(query);
+    if (!key) return [];
+    const terms = key.split(/\s+/).filter(Boolean);
+    return state.rows
+      .filter((row) => {
+        const haystack = normalizeSearch([row.kode, row.nama, row.suplier, row.kategori, row.komposisi].join(" "));
+        return terms.every((term) => haystack.includes(term));
+      })
+      .sort((a, b) => {
+        const aExact = normalizeSearch(a.kode) === key || normalizeSearch(a.nama) === key ? 0 : 1;
+        const bExact = normalizeSearch(b.kode) === key || normalizeSearch(b.nama) === key ? 0 : 1;
+        return aExact - bExact || String(a.nama || a.kode).localeCompare(String(b.nama || b.kode), "id", { sensitivity: "base" });
+      })
+      .slice(0, 8);
+  }
+
+  function handlePurchaseProductClick(event) {
+    const removeButton = event.target.closest("[data-po-remove]");
+    if (removeButton) {
+      state.purchaseItems.splice(Number(removeButton.dataset.poRemove), 1);
+      renderPurchaseItems();
+      return;
+    }
+    const selectButton = event.target.closest("[data-po-select-product]");
+    if (selectButton) {
+      const rowIndex = Number(selectButton.dataset.poSelectProduct);
+      const resultIndex = Number(selectButton.dataset.poResultIndex);
+      const medicine = (state.purchaseProductResults[rowIndex] || [])[resultIndex];
+      if (!medicine) return;
+      addPurchaseItemFromSource(medicine, null);
+      if (els.poSupplier && !els.poSupplier.value && medicine.suplier) {
+        els.poSupplier.value = medicine.suplier;
+        fillPurchaseSupplierFields();
+      }
+    }
+  }
+
+  function renderPurchaseDraftList() {
+    if (!els.poDraftList) return;
+    const drafts = getPurchaseOrderRestockOptions();
+    if (!drafts.length) {
+      els.poDraftList.innerHTML = `<article class="purchase-draft-card"><small>Tidak ada draft restok yang tersedia.</small></article>`;
+      return;
+    }
+    els.poDraftList.innerHTML = drafts.slice(0, 30).map((item) => `
+      <article class="purchase-draft-card" data-po-draft="${escapeHtml(item.id)}">
+        <strong>${escapeHtml(item.medicineName || item.code || "Obat")}</strong>
+        <small>${escapeHtml([item.code, `${item.qty} ${item.unit}`, item.supplier].filter(Boolean).join(" - "))}</small>
+        <div class="purchase-draft-card-actions">
+          <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih</button>
+          <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
+          <button class="is-danger" type="button" data-po-draft-delete="${escapeHtml(item.id)}">Hapus</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  async function handlePurchaseDraftClick(event) {
+    const addButton = event.target.closest("[data-po-draft-add]");
+    const editButton = event.target.closest("[data-po-draft-edit]");
+    const deleteButton = event.target.closest("[data-po-draft-delete]");
+    const id = addButton?.dataset.poDraftAdd || editButton?.dataset.poDraftEdit || deleteButton?.dataset.poDraftDelete || "";
+    if (!id) return;
+    const draft = state.restockRequests.find((request) => request.id === id);
+    if (!draft) return;
+    if (addButton) {
+      const medicine = findMedicineForRestock(draft.code || draft.medicineName);
+      addPurchaseItemFromSource(medicine, draft);
+      if (els.poSupplier && !els.poSupplier.value && draft.supplier) {
+        els.poSupplier.value = draft.supplier;
+        fillPurchaseSupplierFields();
+      }
+      return;
+    }
+    if (editButton) {
+      openRestockRequestModal(id);
+      return;
+    }
+    if (deleteButton) {
+      const token = startAppLoading("Menghapus draft restok...", 0);
+      try {
+        state.restockRequests = state.restockRequests.filter((request) => request.id !== id);
+        const result = await saveRestockRequestsToBackend({ silent: true });
+        if (!result) throw new Error("Draft restok belum tersimpan online.");
+        persistRestockRequests({ remote: false });
+        renderPurchaseDraftList();
+        renderRestockPage();
+        showActionToast("Draft restok berhasil dihapus online.");
+      } catch (error) {
+        showActionToast(error.message || "Draft restok gagal dihapus.", "error");
+      } finally {
+        endAppLoading(token, { force: true });
+      }
+    }
+  }
+
+  function getPurchaseItemSubtotal(item) {
+    return Math.max(0, Number(item?.qty || 0) || 0) * Math.max(0, Number(item?.buyPrice || 0) || 0);
+  }
+
+  function getPurchaseCurrentTotals() {
+    const subtotal = state.purchaseItems.reduce((sum, item) => sum + getPurchaseItemSubtotal(item), 0);
+    const discount = Math.max(0, parseNumber(els.poDiscount?.value || 0));
+    const taxable = Math.max(0, subtotal - discount);
+    const tax = Math.round(taxable * 0.11);
+    return {
+      items: state.purchaseItems.length,
+      qty: state.purchaseItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0),
+      subtotal,
+      discount,
+      tax,
+      total: taxable + tax
+    };
+  }
+
+  function renderPurchaseSummary() {
+    const totals = getPurchaseCurrentTotals();
+    if (els.poSummaryItems) els.poSummaryItems.textContent = `${formatNumber(totals.items)} item`;
+    if (els.poSummaryQty) els.poSummaryQty.textContent = formatNumber(totals.qty);
+    if (els.poSummarySubtotal) els.poSummarySubtotal.textContent = formatRupiah(totals.subtotal);
+    if (els.poSummaryDiscount) els.poSummaryDiscount.textContent = formatRupiah(totals.discount);
+    if (els.poSummaryTax) els.poSummaryTax.textContent = formatRupiah(totals.tax);
+    if (els.poSummaryTotal) els.poSummaryTotal.textContent = formatRupiah(totals.total);
+    if (els.poNumber) {
+      const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
+      const manualNumber = String(els.poManualNumber?.value || "").trim();
+      els.poNumber.textContent = manualNumber || (state.purchaseEditingNumber || buildPurchaseOrderNumber(typeMeta.prefix));
+    }
+  }
+
+  function buildPurchaseOrderFromForm(status = "open") {
     const now = new Date().toISOString();
     const user = getCurrentUserRecord();
-
     const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
     const manualNumber = String(els.poManualNumber?.value || "").trim();
-    const order = normalizePurchaseOrder({
-      number: manualNumber || buildPurchaseOrderNumber(typeMeta.prefix),
+    const existing = state.purchaseEditingNumber ? state.purchaseOrders.find((order) => order.number === state.purchaseEditingNumber) : null;
+    const number = state.purchaseEditingNumber || manualNumber || buildPurchaseOrderNumber(typeMeta.prefix);
+    const note = [els.poNote?.value, els.poAdditionalNote?.value].map((value) => String(value || "").trim()).filter(Boolean).join("\n");
+    return normalizePurchaseOrder({
+      ...(existing || {}),
+      number,
       type: typeMeta.key,
-      manualNumber: manualNumber,
-      supplier: els.poSupplier ? els.poSupplier.value : "",
+      manualNumber: manualNumber || number,
+      supplier: els.poSupplier?.value || "",
       supplierAddress: els.poSupplierAddress?.value || "",
       supplierPhone: els.poSupplierPhone?.value || "",
       city: els.poCity?.value || "S.P. Padang",
       recipient: els.poRecipient?.value || els.poSupplier?.value || "",
       purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
-      date: els.poDate ? els.poDate.value : new Date().toISOString().slice(0, 10),
-      status: "saved",
-      createdAt: now,
+      paymentMethod: els.poPaymentMethod?.value || "Tunai",
+      dueDate: els.poDueDate?.value || "",
+      note,
+      additionalNote: els.poAdditionalNote?.value || "",
+      discount: els.poDiscount?.value || 0,
+      taxRate: 0.11,
+      date: els.poDate?.value || new Date().toISOString().slice(0, 10),
+      status,
+      source: existing?.source || "",
+      createdAt: existing?.createdAt || now,
       updatedAt: now,
-      createdBy: user.name || user.username || "",
-      items: state.purchaseItems.slice()
+      createdBy: existing?.createdBy || user.name || user.username || "",
+      items: state.purchaseItems.map((item) => ({ ...item, subtotal: getPurchaseItemSubtotal(item) }))
     });
-
-    state.purchaseOrders.unshift(order);
-    state.purchaseItems = [];
-    persistPurchaseOrders({ remote: false });
-    const syncResult = await savePurchaseOrdersToBackend({ silent: true });
-    addProfileActivity("Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
-    renderPurchaseItems();
-    renderPurchaseOrders();
-    showActionToast(syncResult ? "Surat pesanan berhasil disimpan online." : "Surat pesanan tersimpan lokal, akan dicoba sinkron lagi.");
   }
 
-  function renderPurchaseItems() {
-    if (!els.poItemsList) return;
+  async function savePurchaseOrder(event, status = "open") {
+    if (event) event.preventDefault();
     if (!state.purchaseItems.length) {
-      els.poItemsList.innerHTML = "<p>Belum ada item pesanan.</p>";
+      showActionToast("Tambahkan minimal satu produk terlebih dahulu.", "error");
       return;
     }
+    if (!String(els.poSupplier?.value || "").trim()) {
+      showActionToast("Supplier wajib dipilih.", "error");
+      els.poSupplier?.focus();
+      return;
+    }
+    const order = buildPurchaseOrderFromForm(status);
+    const nextOrders = state.purchaseOrders
+      .filter((candidate) => candidate.number !== order.number && candidate.number !== state.purchaseEditingNumber)
+      .concat(order)
+      .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
+    const token = startAppLoading(status === "draft" ? "Menyimpan draft pesanan..." : "Menyimpan pesanan pembelian...", 0);
+    try {
+      const syncResult = await savePurchaseOrdersToBackend({ orders: nextOrders, silent: true });
+      if (!syncResult) throw new Error("Pesanan belum berhasil disimpan online.");
+      await markPurchaseRestockSourcesDone(order);
+      state.purchaseItems = [];
+      state.purchaseEditingNumber = "";
+      state.purchaseDraftPickedIds.clear();
+      state.purchaseSelectedNumber = order.number;
+      addProfileActivity(status === "draft" ? "Draft pesanan dibuat" : "Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
+      showPurchaseOrderList();
+      showActionToast(status === "draft" ? "Draft pesanan berhasil disimpan online." : "Pesanan pembelian berhasil disimpan online.");
+    } catch (error) {
+      showActionToast(error.message || "Pesanan gagal disimpan.", "error");
+    } finally {
+      endAppLoading(token, { force: true });
+    }
+  }
 
-    els.poItemsList.innerHTML = state.purchaseItems.map((item, index) => `
-      <div class="po-item">
-        <span><strong>${escapeHtml(item.nama)}</strong><small>${escapeHtml([item.kode, item.activeSubstance, item.strength].filter(Boolean).join(" - ") || "Item surat pesanan")}</small></span>
-        <em>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</em>
-        <button type="button" data-remove-po="${index}" aria-label="Hapus item">x</button>
-      </div>
-    `).join("");
-
-    els.poItemsList.querySelectorAll("[data-remove-po]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.purchaseItems.splice(Number(button.dataset.removePo), 1);
-        renderPurchaseItems();
-      });
+  async function markPurchaseRestockSourcesDone(order) {
+    const ids = new Set((order.items || []).map((item) => item.sourceRestockId).filter(Boolean));
+    if (!ids.size) return;
+    const user = getCurrentUserRecord();
+    let changed = false;
+    const now = new Date().toISOString();
+    state.restockRequests.forEach((item) => {
+      if (!ids.has(item.id)) return;
+      item.status = "done";
+      item.updatedAt = now;
+      item.history = (item.history || []).concat({ status: "done", at: now, by: user.name || "Admin", note: `Masuk pesanan ${order.number}` });
+      changed = true;
     });
+    if (!changed) return;
+    const result = await saveRestockRequestsToBackend({ silent: true });
+    if (result && Array.isArray(result.requests)) {
+      state.restockRequests = result.requests.map(normalizeRestockRequest).filter((item) => item.id);
+    }
+    persistRestockRequests({ remote: false });
+    renderRestockPage();
+  }
+
+  function getFilteredPurchaseOrders() {
+    const query = normalizeSearch(els.poSearchInput?.value || "");
+    const status = normalizePurchaseOrderStatus(els.poStatusFilter?.value || "");
+    const supplier = normalizeSearch(els.poSupplierFilter?.value || "");
+    const date = String(els.poDateFilter?.value || "").trim();
+    return state.purchaseOrders
+      .filter((order) => {
+        if (status && els.poStatusFilter?.value && normalizePurchaseOrderStatus(order.status) !== status) return false;
+        if (supplier && normalizeSearch(order.supplier) !== supplier) return false;
+        if (date && order.date !== date) return false;
+        if (!query) return true;
+        const haystack = normalizeSearch([order.number, order.manualNumber, order.supplier, order.recipient, order.items.map((item) => item.nama).join(" ")].join(" "));
+        return haystack.includes(query);
+      })
+      .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
   }
 
   function renderPurchaseOrders() {
-    if (!els.poSavedList) return;
     if (els.poDate && !els.poDate.value) els.poDate.value = new Date().toISOString().slice(0, 10);
-    if (els.poNumber) els.poNumber.textContent = state.purchaseOrders[0]?.number || "Nomor otomatis akan dibuat saat disimpan.";
     populatePurchaseRestockReferences();
+    renderPurchaseDraftList();
+    const rows = getFilteredPurchaseOrders();
+    const open = state.purchaseOrders.filter((order) => order.status === "open" || order.status === "draft").length;
+    const processing = state.purchaseOrders.filter((order) => order.status === "processing").length;
+    const done = state.purchaseOrders.filter((order) => order.status === "done").length;
+    const total = state.purchaseOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    setText(els.poOpenCount, formatNumber(open));
+    setText(els.poProcessCount, formatNumber(processing));
+    setText(els.poDoneCount, formatNumber(done));
+    setText(els.poTotalValue, formatRupiah(total));
+    if (!state.purchaseSelectedNumber && rows.length) state.purchaseSelectedNumber = rows[0].number;
+    if (state.purchaseSelectedNumber && !state.purchaseOrders.some((order) => order.number === state.purchaseSelectedNumber)) {
+      state.purchaseSelectedNumber = rows[0]?.number || "";
+    }
+    if (els.poListStatus) {
+      els.poListStatus.textContent = rows.length
+        ? `Menampilkan ${formatNumber(rows.length)} dari ${formatNumber(state.purchaseOrders.length)} pesanan.`
+        : "Belum ada data pesanan pembelian.";
+    }
+    if (els.poOrdersTableBody) {
+      els.poOrdersTableBody.innerHTML = rows.length ? rows.map((order) => buildPurchaseOrderTableRow(order)).join("") : `
+        <tr><td colspan="7"><span class="purchase-row-muted">Belum ada pesanan pembelian online.</span></td></tr>
+      `;
+    }
+    renderPurchaseDetail();
+  }
 
-    if (!state.purchaseOrders.length) {
-      els.poSavedList.innerHTML = "<p>Belum ada surat pesanan tersimpan.</p>";
+  function buildPurchaseOrderTableRow(order) {
+    const status = getPurchaseOrderStatusMeta(order.status);
+    const summary = `${formatNumber(order.items.length)} item produk`;
+    const firstPhone = order.supplierPhone ? `<small>${escapeHtml(order.supplierPhone)}</small>` : "";
+    return `
+      <tr data-po-order="${escapeHtml(order.number)}" class="${state.purchaseSelectedNumber === order.number ? "is-selected" : ""}">
+        <td><span class="purchase-row-title">${escapeHtml(order.number)}<small>${escapeHtml(getPurchaseOrderTypeMeta(order.type).label)}</small></span></td>
+        <td><span class="purchase-row-title">${escapeHtml(order.supplier || "Supplier belum dipilih")}${firstPhone}</span></td>
+        <td><span class="purchase-row-title">${escapeHtml(summary)}<small>${escapeHtml((order.items || []).slice(0, 2).map((item) => item.nama).join(", "))}</small></span></td>
+        <td><span class="purchase-row-title">${escapeHtml(formatShortDate(order.date))}<small>${escapeHtml(order.dueDate ? `Tempo ${formatShortDate(order.dueDate)}` : order.paymentMethod || "")}</small></span></td>
+        <td><span class="purchase-status-pill ${status.className}">${escapeHtml(status.label)}</span></td>
+        <td>${escapeHtml(formatRupiah(order.total || 0))}</td>
+        <td><button class="purchase-row-icon-button" type="button" data-po-row-menu="${escapeHtml(order.number)}" aria-label="Pilih pesanan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5h.01"></path><path d="M12 12h.01"></path><path d="M12 19h.01"></path></svg></button></td>
+      </tr>
+    `;
+  }
+
+  function handlePurchaseOrderTableClick(event) {
+    const row = event.target.closest("[data-po-order]");
+    if (!row) return;
+    state.purchaseSelectedNumber = row.dataset.poOrder || "";
+    renderPurchaseOrders();
+  }
+
+  function getSelectedPurchaseOrder() {
+    return state.purchaseOrders.find((order) => order.number === state.purchaseSelectedNumber) || state.purchaseOrders[0] || null;
+  }
+
+  function renderPurchaseDetail() {
+    if (!els.poDetailContent) return;
+    const order = getSelectedPurchaseOrder();
+    if (!order) {
+      els.poDetailContent.innerHTML = `
+        <div class="purchase-detail-title">
+          <span><strong>Belum ada pesanan</strong><small>Pilih atau buat pesanan baru.</small></span>
+        </div>
+      `;
       return;
     }
+    const status = getPurchaseOrderStatusMeta(order.status);
+    els.poDetailContent.innerHTML = `
+      <div class="purchase-detail-title">
+        <span><strong>${escapeHtml(order.number)}</strong><small>${escapeHtml(order.supplier || "Supplier belum dipilih")}</small></span>
+        <span class="purchase-status-pill ${status.className}">${escapeHtml(status.label)}</span>
+      </div>
+      <section class="purchase-detail-card">
+        <strong>Informasi Pesanan</strong>
+        <dl>
+          <div><dt>Supplier</dt><dd>${escapeHtml(order.supplier || "-")}</dd></div>
+          <div><dt>Tanggal PO</dt><dd>${escapeHtml(formatShortDate(order.date))}</dd></div>
+          <div><dt>Sales</dt><dd>${escapeHtml(order.recipient || "-")}</dd></div>
+          <div><dt>Estimasi Tempo</dt><dd>${escapeHtml(order.dueDate ? formatShortDate(order.dueDate) : "-")}</dd></div>
+          <div><dt>No. Kontak</dt><dd>${escapeHtml(order.supplierPhone || "-")}</dd></div>
+          <div><dt>Pembuat PO</dt><dd>${escapeHtml(order.createdBy || "-")}</dd></div>
+        </dl>
+      </section>
+      <section class="purchase-detail-card">
+        <strong>Ringkasan Pesanan</strong>
+        <dl>
+          <div><dt>Subtotal (${formatNumber(order.items.length)} item)</dt><dd>${escapeHtml(formatRupiah(order.subtotal || 0))}</dd></div>
+          <div><dt>Diskon</dt><dd>${escapeHtml(formatRupiah(order.discount || 0))}</dd></div>
+          <div><dt>PPN (11%)</dt><dd>${escapeHtml(formatRupiah(order.tax || 0))}</dd></div>
+          <div><dt>Grand Total</dt><dd>${escapeHtml(formatRupiah(order.total || 0))}</dd></div>
+        </dl>
+      </section>
+      <section class="purchase-detail-card">
+        <strong>Produk</strong>
+        ${(order.items || []).map((item) => `<div><dt>${escapeHtml(item.nama)}</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>`).join("") || "<small>Belum ada produk.</small>"}
+      </section>
+    `;
+  }
 
-    els.poSavedList.innerHTML = state.purchaseOrders.slice(0, 8).map((order) => {
-      const items = (order.items || []).slice(0, 3).map((item) => `${item.nama} (${item.qty} ${item.unit})`).join(", ");
-      const typeMeta = getPurchaseOrderTypeMeta(order.type);
-      return `
-        <article class="po-saved-card ${order.status === "draft" ? "is-draft" : ""}">
-          <strong>${escapeHtml(order.number)}</strong>
-          <span>${escapeHtml(typeMeta.label)} - ${escapeHtml(order.date)} - ${escapeHtml(order.supplier || "Supplier belum dipilih")}</span>
-          <small>${formatNumber(order.items.length)} item${order.status === "draft" ? " - Draft Restok" : ""}</small>
-          ${items ? `<em>${escapeHtml(items)}${order.items.length > 3 ? ", ..." : ""}</em>` : ""}
-        </article>
-      `;
-    }).join("");
+  function handlePurchaseDetailClick(event) {
+    const printButton = event.target.closest("[data-po-detail-print]");
+    if (printButton) printPurchaseOrder();
+  }
+
+  function editSelectedPurchaseOrder() {
+    const order = getSelectedPurchaseOrder();
+    if (order) openPurchaseOrderForm(order);
+  }
+
+  async function updateSelectedPurchaseStatus(status) {
+    const order = getSelectedPurchaseOrder();
+    if (!order) return;
+    const updated = normalizePurchaseOrder({ ...order, status, updatedAt: new Date().toISOString() });
+    const nextOrders = state.purchaseOrders.map((candidate) => candidate.number === updated.number ? updated : candidate);
+    const token = startAppLoading(`Memperbarui status pesanan ${updated.number}...`, 0);
+    try {
+      const result = await savePurchaseOrdersToBackend({ orders: nextOrders, silent: true });
+      if (!result) throw new Error("Status pesanan belum berhasil disimpan online.");
+      state.purchaseSelectedNumber = updated.number;
+      showActionToast(`Status pesanan menjadi ${getPurchaseOrderStatusMeta(status).label}.`);
+    } catch (error) {
+      showActionToast(error.message || "Status pesanan gagal diubah.", "error");
+    } finally {
+      endAppLoading(token, { force: true });
+    }
+  }
+
+  function resetPurchaseOrderFilters() {
+    if (els.poSearchInput) els.poSearchInput.value = "";
+    if (els.poStatusFilter) els.poStatusFilter.value = "";
+    if (els.poSupplierFilter) els.poSupplierFilter.value = "";
+    if (els.poDateFilter) els.poDateFilter.value = "";
+    renderPurchaseOrders();
+  }
+
+  function exportPurchaseOrdersCsv() {
+    const rows = getFilteredPurchaseOrders();
+    if (!rows.length) {
+      showActionToast("Tidak ada data pesanan untuk diexport.", "error");
+      return;
+    }
+    const header = ["No SP", "Jenis", "Supplier", "Tanggal", "Status", "Item", "Subtotal", "Diskon", "PPN", "Total"];
+    const csvRows = [header].concat(rows.map((order) => [
+      order.number,
+      getPurchaseOrderTypeMeta(order.type).label,
+      order.supplier,
+      order.date,
+      getPurchaseOrderStatusMeta(order.status).label,
+      order.items.map((item) => `${item.nama} ${item.qty} ${item.unit}`).join("; "),
+      order.subtotal,
+      order.discount,
+      order.tax,
+      order.total
+    ]));
+    const csv = csvRows.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `pesanan-pembelian-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   function getPurchaseOrderForPrint() {
-    if (state.purchaseItems.length) {
-      const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
-      const manualNumber = String(els.poManualNumber?.value || "").trim();
-      return normalizePurchaseOrder({
-        number: manualNumber || buildPurchaseOrderNumber(typeMeta.prefix),
-        type: typeMeta.key,
-        manualNumber,
-        supplier: els.poSupplier?.value || "",
-        supplierAddress: els.poSupplierAddress?.value || "",
-        supplierPhone: els.poSupplierPhone?.value || "",
-        city: els.poCity?.value || "S.P. Padang",
-        recipient: els.poRecipient?.value || els.poSupplier?.value || "",
-        purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
-        date: els.poDate?.value || new Date().toISOString().slice(0, 10),
-        status: "draft",
-        source: "preview",
-        items: state.purchaseItems.slice()
-      });
-    }
-    return state.purchaseOrders[0] || null;
+    if (state.purchaseMode === "form" && state.purchaseItems.length) return buildPurchaseOrderFromForm("draft");
+    return getSelectedPurchaseOrder();
   }
 
   function printPurchaseOrder() {
@@ -5060,13 +5670,11 @@
       showActionToast("Tambahkan item surat pesanan terlebih dahulu.", "error");
       return;
     }
-
     const printWindow = window.open("", "_blank", "width=900,height=1200");
     if (!printWindow) {
       window.print();
       return;
     }
-
     printWindow.document.open();
     printWindow.document.write(buildPurchaseOrderPrintHtml(order));
     printWindow.document.close();
@@ -5075,156 +5683,157 @@
   }
 
   function buildPurchaseOrderPrintHtml(order) {
+    const profile = getPharmacyProfile();
     const type = getPurchaseOrderTypeMeta(order.type);
-    const escapedItems = order.items.map((item, index) => buildPurchaseOrderPrintRow(order, item, index)).join("");
-    const rows = escapedItems + Array.from({ length: Math.max(0, 12 - order.items.length) }, (_, index) => buildPurchaseOrderPrintEmptyRow(order, index)).join("");
-    const title = type.key === "regular"
-      ? "SURAT PESANAN"
-      : type.key === "prekursor"
-        ? "SURAT PESANAN PREKURSOR FARMASI"
-        : type.key === "ott"
-          ? "SURAT PESANAN OBAT-OBAT TERTENTU"
-          : "SURAT PESANAN ALAT KESEHATAN";
-    const intro = type.key === "regular"
-      ? ""
-      : type.key === "prekursor"
-        ? "Mengajukan permintaan obat yang mengandung Prekursor Farmasi kepada :"
-        : type.key === "ott"
-          ? "Mengajukan permintaan obat-obat tertentu kepada :"
-          : "Mengajukan permintaan alat kesehatan kepada :";
-
+    const rows = buildPurchaseOrderPrintRows(order);
+    const brandName = profile.name && profile.name !== "Apotek Anda" ? profile.name : "Apotek Nadhira Farma";
+    const address = profile.address || "Jl. Raya Desa Terate Kecamatan Sirah Pulau Padang Kabupaten Ogan Komering Ilir Sumatera Selatan, 30651";
+    const phone = profile.phone || "";
+    const email = profile.email || "";
+    const website = profile.website || "";
+    const logo = profile.logo || PLATFORM_LOGO;
+    const pharmacist = profile.responsiblePharmacist || "Apt. Lilin Syukria, S.Farm.";
+    const sipa = profile.sipaNumber || "017/DPMPTSP/SIPA/V/2021";
+    const sia = profile.licenseNumber || "010/DPMPTSP/SIA/VI/2021";
     return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escapeHtml(order.number)} - ${escapeHtml(title)}</title>
+  <title>${escapeHtml(order.number)} - ${escapeHtml(type.printTitle)}</title>
   <style>
-    @page { size: A4; margin: 12mm; }
+    @page { size: A4; margin: 10mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #111; font-family: "Times New Roman", serif; font-size: 14pt; }
-    .sheet { min-height: 270mm; position: relative; }
-    .top { display: grid; grid-template-columns: 1fr 0.9fr; gap: 28px; align-items: start; }
-    .brand strong { display: block; font-size: 18pt; text-decoration: underline; }
-    .brand p, .to p, .identity p, .usage p { margin: 3px 0; }
-    .to { line-height: 1.35; }
-    h1 { margin: 20px 0 8px; text-align: center; font-size: 18pt; text-decoration: ${type.key === "regular" ? "none" : "underline"}; }
-    h2 { margin: 0 0 18px; text-align: center; font-size: 14pt; }
-    .identity { margin: 26px 0; }
-    .line { display: grid; grid-template-columns: 190px 16px 1fr; gap: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
-    th, td { border: 1px solid #111; padding: 7px 6px; vertical-align: middle; }
-    th { text-align: center; font-weight: 700; }
-    td { height: 30px; }
-    .no { width: 48px; text-align: center; }
-    .qty { width: 160px; text-align: center; }
-    .small { font-size: 12pt; }
-    .usage { margin-top: 24px; }
-    .sign { position: absolute; right: 26px; bottom: 10px; width: 260px; text-align: center; }
-    .sign-space { height: 90px; }
-    .stamp { margin-top: 4px; font-weight: 700; text-decoration: underline; }
-    @media print { button { display: none; } }
+    body { margin: 0; color: #111827; font-family: Arial, Helvetica, sans-serif; font-size: 12.5px; }
+    .sheet { min-height: 277mm; padding: 10px 12px 0; position: relative; }
+    .header { display: grid; grid-template-columns: 1fr 0.8fr; gap: 20px; align-items: start; padding-bottom: 18px; border-bottom: 2px solid #0758d8; }
+    .brand { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: center; }
+    .brand img { width: 104px; height: 104px; object-fit: contain; border: 2px solid #0758d8; border-radius: 18px; padding: 10px; }
+    .brand h1 { margin: 0 0 8px; color: #0758d8; font-size: 30px; line-height: 1.05; }
+    .brand p, .title p, .lines p, .usage p { margin: 4px 0; line-height: 1.35; }
+    .title { text-align: right; color: #0758d8; }
+    .title h2 { margin: 10px 0 16px; font-size: 34px; line-height: 1.08; text-transform: uppercase; }
+    .title p { color: #111827; font-size: 15px; }
+    .lines { margin-top: 26px; }
+    .line { display: grid; grid-template-columns: 160px 16px minmax(220px, 360px); gap: 8px; align-items: end; margin: 12px 0; }
+    .line .blank { min-height: 18px; border-bottom: 1px solid #777; }
+    .supplier-block { margin-top: 28px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 22px; }
+    th { background: #0758d8; color: #fff; font-size: 14px; font-weight: 800; }
+    th, td { border: 1.5px solid #0758d8; padding: 9px 8px; height: 34px; vertical-align: middle; }
+    td.no, th.no { width: 58px; text-align: center; }
+    .usage { margin-top: 28px; padding: 16px; border: 1.5px solid #0758d8; border-radius: 10px; }
+    .usage .line { grid-template-columns: 140px 16px 1fr; margin: 10px 0; }
+    .sign { width: 330px; margin: 28px 60px 0 auto; text-align: center; font-size: 14px; }
+    .sign-space { height: 54px; }
+    .footer { position: absolute; left: 12px; right: 12px; bottom: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 220px; gap: 14px; align-items: center; height: 52px; border: 1.5px solid #0758d8; border-radius: 10px 10px 0 0; overflow: hidden; color: #0758d8; }
+    .footer span { display: flex; align-items: center; gap: 10px; padding: 0 18px; border-right: 1.5px solid #0758d8; height: 100%; }
+    .footer b { height: 100%; background: #0758d8; }
+    @media print { .sheet { min-height: 277mm; } }
   </style>
 </head>
 <body>
   <main class="sheet">
-    ${type.key === "regular" ? buildRegularPurchasePrintHeader(order) : buildControlledPurchasePrintHeader(order, title, intro)}
-    ${buildPurchaseOrderPrintTable(order, rows)}
-    ${type.key === "regular" ? "" : `
-      <section class="usage">
-        <p>${escapeHtml(order.purpose || "Obat tersebut akan digunakan untuk membantu kebutuhan :")}</p>
-        <p class="line"><span>Nama Apotek</span><b>:</b><strong>Apotek Nadhira Farma</strong></p>
-        <p class="line"><span>Alamat</span><b>:</b><strong>Desa Terate Kec. SP. Padang Kab. Ogan Komering Ilir.</strong></p>
-        <p class="line"><span>SIA</span><b>:</b><strong>010/DPMPTSP/SIA/VI/2021</strong></p>
+    <header class="header">
+      <section class="brand">
+        <img src="${escapeHtml(logo)}" alt="">
+        <div>
+          <h1>${escapeHtml(brandName)}</h1>
+          <p>${escapeHtml(address)}</p>
+        </div>
       </section>
-    `}
-    <section class="sign">
-      <p>${escapeHtml(order.city || "S.P. Padang")},</p>
-      <p>${type.key === "regular" ? "Pemesan" : "Pemohon,"}</p>
-      <div class="sign-space"></div>
-      <p class="stamp">Apt. Lilin Syukria, S.Farm.</p>
-      <p class="small">017/DPMPTSP/SIPA/V/2021</p>
-      <p class="small">010/DPMPTSP/SIA/VI/2021</p>
+      <section class="title">
+        <h2>${escapeHtml(type.printTitle)}</h2>
+        <p>No. SP: ${escapeHtml(order.manualNumber || order.number)}</p>
+      </section>
+    </header>
+    <section class="lines">
+      <p>Yang bertanda tangan di bawah ini,</p>
+      ${printLine("nama", pharmacist)}
+      ${printLine("jabatan", "Apoteker Penanggung Jawab")}
+      ${printLine("telepon", phone)}
+      <div class="supplier-block">
+        <p>${escapeHtml(getPurchasePrintIntro(order.type))}</p>
+        ${printLine("nama distributor", order.supplier || order.recipient)}
+        ${printLine("alamat", order.supplierAddress)}
+        ${printLine("", "")}
+        ${printLine("telepon", order.supplierPhone)}
+      </div>
+      <p style="margin-top:26px;">${escapeHtml(getPurchasePrintTableLead(order.type))}</p>
     </section>
+    ${buildPurchasePrintTable(order, rows)}
+    <section class="usage">
+      <p>${escapeHtml(getPurchasePrintUsageLead(order.type))}</p>
+      ${printLine("Nama Sarana", brandName)}
+      ${printLine("Alamat Sarana", address)}
+      ${printLine("Nomor SIA", sia)}
+      ${printLine("Nomor SIPA", sipa)}
+    </section>
+    <section class="sign">
+      <p>${escapeHtml(order.city || "SP. Padang")}, __________________ 20_____</p>
+      <div class="sign-space"></div>
+      <p>(______________________________)</p>
+      <p>Apoteker Penanggung Jawab</p>
+    </section>
+    <footer class="footer">
+      <span>${escapeHtml(phone || "______________")}</span>
+      <span>${escapeHtml(email || "______________")}</span>
+      <span>${escapeHtml(website || "______________")}</span>
+      <b></b>
+    </footer>
   </main>
 </body>
 </html>`;
   }
 
-  function buildRegularPurchasePrintHeader(order) {
-    return `
-      <section class="top">
-        <div class="brand">
-          <strong>APOTEK NADHIRA FARMA</strong>
-          <p>Desa Terate Kec. S.P. Padang Kab. OKI</p>
-          <p>Apoteker : Apt. Lilin Syukria, S.Farm.</p>
-          <p>SIPA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 017/DPMPTSP/SIPA/V/2021</p>
-          <p>SIA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 010/DPMPTSP/SIA/VI/2021</p>
-        </div>
-        <div class="to">
-          <p>Nomor : ${escapeHtml(order.manualNumber || order.number || "")}</p>
-          <p>${escapeHtml(order.city || "S.P. Padang")}, ......................................</p>
-          <p>Kepada</p>
-          <p>Yth, ${escapeHtml(order.recipient || order.supplier || "......................................")}</p>
-          <p>${escapeHtml(order.supplierAddress || "......................................")}</p>
-          <p>${escapeHtml(order.supplierPhone || "......................................")}</p>
-        </div>
-      </section>
-      <h1>SURAT PESANAN</h1>
-    `;
+  function printLine(label, value) {
+    return `<p class="line"><span>${escapeHtml(label)}</span><b>:</b><span class="blank">${escapeHtml(value || "")}</span></p>`;
   }
 
-  function buildControlledPurchasePrintHeader(order, title, intro) {
-    return `
-      <h1>${escapeHtml(title)}</h1>
-      <h2>NO. SP : ${escapeHtml(order.manualNumber || order.number || "........................")}</h2>
-      <section class="identity">
-        <p>Yang bertanda tangan dibawah ini :</p>
-        <p class="line"><span>Nama</span><b>:</b><strong>Apt. Lilin Syukria, S. Farm.</strong></p>
-        <p class="line"><span>Jabatan</span><b>:</b><span>Apoteker Penanggung Jawab</span></p>
-        <p class="line"><span>Nomor SIPA</span><b>:</b><span>017/DPMPTSP/SIPA/V/2021</span></p>
-      </section>
-      <section class="identity">
-        <p>${escapeHtml(intro)}</p>
-        <p class="line"><span>PBF</span><b>:</b><span>${escapeHtml(order.recipient || order.supplier || "")}</span></p>
-        <p class="line"><span>Alamat</span><b>:</b><span>${escapeHtml(order.supplierAddress || "")}</span></p>
-        <p class="line"><span>HP./Telp.</span><b>:</b><span>${escapeHtml(order.supplierPhone || "")}</span></p>
-      </section>
-    `;
+  function buildPurchasePrintTable(order, rows) {
+    if (isControlledPurchaseOrderType(order.type)) {
+      return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Zat Aktif</th><th>Bentuk Sediaan</th><th>Satuan</th><th>Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    if (normalizePurchaseOrderType(order.type) === "alkes") {
+      return `<table><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th>Satuan</th><th>Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Jumlah</th><th>Satuan</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  function buildPurchaseOrderPrintTable(order, rows) {
-    const type = getPurchaseOrderTypeMeta(order.type).key;
-    if (type === "regular") {
-      return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Qty</th></tr></thead><tbody>${rows}</tbody></table>`;
-    }
-    if (type === "prekursor") {
-      return `<table><thead><tr><th class="no">No.</th><th>Nama obat yang mengandung Prekursor Farmasi</th><th>Zat Aktif Prekursor</th><th>Bentuk dan kekuatan sediaan</th><th>Satuan</th><th>Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
-    }
-    if (type === "ott") {
-      return `<p>Dengan obat-obat tertentu yang dipesan adalah :</p><table><thead><tr><th class="no">No.</th><th>Nama obat-obat tertentu</th><th>Bentuk sediaan</th><th>Zat Aktif</th><th>Satuan</th><th>Jumlah (angka)</th><th>Jumlah (huruf)</th></tr></thead><tbody>${rows}</tbody></table>`;
-    }
-    return `<table><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th>Satuan</th><th>Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+  function buildPurchaseOrderPrintRows(order) {
+    const type = normalizePurchaseOrderType(order.type);
+    const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 5;
+    const filled = (order.items || []).map((item, index) => {
+      if (isControlledPurchaseOrderType(type)) {
+        return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm || item.strength)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+      }
+      if (type === "alkes") {
+        return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+      }
+      return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+    });
+    const empty = Array.from({ length: Math.max(0, 5 - filled.length) }, () => `<tr>${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
+    return filled.concat(empty).join("");
   }
 
-  function buildPurchaseOrderPrintRow(order, item, index) {
-    const type = getPurchaseOrderTypeMeta(order.type).key;
-    const no = index + 1;
-    if (type === "regular") {
-      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td></tr>`;
-    }
-    if (type === "prekursor") {
-      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.strength || item.dosageForm)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
-    }
-    if (type === "ott") {
-      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.dosageForm)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(numberToIndonesianWords(item.qty))}</td></tr>`;
-    }
-    return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+  function getPurchasePrintIntro(type) {
+    const key = normalizePurchaseOrderType(type);
+    if (key === "regular") return "mengajukan pesanan obat kepada,";
+    if (key === "alkes") return "mengajukan pesanan alat kesehatan kepada,";
+    return `mengajukan pesanan ${getPurchaseOrderTypeMeta(key).label.toLowerCase()} kepada,`;
   }
 
-  function buildPurchaseOrderPrintEmptyRow(order) {
-    const type = getPurchaseOrderTypeMeta(order.type).key;
-    const columns = type === "regular" ? 3 : type === "alkes" ? 6 : 7;
-    return `<tr>${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`;
+  function getPurchasePrintTableLead(type) {
+    const key = normalizePurchaseOrderType(type);
+    if (key === "regular") return "dengan daftar obat yang dipesan sebagai berikut:";
+    if (key === "alkes") return "dengan daftar alat kesehatan yang dipesan sebagai berikut:";
+    return `dengan daftar ${getPurchaseOrderTypeMeta(key).label.toLowerCase()} yang dipesan sebagai berikut:`;
+  }
+
+  function getPurchasePrintUsageLead(type) {
+    const key = normalizePurchaseOrderType(type);
+    if (key === "regular") return "Obat tersebut akan digunakan untuk:";
+    if (key === "alkes") return "Alat kesehatan tersebut akan digunakan untuk:";
+    return `${getPurchaseOrderTypeMeta(key).label} tersebut akan digunakan untuk:`;
   }
 
   function numberToIndonesianWords(value) {
@@ -5236,6 +5845,16 @@
     if (number < 200) return `seratus ${numberToIndonesianWords(number - 100)}`.trim();
     if (number < 1000) return `${words[Math.floor(number / 100)]} ratus ${number % 100 ? numberToIndonesianWords(number % 100) : ""}`.trim();
     return String(number);
+  }
+
+  function formatRupiah(value) {
+    return `Rp ${new Intl.NumberFormat("id-ID").format(Math.max(0, Math.round(Number(value) || 0)))}`;
+  }
+
+  function formatShortDate(value) {
+    const date = parseDateValue(value);
+    if (!date) return String(value || "-");
+    return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }).format(date);
   }
 
   function normalizeRestockRequest(item = {}) {
@@ -5312,6 +5931,10 @@
       });
       if (!payload || (payload.success !== true && payload.ok !== true)) {
         throw new Error(payload?.message || "Data restok belum tersimpan online.");
+      }
+      if (Array.isArray(payload.requests)) {
+        state.restockRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
+        writeStoredArray(RESTOCK_KEY, state.restockRequests);
       }
       return payload;
     } catch (error) {
@@ -5570,8 +6193,8 @@
       if (els.restockPhotoLabel) els.restockPhotoLabel.textContent = "Upload Foto";
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Foto maksimal 2MB.";
+    if (file.size > 8 * 1024 * 1024) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Foto maksimal 8MB.";
       if (els.restockPhotoInput) els.restockPhotoInput.value = "";
       return;
     }
@@ -5661,6 +6284,7 @@
     const realStockUnit = String(els.restockRealStockUnitSelect?.value || (row ? inferRestockRealStockUnit(row) : editingItem?.realStockUnit || editingItem?.stockUnit || "Pcs")).trim() || "Pcs";
     try {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok...";
+      await delay(80);
       if (state.pendingRestockPhotoPromise) await state.pendingRestockPhotoPromise;
       await delay(450);
       const now = new Date().toISOString();
@@ -5708,13 +6332,12 @@
       }
       persistRestockRequests({ remote: false });
       const syncResult = await saveRestockRequestsToBackend({ silent: true });
+      if (!syncResult) throw new Error("Data restok belum berhasil disimpan online.");
       addProfileActivity(editingItem ? "Data restok diperbarui" : "Permintaan restok dibuat", `${medicineText} - ${els.restockQtyInput?.value || 1} ${els.restockUnitSelect?.value || ""}`);
       closeRestockRequestModal();
       renderRestockPage();
       setRestockPageMessage(
-        syncResult
-          ? (editingItem ? "Perubahan data restok berhasil disimpan online." : "Laporan restok berhasil dikirim dan disimpan online.")
-          : (editingItem ? "Perubahan data restok berhasil disimpan lokal." : "Laporan restok berhasil disimpan lokal."),
+        editingItem ? "Perubahan data restok berhasil disimpan online." : "Laporan restok berhasil dikirim dan disimpan online.",
         "success"
       );
       showActionToast(editingItem ? "Data restok berhasil diubah." : "Laporan restok berhasil disimpan.");
@@ -6156,6 +6779,8 @@
       if (action === "cancel") {
         await cancelRestockRequest(state.restockDetailId);
       }
+    } catch (error) {
+      showActionToast(error.message || "Permintaan restok gagal diproses.", "error");
     } finally {
       endAppLoading(token);
     }
@@ -6366,67 +6991,22 @@
       setRestockPageMessage("Draft pesanan hanya dapat dibuat oleh owner/admin.", "error");
       return;
     }
-    const now = new Date().toISOString();
-    const today = new Date().toISOString().slice(0, 10);
-    const supplierKey = normalizeSearch(item.supplier || "");
-    let order = state.purchaseOrders.find((candidate) => {
-      return candidate.status === "draft"
-        && candidate.source === "restock"
-        && candidate.date === today
-        && normalizeSearch(candidate.supplier || "") === supplierKey;
-    });
-
-    if (!order) {
-      order = normalizePurchaseOrder({
-        number: buildPurchaseOrderNumber("DRF"),
-        type: normalizePurchaseOrderType(els.poType?.value || "regular"),
-        supplier: item.supplier || "",
-        recipient: item.supplier || "",
-        city: els.poCity?.value || "S.P. Padang",
-        purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
-        date: today,
-        status: "draft",
-        source: "restock",
-        createdAt: now,
-        updatedAt: now,
-        createdBy: user.name || user.username || "",
-        items: []
-      });
-      state.purchaseOrders.unshift(order);
+    if (item.status === "pending") {
+      item.status = "processing";
+      item.updatedAt = new Date().toISOString();
+      item.history = (item.history || []).concat({ status: "processing", at: item.updatedAt, by: user.name || "Admin", note: "Masuk draft pesanan pembelian" });
+      const syncResult = await saveRestockRequestsToBackend({ silent: true });
+      if (!syncResult) throw new Error("Draft restok belum tersimpan online.");
+      if (Array.isArray(syncResult.requests)) {
+        state.restockRequests = syncResult.requests.map(normalizeRestockRequest).filter((request) => request.id);
+      }
+      persistRestockRequests({ remote: false });
     }
-
-    const orderItem = {
-      kode: item.code,
-      nama: item.medicineName,
-      qty: item.qty,
-      unit: item.unit,
-      activeSubstance: "",
-      dosageForm: "",
-      strength: "",
-      note: item.note || "",
-      sourceRestockId: item.id
-    };
-    const existingIndex = order.items.findIndex((candidate) => candidate.sourceRestockId === item.id || (candidate.kode && candidate.kode === item.code));
-    if (existingIndex >= 0) order.items[existingIndex] = orderItem;
-    else order.items.push(orderItem);
-    order.updatedAt = now;
-    state.purchaseItems = order.items.map((candidate) => ({ ...candidate }));
-    if (els.poSupplier) els.poSupplier.value = order.supplier || item.supplier || "";
-    if (els.poDate) els.poDate.value = order.date;
-
-    persistPurchaseOrders({ remote: false });
-    const syncResult = await savePurchaseOrdersToBackend({ silent: true });
-    await updateRestockStatus(id, "processing");
     closeRestockDetailModal();
-    renderPurchaseItems();
     renderRestockPage();
-    setRestockPageMessage(
-      syncResult
-        ? `${item.medicineName} berhasil masuk ke draft pesanan online.`
-        : `${item.medicineName} berhasil masuk draft lokal, sinkron online akan dicoba lagi.`,
-      "success"
-    );
-    showActionToast(syncResult ? "Draft pesanan tersimpan online." : "Draft pesanan tersimpan lokal.");
+    renderPurchaseDraftList();
+    setRestockPageMessage(`${item.medicineName} masuk draft pesanan pembelian online.`, "success");
+    showActionToast("Draft restok siap dipilih di Pesanan Pembelian.");
   }
 
   function getRestockStatusMeta(status) {

@@ -885,59 +885,182 @@
       </section>
 
         <section class="dashboard-view" id="view-surat-pesanan" data-view="surat-pesanan">
-          <div class="module-grid">
-            <form class="module-card" id="purchaseOrderForm">
-              <div class="module-head">
-                <div>
-                  <h2>Surat Pesanan Pembelian</h2>
-                  <p>Buat draft pesanan untuk obat kosong, habis, atau stok menipis.</p>
+          <section class="purchase-page" id="purchaseListView">
+            <header class="purchase-page-head">
+              <div>
+                <h2>Pesanan Pembelian</h2>
+                <p>Kelola pembelian obat, supplier, dan status penerimaan secara realtime.</p>
+              </div>
+              <div class="purchase-head-actions">
+                <button class="purchase-primary-button" id="poNewButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                  Pesanan Baru
+                </button>
+                <button class="purchase-soft-button" id="poImportDraftButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
+                  Import Draft
+                </button>
+                <button class="purchase-soft-button" id="poExportButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path></svg>
+                  Export Excel
+                </button>
+                <button class="purchase-soft-button" id="poFilterButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+                  Filter Lanjutan
+                </button>
+              </div>
+            </header>
+
+            <div class="purchase-list-layout">
+              <div class="purchase-main-panel">
+                <section class="purchase-stats">
+                  <article><span class="purchase-stat-icon is-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg></span><small>Open</small><strong id="poOpenCount">0</strong><em>Pesanan</em></article>
+                  <article><span class="purchase-stat-icon is-orange"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><small>Diproses</small><strong id="poProcessCount">0</strong><em>Pesanan</em></article>
+                  <article><span class="purchase-stat-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path><circle cx="12" cy="12" r="9"></circle></svg></span><small>Diterima</small><strong id="poDoneCount">0</strong><em>Pesanan</em></article>
+                  <article><span class="purchase-stat-icon is-pink"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7"></path><path d="M16 6a4 4 0 0 0-8 0"></path><path d="M3 8h18l-2 4H5Z"></path></svg></span><small>Nilai PO</small><strong id="poTotalValue">Rp 0</strong><em>Total Nilai</em></article>
+                </section>
+
+                <section class="purchase-filters" id="poFilterPanel">
+                  <label class="purchase-search">
+                    <input id="poSearchInput" type="search" placeholder="Cari No SP / Supplier / Produk...">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
+                  </label>
+                  <label>Status<select id="poStatusFilter"><option value="">Semua Status</option><option value="open">Open</option><option value="processing">Diproses</option><option value="done">Diterima</option><option value="draft">Draft</option><option value="cancelled">Dibatalkan</option></select></label>
+                  <label>Supplier<select id="poSupplierFilter"></select></label>
+                  <label>Tanggal<input id="poDateFilter" type="date"></label>
+                  <button class="purchase-reset-button" id="poResetFilter" type="button">Reset</button>
+                </section>
+
+                <div class="purchase-table-wrap">
+                  <table class="purchase-table">
+                    <thead><tr><th>No. SP</th><th>Supplier</th><th>Ringkasan</th><th>Tanggal PO</th><th>Status</th><th>Total</th><th>Aksi</th></tr></thead>
+                    <tbody id="poOrdersTableBody"></tbody>
+                  </table>
                 </div>
+                <p class="purchase-page-info" id="poListStatus">Belum ada data pesanan pembelian.</p>
               </div>
-              <div class="form-grid compact">
-                <label>Jenis Surat
-                  <select id="poType">
-                    <option value="regular">Surat Pesanan Biasa</option>
-                    <option value="prekursor">Prekursor Farmasi</option>
-                    <option value="ott">Obat-Obat Tertentu</option>
-                    <option value="alkes">Alat Kesehatan</option>
-                  </select>
-                </label>
-                <label>No. SP<input id="poManualNumber" type="text" placeholder="Otomatis saat disimpan"></label>
-                <label>Supplier<select id="poSupplier"></select></label>
-                <label>Tanggal<input id="poDate" type="date"></label>
-                <label>Alamat PBF<input id="poSupplierAddress" type="text" placeholder="Alamat supplier/PBF"></label>
-                <label>HP/Telp.<input id="poSupplierPhone" type="text" placeholder="Nomor kontak supplier"></label>
-                <label>Kota<input id="poCity" type="text" value="S.P. Padang"></label>
-                <label>Kepada/Yth.<input id="poRecipient" type="text" placeholder="Nama PBF / tujuan surat"></label>
-                <label class="wide-field">Filter Draft Restok<input id="poReferenceFilter" type="search" placeholder="Filter nama obat atau supplier dari draft restok"></label>
-                <label class="wide-field">Referensi Draft Restok<select id="poRestockReference"></select></label>
-                <label>Obat<select id="poMedicine"></select></label>
-                <label>Qty<input id="poQty" type="number" min="1" value="1"></label>
-                <label>Satuan<input id="poUnit" type="text" placeholder="Box / Strip / Pcs"></label>
-                <label class="po-controlled-field" data-po-field="regulated">Zat Aktif<input id="poActiveSubstance" type="text" placeholder="Contoh: Pseudoephedrine"></label>
-                <label class="po-controlled-field" data-po-field="regulated">Bentuk Sediaan<input id="poDosageForm" type="text" placeholder="Tablet / Sirup / Kapsul"></label>
-                <label class="po-controlled-field" data-po-field="regulated">Kekuatan/Spesifikasi<input id="poStrength" type="text" placeholder="Contoh: 60 mg / 100 ml"></label>
-                <label class="po-controlled-field" data-po-field="alkes">Spesifikasi Alkes<input id="poDeviceSpec" type="text" placeholder="Ukuran / tipe / merek"></label>
-                <label class="wide-field">Keterangan Item<input id="poItemNote" type="text" placeholder="Keterangan tambahan"></label>
-                <label class="wide-field po-controlled-field" data-po-field="regulated">Kebutuhan/Penggunaan<input id="poPurpose" type="text" placeholder="Untuk membantu kebutuhan Apotek Nadhira Farma"></label>
-              </div>
-              <div class="form-actions">
-                <button class="filter-action" id="addPoItemButton" type="button">Tambah Item</button>
-                <button class="secondary-action" type="submit">Simpan Surat Pesanan</button>
-              </div>
-            </form>
-            <div class="module-card">
-              <div class="module-head">
-                <div>
-                  <h2>Draft Surat Pesanan</h2>
-                  <p id="poNumber">Nomor otomatis akan dibuat saat disimpan.</p>
+
+              <aside class="purchase-detail-panel" id="poDetailPanel">
+                <button class="purchase-detail-close" id="poCloseDetailButton" type="button" aria-label="Tutup detail">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+                <div id="poDetailContent" class="purchase-detail-content"></div>
+                <div class="purchase-detail-actions">
+                  <button class="purchase-action-button is-blue" id="poEditSelectedButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                    Edit
+                  </button>
+                  <button class="purchase-action-button is-orange" id="poMarkProcessButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                    Tandai Diproses
+                  </button>
+                  <button class="purchase-action-button is-green" id="poReceiveButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
+                    Terima Barang
+                  </button>
+                  <button class="purchase-action-button is-red" id="poCancelButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+                    Batalkan
+                  </button>
+                  <button class="purchase-action-button is-blue" id="printPoButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>
+                    Cetak
+                  </button>
                 </div>
-                <button class="filter-action" id="printPoButton" type="button">Cetak</button>
-              </div>
-              <div id="poItemsList" class="po-items"></div>
-              <div id="poSavedList" class="po-saved-list"></div>
+              </aside>
             </div>
-          </div>
+          </section>
+
+          <section class="purchase-form-page" id="purchaseFormView" hidden>
+            <header class="purchase-form-head">
+              <button class="purchase-back-button" id="poBackButton" type="button" aria-label="Kembali">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+              </button>
+              <div>
+                <h2 id="poFormTitle">Pesanan Baru</h2>
+                <p>Buat pesanan pembelian obat ke supplier.</p>
+              </div>
+              <div class="purchase-form-actions">
+                <button class="purchase-soft-button" id="poSaveDraftButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+                  Simpan Draft
+                </button>
+                <button class="purchase-primary-button" id="poSaveOrderButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+                  Simpan Pesanan
+                </button>
+              </div>
+            </header>
+
+            <div class="purchase-form-layout">
+              <main class="purchase-form-main">
+                <form class="purchase-card" id="purchaseOrderForm">
+                  <div class="purchase-card-head"><span class="purchase-mini-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg></span><h3>Informasi Pesanan</h3></div>
+                  <div class="purchase-form-grid">
+                    <label>Supplier *<span class="purchase-select-with-button"><select id="poSupplier"></select><button id="poAddSupplierButton" type="button" aria-label="Tambah supplier">+</button></span></label>
+                    <label>No. Surat Pesanan *<input id="poManualNumber" type="text" placeholder="Kosongkan untuk otomatis"></label>
+                    <label>Tanggal Pemesanan *<input id="poDate" type="date"></label>
+                    <label>Jenis Surat Pesanan *<select id="poType"><option value="regular">Biasa</option><option value="prekursor">Prekursor</option><option value="ott">Obat-Obat Tertentu</option><option value="psikotropika">Psikotropika</option><option value="narkotika">Narkotika</option><option value="alkes">Alkes</option></select></label>
+                    <label>Metode Pembayaran *<select id="poPaymentMethod"><option value="Tunai">Tunai</option><option value="Transfer">Transfer</option><option value="Tempo">Tempo</option><option value="Konsinyasi">Konsinyasi</option></select></label>
+                    <label>Jatuh Tempo Pembayaran<input id="poDueDate" type="date"></label>
+                    <label>Sales / Kontak<input id="poRecipient" type="text" placeholder="Nama sales atau kontak"></label>
+                    <label>Kota<input id="poCity" type="text" value="S.P. Padang"></label>
+                    <label class="wide-field">Alamat PBF<input id="poSupplierAddress" type="text" placeholder="Alamat supplier/PBF"></label>
+                    <label>HP/Telp.<input id="poSupplierPhone" type="text" placeholder="Nomor kontak supplier"></label>
+                    <label>Diskon<input id="poDiscount" type="number" min="0" value="0"></label>
+                    <label class="wide-field">Catatan (Opsional)<input id="poNote" type="text" placeholder="Tulis catatan untuk pesanan ini"></label>
+                    <label class="wide-field po-controlled-field" data-po-field="regulated">Kebutuhan/Penggunaan<input id="poPurpose" type="text" placeholder="Untuk membantu kebutuhan Apotek Nadhira Farma"></label>
+                  </div>
+                </form>
+
+                <section class="purchase-card purchase-product-card">
+                  <div class="purchase-card-head"><span class="purchase-mini-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg></span><div><h3>Daftar Produk</h3><p>Tambahkan produk yang ingin dipesan ke supplier.</p></div></div>
+                  <div class="purchase-product-table-wrap">
+                    <table class="purchase-product-table">
+                      <thead id="poProductHead"></thead>
+                      <tbody id="poProductRows"></tbody>
+                    </table>
+                  </div>
+                  <div id="poItemsList" class="po-items" hidden></div>
+                  <select id="poMedicine" hidden></select>
+                  <input id="poQty" type="hidden" value="1">
+                  <input id="poUnit" type="hidden">
+                  <input id="poActiveSubstance" type="hidden">
+                  <input id="poDosageForm" type="hidden">
+                  <input id="poStrength" type="hidden">
+                  <input id="poDeviceSpec" type="hidden">
+                  <input id="poItemNote" type="hidden">
+                  <select id="poRestockReference" hidden></select>
+                  <button id="addPoItemButton" type="button" hidden>Tambah Item</button>
+                </section>
+
+                <section class="purchase-card">
+                  <div class="purchase-card-head"><span class="purchase-mini-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"></path></svg></span><h3>Catatan Tambahan</h3></div>
+                  <textarea id="poAdditionalNote" rows="3" placeholder="Tulis catatan tambahan untuk pesanan ini..."></textarea>
+                </section>
+              </main>
+
+              <aside class="purchase-form-side">
+                <section class="purchase-summary-card">
+                  <div class="purchase-card-head"><h3>Ringkasan Pesanan</h3><span id="poNumber">Nomor otomatis akan dibuat saat disimpan.</span></div>
+                  <dl>
+                    <div><dt>Total Item</dt><dd id="poSummaryItems">0 item</dd></div>
+                    <div><dt>Total Kuantitas</dt><dd id="poSummaryQty">0</dd></div>
+                    <div><dt>Subtotal</dt><dd id="poSummarySubtotal">Rp 0</dd></div>
+                    <div><dt>Diskon</dt><dd id="poSummaryDiscount">Rp 0</dd></div>
+                    <div><dt>PPN (11%)</dt><dd id="poSummaryTax">Rp 0</dd></div>
+                    <div class="is-total"><dt>Total</dt><dd id="poSummaryTotal">Rp 0</dd></div>
+                  </dl>
+                </section>
+
+                <section class="purchase-summary-card">
+                  <div class="purchase-card-head"><span class="purchase-mini-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><div><h3>Draft Restok Obat</h3><p>Buat draft berdasarkan kebutuhan restok obat.</p></div></div>
+                  <label class="purchase-search is-compact"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
+                  <div id="poDraftList" class="purchase-draft-list"></div>
+                </section>
+              </aside>
+            </div>
+          </section>
         </section>
 
         <section class="dashboard-view" id="view-import-data-obat" data-view="import-data-obat">

@@ -11,6 +11,10 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-13 02:35 WIB: membangun ulang halaman Surat Pesanan Pembelian dengan dashboard/list/detail, form pesanan baru, dropdown supplier dan jenis SP, pencarian produk/barcode, kolom dinamis untuk Biasa/Prekursor/Obat-Obat Tertentu/Psikotropika/Narkotika/Alkes, draft restok online, export CSV, print surat, serta aksi edit/proses/terima/batal.
+- 2026-06-13 02:35 WIB: memperbarui Apps Script Search API untuk menyimpan data purchase order lintas perangkat, menyimpan foto laporan restok ke Drive folder `foto_restock_obat`, dan mengembalikan URL foto agar tidak tersimpan sebagai base64 lokal.
+- 2026-06-13 02:35 WIB: Apps Script Search API produksi dideploy ulang ke deployment `AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu @104`.
+- 2026-06-13 02:35 WIB: memperbaiki alur draft restok agar item yang dimasukkan ke Surat Pesanan berubah status diproses, lalu menjadi selesai setelah pesanan disimpan, serta menambahkan edit/hapus draft restok dari panel pesanan.
 - 2026-06-11 22:15 WIB: mempercepat pemuatan daftar user login di perangkat baru dengan mencoba endpoint GET dan POST secara paralel, sehingga backend Apps Script lama tidak lagi menahan fallback daftar username.
 - 2026-06-11 22:15 WIB: menaikkan cache busting asset `index.html` dan `login.html` ke `20260611-ui-v9`, lalu memicu rebuild GitHub Pages.
 - 2026-06-11 21:55 WIB: memperbaiki login perangkat baru agar tetap bisa input username manual saat daftar user online belum tersedia, menyaring user/karyawan nonaktif dari daftar login, dan memblokir login/absensi untuk status nonaktif.
