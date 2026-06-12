@@ -34,6 +34,9 @@
   const BACKGROUND_SYNC_INTERVAL_MS = 120000;
   const BACKGROUND_SYNC_MIN_GAP_MS = 45000;
   const USER_SYNC_MIN_GAP_MS = 300000;
+  const SALARY_HISTORY_SYNC_MIN_GAP_MS = 180000;
+  const SALARY_HISTORY_REQUEST_TIMEOUT_MS = 25000;
+  const SALARY_BULK_EXPORT_PAUSE_MS = 180;
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
   const DEFAULT_MEDICINE_UNIT_COUNT = 3;
@@ -325,6 +328,8 @@
     salarySlipUrl: "",
     salarySlipHistory: [],
     salaryHistoryEndpointReady: false,
+    salaryHistoryFetchPromise: null,
+    lastSalaryHistorySyncAt: 0,
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
     quickPage: 1,
@@ -390,7 +395,6 @@
     fetchLocalRecords({ silent: true });
     fetchAttendanceRecords({ silent: true });
     fetchPayrollEmployees({ silent: true });
-    fetchSalarySlipHistory({ silent: true });
     fetchOwnerActivityLog();
     bindUserAccessSync();
   }
@@ -704,6 +708,7 @@
       salarySlipSummary: document.getElementById("salarySlipSummary"),
       salarySlipHistoryCard: document.getElementById("salarySlipHistoryCard"),
       salarySlipHistoryStatus: document.getElementById("salarySlipHistoryStatus"),
+      deleteAllSalarySlipHistoryButton: document.getElementById("deleteAllSalarySlipHistoryButton"),
       salarySlipHistoryList: document.getElementById("salarySlipHistoryList"),
       userTableBody: document.getElementById("userTableBody"),
       addUserButton: document.getElementById("addUserButton"),
@@ -968,6 +973,7 @@
     });
     if (els.generateSalarySlipButton) els.generateSalarySlipButton.addEventListener("click", generateSalarySlipPdf);
     if (els.salarySlipHistoryList) els.salarySlipHistoryList.addEventListener("click", handleSalarySlipHistoryAction);
+    if (els.deleteAllSalarySlipHistoryButton) els.deleteAllSalarySlipHistoryButton.addEventListener("click", deleteAllSalarySlipHistory);
     if (els.openSalarySlipButton) els.openSalarySlipButton.addEventListener("click", () => {
       if (state.appLoadingToken) endAppLoading(state.appLoadingToken);
       if (state.salarySlipUrl) window.open(state.salarySlipUrl, "_blank", "noopener");
@@ -1102,7 +1108,6 @@
       fetchPurchaseOrders({ silent: true }),
       fetchOwnerActivityLog({ silent: true }),
       fetchAttendanceRecords({ silent: true }),
-      fetchSalarySlipHistory({ silent: true }),
       fetchUsers({ silent: true }),
       fetchLocalRecords({ silent: true })
     ]);
@@ -8124,6 +8129,9 @@
             ? `Membuat PDF ${formatNumber(index + 1)} dari ${formatNumber(employees.length)}: ${employee.name || employee.nip}...`
             : "Membuat PDF dari template Slip_Gaji...";
         }
+        if (isBulk && els.appLoadingText) {
+          els.appLoadingText.textContent = `Membuat PDF ${formatNumber(index + 1)} dari ${formatNumber(employees.length)}...`;
+        }
 
         try {
           const result = await postToAbsensiApi({
@@ -8147,6 +8155,9 @@
             result,
             fileUrl
           });
+          if (isBulk && index < employees.length - 1) {
+            await delay(SALARY_BULK_EXPORT_PAUSE_MS);
+          }
         } catch (error) {
           failures.push(`${employee.name || employee.nip || "Karyawan"}: ${error.message || "gagal"}`);
         }
@@ -8161,7 +8172,7 @@
         ? `${formatNumber(created.length)} PDF slip gaji siap. ${failures.length ? `${formatNumber(failures.length)} gagal dibuat.` : ""}`.trim()
         : `${formatNumber(created.length)} PDF slip gaji berhasil dibuat, tetapi link file belum diterima.`;
       renderSalarySlipSummary();
-      await fetchSalarySlipHistory({ silent: true });
+      await fetchSalarySlipHistory({ silent: true, force: true });
       showActionToast(isBulk ? `${formatNumber(created.length)} PDF slip gaji berhasil dibuat.` : "PDF slip gaji berhasil dibuat.");
       if (failures.length && els.salarySlipStatusText) {
         els.salarySlipStatusText.textContent = `${els.salarySlipStatusText.textContent} Gagal: ${failures.slice(0, 3).join("; ")}${failures.length > 3 ? "..." : ""}`;
@@ -8175,35 +8186,56 @@
 
   async function fetchSalarySlipHistory(options = {}) {
     if (!els.salarySlipHistoryList) return;
+    const now = Date.now();
     const user = getCurrentUserRecord();
     const localHistory = readStoredArray(getSalarySlipHistoryKey()).map(normalizeSalarySlipHistoryItem);
+
+    if (localHistory.length && !state.salarySlipHistory.length) {
+      state.salarySlipHistory = mergeSalarySlipHistory(localHistory);
+      renderSalarySlipHistory();
+    }
+
+    if (state.salaryHistoryFetchPromise) return state.salaryHistoryFetchPromise;
+    if (!options.force && state.lastSalaryHistorySyncAt && now - state.lastSalaryHistorySyncAt < SALARY_HISTORY_SYNC_MIN_GAP_MS) {
+      renderSalarySlipHistory();
+      return;
+    }
 
     if (!options.silent && els.salarySlipHistoryStatus) {
       els.salarySlipHistoryStatus.textContent = "Menyinkronkan histori slip gaji...";
     }
 
-    try {
-      const payload = await getAbsensiRecords({
-        action: "listSalarySlipHistory",
-        role: user.role || "",
-        username: user.username || user.name || "",
-        name: user.name || user.username || ""
-      });
+    state.salaryHistoryFetchPromise = (async () => {
+      try {
+        const payload = await withTimeout(getAbsensiRecords({
+          action: "listSalarySlipHistory",
+          role: user.role || "",
+          username: user.username || user.name || "",
+          name: user.name || user.username || ""
+        }), SALARY_HISTORY_REQUEST_TIMEOUT_MS, "Histori slip gaji belum merespons. Coba sinkron ulang sebentar lagi.");
 
-      if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.history)) {
-        throw new Error(payload?.message || "Endpoint histori slip gaji belum aktif.");
+        if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.history)) {
+          throw new Error(payload?.message || "Endpoint histori slip gaji belum aktif.");
+        }
+
+        state.salaryHistoryEndpointReady = true;
+        state.lastSalaryHistorySyncAt = Date.now();
+        state.salarySlipHistory = mergeSalarySlipHistory(payload.history, localHistory);
+        writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory.slice(0, 120));
+      } catch (error) {
+        state.salaryHistoryEndpointReady = false;
+        state.salarySlipHistory = mergeSalarySlipHistory(localHistory, state.salarySlipHistory);
+        if (!options.silent) console.warn("Gagal memuat histori slip gaji:", error);
+        if (els.salarySlipHistoryStatus && !options.silent) {
+          els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji belum bisa disinkronkan.";
+        }
+      } finally {
+        state.salaryHistoryFetchPromise = null;
+        renderSalarySlipHistory();
       }
+    })();
 
-      state.salaryHistoryEndpointReady = true;
-      state.salarySlipHistory = mergeSalarySlipHistory(payload.history, localHistory);
-      writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory.slice(0, 120));
-    } catch (error) {
-      state.salaryHistoryEndpointReady = false;
-      state.salarySlipHistory = mergeSalarySlipHistory(localHistory, state.salarySlipHistory);
-      if (!options.silent) console.warn("Gagal memuat histori slip gaji:", error);
-    }
-
-    renderSalarySlipHistory();
+    return state.salaryHistoryFetchPromise;
   }
 
   function renderSalarySlipHistory() {
@@ -8218,6 +8250,10 @@
       els.salarySlipHistoryStatus.textContent = history.length
         ? `${formatNumber(history.length)} slip gaji tersimpan. Setiap periode disimpan sebagai histori terpisah.`
         : "Belum ada slip gaji PDF yang diterbitkan.";
+    }
+    if (els.deleteAllSalarySlipHistoryButton) {
+      els.deleteAllSalarySlipHistoryButton.hidden = !canDelete;
+      els.deleteAllSalarySlipHistoryButton.disabled = !canDelete || !history.length;
     }
 
     if (!history.length) {
@@ -8269,14 +8305,14 @@
     const token = startAppLoading("Menghapus histori slip gaji...", 0);
 
     try {
-      if (item.rowNumber && state.salaryHistoryEndpointReady) {
-        const result = await postToAbsensiApi({
+      if (item.rowNumber || item.fileId) {
+        const result = await withTimeout(postToAbsensiApi({
           action: "deleteSalarySlipHistory",
           role: user.role || "",
           username: user.username || user.name || "",
           rowNumber: item.rowNumber,
           fileId: item.fileId || ""
-        });
+        }), SALARY_HISTORY_REQUEST_TIMEOUT_MS, "Server terlalu lama menghapus histori slip gaji.");
         if (!result || (result.ok !== true && result.success !== true)) {
           throw new Error(result?.message || "Histori slip gaji gagal dihapus.");
         }
@@ -8286,11 +8322,47 @@
       writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory);
       renderSalarySlipHistory();
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = "Histori slip gaji berhasil dihapus.";
-      if (state.salaryHistoryEndpointReady) await fetchSalarySlipHistory({ silent: true });
+      await fetchSalarySlipHistory({ silent: true, force: true });
       showActionToast("Histori slip gaji berhasil dihapus.");
     } catch (error) {
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji gagal dihapus.";
       showActionToast(error.message || "Histori slip gaji gagal dihapus.", "error");
+    } finally {
+      endAppLoading(token);
+    }
+  }
+
+  async function deleteAllSalarySlipHistory() {
+    if (!isAdminUser(getCurrentUserRecord()) || !state.salarySlipHistory.length) return;
+
+    const confirmed = await showConfirmDialog("Hapus semua histori slip gaji PDF?");
+    if (!confirmed) return;
+
+    const user = getCurrentUserRecord();
+    const token = startAppLoading("Menghapus semua histori slip gaji...", 0);
+
+    try {
+      const result = await withTimeout(postToAbsensiApi({
+        action: "deleteAllSalarySlipHistory",
+        role: user.role || "",
+        username: user.username || user.name || ""
+      }), 45000, "Server terlalu lama menghapus semua histori slip gaji.");
+
+      if (!result || (result.ok !== true && result.success !== true)) {
+        throw new Error(result?.message || "Semua histori slip gaji gagal dihapus.");
+      }
+
+      state.salarySlipHistory = [];
+      state.lastSalaryHistorySyncAt = Date.now();
+      writeStoredArray(getSalarySlipHistoryKey(), []);
+      renderSalarySlipHistory();
+      if (els.salarySlipHistoryStatus) {
+        els.salarySlipHistoryStatus.textContent = `${formatNumber(result.deleted || 0)} histori slip gaji berhasil dihapus.`;
+      }
+      showActionToast("Semua histori slip gaji berhasil dihapus.");
+    } catch (error) {
+      if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Semua histori slip gaji gagal dihapus.";
+      showActionToast(error.message || "Semua histori slip gaji gagal dihapus.", "error");
     } finally {
       endAppLoading(token);
     }
@@ -9157,6 +9229,14 @@
 
   function delay(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function withTimeout(promise, ms, message) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error(message || "Proses terlalu lama.")), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
   }
 
   function togglePasswordVisibility(event) {

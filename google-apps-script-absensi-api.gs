@@ -27,6 +27,7 @@ var PAYROLL_PERIOD_CELL = 'K6';
 var PAYROLL_SHIFT_PAGI_CELL = 'K8';
 var PAYROLL_SHIFT_SORE_CELL = 'K9';
 var PAYROLL_EXPORT_RANGE = 'C1:K32';
+var PAYROLL_EXPORT_SETTLE_MS = 250;
 var PAYROLL_TEMPLATE_CELLS = {
   job: 'E9',
   baseAmount: 'E13',
@@ -39,8 +40,9 @@ var PAYROLL_TEMPLATE_CELLS = {
   otherAmount: 'I15',
   gross: 'E19',
   deductions: 'I19',
-  netSalary: 'E20'
+  netSalary: 'E21'
 };
+var PAYROLL_TEMPLATE_CLEAR_CELLS = ['F20'];
 var PAYROLL_DEFAULT_HEADERS = [
   'No',
   'NIP',
@@ -166,6 +168,10 @@ function doPost(e) {
 
     if (action == 'deleteSalarySlipHistory') {
       return handleDeleteSalarySlipHistory_(payload, spreadsheet);
+    }
+
+    if (action == 'deleteAllSalarySlipHistory') {
+      return handleDeleteAllSalarySlipHistory_(payload, spreadsheet);
     }
 
     if (action) {
@@ -768,7 +774,7 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
   try {
     writePayrollTemplateContext_(exportSheet, employee, period, summary, salary);
     SpreadsheetApp.flush();
-    Utilities.sleep(900);
+    Utilities.sleep(PAYROLL_EXPORT_SETTLE_MS);
     file = exportPayrollSlipPdf_(spreadsheet, exportSheet, folder, employee, period);
   } finally {
     spreadsheet.deleteSheet(exportSheet);
@@ -807,7 +813,9 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   if (isAbsensiAdmin_(params)) {
     migrateLegacyPayrollLogRows_(sheet);
     cleanupZeroSalarySlipHistory_(sheet);
-    restorePayrollLogFromPdfFiles_(spreadsheet, sheet);
+    if (isPayrollHistoryMaintenanceRequested_(params)) {
+      restorePayrollLogFromPdfFiles_(spreadsheet, sheet);
+    }
   }
 
   var values = sheet.getDataRange().getValues();
@@ -948,6 +956,66 @@ function handleDeleteSalarySlipHistory_(payload, spreadsheet) {
     ok: true,
     success: true,
     message: 'Histori slip gaji berhasil dihapus.'
+  });
+}
+
+function handleDeleteAllSalarySlipHistory_(payload, spreadsheet) {
+  if (!isAbsensiAdmin_(payload)) {
+    return jsonAbsensi_({
+      ok: false,
+      success: false,
+      message: 'Hanya owner/admin yang dapat menghapus semua histori slip gaji.'
+    });
+  }
+
+  var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME);
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return jsonAbsensi_({
+      ok: true,
+      success: true,
+      deleted: 0,
+      message: 'Tidak ada histori slip gaji yang perlu dihapus.'
+    });
+  }
+
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var values = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getDisplayValues();
+  var fileColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('file'));
+  var fileIdColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('fileid'));
+  var fileUrlColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('fileurl'));
+  var deleted = 0;
+  var trashed = 0;
+
+  for (var rowIndex = values.length - 1; rowIndex >= 1; rowIndex -= 1) {
+    var row = values[rowIndex];
+    var fileText = fileColumn >= 0 ? String(row[fileColumn] || '').trim() : '';
+    var fileUrl = fileUrlColumn >= 0
+      ? String(row[fileUrlColumn] || '').trim()
+      : String(fileText.split('|').slice(1).join('|') || '').trim();
+    var fileId = String(fileIdColumn >= 0 ? row[fileIdColumn] || '' : '').trim() || extractDriveFileId_(fileUrl);
+
+    if (fileId) {
+      try {
+        DriveApp.getFileById(fileId).setTrashed(true);
+        trashed += 1;
+      } catch (error) {
+        // Baris tetap dihapus meskipun file Drive sudah tidak tersedia.
+      }
+    }
+
+    sheet.deleteRow(rowIndex + 1);
+    deleted += 1;
+  }
+
+  SpreadsheetApp.flush();
+
+  return jsonAbsensi_({
+    ok: true,
+    success: true,
+    deleted: deleted,
+    trashed: trashed,
+    message: 'Semua histori slip gaji berhasil dihapus.'
   });
 }
 
@@ -1391,6 +1459,7 @@ function countPayrollWorkDays_(year, month) {
 }
 
 function writePayrollTemplateContext_(templateSheet, employee, period, summary, salary) {
+  clearPayrollTemplateCells_(templateSheet);
   setPayrollTemplateValue_(templateSheet, PAYROLL_NIP_CELL, employee.nip, true);
   setPayrollTemplateValue_(templateSheet, PAYROLL_NAME_CELL, employee.name || '', true);
   setPayrollTemplateValue_(templateSheet, PAYROLL_PERIOD_CELL, period.label, true);
@@ -1408,6 +1477,18 @@ function writePayrollTemplateContext_(templateSheet, employee, period, summary, 
   setPayrollTemplateValue_(templateSheet, PAYROLL_TEMPLATE_CELLS.gross, salary.gross, true);
   setPayrollTemplateValue_(templateSheet, PAYROLL_TEMPLATE_CELLS.deductions, salary.deductions, true);
   setPayrollTemplateValue_(templateSheet, PAYROLL_TEMPLATE_CELLS.netSalary, salary.netSalary, true);
+}
+
+function clearPayrollTemplateCells_(templateSheet) {
+  PAYROLL_TEMPLATE_CLEAR_CELLS.forEach(function(a1) {
+    if (!a1) return;
+
+    try {
+      templateSheet.getRange(a1).clearContent();
+    } catch (error) {
+      // Cell template opsional boleh tidak ada.
+    }
+  });
 }
 
 function setPayrollTemplateValue_(sheet, a1, value, always) {
@@ -1747,6 +1828,11 @@ function getLegacyPayrollLogFileInfo_(row) {
 function sanitizeLegacyPayrollLogCell_(value) {
   var text = String(value || '').trim();
   return text === '0' ? '' : text;
+}
+
+function isPayrollHistoryMaintenanceRequested_(params) {
+  var value = normalizeAbsensiKey_(params.repairHistory || params.restoreHistory || params.maintenance || '');
+  return value == '1' || value == 'true' || value == 'yes' || value == 'restore' || value == 'repair';
 }
 
 function restorePayrollLogFromPdfFiles_(spreadsheet, sheet) {
