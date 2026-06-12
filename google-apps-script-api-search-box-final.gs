@@ -200,6 +200,22 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  e = e || {};
+  e.parameter = e.parameter || {};
+
+  var earlyData = parsePostData_(e);
+  Object.keys(e.parameter).forEach(function(key) {
+    if (earlyData[key] == null) {
+      earlyData[key] = e.parameter[key];
+    }
+  });
+  var earlyAction = String(earlyData.action || e.parameter.action || '').trim();
+  var unlockedOutput = handleUnlockedPostAction_(earlyAction, earlyData);
+
+  if (unlockedOutput) {
+    return unlockedOutput;
+  }
+
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
 
@@ -346,6 +362,43 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function handleUnlockedPostAction_(action, data) {
+  if (action == 'getDataObatFilter') {
+    return handleGetDataObatFilter_();
+  }
+
+  if (action == 'listActivityLog') {
+    return handleListActivityLog_();
+  }
+
+  if (action == 'getAttendanceShiftSettings') {
+    return handleGetAttendanceShiftSettings_();
+  }
+
+  if (action == 'getPharmacyProfile') {
+    return handleGetPharmacyProfile_();
+  }
+
+  if (action == 'listRestockRequests') {
+    return handleListRestockRequests_(data);
+  }
+
+  if (action == 'listPurchaseOrders') {
+    return handleListPurchaseOrders_(data);
+  }
+
+  if (action == 'listLocalRecords') {
+    return handleListLocalRecords_(data);
+  }
+
+  if (action == 'listLoginUsers') {
+    var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
+    return handleListLoginUsers_(readUserRows_(ss.getSheetByName(USER_SHEET_NAME) || ss.insertSheet(USER_SHEET_NAME)));
+  }
+
+  return null;
 }
 
 function handleLogin_(data, users) {
