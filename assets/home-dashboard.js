@@ -5348,39 +5348,36 @@
     return "is-warning";
   }
 
-  function renderRestockCard(item) {
+  function renderRestockCard(item, index) {
     const status = getRestockStatusMeta(item.status);
     const priority = getRestockPriorityMeta(item.priority);
     const isSelected = state.selectedRestockIds.has(item.id);
     const canDelete = canDeleteRestockRequest(item);
     const differenceClass = getRestockDifferenceClass(item);
+    const tone = ((Number(index) || 0) % 4) + 1;
+    const priorityText = String(priority.label || "").toLowerCase();
+    const statusText = String(status.label || "").toLowerCase();
+    const title = `${item.medicineName || "Obat"} (${priorityText})`;
+    const source = [item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok";
     return `
-      <article class="restock-card ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
+      <article class="restock-card quick-medicine-card quick-tone-${tone} ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
         <button class="restock-select-toggle ${isSelected ? "is-selected" : ""}" type="button" data-restock-action="select" data-restock-id="${escapeHtml(item.id)}" aria-pressed="${isSelected ? "true" : "false"}" aria-label="${escapeHtml(isSelected ? "Batalkan pilihan" : "Pilih data restok")}" ${canDelete ? "" : "disabled"}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
         </button>
-        <div class="restock-card-main">
-          <div class="restock-card-title-row">
-            <div class="restock-card-title">
-              <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
-              <h3>${escapeHtml(item.medicineName || "Obat")}</h3>
-              <small>${escapeHtml([item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok")}</small>
-            </div>
-            ${item.photo ? `<img class="restock-card-photo" src="${escapeHtml(item.photo)}" alt="">` : ""}
-          </div>
-          <div class="restock-card-grid">
-            <span><small>Stok Saat Ini</small><strong class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</strong></span>
-            <span><small>Stok Real</small><strong class="${differenceClass}">${escapeHtml(formatRestockRealStock(item))}</strong></span>
-            <span><small>Selisih</small><strong class="${differenceClass}">${escapeHtml(formatRestockStockDifference(item))}</strong></span>
-            <span><small>Permintaan</small><strong>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</strong></span>
-            <span><small>Pelapor</small><strong>${escapeHtml(item.reporter || "-")}</strong></span>
-            <span><small>Tanggal</small><strong>${escapeHtml(formatRestockDateTime(item.createdAt))}</strong></span>
-          </div>
+        <div class="quick-medicine-name restock-card-title-row">
+          <span class="quick-name-accent" aria-hidden="true"></span>
+          <strong>${escapeHtml(title)}</strong>
+          <small class="restock-card-subtitle">${escapeHtml(source)}</small>
         </div>
-        <button class="restock-status-chip is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}">
-          ${status.icon}
-          <span>${escapeHtml(status.label)}</span>
-        </button>
+        <dl class="quick-medicine-list restock-card-grid">
+          <div><dt>Stok Saat Ini</dt><dd class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</dd></div>
+          <div><dt>Stok Real</dt><dd class="${differenceClass}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
+          <div><dt>Selisih</dt><dd class="${differenceClass}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
+          <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
+          <div><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
+          <div><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
+          <div><dt>Status</dt><dd><button class="restock-status-inline is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}" aria-label="${escapeHtml("Buka detail " + status.label)}">(${escapeHtml(statusText)})</button></dd></div>
+        </dl>
       </article>
     `;
   }
