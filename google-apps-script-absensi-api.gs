@@ -807,6 +807,7 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   if (isAbsensiAdmin_(params)) {
     migrateLegacyPayrollLogRows_(sheet);
     cleanupZeroSalarySlipHistory_(sheet);
+    restorePayrollLogFromPdfFiles_(spreadsheet, sheet);
   }
 
   var values = sheet.getDataRange().getValues();
@@ -1474,7 +1475,7 @@ function writePayrollLog_(spreadsheet, employee, period, summary, salary, file, 
   var rowNumber = sheet.getLastRow() + 1;
   var actor = String((payload && (payload.username || payload.actor)) || '').trim();
   var map = {
-    timestamp: new Date(),
+    timestamp: payload && payload.timestamp ? payload.timestamp : new Date(),
     periode: period.label,
     nip: employee.nip,
     nama: employee.name,
@@ -1746,6 +1747,70 @@ function getLegacyPayrollLogFileInfo_(row) {
 function sanitizeLegacyPayrollLogCell_(value) {
   var text = String(value || '').trim();
   return text === '0' ? '' : text;
+}
+
+function restorePayrollLogFromPdfFiles_(spreadsheet, sheet) {
+  if (!sheet) return 0;
+
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var values = sheet.getDataRange().getDisplayValues();
+  var fileIdColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('fileid'));
+  var fileColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('file'));
+  var known = {};
+  var restored = 0;
+
+  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    var row = values[rowIndex];
+    var fileId = fileIdColumn >= 0 ? sanitizeLegacyPayrollLogCell_(row[fileIdColumn]) : '';
+    var fileText = fileColumn >= 0 ? sanitizeLegacyPayrollLogCell_(row[fileColumn]) : '';
+
+    if (fileId) known['id:' + fileId] = true;
+    if (fileText) known['file:' + fileText.split('|')[0].trim()] = true;
+  }
+
+  var payrollSheet = getPayrollSheet_(spreadsheet);
+  var employees = readPayrollEmployees_(payrollSheet);
+  var folder = getOrCreatePayrollFolder_();
+  var files = folder.getFiles();
+
+  while (files.hasNext()) {
+    var file = files.next();
+    var parsed = parsePayrollSlipFileName_(file.getName());
+
+    if (!parsed) continue;
+    if (known['id:' + file.getId()] || known['file:' + file.getName()]) continue;
+
+    var employee = findPayrollEmployee_(employees, '', parsed.name);
+    if (!employee) continue;
+
+    var period = buildPayrollPeriod_(parsed.month, parsed.year);
+    var summary = calculatePayrollAttendanceSummary_(spreadsheet, employee, period);
+    var salary = calculatePayrollSalaryTotals_(employee, summary);
+
+    if (Number(salary.netSalary || 0) <= 0) continue;
+
+    writePayrollLog_(spreadsheet, employee, period, summary, salary, file, {
+      actor: 'restore',
+      timestamp: file.getDateCreated ? file.getDateCreated() : new Date()
+    });
+    known['id:' + file.getId()] = true;
+    known['file:' + file.getName()] = true;
+    restored += 1;
+  }
+
+  return restored;
+}
+
+function parsePayrollSlipFileName_(fileName) {
+  var match = String(fileName || '').match(/^Slip_Gaji_(.+)_(\d{4})-(\d{2})\.pdf$/i);
+
+  if (!match) return null;
+
+  return {
+    name: match[1].replace(/_/g, ' '),
+    year: match[2],
+    month: match[3]
+  };
 }
 
 function extractDriveFileId_(value) {
