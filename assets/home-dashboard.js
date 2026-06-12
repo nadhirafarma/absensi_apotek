@@ -267,6 +267,7 @@
     users: [],
     employees: [],
     suppliers: [],
+    localRecordBootstrapRunning: false,
     purchaseItems: [],
     purchaseOrders: [],
     restockRequests: [],
@@ -501,11 +502,25 @@
       supplierTableBody: document.getElementById("supplierTableBody"),
       addSupplierButton: document.getElementById("addSupplierButton"),
       poForm: document.getElementById("purchaseOrderForm"),
+      poType: document.getElementById("poType"),
+      poManualNumber: document.getElementById("poManualNumber"),
       poSupplier: document.getElementById("poSupplier"),
       poDate: document.getElementById("poDate"),
+      poSupplierAddress: document.getElementById("poSupplierAddress"),
+      poSupplierPhone: document.getElementById("poSupplierPhone"),
+      poCity: document.getElementById("poCity"),
+      poRecipient: document.getElementById("poRecipient"),
+      poReferenceFilter: document.getElementById("poReferenceFilter"),
+      poRestockReference: document.getElementById("poRestockReference"),
       poMedicine: document.getElementById("poMedicine"),
       poQty: document.getElementById("poQty"),
       poUnit: document.getElementById("poUnit"),
+      poActiveSubstance: document.getElementById("poActiveSubstance"),
+      poDosageForm: document.getElementById("poDosageForm"),
+      poStrength: document.getElementById("poStrength"),
+      poDeviceSpec: document.getElementById("poDeviceSpec"),
+      poItemNote: document.getElementById("poItemNote"),
+      poPurpose: document.getElementById("poPurpose"),
       addPoItemButton: document.getElementById("addPoItemButton"),
       printPoButton: document.getElementById("printPoButton"),
       poItemsList: document.getElementById("poItemsList"),
@@ -537,6 +552,7 @@
       restockBarcodeButton: document.getElementById("restockBarcodeButton"),
       restockCurrentStockInput: document.getElementById("restockCurrentStockInput"),
       restockRealStockInput: document.getElementById("restockRealStockInput"),
+      restockRealStockUnitSelect: document.getElementById("restockRealStockUnitSelect"),
       restockQtyInput: document.getElementById("restockQtyInput"),
       restockUnitSelect: document.getElementById("restockUnitSelect"),
       restockPrioritySelect: document.getElementById("restockPrioritySelect"),
@@ -828,7 +844,12 @@
 
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
     if (els.poForm) els.poForm.addEventListener("submit", savePurchaseOrder);
-    if (els.printPoButton) els.printPoButton.addEventListener("click", () => window.print());
+    if (els.poType) els.poType.addEventListener("change", updatePurchaseOrderTypeFields);
+    if (els.poMedicine) els.poMedicine.addEventListener("change", fillPurchaseMedicineFields);
+    if (els.poSupplier) els.poSupplier.addEventListener("change", fillPurchaseSupplierFields);
+    if (els.poReferenceFilter) els.poReferenceFilter.addEventListener("input", populatePurchaseRestockReferences);
+    if (els.poRestockReference) els.poRestockReference.addEventListener("change", applyPurchaseRestockReference);
+    if (els.printPoButton) els.printPoButton.addEventListener("click", printPurchaseOrder);
     if (els.restockBackButton) els.restockBackButton.addEventListener("click", () => switchView(isMobileViewport() ? "home" : "dashboard"));
     if (els.restockAddButton) els.restockAddButton.addEventListener("click", openRestockRequestModal);
     if (els.restockDeleteButton) els.restockDeleteButton.addEventListener("click", openRestockDeleteModal);
@@ -1169,6 +1190,10 @@
     try {
       const payload = await postToApi({ action: "listLocalRecords" });
       if (!payload || (payload.success !== true && payload.ok !== true)) return;
+      const localEmployees = state.employees.slice();
+      const localSuppliers = state.suppliers.slice();
+      let shouldPushEmployees = false;
+      let shouldPushSuppliers = false;
 
       if (Array.isArray(payload.employees)) {
         const employees = payload.employees
@@ -1178,6 +1203,8 @@
         if (employees.length || !state.employees.length || options.allowEmpty === true) {
           state.employees = employees;
           writeStoredArray(EMPLOYEE_KEY, state.employees);
+        } else if (!employees.length && localEmployees.length) {
+          shouldPushEmployees = true;
         }
       }
 
@@ -1189,7 +1216,16 @@
         if (suppliers.length || !state.suppliers.length || options.allowEmpty === true) {
           state.suppliers = suppliers;
           writeStoredArray(SUPPLIER_KEY, state.suppliers);
+        } else if (!suppliers.length && localSuppliers.length) {
+          shouldPushSuppliers = true;
         }
+      }
+
+      if (!options.skipBootstrap && (shouldPushEmployees || shouldPushSuppliers)) {
+        await pushLocalRecordsToBackend({
+          employees: shouldPushEmployees ? localEmployees : [],
+          suppliers: shouldPushSuppliers ? localSuppliers : []
+        });
       }
 
       renderEmployees();
@@ -1200,6 +1236,29 @@
       if (!options.silent) {
         console.warn("Gagal menyinkronkan data karyawan/supplier:", error);
       }
+    }
+  }
+
+  async function pushLocalRecordsToBackend({ employees = [], suppliers = [] } = {}) {
+    if (state.localRecordBootstrapRunning) return;
+    const cleanEmployees = employees.map(normalizeEmployeeRecord).filter((item) => item.name || item.email || item.phone);
+    const cleanSuppliers = suppliers.map(normalizeSupplierRecord).filter((item) => item.name || item.phone || item.pic);
+
+    if (!cleanEmployees.length && !cleanSuppliers.length) return;
+
+    state.localRecordBootstrapRunning = true;
+    try {
+      for (const employee of cleanEmployees) {
+        await saveRemoteLocalRecord("employee", employee, employee);
+      }
+      for (const supplier of cleanSuppliers) {
+        await saveRemoteLocalRecord("supplier", supplier, supplier);
+      }
+      await fetchLocalRecords({ silent: true, skipBootstrap: true });
+    } catch (error) {
+      console.warn("Gagal mengunggah data lokal ke Google Sheet:", error);
+    } finally {
+      state.localRecordBootstrapRunning = false;
     }
   }
 
@@ -1311,6 +1370,9 @@
 
       els.poMedicine.innerHTML = `<option value="">Pilih obat</option>${options.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")}`;
     }
+
+    populatePurchaseRestockReferences();
+    updatePurchaseOrderTypeFields();
   }
 
   function setSelectOptions(select, values, placeholder) {
@@ -1931,6 +1993,8 @@
 
         scanCanvas.width = crop.targetWidth;
         scanCanvas.height = crop.targetHeight;
+        scanContext.filter = "contrast(135%) brightness(108%)";
+        scanContext.imageSmoothingEnabled = true;
         scanContext.drawImage(
           els.scannerVideo,
           crop.sourceX,
@@ -1942,6 +2006,7 @@
           crop.targetWidth,
           crop.targetHeight
         );
+        scanContext.filter = "none";
 
         const nativeValue = state.barcodeDetector ? await detectDashboardNativeBarcode(scanCanvas) : "";
         const qrValue = nativeValue || detectDashboardJsQr(scanContext, scanCanvas.width, scanCanvas.height);
@@ -1957,7 +2022,7 @@
     }
 
     if (!state.scannerLocked && !els.scannerModal?.hidden) {
-      state.scannerTimer = window.setTimeout(scanDashboardFrame, 180);
+      state.scannerTimer = window.setTimeout(scanDashboardFrame, 95);
     }
   }
 
@@ -1986,7 +2051,7 @@
     const quagga = window.Quagga || window.Quagga2;
     const now = Date.now();
 
-    if (!quagga?.decodeSingle || state.quaggaBusy || now - state.lastQuaggaScanAt < 450) {
+    if (!quagga?.decodeSingle || state.quaggaBusy || now - state.lastQuaggaScanAt < 220) {
       return Promise.resolve("");
     }
 
@@ -1999,11 +2064,11 @@
           src: scanCanvas.toDataURL("image/png"),
           locate: true,
           inputStream: {
-            size: 960,
+            size: 1280,
             singleChannel: false
           },
           locator: {
-            patchSize: "medium",
+            patchSize: "small",
             halfSample: false
           },
           decoder: {
@@ -2041,9 +2106,9 @@
   function getDashboardScanCrop() {
     const sourceWidth = els.scannerVideo.videoWidth || 1280;
     const sourceHeight = els.scannerVideo.videoHeight || 720;
-    const frameRatio = 2.9;
-    const maxWidth = sourceWidth * 0.86;
-    const maxHeight = sourceHeight * 0.56;
+    const frameRatio = 2.65;
+    const maxWidth = sourceWidth * 0.94;
+    const maxHeight = sourceHeight * 0.68;
     let cropWidth = Math.min(maxWidth, maxHeight * frameRatio);
     let cropHeight = cropWidth / frameRatio;
 
@@ -2244,7 +2309,7 @@
 
     state.scannerCandidateAt = now;
 
-    const requiredReads = normalizedValue.length >= 8 ? 2 : 3;
+    const requiredReads = normalizedValue.length >= 8 ? 1 : 2;
     if (state.scannerCandidateCount >= requiredReads) {
       applyScannedBarcode(state.scannerCandidateRaw || rawValue);
       return true;
@@ -4522,12 +4587,23 @@
       nama: String(item.nama || item.name || item.medicineName || "Obat").trim(),
       qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
       unit: String(item.unit || item.satuan || "Pcs").trim() || "Pcs",
+      activeSubstance: String(item.activeSubstance || item.zatAktif || item.zat_aktif || "").trim(),
+      dosageForm: String(item.dosageForm || item.bentukSediaan || item.bentuk_sediaan || "").trim(),
+      strength: String(item.strength || item.kekuatan || item.spec || item.spesifikasi || "").trim(),
+      note: String(item.note || item.keterangan || "").trim(),
       sourceRestockId: String(item.sourceRestockId || item.restockId || "").trim()
     })).filter((item) => item.nama);
 
     return {
       number: String(order.number || order.nomor || `SP-${Date.now()}-${index + 1}`).trim(),
+      type: normalizePurchaseOrderType(order.type || order.jenis || "regular"),
+      manualNumber: String(order.manualNumber || order.noSp || order.no_sp || "").trim(),
       supplier: String(order.supplier || order.suplier || "").trim(),
+      supplierAddress: String(order.supplierAddress || order.alamatPbf || order.alamat || "").trim(),
+      supplierPhone: String(order.supplierPhone || order.phone || order.telepon || "").trim(),
+      city: String(order.city || order.kota || "S.P. Padang").trim() || "S.P. Padang",
+      recipient: String(order.recipient || order.kepada || order.yth || "").trim(),
+      purpose: String(order.purpose || order.kebutuhan || "Untuk membantu kebutuhan Apotek Nadhira Farma").trim(),
       date: String(order.date || new Date().toISOString().slice(0, 10)).slice(0, 10),
       status: String(order.status || "saved").trim() || "saved",
       source: String(order.source || "").trim(),
@@ -4536,6 +4612,24 @@
       createdBy: String(order.createdBy || order.user || "").trim(),
       items
     };
+  }
+
+  function normalizePurchaseOrderType(value) {
+    const key = normalizeSearch(value);
+    if (key.includes("prekursor")) return "prekursor";
+    if (key === "ott" || key.includes("obatobattertentu") || key.includes("obattertentu")) return "ott";
+    if (key.includes("alkes") || key.includes("alatkesehatan")) return "alkes";
+    return "regular";
+  }
+
+  function getPurchaseOrderTypeMeta(type) {
+    const map = {
+      regular: { key: "regular", label: "Surat Pesanan Biasa", prefix: "SP" },
+      prekursor: { key: "prekursor", label: "Surat Pesanan Prekursor Farmasi", prefix: "SPP" },
+      ott: { key: "ott", label: "Surat Pesanan Obat-Obat Tertentu", prefix: "OTT" },
+      alkes: { key: "alkes", label: "Surat Pesanan Alat Kesehatan", prefix: "ALK" }
+    };
+    return map[normalizePurchaseOrderType(type)] || map.regular;
   }
 
   function safeParseJsonArray(value) {
@@ -4608,6 +4702,80 @@
     }
   }
 
+  function getPurchaseOrderRestockOptions() {
+    const query = normalizeSearch(els.poReferenceFilter?.value || "");
+    return state.restockRequests
+      .filter((item) => item.status !== "rejected" && item.status !== "done")
+      .filter((item) => {
+        const haystack = normalizeSearch([item.medicineName, item.code, item.supplier, item.reporter].join(" "));
+        return !query || haystack.includes(query);
+      })
+      .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
+      .slice(0, 120);
+  }
+
+  function populatePurchaseRestockReferences() {
+    if (!els.poRestockReference) return;
+    const current = els.poRestockReference.value;
+    const options = getPurchaseOrderRestockOptions();
+    els.poRestockReference.innerHTML = `<option value="">Pilih referensi restok</option>${options.map((item) => {
+      const label = `${item.medicineName || item.code} - ${item.qty} ${item.unit}${item.supplier ? ` - ${item.supplier}` : ""}`;
+      return `<option value="${escapeHtml(item.id)}">${escapeHtml(label)}</option>`;
+    }).join("")}`;
+    if (options.some((item) => item.id === current)) els.poRestockReference.value = current;
+  }
+
+  function applyPurchaseRestockReference() {
+    const item = state.restockRequests.find((request) => request.id === els.poRestockReference?.value);
+    if (!item) return;
+    const rowIndex = state.rows.findIndex((row) => {
+      return normalizeSearch(row.kode) === normalizeSearch(item.code) || normalizeSearch(row.nama) === normalizeSearch(item.medicineName);
+    });
+    if (els.poSupplier) els.poSupplier.value = item.supplier || els.poSupplier.value || "";
+    if (els.poMedicine && rowIndex >= 0) els.poMedicine.value = String(rowIndex);
+    if (els.poQty) els.poQty.value = String(item.qty || 1);
+    if (els.poUnit) els.poUnit.value = item.unit || item.stockUnit || "Pcs";
+    fillPurchaseSupplierFields();
+    fillPurchaseMedicineFields();
+  }
+
+  function updatePurchaseOrderTypeFields() {
+    const type = normalizePurchaseOrderType(els.poType?.value || "regular");
+    document.querySelectorAll(".po-controlled-field").forEach((field) => {
+      const key = field.dataset.poField || "";
+      field.hidden = key === "regulated"
+        ? type === "regular" || type === "alkes"
+        : key === "alkes"
+          ? type !== "alkes"
+          : false;
+    });
+    if (els.poPurpose) {
+      els.poPurpose.closest("label")?.toggleAttribute("hidden", type === "regular" || type === "alkes");
+    }
+  }
+
+  function fillPurchaseMedicineFields() {
+    const medicine = state.rows[Number(els.poMedicine?.value ?? -1)];
+    if (!medicine) return;
+    if (els.poUnit && !els.poUnit.value) els.poUnit.value = medicine.satuan_beli || medicine.satuan_1 || "Pcs";
+    if (els.poActiveSubstance && !els.poActiveSubstance.value) els.poActiveSubstance.value = medicine.komposisi || "";
+    if (els.poDosageForm && !els.poDosageForm.value) els.poDosageForm.value = medicine.kategori || "";
+    if (els.poStrength && !els.poStrength.value) els.poStrength.value = medicine.kekuatan || "";
+    if (els.poItemNote && !els.poItemNote.value) els.poItemNote.value = medicine.no_batch ? `Batch ${medicine.no_batch}` : "";
+  }
+
+  function fillPurchaseSupplierFields() {
+    const supplierName = els.poSupplier?.value || "";
+    const supplier = state.suppliers.find((item) => normalizeSearch(item.name) === normalizeSearch(supplierName));
+    if (!supplier) {
+      if (els.poRecipient && !els.poRecipient.value) els.poRecipient.value = supplierName;
+      return;
+    }
+    if (els.poRecipient) els.poRecipient.value = supplier.name || supplierName;
+    if (els.poSupplierAddress && !els.poSupplierAddress.value) els.poSupplierAddress.value = supplier.address || "";
+    if (els.poSupplierPhone && !els.poSupplierPhone.value) els.poSupplierPhone.value = supplier.phone || "";
+  }
+
   function buildPurchaseOrderNumber(prefix = "SP") {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const count = state.purchaseOrders.filter((order) => String(order.number || "").indexOf(`${prefix}-${today}`) === 0).length + 1;
@@ -4617,16 +4785,22 @@
   function addPurchaseItem() {
     const medicineIndex = Number(els.poMedicine ? els.poMedicine.value : -1);
     const medicine = state.rows[medicineIndex];
+    const restockItem = state.restockRequests.find((request) => request.id === els.poRestockReference?.value);
     const qty = Math.max(1, Number(els.poQty ? els.poQty.value : 1) || 1);
-    const unit = String(els.poUnit ? els.poUnit.value : "").trim() || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs";
+    const unit = String(els.poUnit ? els.poUnit.value : "").trim() || restockItem?.unit || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs";
 
-    if (!medicine) return;
+    if (!medicine && !restockItem) return;
 
     state.purchaseItems.push({
-      kode: medicine.kode,
-      nama: medicine.nama,
+      kode: medicine?.kode || restockItem?.code || "",
+      nama: medicine?.nama || restockItem?.medicineName || "Obat",
       qty,
-      unit
+      unit,
+      activeSubstance: String(els.poActiveSubstance?.value || "").trim(),
+      dosageForm: String(els.poDosageForm?.value || "").trim(),
+      strength: String(els.poDeviceSpec?.value || els.poStrength?.value || "").trim(),
+      note: String(els.poItemNote?.value || "").trim(),
+      sourceRestockId: restockItem?.id || ""
     });
     renderPurchaseItems();
   }
@@ -4637,9 +4811,18 @@
     const now = new Date().toISOString();
     const user = getCurrentUserRecord();
 
+    const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
+    const manualNumber = String(els.poManualNumber?.value || "").trim();
     const order = normalizePurchaseOrder({
-      number: buildPurchaseOrderNumber("SP"),
+      number: manualNumber || buildPurchaseOrderNumber(typeMeta.prefix),
+      type: typeMeta.key,
+      manualNumber: manualNumber,
       supplier: els.poSupplier ? els.poSupplier.value : "",
+      supplierAddress: els.poSupplierAddress?.value || "",
+      supplierPhone: els.poSupplierPhone?.value || "",
+      city: els.poCity?.value || "S.P. Padang",
+      recipient: els.poRecipient?.value || els.poSupplier?.value || "",
+      purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
       date: els.poDate ? els.poDate.value : new Date().toISOString().slice(0, 10),
       status: "saved",
       createdAt: now,
@@ -4667,7 +4850,7 @@
 
     els.poItemsList.innerHTML = state.purchaseItems.map((item, index) => `
       <div class="po-item">
-        <span><strong>${escapeHtml(item.nama)}</strong><small>${escapeHtml(item.kode)}</small></span>
+        <span><strong>${escapeHtml(item.nama)}</strong><small>${escapeHtml([item.kode, item.activeSubstance, item.strength].filter(Boolean).join(" - ") || "Item surat pesanan")}</small></span>
         <em>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</em>
         <button type="button" data-remove-po="${index}" aria-label="Hapus item">x</button>
       </div>
@@ -4685,6 +4868,7 @@
     if (!els.poSavedList) return;
     if (els.poDate && !els.poDate.value) els.poDate.value = new Date().toISOString().slice(0, 10);
     if (els.poNumber) els.poNumber.textContent = state.purchaseOrders[0]?.number || "Nomor otomatis akan dibuat saat disimpan.";
+    populatePurchaseRestockReferences();
 
     if (!state.purchaseOrders.length) {
       els.poSavedList.innerHTML = "<p>Belum ada surat pesanan tersimpan.</p>";
@@ -4693,15 +4877,223 @@
 
     els.poSavedList.innerHTML = state.purchaseOrders.slice(0, 8).map((order) => {
       const items = (order.items || []).slice(0, 3).map((item) => `${item.nama} (${item.qty} ${item.unit})`).join(", ");
+      const typeMeta = getPurchaseOrderTypeMeta(order.type);
       return `
         <article class="po-saved-card ${order.status === "draft" ? "is-draft" : ""}">
           <strong>${escapeHtml(order.number)}</strong>
-          <span>${escapeHtml(order.date)} - ${escapeHtml(order.supplier || "Supplier belum dipilih")}</span>
+          <span>${escapeHtml(typeMeta.label)} - ${escapeHtml(order.date)} - ${escapeHtml(order.supplier || "Supplier belum dipilih")}</span>
           <small>${formatNumber(order.items.length)} item${order.status === "draft" ? " - Draft Restok" : ""}</small>
           ${items ? `<em>${escapeHtml(items)}${order.items.length > 3 ? ", ..." : ""}</em>` : ""}
         </article>
       `;
     }).join("");
+  }
+
+  function getPurchaseOrderForPrint() {
+    if (state.purchaseItems.length) {
+      const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
+      const manualNumber = String(els.poManualNumber?.value || "").trim();
+      return normalizePurchaseOrder({
+        number: manualNumber || buildPurchaseOrderNumber(typeMeta.prefix),
+        type: typeMeta.key,
+        manualNumber,
+        supplier: els.poSupplier?.value || "",
+        supplierAddress: els.poSupplierAddress?.value || "",
+        supplierPhone: els.poSupplierPhone?.value || "",
+        city: els.poCity?.value || "S.P. Padang",
+        recipient: els.poRecipient?.value || els.poSupplier?.value || "",
+        purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
+        date: els.poDate?.value || new Date().toISOString().slice(0, 10),
+        status: "draft",
+        source: "preview",
+        items: state.purchaseItems.slice()
+      });
+    }
+    return state.purchaseOrders[0] || null;
+  }
+
+  function printPurchaseOrder() {
+    const order = getPurchaseOrderForPrint();
+    if (!order || !order.items.length) {
+      showActionToast("Tambahkan item surat pesanan terlebih dahulu.", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=1200");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(buildPurchaseOrderPrintHtml(order));
+    printWindow.document.close();
+    printWindow.focus();
+    window.setTimeout(() => printWindow.print(), 450);
+  }
+
+  function buildPurchaseOrderPrintHtml(order) {
+    const type = getPurchaseOrderTypeMeta(order.type);
+    const escapedItems = order.items.map((item, index) => buildPurchaseOrderPrintRow(order, item, index)).join("");
+    const rows = escapedItems + Array.from({ length: Math.max(0, 12 - order.items.length) }, (_, index) => buildPurchaseOrderPrintEmptyRow(order, index)).join("");
+    const title = type.key === "regular"
+      ? "SURAT PESANAN"
+      : type.key === "prekursor"
+        ? "SURAT PESANAN PREKURSOR FARMASI"
+        : type.key === "ott"
+          ? "SURAT PESANAN OBAT-OBAT TERTENTU"
+          : "SURAT PESANAN ALAT KESEHATAN";
+    const intro = type.key === "regular"
+      ? ""
+      : type.key === "prekursor"
+        ? "Mengajukan permintaan obat yang mengandung Prekursor Farmasi kepada :"
+        : type.key === "ott"
+          ? "Mengajukan permintaan obat-obat tertentu kepada :"
+          : "Mengajukan permintaan alat kesehatan kepada :";
+
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(order.number)} - ${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111; font-family: "Times New Roman", serif; font-size: 14pt; }
+    .sheet { min-height: 270mm; position: relative; }
+    .top { display: grid; grid-template-columns: 1fr 0.9fr; gap: 28px; align-items: start; }
+    .brand strong { display: block; font-size: 18pt; text-decoration: underline; }
+    .brand p, .to p, .identity p, .usage p { margin: 3px 0; }
+    .to { line-height: 1.35; }
+    h1 { margin: 20px 0 8px; text-align: center; font-size: 18pt; text-decoration: ${type.key === "regular" ? "none" : "underline"}; }
+    h2 { margin: 0 0 18px; text-align: center; font-size: 14pt; }
+    .identity { margin: 26px 0; }
+    .line { display: grid; grid-template-columns: 190px 16px 1fr; gap: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+    th, td { border: 1px solid #111; padding: 7px 6px; vertical-align: middle; }
+    th { text-align: center; font-weight: 700; }
+    td { height: 30px; }
+    .no { width: 48px; text-align: center; }
+    .qty { width: 160px; text-align: center; }
+    .small { font-size: 12pt; }
+    .usage { margin-top: 24px; }
+    .sign { position: absolute; right: 26px; bottom: 10px; width: 260px; text-align: center; }
+    .sign-space { height: 90px; }
+    .stamp { margin-top: 4px; font-weight: 700; text-decoration: underline; }
+    @media print { button { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    ${type.key === "regular" ? buildRegularPurchasePrintHeader(order) : buildControlledPurchasePrintHeader(order, title, intro)}
+    ${buildPurchaseOrderPrintTable(order, rows)}
+    ${type.key === "regular" ? "" : `
+      <section class="usage">
+        <p>${escapeHtml(order.purpose || "Obat tersebut akan digunakan untuk membantu kebutuhan :")}</p>
+        <p class="line"><span>Nama Apotek</span><b>:</b><strong>Apotek Nadhira Farma</strong></p>
+        <p class="line"><span>Alamat</span><b>:</b><strong>Desa Terate Kec. SP. Padang Kab. Ogan Komering Ilir.</strong></p>
+        <p class="line"><span>SIA</span><b>:</b><strong>010/DPMPTSP/SIA/VI/2021</strong></p>
+      </section>
+    `}
+    <section class="sign">
+      <p>${escapeHtml(order.city || "S.P. Padang")},</p>
+      <p>${type.key === "regular" ? "Pemesan" : "Pemohon,"}</p>
+      <div class="sign-space"></div>
+      <p class="stamp">Apt. Lilin Syukria, S.Farm.</p>
+      <p class="small">017/DPMPTSP/SIPA/V/2021</p>
+      <p class="small">010/DPMPTSP/SIA/VI/2021</p>
+    </section>
+  </main>
+</body>
+</html>`;
+  }
+
+  function buildRegularPurchasePrintHeader(order) {
+    return `
+      <section class="top">
+        <div class="brand">
+          <strong>APOTEK NADHIRA FARMA</strong>
+          <p>Desa Terate Kec. S.P. Padang Kab. OKI</p>
+          <p>Apoteker : Apt. Lilin Syukria, S.Farm.</p>
+          <p>SIPA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 017/DPMPTSP/SIPA/V/2021</p>
+          <p>SIA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 010/DPMPTSP/SIA/VI/2021</p>
+        </div>
+        <div class="to">
+          <p>Nomor : ${escapeHtml(order.manualNumber || order.number || "")}</p>
+          <p>${escapeHtml(order.city || "S.P. Padang")}, ......................................</p>
+          <p>Kepada</p>
+          <p>Yth, ${escapeHtml(order.recipient || order.supplier || "......................................")}</p>
+          <p>${escapeHtml(order.supplierAddress || "......................................")}</p>
+          <p>${escapeHtml(order.supplierPhone || "......................................")}</p>
+        </div>
+      </section>
+      <h1>SURAT PESANAN</h1>
+    `;
+  }
+
+  function buildControlledPurchasePrintHeader(order, title, intro) {
+    return `
+      <h1>${escapeHtml(title)}</h1>
+      <h2>NO. SP : ${escapeHtml(order.manualNumber || order.number || "........................")}</h2>
+      <section class="identity">
+        <p>Yang bertanda tangan dibawah ini :</p>
+        <p class="line"><span>Nama</span><b>:</b><strong>Apt. Lilin Syukria, S. Farm.</strong></p>
+        <p class="line"><span>Jabatan</span><b>:</b><span>Apoteker Penanggung Jawab</span></p>
+        <p class="line"><span>Nomor SIPA</span><b>:</b><span>017/DPMPTSP/SIPA/V/2021</span></p>
+      </section>
+      <section class="identity">
+        <p>${escapeHtml(intro)}</p>
+        <p class="line"><span>PBF</span><b>:</b><span>${escapeHtml(order.recipient || order.supplier || "")}</span></p>
+        <p class="line"><span>Alamat</span><b>:</b><span>${escapeHtml(order.supplierAddress || "")}</span></p>
+        <p class="line"><span>HP./Telp.</span><b>:</b><span>${escapeHtml(order.supplierPhone || "")}</span></p>
+      </section>
+    `;
+  }
+
+  function buildPurchaseOrderPrintTable(order, rows) {
+    const type = getPurchaseOrderTypeMeta(order.type).key;
+    if (type === "regular") {
+      return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Qty</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    if (type === "prekursor") {
+      return `<table><thead><tr><th class="no">No.</th><th>Nama obat yang mengandung Prekursor Farmasi</th><th>Zat Aktif Prekursor</th><th>Bentuk dan kekuatan sediaan</th><th>Satuan</th><th>Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    if (type === "ott") {
+      return `<p>Dengan obat-obat tertentu yang dipesan adalah :</p><table><thead><tr><th class="no">No.</th><th>Nama obat-obat tertentu</th><th>Bentuk sediaan</th><th>Zat Aktif</th><th>Satuan</th><th>Jumlah (angka)</th><th>Jumlah (huruf)</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    return `<table><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th>Satuan</th><th>Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function buildPurchaseOrderPrintRow(order, item, index) {
+    const type = getPurchaseOrderTypeMeta(order.type).key;
+    const no = index + 1;
+    if (type === "regular") {
+      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td></tr>`;
+    }
+    if (type === "prekursor") {
+      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.strength || item.dosageForm)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+    }
+    if (type === "ott") {
+      return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.dosageForm)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(numberToIndonesianWords(item.qty))}</td></tr>`;
+    }
+    return `<tr><td class="no">${no}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+  }
+
+  function buildPurchaseOrderPrintEmptyRow(order) {
+    const type = getPurchaseOrderTypeMeta(order.type).key;
+    const columns = type === "regular" ? 3 : type === "alkes" ? 6 : 7;
+    return `<tr>${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`;
+  }
+
+  function numberToIndonesianWords(value) {
+    const number = Math.max(0, Math.round(Number(value) || 0));
+    const words = ["nol", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+    if (number < 12) return words[number];
+    if (number < 20) return `${words[number - 10]} belas`;
+    if (number < 100) return `${words[Math.floor(number / 10)]} puluh ${number % 10 ? words[number % 10] : ""}`.trim();
+    if (number < 200) return `seratus ${numberToIndonesianWords(number - 100)}`.trim();
+    if (number < 1000) return `${words[Math.floor(number / 100)]} ratus ${number % 100 ? numberToIndonesianWords(number % 100) : ""}`.trim();
+    return String(number);
   }
 
   function normalizeRestockRequest(item = {}) {
@@ -4718,7 +5110,7 @@
       currentStock: String(item.currentStock || item.stok || medicine?.stok || "0").trim(),
       stockUnit,
       realStock: String(realStockValue == null ? "" : realStockValue).trim(),
-      realStockUnit: String(item.realStockUnit || item.stokRealUnit || item.stok_real_unit || stockUnit).trim() || stockUnit,
+      realStockUnit: String(item.realStockUnit || item.stokRealUnit || item.stok_real_unit || inferRestockRealStockUnit(medicine) || stockUnit).trim() || stockUnit,
       unit,
       qty: Math.max(1, Number(item.qty || item.requestQty || item.quantity || item.permintaan || 1) || 1),
       priority: ["urgent", "important", "normal"].includes(item.priority) ? item.priority : "normal",
@@ -4788,22 +5180,39 @@
 
   function populateRestockMedicineOptions() {
     populateRestockUnitOptions();
+    populateRestockRealStockUnitOptions();
     renderRestockMedicineResults();
+  }
+
+  function getRestockUnitOptions(row = null) {
+    const unitCandidates = row
+      ? [row.satuan_stok_min, row.satuan_1, row.satuan_2, row.satuan_3, row.satuan_4, row.satuan_beli]
+      : state.rows.flatMap((item) => [
+        item.satuan_stok_min,
+        item.satuan_1,
+        item.satuan_2,
+        item.satuan_3,
+        item.satuan_4,
+        item.satuan_beli
+      ]);
+    const units = unique(unitCandidates).filter(Boolean);
+    return units.length ? units : ["Box", "Strip", "Tablet", "Botol", "Pcs"];
   }
 
   function populateRestockUnitOptions(selected = "") {
     if (!els.restockUnitSelect) return;
-    const units = unique(state.rows.flatMap((row) => [
-      row.satuan_beli,
-      row.satuan_1,
-      row.satuan_2,
-      row.satuan_3,
-      row.satuan_stok_min
-    ])).filter(Boolean);
-    const values = units.length ? units : ["Box", "Strip", "Tablet", "Botol", "Pcs"];
+    const values = getRestockUnitOptions();
     const current = selected || els.restockUnitSelect.value || values[0] || "Pcs";
     els.restockUnitSelect.innerHTML = values.map((unit) => `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`).join("");
     els.restockUnitSelect.value = values.includes(current) ? current : values[0];
+  }
+
+  function populateRestockRealStockUnitOptions(selected = "", row = null) {
+    if (!els.restockRealStockUnitSelect) return;
+    const values = getRestockUnitOptions(row);
+    const current = selected || els.restockRealStockUnitSelect.value || inferRestockRealStockUnit(row) || values[0] || "Pcs";
+    els.restockRealStockUnitSelect.innerHTML = values.map((unit) => `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`).join("");
+    els.restockRealStockUnitSelect.value = values.includes(current) ? current : values[0];
   }
 
   function inferRestockUnit(row) {
@@ -4812,6 +5221,10 @@
 
   function inferRestockStockUnit(row) {
     return String(row?.satuan_beli || row?.satuan_1 || row?.satuan_stok_min || "Pcs").trim() || "Pcs";
+  }
+
+  function inferRestockRealStockUnit(row) {
+    return String(row?.satuan_stok_min || row?.satuan_1 || row?.satuan_beli || "Pcs").trim() || "Pcs";
   }
 
   function getRestockMedicineKey(row) {
@@ -4860,6 +5273,7 @@
     state.restockSelectedMedicineKey = "";
     if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = "";
     if (els.restockRealStockInput) els.restockRealStockInput.value = "";
+    populateRestockRealStockUnitOptions();
     renderRestockMedicineResults();
     if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Pilih obat dari hasil pencarian untuk mengisi data restok.";
   }
@@ -4920,6 +5334,7 @@
     if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`;
     if (els.restockRealStockInput) els.restockRealStockInput.value = formatRestockNumberInputValue(row.stok);
     populateRestockUnitOptions(inferRestockUnit(row));
+    populateRestockRealStockUnitOptions(inferRestockRealStockUnit(row), row);
     if (els.restockMedicineResults) {
       els.restockMedicineResults.hidden = true;
       els.restockMedicineResults.innerHTML = "";
@@ -4936,6 +5351,7 @@
       els.restockCurrentStockInput.value = row ? `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}` : "0";
     }
     if (row) populateRestockUnitOptions(inferRestockUnit(row));
+    if (row) populateRestockRealStockUnitOptions(inferRestockRealStockUnit(row), row);
   }
 
   function openRestockRequestModal(id = "") {
@@ -4985,6 +5401,10 @@
       els.restockMedicineResults.innerHTML = "";
     }
     populateRestockUnitOptions(editingItem ? editingItem.unit : "");
+    populateRestockRealStockUnitOptions(
+      editingItem ? editingItem.realStockUnit || currentStockInfo?.unit || "" : "",
+      row
+    );
     showModal(els.restockRequestModal);
     window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
   }
@@ -5096,6 +5516,7 @@
     }
     const loadingToken = startAppLoading(editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok obat...", 0);
     const user = getCurrentUserRecord();
+    const realStockUnit = String(els.restockRealStockUnitSelect?.value || (row ? inferRestockRealStockUnit(row) : editingItem?.realStockUnit || editingItem?.stockUnit || "Pcs")).trim() || "Pcs";
     try {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok...";
       if (state.pendingRestockPhotoPromise) await state.pendingRestockPhotoPromise;
@@ -5109,7 +5530,7 @@
           currentStock: row?.stok || editingItem.currentStock || "0",
           stockUnit: row ? inferRestockStockUnit(row) : editingItem.stockUnit,
           realStock: realStockText,
-          realStockUnit: row ? inferRestockStockUnit(row) : editingItem.realStockUnit || editingItem.stockUnit,
+          realStockUnit: realStockUnit,
           unit: els.restockUnitSelect?.value || editingItem.unit,
           qty: els.restockQtyInput?.value || editingItem.qty || 1,
           priority: els.restockPrioritySelect?.value || editingItem.priority || "normal",
@@ -5127,7 +5548,7 @@
           currentStock: row.stok || els.restockCurrentStockInput?.value || "0",
           stockUnit: inferRestockStockUnit(row),
           realStock: realStockText,
-          realStockUnit: inferRestockStockUnit(row),
+          realStockUnit: realStockUnit,
           unit: els.restockUnitSelect?.value || inferRestockUnit(row),
           qty: els.restockQtyInput?.value || 1,
           priority: els.restockPrioritySelect?.value || "normal",
@@ -5206,6 +5627,7 @@
     }
 
     updateNotificationState();
+    populatePurchaseRestockReferences();
   }
 
   function setRestockPageMessage(message, type) {
@@ -5363,9 +5785,45 @@
     return item?.realStockUnit || getRestockCurrentStockInfo(item).unit || item?.stockUnit || item?.unit || "";
   }
 
+  function getRestockDifferenceUnit(item) {
+    return getRestockCurrentStockInfo(item).unit || getRestockComparisonUnit(item);
+  }
+
+  function getRestockUnitRatioToBuyUnit(row, unit) {
+    const key = normalizeSearch(unit);
+    if (!key) return null;
+    if (normalizeSearch(row?.satuan_beli) === key) return 1;
+
+    for (let index = 1; index <= 4; index += 1) {
+      if (normalizeSearch(row?.[`satuan_${index}`]) !== key) continue;
+      const isi = parseNumber(row?.[`isi_${index}`]);
+      return isi > 0 ? 1 / isi : 1;
+    }
+
+    if (normalizeSearch(row?.satuan_stok_min) === key) {
+      for (let index = 4; index >= 1; index -= 1) {
+        if (normalizeSearch(row?.[`satuan_${index}`]) !== key) continue;
+        const isi = parseNumber(row?.[`isi_${index}`]);
+        return isi > 0 ? 1 / isi : 1;
+      }
+    }
+
+    return null;
+  }
+
+  function getRestockUnitConversionFactor(row, fromUnit, toUnit) {
+    if (normalizeSearch(fromUnit) === normalizeSearch(toUnit)) return 1;
+    const fromRatio = getRestockUnitRatioToBuyUnit(row, fromUnit);
+    const toRatio = getRestockUnitRatioToBuyUnit(row, toUnit);
+    if (fromRatio && toRatio) return fromRatio / toRatio;
+    return 1;
+  }
+
   function getRestockStockDifference(item) {
     if (!hasRestockRealStock(item)) return null;
-    return parseNumber(item.realStock) - parseNumber(getRestockCurrentStockInfo(item).stock);
+    const currentInfo = getRestockCurrentStockInfo(item);
+    const factor = getRestockUnitConversionFactor(currentInfo.row, getRestockComparisonUnit(item), currentInfo.unit);
+    return (parseNumber(item.realStock) * factor) - parseNumber(currentInfo.stock);
   }
 
   function formatRestockRealStock(item) {
@@ -5378,7 +5836,7 @@
     if (difference === null) return "Belum dicek";
     if (Math.abs(difference) < 0.0001) return "Sesuai";
     const prefix = difference > 0 ? "+" : "";
-    return `${prefix}${formatNumber(difference)} ${getRestockComparisonUnit(item)}`;
+    return `${prefix}${formatNumber(difference)} ${getRestockDifferenceUnit(item)}`;
   }
 
   function getRestockDifferenceClass(item) {
@@ -5399,6 +5857,7 @@
     const statusText = String(status.label || "").toLowerCase();
     const title = item.medicineName || "Obat";
     const source = [item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok";
+    const photo = item.photo ? `<img class="restock-card-photo-inline" src="${escapeHtml(item.photo)}" alt="">` : "";
     return `
       <article class="restock-card quick-medicine-card quick-tone-${tone} ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
         <button class="restock-select-toggle ${isSelected ? "is-selected" : ""}" type="button" data-restock-action="select" data-restock-id="${escapeHtml(item.id)}" aria-pressed="${isSelected ? "true" : "false"}" aria-label="${escapeHtml(isSelected ? "Batalkan pilihan" : "Pilih data restok")}" ${canDelete ? "" : "disabled"}>
@@ -5411,6 +5870,7 @@
             <span class="restock-priority is-${priority.key}">${escapeHtml(priorityText)}</span>
           </span>
           <small class="restock-card-subtitle">${escapeHtml(source)}</small>
+          ${photo}
         </div>
         <dl class="quick-medicine-list restock-card-grid">
           <div><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
@@ -5522,30 +5982,44 @@
     `;
   }
 
-  function handleRestockDetailAction(event) {
+  async function handleRestockDetailAction(event) {
     const button = event.target.closest("[data-restock-detail-action]");
     if (!button || !state.restockDetailId) return;
     const action = button.dataset.restockDetailAction;
-    if (action === "order") {
-      addRestockToPurchaseOrder(state.restockDetailId);
-      return;
-    }
-    if (action === "processing" || action === "done" || action === "rejected") {
-      updateRestockStatus(state.restockDetailId, action === "processing" ? "processing" : action);
-      return;
-    }
-    if (action === "cancel") {
-      cancelRestockRequest(state.restockDetailId);
-      return;
-    }
     if (action === "edit-medicine") {
       const editId = state.restockDetailId;
       closeRestockDetailModal();
       openRestockRequestModal(editId);
+      return;
+    }
+
+    const labelMap = {
+      order: "Memasukkan restok ke draft pesanan...",
+      processing: "Menandai restok sedang diproses...",
+      done: "Menandai restok selesai...",
+      rejected: "Menolak laporan restok...",
+      cancel: "Membatalkan laporan restok..."
+    };
+    const token = startAppLoading(labelMap[action] || "Memproses permintaan restok...", 0);
+
+    try {
+      if (action === "order") {
+        await addRestockToPurchaseOrder(state.restockDetailId);
+        return;
+      }
+      if (action === "processing" || action === "done" || action === "rejected") {
+        await updateRestockStatus(state.restockDetailId, action === "processing" ? "processing" : action);
+        return;
+      }
+      if (action === "cancel") {
+        await cancelRestockRequest(state.restockDetailId);
+      }
+    } finally {
+      endAppLoading(token);
     }
   }
 
-  function updateRestockStatus(id, status) {
+  async function updateRestockStatus(id, status) {
     const item = state.restockRequests.find((request) => request.id === id);
     if (!item) return;
     const user = getCurrentUserRecord();
@@ -5562,25 +6036,29 @@
     item.status = status;
     item.updatedAt = new Date().toISOString();
     item.history = (item.history || []).concat({ status, at: item.updatedAt, by: user.name || "Admin" });
-    persistRestockRequests();
+    persistRestockRequests({ remote: false });
+    const syncResult = await saveRestockRequestsToBackend({ silent: true });
     addProfileActivity("Status restok diperbarui", `${item.medicineName} - ${getRestockStatusMeta(status).label}`);
     renderRestockPage();
     renderRestockDetail(item);
-    showActionToast(`Status restok ${getRestockStatusMeta(status).label.toLowerCase()} berhasil disimpan.`);
+    showActionToast(syncResult
+      ? `Status restok ${getRestockStatusMeta(status).label.toLowerCase()} berhasil disimpan online.`
+      : `Status restok ${getRestockStatusMeta(status).label.toLowerCase()} tersimpan lokal.`);
   }
 
-  function cancelRestockRequest(id) {
+  async function cancelRestockRequest(id) {
     const item = state.restockRequests.find((request) => request.id === id);
     if (!item || item.status !== "pending") {
       setRestockPageMessage("Laporan hanya bisa dibatalkan saat status masih pending.", "error");
       return;
     }
     state.restockRequests = state.restockRequests.filter((request) => request.id !== id);
-    persistRestockRequests();
+    persistRestockRequests({ remote: false });
+    const syncResult = await saveRestockRequestsToBackend({ silent: true });
     addProfileActivity("Laporan restok dibatalkan", item?.medicineName || "Restok obat");
     closeRestockDetailModal();
     renderRestockPage();
-    showActionToast("Laporan restok berhasil dibatalkan.");
+    showActionToast(syncResult ? "Laporan restok berhasil dibatalkan online." : "Laporan restok berhasil dibatalkan lokal.");
   }
 
   function openRestockDeleteModal() {
@@ -5759,7 +6237,11 @@
     if (!order) {
       order = normalizePurchaseOrder({
         number: buildPurchaseOrderNumber("DRF"),
+        type: normalizePurchaseOrderType(els.poType?.value || "regular"),
         supplier: item.supplier || "",
+        recipient: item.supplier || "",
+        city: els.poCity?.value || "S.P. Padang",
+        purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
         date: today,
         status: "draft",
         source: "restock",
@@ -5776,6 +6258,10 @@
       nama: item.medicineName,
       qty: item.qty,
       unit: item.unit,
+      activeSubstance: "",
+      dosageForm: "",
+      strength: "",
+      note: item.note || "",
       sourceRestockId: item.id
     };
     const existingIndex = order.items.findIndex((candidate) => candidate.sourceRestockId === item.id || (candidate.kode && candidate.kode === item.code));
@@ -5788,7 +6274,7 @@
 
     persistPurchaseOrders({ remote: false });
     const syncResult = await savePurchaseOrdersToBackend({ silent: true });
-    updateRestockStatus(id, "processing");
+    await updateRestockStatus(id, "processing");
     closeRestockDetailModal();
     renderPurchaseItems();
     renderRestockPage();
@@ -7523,7 +8009,7 @@
     if (els.salarySlipEmployeeSelect) {
       const current = els.salarySlipEmployeeSelect.value;
       els.salarySlipEmployeeSelect.innerHTML = state.payrollEmployees.length
-        ? state.payrollEmployees.map((employee) => `<option value="${escapeHtml(employee.nip || employee.name)}">${escapeHtml(employee.name || employee.nip)}${employee.nip ? ` - ${escapeHtml(employee.nip)}` : ""}</option>`).join("")
+        ? `<option value="__all__">Semua Karyawan</option>${state.payrollEmployees.map((employee) => `<option value="${escapeHtml(employee.nip || employee.name)}">${escapeHtml(employee.name || employee.nip)}${employee.nip ? ` - ${escapeHtml(employee.nip)}` : ""}</option>`).join("")}`
         : `<option value="">Belum ada data gaji</option>`;
       if (current && Array.from(els.salarySlipEmployeeSelect.options).some((option) => option.value === current)) {
         els.salarySlipEmployeeSelect.value = current;
@@ -7549,7 +8035,8 @@
     if (!els.salarySlipSummary) return;
 
     const employee = getSelectedPayrollEmployee();
-    if (!employee) {
+    const employees = getSelectedPayrollEmployees();
+    if (!employees.length) {
       state.salarySlipUrl = "";
       els.salarySlipSummary.innerHTML = `<span>Belum ada karyawan terpilih.</span>`;
       if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = true;
@@ -7558,6 +8045,17 @@
     }
 
     if (els.generateSalarySlipButton) els.generateSalarySlipButton.disabled = !state.payrollEndpointReady;
+    if (!employee) {
+      const totalPreview = employees.reduce((total, item) => total + calculateSalarySlipPreview(item).netSalary, 0);
+      els.salarySlipSummary.innerHTML = `
+        <span><small>Mode Export</small><strong>Semua</strong></span>
+        <span><small>Karyawan</small><strong>${formatNumber(employees.length)} Orang</strong></span>
+        <span><small>File PDF</small><strong>${formatNumber(employees.length)} File</strong></span>
+        <span><small>Estimasi Total</small><strong>${formatPayrollMoney(totalPreview)}</strong></span>
+      `;
+      return;
+    }
+
     const summary = calculateSalarySlipPreview(employee);
     els.salarySlipSummary.innerHTML = `
       <span><small>Hadir</small><strong>${formatNumber(summary.present)} Hari</strong></span>
@@ -7602,54 +8100,72 @@
 
   async function generateSalarySlipPdf() {
     const user = getCurrentUserRecord();
-    const employee = getSelectedPayrollEmployee();
+    const employees = getSelectedPayrollEmployees();
 
-    if (!isAdminUser(user) || !employee) return;
+    if (!isAdminUser(user) || !employees.length) return;
     if (!state.payrollEndpointReady) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = "Endpoint slip gaji belum aktif. Update Apps Script absensi terlebih dahulu.";
       return;
     }
 
-    const token = startAppLoading("Membuat PDF slip gaji...", 0);
+    const isBulk = employees.length > 1 || els.salarySlipEmployeeSelect?.value === "__all__";
+    const token = startAppLoading(isBulk ? `Membuat ${formatNumber(employees.length)} PDF slip gaji...` : "Membuat PDF slip gaji...", 0);
     state.salarySlipUrl = "";
     if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = true;
 
     try {
-      if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = "Membuat PDF dari template Slip_Gaji...";
-      const result = await postToAbsensiApi({
-        action: "generateSalarySlip",
-        role: user.role || "",
-        username: user.username || user.name || "",
-        nip: employee.nip || "",
-        name: employee.name || "",
-        month: els.salarySlipMonthSelect?.value || getCurrentMonthValue(),
-        year: els.salarySlipYearSelect?.value || String(new Date().getFullYear())
-      });
+      const failures = [];
+      const created = [];
 
-      if (!result || (result.ok !== true && result.success !== true)) {
-        throw new Error(result?.message || result?.error || "PDF slip gaji gagal dibuat.");
+      for (let index = 0; index < employees.length; index += 1) {
+        const employee = employees[index];
+        if (els.salarySlipStatusText) {
+          els.salarySlipStatusText.textContent = isBulk
+            ? `Membuat PDF ${formatNumber(index + 1)} dari ${formatNumber(employees.length)}: ${employee.name || employee.nip}...`
+            : "Membuat PDF dari template Slip_Gaji...";
+        }
+
+        try {
+          const result = await postToAbsensiApi({
+            action: "generateSalarySlip",
+            role: user.role || "",
+            username: user.username || user.name || "",
+            nip: employee.nip || "",
+            name: employee.name || "",
+            month: els.salarySlipMonthSelect?.value || getCurrentMonthValue(),
+            year: els.salarySlipYearSelect?.value || String(new Date().getFullYear())
+          });
+
+          if (!result || (result.ok !== true && result.success !== true)) {
+            throw new Error(result?.message || result?.error || "PDF slip gaji gagal dibuat.");
+          }
+
+          const fileUrl = result.fileUrl || result.printUrl || "";
+          if (fileUrl && !state.salarySlipUrl) state.salarySlipUrl = fileUrl;
+          created.push({
+            employee,
+            result,
+            fileUrl
+          });
+        } catch (error) {
+          failures.push(`${employee.name || employee.nip || "Karyawan"}: ${error.message || "gagal"}`);
+        }
       }
 
-      state.salarySlipUrl = result.fileUrl || result.printUrl || "";
-      appendSalarySlipHistory({
-        id: result.fileId || `${employee.nip || employee.name}-${Date.now()}`,
-        rowNumber: Number(result.rowNumber || 0),
-        issuedAt: new Date().toISOString(),
-        period: result.period?.label || `${getMonthName(els.salarySlipMonthSelect?.value)} ${els.salarySlipYearSelect?.value || ""}`.trim(),
-        nip: employee.nip || "",
-        name: employee.name || "",
-        netSalary: Number(result.salary?.netSalary || calculateSalarySlipPreview(employee).netSalary || 0),
-        fileId: result.fileId || "",
-        fileName: result.fileName || "",
-        fileUrl: state.salarySlipUrl
-      });
+      if (!created.length) {
+        throw new Error(failures[0] || "PDF slip gaji gagal dibuat.");
+      }
+
       if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = !state.salarySlipUrl;
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = state.salarySlipUrl
-        ? "PDF slip gaji siap dibuka."
-        : (result.message || "PDF slip gaji berhasil dibuat, tetapi link file belum diterima.");
+        ? `${formatNumber(created.length)} PDF slip gaji siap. ${failures.length ? `${formatNumber(failures.length)} gagal dibuat.` : ""}`.trim()
+        : `${formatNumber(created.length)} PDF slip gaji berhasil dibuat, tetapi link file belum diterima.`;
       renderSalarySlipSummary();
       await fetchSalarySlipHistory({ silent: true });
-      showActionToast("PDF slip gaji berhasil dibuat.");
+      showActionToast(isBulk ? `${formatNumber(created.length)} PDF slip gaji berhasil dibuat.` : "PDF slip gaji berhasil dibuat.");
+      if (failures.length && els.salarySlipStatusText) {
+        els.salarySlipStatusText.textContent = `${els.salarySlipStatusText.textContent} Gagal: ${failures.slice(0, 3).join("; ")}${failures.length > 3 ? "..." : ""}`;
+      }
     } catch (error) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
     } finally {
@@ -7791,6 +8307,7 @@
     const merged = Array.from(arguments).flat().map(normalizeSalarySlipHistoryItem);
     const seen = new Set();
     return merged.filter((item) => {
+      if (!isValidSalarySlipHistoryItem(item)) return false;
       const key = item.fileId || item.fileUrl || `${item.name}|${item.period}|${item.issuedAt}`;
       if (!key || seen.has(key)) return false;
       seen.add(key);
@@ -7813,6 +8330,12 @@
     };
   }
 
+  function isValidSalarySlipHistoryItem(item) {
+    if (!item) return false;
+    if (Number(item.netSalary || 0) <= 0) return false;
+    return Boolean(item.fileUrl || item.fileId || item.fileName);
+  }
+
   function getSalarySlipHistoryKey() {
     return `${SALARY_HISTORY_KEY}.${getProfileStorageIdentity()}`;
   }
@@ -7829,9 +8352,19 @@
 
   function getSelectedPayrollEmployee() {
     const value = els.salarySlipEmployeeSelect?.value || "";
+    if (value === "__all__") return null;
     return state.payrollEmployees.find((employee) => {
       return normalizeSearch(employee.nip) === normalizeSearch(value) || normalizeSearch(employee.name) === normalizeSearch(value);
     }) || null;
+  }
+
+  function getSelectedPayrollEmployees() {
+    const value = els.salarySlipEmployeeSelect?.value || "";
+    if (value === "__all__") {
+      return state.payrollEmployees.filter((employee) => employee.nip || employee.name);
+    }
+    const employee = getSelectedPayrollEmployee();
+    return employee ? [employee] : [];
   }
 
   function normalizePayrollEmployee(value) {

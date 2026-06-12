@@ -43,7 +43,14 @@ var RESTOCK_REQUEST_HEADERS = [
 ];
 var PURCHASE_ORDER_HEADERS = [
   'number',
+  'type',
+  'manualNumber',
   'supplier',
+  'supplierAddress',
+  'supplierPhone',
+  'city',
+  'recipient',
+  'purpose',
   'date',
   'status',
   'source',
@@ -1388,7 +1395,14 @@ function readPurchaseOrderFromRow_(headers, row) {
 
   return sanitizePurchaseOrder_({
     number: pickDataValue_(raw, ['number', 'nomor']),
+    type: pickDataValue_(raw, ['type', 'jenis']),
+    manualNumber: pickDataValue_(raw, ['manualnumber', 'nosp', 'no_sp']),
     supplier: pickDataValue_(raw, ['supplier', 'suplier']),
+    supplierAddress: pickDataValue_(raw, ['supplieraddress', 'alamatpbf', 'alamat']),
+    supplierPhone: pickDataValue_(raw, ['supplierphone', 'phone', 'telepon']),
+    city: pickDataValue_(raw, ['city', 'kota']),
+    recipient: pickDataValue_(raw, ['recipient', 'kepada', 'yth']),
+    purpose: pickDataValue_(raw, ['purpose', 'kebutuhan']),
     date: pickDataValue_(raw, ['date', 'tanggal']),
     status: pickDataValue_(raw, ['status']),
     source: pickDataValue_(raw, ['source', 'sumber']),
@@ -1441,7 +1455,14 @@ function sanitizePurchaseOrder_(order) {
 
   return {
     number: String(order.number || order.nomor || ('SP-' + new Date().getTime())).trim().slice(0, 90),
+    type: normalizePurchaseOrderType_(order.type || order.jenis),
+    manualNumber: String(order.manualNumber || order.noSp || order.no_sp || '').trim().slice(0, 90),
     supplier: String(order.supplier || order.suplier || '').trim().slice(0, 180),
+    supplierAddress: String(order.supplierAddress || order.alamatPbf || order.alamat || '').trim().slice(0, 240),
+    supplierPhone: String(order.supplierPhone || order.phone || order.telepon || '').trim().slice(0, 80),
+    city: String(order.city || order.kota || 'S.P. Padang').trim().slice(0, 120) || 'S.P. Padang',
+    recipient: String(order.recipient || order.kepada || order.yth || '').trim().slice(0, 180),
+    purpose: String(order.purpose || order.kebutuhan || '').trim().slice(0, 260),
     date: String(order.date || order.tanggal || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd')).trim().slice(0, 20),
     status: normalizePurchaseOrderStatus_(order.status),
     source: String(order.source || order.sumber || '').trim().slice(0, 80),
@@ -1474,11 +1495,23 @@ function parsePurchaseOrderItems_(value) {
       nama: String(item.nama || item.name || item.medicineName || 'Obat').trim().slice(0, 220),
       qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
       unit: String(item.unit || item.satuan || 'Pcs').trim().slice(0, 60) || 'Pcs',
+      activeSubstance: String(item.activeSubstance || item.zatAktif || item.zat_aktif || '').trim().slice(0, 160),
+      dosageForm: String(item.dosageForm || item.bentukSediaan || item.bentuk_sediaan || '').trim().slice(0, 160),
+      strength: String(item.strength || item.kekuatan || item.spec || item.spesifikasi || '').trim().slice(0, 160),
+      note: String(item.note || item.keterangan || '').trim().slice(0, 220),
       sourceRestockId: String(item.sourceRestockId || item.restockId || '').trim().slice(0, 90)
     };
   }).filter(function(item) {
     return item.nama;
   });
+}
+
+function normalizePurchaseOrderType_(value) {
+  var key = normalizeLoginKey_(value || '');
+  if (key.indexOf('prekursor') >= 0) return 'prekursor';
+  if (key == 'ott' || key.indexOf('obatobattertentu') >= 0 || key.indexOf('obattertentu') >= 0) return 'ott';
+  if (key.indexOf('alkes') >= 0 || key.indexOf('alatkesehatan') >= 0) return 'alkes';
+  return 'regular';
 }
 
 function normalizePurchaseOrderStatus_(value) {

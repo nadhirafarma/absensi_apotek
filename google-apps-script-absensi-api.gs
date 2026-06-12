@@ -774,7 +774,7 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     spreadsheet.deleteSheet(exportSheet);
   }
 
-  writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload);
+  var rowNumber = writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload);
 
   return jsonAbsensi_({
     ok: true,
@@ -787,7 +787,8 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     fileId: file.getId(),
     fileName: file.getName(),
     fileUrl: file.getUrl(),
-    printUrl: file.getUrl()
+    printUrl: file.getUrl(),
+    rowNumber: rowNumber
   });
 }
 
@@ -803,9 +804,16 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
     });
   }
 
+  if (isAbsensiAdmin_(params)) {
+    cleanupZeroSalarySlipHistory_(sheet);
+  }
+
   var values = sheet.getDataRange().getValues();
   var displayValues = sheet.getDataRange().getDisplayValues();
-  var headers = displayValues[0].map(normalizeAbsensiHeader_);
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  values = sheet.getDataRange().getValues();
+  displayValues = sheet.getDataRange().getDisplayValues();
+  var headers = headerInfo.headers.map(normalizeAbsensiHeader_);
   var timestampColumn = findHeaderIndex_(headers, ['timestamp', 'diterbitkan', 'tanggal']);
   var periodColumn = findHeaderIndex_(headers, ['periode']);
   var nipColumn = findHeaderIndex_(headers, ['nip']);
@@ -859,6 +867,11 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
     var issuedAt = timestampValue instanceof Date && !isNaN(timestampValue.getTime())
       ? timestampValue.toISOString()
       : String(timestampColumn >= 0 ? displayRow[timestampColumn] || '' : '').trim();
+    var netSalary = netSalaryColumn >= 0 ? parsePayrollMoney_(displayRow[netSalaryColumn] || row[netSalaryColumn] || 0) : 0;
+
+    if (netSalary <= 0) {
+      continue;
+    }
 
     history.push({
       id: fileId || ('row-' + (rowIndex + 1)),
@@ -867,7 +880,7 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
       period: periodColumn >= 0 ? String(displayRow[periodColumn] || '').trim() : '',
       nip: nip,
       name: name,
-      netSalary: netSalaryColumn >= 0 ? Number(row[netSalaryColumn] || 0) : 0,
+      netSalary: netSalary,
       fileId: fileId,
       fileName: fileName,
       fileUrl: fileUrl
@@ -1456,56 +1469,139 @@ function exportPayrollSlipPdf_(spreadsheet, templateSheet, folder, employee, per
 
 function writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload) {
   var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME) || spreadsheet.insertSheet(PAYROLL_LOG_SHEET_NAME);
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var rowNumber = sheet.getLastRow() + 1;
+  var actor = String((payload && (payload.username || payload.actor)) || '').trim();
+  var map = {
+    timestamp: new Date(),
+    periode: period.label,
+    nip: employee.nip,
+    nama: employee.name,
+    shiftpagi: summary.shiftPagi,
+    shiftsore: summary.shiftSore,
+    hadir: summary.present,
+    hadirlengkap: summary.completeDays,
+    terlambat: summary.late,
+    pulangcepat: summary.earlyReturn,
+    lembur: summary.overtimeDays,
+    gajibersih: salary.netSalary,
+    file: file.getName() + ' | ' + file.getUrl(),
+    fileid: file.getId(),
+    fileurl: file.getUrl(),
+    diterbitkanoleh: actor
+  };
 
-  if (sheet.getLastRow() < 1) {
-    sheet.appendRow([
-      'Timestamp',
-      'Periode',
-      'NIP',
-      'Nama',
-      'Shift Pagi',
-      'Shift Sore',
-      'Hadir',
-      'Hadir Lengkap',
-      'Terlambat',
-      'Pulang Cepat',
-      'Lembur',
-      'Gaji Bersih',
-      'File',
-      'File ID',
-      'File URL',
-      'Diterbitkan Oleh'
-    ]);
-  } else {
-    var requiredHeaders = ['File ID', 'File URL', 'Diterbitkan Oleh'];
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
-    var normalizedHeaders = headers.map(normalizeAbsensiHeader_);
-    requiredHeaders.forEach(function(header) {
-      if (normalizedHeaders.indexOf(normalizeAbsensiHeader_(header)) >= 0) return;
-      sheet.getRange(1, headers.length + 1).setValue(header);
-      headers.push(header);
-      normalizedHeaders.push(normalizeAbsensiHeader_(header));
-    });
+  Object.keys(map).forEach(function(key) {
+    var column = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_(key));
+    if (column < 0) return;
+    sheet.getRange(rowNumber, column + 1).setValue(map[key]);
+  });
+
+  SpreadsheetApp.flush();
+  return rowNumber;
+}
+
+function getPayrollLogDefaultHeaders_() {
+  return [
+    'Timestamp',
+    'Periode',
+    'NIP',
+    'Nama',
+    'Shift Pagi',
+    'Shift Sore',
+    'Hadir',
+    'Hadir Lengkap',
+    'Terlambat',
+    'Pulang Cepat',
+    'Lembur',
+    'Gaji Bersih',
+    'File',
+    'File ID',
+    'File URL',
+    'Diterbitkan Oleh'
+  ];
+}
+
+function getPayrollLogHeaderAliases_(key) {
+  var aliases = {
+    timestamp: ['timestamp', 'tanggal', 'diterbitkan'],
+    periode: ['periode', 'period'],
+    nip: ['nip', 'idkaryawan', 'nik'],
+    nama: ['nama', 'namakaryawan', 'name'],
+    shiftpagi: ['shiftpagi'],
+    shiftsore: ['shiftsore'],
+    hadir: ['hadir'],
+    hadirlengkap: ['hadirlengkap'],
+    terlambat: ['terlambat'],
+    pulangcepat: ['pulangcepat'],
+    lembur: ['lembur'],
+    gajibersih: ['gajibersih', 'netsalary'],
+    file: ['file'],
+    fileid: ['fileid'],
+    fileurl: ['fileurl', 'url'],
+    diterbitkanoleh: ['diterbitkanoleh', 'publishedby', 'actor']
+  };
+
+  return aliases[key] || [key];
+}
+
+function ensurePayrollLogHeaders_(sheet) {
+  var defaults = getPayrollLogDefaultHeaders_();
+
+  if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 1) {
+    sheet.getRange(1, 1, 1, defaults.length).setValues([defaults]);
   }
 
-  sheet.appendRow([
-    new Date(),
-    period.label,
-    employee.nip,
-    employee.name,
-    summary.shiftPagi,
-    summary.shiftSore,
-    summary.present,
-    summary.completeDays,
-    summary.late,
-    summary.earlyReturn,
-    summary.overtimeDays,
-    salary.netSalary,
-    file.getName() + ' | ' + file.getUrl(),
-    file.getId(),
-    file.getUrl(),
-    String((payload && (payload.username || payload.actor)) || '').trim()
-  ]);
+  var headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getDisplayValues()[0].map(function(header) {
+    return String(header || '').trim();
+  });
+
+  if (!headers.filter(Boolean).length) {
+    headers = defaults.slice();
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+
+  var normalized = headers.map(normalizeAbsensiHeader_);
+
+  defaults.forEach(function(header) {
+    var key = normalizeAbsensiHeader_(header);
+    if (findHeaderIndex_(normalized, getPayrollLogHeaderAliases_(key)) >= 0) return;
+    sheet.getRange(1, headers.length + 1).setValue(header);
+    headers.push(header);
+    normalized.push(normalizeAbsensiHeader_(header));
+  });
+
+  return {
+    headers: headers,
+    normalized: normalized
+  };
+}
+
+function cleanupZeroSalarySlipHistory_(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return 0;
+
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var values = sheet.getDataRange().getDisplayValues();
+  var netSalaryColumn = findHeaderIndex_(headerInfo.normalized, ['gajibersih', 'netsalary']);
+  var fileColumn = findHeaderIndex_(headerInfo.normalized, ['file']);
+  var deleted = 0;
+
+  if (netSalaryColumn < 0) return 0;
+
+  for (var rowIndex = values.length - 1; rowIndex >= 1; rowIndex -= 1) {
+    var row = values[rowIndex];
+    var fileText = fileColumn >= 0 ? String(row[fileColumn] || '').trim() : '';
+    var netSalary = parsePayrollMoney_(row[netSalaryColumn]);
+    var rowLooksLikeSlip = fileText || row.join('|').indexOf('Slip_Gaji_') >= 0;
+
+    if (rowLooksLikeSlip && netSalary <= 0) {
+      sheet.deleteRow(rowIndex + 1);
+      deleted += 1;
+    }
+  }
+
+  if (deleted) SpreadsheetApp.flush();
+  return deleted;
 }
 
 function extractDriveFileId_(value) {

@@ -890,11 +890,32 @@
                 </div>
               </div>
               <div class="form-grid compact">
+                <label>Jenis Surat
+                  <select id="poType">
+                    <option value="regular">Surat Pesanan Biasa</option>
+                    <option value="prekursor">Prekursor Farmasi</option>
+                    <option value="ott">Obat-Obat Tertentu</option>
+                    <option value="alkes">Alat Kesehatan</option>
+                  </select>
+                </label>
+                <label>No. SP<input id="poManualNumber" type="text" placeholder="Otomatis saat disimpan"></label>
                 <label>Supplier<select id="poSupplier"></select></label>
                 <label>Tanggal<input id="poDate" type="date"></label>
+                <label>Alamat PBF<input id="poSupplierAddress" type="text" placeholder="Alamat supplier/PBF"></label>
+                <label>HP/Telp.<input id="poSupplierPhone" type="text" placeholder="Nomor kontak supplier"></label>
+                <label>Kota<input id="poCity" type="text" value="S.P. Padang"></label>
+                <label>Kepada/Yth.<input id="poRecipient" type="text" placeholder="Nama PBF / tujuan surat"></label>
+                <label class="wide-field">Filter Draft Restok<input id="poReferenceFilter" type="search" placeholder="Filter nama obat atau supplier dari draft restok"></label>
+                <label class="wide-field">Referensi Draft Restok<select id="poRestockReference"></select></label>
                 <label>Obat<select id="poMedicine"></select></label>
                 <label>Qty<input id="poQty" type="number" min="1" value="1"></label>
                 <label>Satuan<input id="poUnit" type="text" placeholder="Box / Strip / Pcs"></label>
+                <label class="po-controlled-field" data-po-field="regulated">Zat Aktif<input id="poActiveSubstance" type="text" placeholder="Contoh: Pseudoephedrine"></label>
+                <label class="po-controlled-field" data-po-field="regulated">Bentuk Sediaan<input id="poDosageForm" type="text" placeholder="Tablet / Sirup / Kapsul"></label>
+                <label class="po-controlled-field" data-po-field="regulated">Kekuatan/Spesifikasi<input id="poStrength" type="text" placeholder="Contoh: 60 mg / 100 ml"></label>
+                <label class="po-controlled-field" data-po-field="alkes">Spesifikasi Alkes<input id="poDeviceSpec" type="text" placeholder="Ukuran / tipe / merek"></label>
+                <label class="wide-field">Keterangan Item<input id="poItemNote" type="text" placeholder="Keterangan tambahan"></label>
+                <label class="wide-field po-controlled-field" data-po-field="regulated">Kebutuhan/Penggunaan<input id="poPurpose" type="text" placeholder="Untuk membantu kebutuhan Apotek Nadhira Farma"></label>
               </div>
               <div class="form-actions">
                 <button class="filter-action" id="addPoItemButton" type="button">Tambah Item</button>
@@ -1198,7 +1219,10 @@
           <input id="restockCurrentStockInput" type="text" readonly>
         </label>
         <label>Stok Real <span>*</span>
-          <input id="restockRealStockInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Isi stok fisik saat dicek" required>
+          <span class="restock-stock-input-row">
+            <input id="restockRealStockInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Isi stok fisik saat dicek" required>
+            <select id="restockRealStockUnitSelect" aria-label="Satuan stok real"></select>
+          </span>
         </label>
         <label>Qty Restok yang Dibutuhkan <span>*</span>
           <input id="restockQtyInput" type="number" min="1" step="1" value="1" required>

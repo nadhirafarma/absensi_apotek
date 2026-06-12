@@ -4437,6 +4437,14 @@ td.col-actions {
   gap: 14px;
 }
 
+.form-grid .wide-field {
+  grid-column: 1 / -1;
+}
+
+.po-controlled-field[hidden] {
+  display: none !important;
+}
+
 .medicine-form-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -13424,6 +13432,16 @@ body.notification-open .mobile-bottom-nav {
   background: #fff;
 }
 
+.restock-card-photo-inline {
+  width: 58px;
+  height: 58px;
+  margin-top: 4px;
+  border: 1px solid #d8e7fb;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+}
+
 .restock-card h3 {
   margin: 0;
   color: #071955;
@@ -13754,8 +13772,19 @@ body.notification-open .mobile-bottom-nav {
   color: #ff2554;
 }
 
+.restock-form-grid label .restock-stock-input-row {
+  color: inherit;
+}
+
 .restock-form-grid .wide-field {
   grid-column: 1 / -1;
+}
+
+.restock-stock-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(92px, 0.36fr);
+  gap: 8px;
+  align-items: center;
 }
 
 .restock-medicine-search-field {
@@ -13873,6 +13902,11 @@ body.notification-open .mobile-bottom-nav {
   color: #071955;
   font: inherit;
   font-weight: 700;
+}
+
+.restock-stock-input-row input,
+.restock-stock-input-row select {
+  width: 100%;
 }
 
 .restock-form-grid textarea {
