@@ -805,6 +805,7 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   }
 
   if (isAbsensiAdmin_(params)) {
+    migrateLegacyPayrollLogRows_(sheet);
     cleanupZeroSalarySlipHistory_(sheet);
   }
 
@@ -1592,7 +1593,12 @@ function cleanupZeroSalarySlipHistory_(sheet) {
     var row = values[rowIndex];
     var fileText = fileColumn >= 0 ? String(row[fileColumn] || '').trim() : '';
     var netSalary = parsePayrollMoney_(row[netSalaryColumn]);
+    var legacySalary = parseLegacyPayrollLogSalary_(row);
     var rowLooksLikeSlip = fileText || row.join('|').indexOf('Slip_Gaji_') >= 0;
+
+    if (legacySalary > 0 && netSalary <= 0) {
+      continue;
+    }
 
     if (rowLooksLikeSlip && netSalary <= 0) {
       sheet.deleteRow(rowIndex + 1);
@@ -1602,6 +1608,144 @@ function cleanupZeroSalarySlipHistory_(sheet) {
 
   if (deleted) SpreadsheetApp.flush();
   return deleted;
+}
+
+function migrateLegacyPayrollLogRows_(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return 0;
+
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var lastRow = sheet.getLastRow();
+  var lastColumn = Math.max(sheet.getLastColumn(), 16);
+  var values = sheet.getRange(1, 1, lastRow, lastColumn).getDisplayValues();
+  var normalized = headerInfo.normalized;
+  var columns = {
+    shiftPagi: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('shiftpagi')),
+    shiftSore: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('shiftsore')),
+    hadir: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('hadir')),
+    hadirLengkap: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('hadirlengkap')),
+    terlambat: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('terlambat')),
+    pulangCepat: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('pulangcepat')),
+    lembur: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('lembur')),
+    gajiBersih: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('gajibersih')),
+    file: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('file')),
+    fileId: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('fileid')),
+    fileUrl: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('fileurl')),
+    diterbitkanOleh: findHeaderIndex_(normalized, getPayrollLogHeaderAliases_('diterbitkanoleh'))
+  };
+  var migrated = 0;
+
+  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    var row = values[rowIndex];
+    var rowText = row.join('|');
+    var fileInfo = getLegacyPayrollLogFileInfo_(row);
+    var legacySalary = parseLegacyPayrollLogSalary_(row);
+
+    if (rowText.indexOf('Slip_Gaji_') < 0 && !fileInfo.fileName) continue;
+    if (legacySalary <= 0) continue;
+
+    var map = {
+      shiftPagi: row[4],
+      shiftSore: row[5],
+      hadir: row[6],
+      hadirLengkap: row[7],
+      terlambat: row[8],
+      pulangCepat: row[9],
+      lembur: row[10],
+      gajiBersih: legacySalary,
+      file: fileInfo.fileText,
+      fileId: fileInfo.fileId,
+      fileUrl: fileInfo.fileUrl,
+      diterbitkanOleh: sanitizeLegacyPayrollLogCell_(row[15])
+    };
+
+    Object.keys(map).forEach(function(key) {
+      var column = columns[key];
+      if (column < 0) return;
+
+      var value = map[key];
+      if (value == null || value === '') return;
+
+      var current = String(row[column] || '').trim();
+      var shouldWrite = !current;
+
+      if (key == 'gajiBersih') {
+        shouldWrite = parsePayrollMoney_(current) <= 0;
+      } else if (key == 'fileId' || key == 'fileUrl' || key == 'diterbitkanOleh') {
+        shouldWrite = !current || current === '0';
+      }
+
+      if (!shouldWrite) return;
+
+      sheet.getRange(rowIndex + 1, column + 1).setValue(value);
+      row[column] = value;
+      migrated += 1;
+    });
+  }
+
+  if (migrated) SpreadsheetApp.flush();
+  return migrated;
+}
+
+function parseLegacyPayrollLogSalary_(row) {
+  var preferred = parsePayrollMoney_(row[11]);
+  if (preferred > 0) return preferred;
+
+  for (var index = 4; index < row.length; index += 1) {
+    var text = String(row[index] || '').trim();
+    if (!text) continue;
+    if (/[a-zA-Z]/.test(text) && !/^rp\b/i.test(text)) continue;
+
+    var number = parsePayrollMoney_(text);
+    if (number >= 10000) return number;
+  }
+
+  return 0;
+}
+
+function getLegacyPayrollLogFileInfo_(row) {
+  var fileIndex = -1;
+  var fileText = '';
+  var fileId = '';
+  var fileUrl = '';
+
+  for (var index = 0; index < row.length; index += 1) {
+    var text = String(row[index] || '').trim();
+    if (text.indexOf('Slip_Gaji_') >= 0) {
+      fileIndex = index;
+      fileText = text;
+      break;
+    }
+  }
+
+  if (fileIndex >= 0) {
+    var parts = fileText.split('|');
+    var fileName = sanitizeLegacyPayrollLogCell_(parts[0]);
+    fileUrl = sanitizeLegacyPayrollLogCell_(parts.slice(1).join('|')) || sanitizeLegacyPayrollLogCell_(row[fileIndex + 2]);
+    fileId = sanitizeLegacyPayrollLogCell_(row[fileIndex + 1]) || extractDriveFileId_(fileUrl);
+
+    if (!fileUrl && fileId) {
+      fileUrl = 'https://drive.google.com/file/d/' + fileId + '/view';
+    }
+
+    return {
+      fileName: fileName,
+      fileId: fileId,
+      fileUrl: fileUrl,
+      fileText: fileName + (fileUrl ? ' | ' + fileUrl : '')
+    };
+  }
+
+  return {
+    fileName: '',
+    fileId: '',
+    fileUrl: '',
+    fileText: ''
+  };
+}
+
+function sanitizeLegacyPayrollLogCell_(value) {
+  var text = String(value || '').trim();
+  return text === '0' ? '' : text;
 }
 
 function extractDriveFileId_(value) {
