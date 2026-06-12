@@ -13364,7 +13364,23 @@ body.notification-open .mobile-bottom-nav {
   overflow-wrap: anywhere;
 }
 
-.restock-card-subtitle {
+.restock-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+.restock-card-title-row .restock-priority {
+  min-height: 19px;
+  padding: 0 7px;
+  font-size: 0.61rem;
+  line-height: 1;
+  text-transform: lowercase;
+}
+
+.quick-medicine-name .restock-card-subtitle {
   margin: 0;
   color: #66779a;
   font-size: 0.74rem;

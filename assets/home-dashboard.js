@@ -4705,7 +4705,7 @@
   }
 
   function normalizeRestockRequest(item = {}) {
-    const medicine = findMedicineForRestock(item.medicineName || item.nama || item.name || item.kode || item.code);
+    const medicine = findMedicineForRestock(item.code || item.kode || item.medicineName || item.nama || item.name);
     const createdAt = normalizeTimestamp(item.createdAt || item.date || new Date().toISOString()) || new Date().toISOString();
     const updatedAt = normalizeTimestamp(item.updatedAt || createdAt) || createdAt;
     const unit = String(item.unit || item.requestUnit || item.satuan || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs").trim() || "Pcs";
@@ -4811,7 +4811,7 @@
   }
 
   function inferRestockStockUnit(row) {
-    return String(row?.satuan_stok_min || row?.satuan_1 || row?.satuan_beli || "Pcs").trim() || "Pcs";
+    return String(row?.satuan_beli || row?.satuan_1 || row?.satuan_stok_min || "Pcs").trim() || "Pcs";
   }
 
   function getRestockMedicineKey(row) {
@@ -4957,19 +4957,20 @@
         ? "Ubah jumlah, satuan, prioritas, atau catatan restok."
         : "Isi kebutuhan restok obat yang stoknya kosong atau menipis.";
     }
-    const row = editingItem ? findMedicineForRestock(editingItem.code || editingItem.medicineName) : null;
+    const row = editingItem ? getRestockLiveMedicine(editingItem) : null;
+    const currentStockInfo = editingItem ? getRestockCurrentStockInfo(editingItem) : null;
     if (row) state.restockSelectedMedicineKey = getRestockMedicineKey(row);
     if (els.restockMedicineInput) {
       els.restockMedicineInput.value = editingItem ? (editingItem.medicineName || row?.nama || "") : "";
     }
     if (els.restockCurrentStockInput) {
       els.restockCurrentStockInput.value = editingItem
-        ? `${formatCell(editingItem.currentStock, "stok")} ${editingItem.stockUnit || inferRestockStockUnit(row)}`
+        ? `${formatCell(currentStockInfo.stock, "stok")} ${currentStockInfo.unit}`
         : "";
     }
     if (els.restockRealStockInput) {
       const realStockSource = editingItem
-        ? (hasRestockRealStock(editingItem) ? editingItem.realStock : editingItem.currentStock)
+        ? (hasRestockRealStock(editingItem) ? editingItem.realStock : currentStockInfo.stock)
         : "";
       els.restockRealStockInput.value = editingItem
         ? formatRestockNumberInputValue(realStockSource)
@@ -5073,7 +5074,7 @@
     const editingItem = state.restockEditingId
       ? state.restockRequests.find((request) => request.id === state.restockEditingId)
       : null;
-    const row = getSelectedRestockMedicine() || (editingItem ? findMedicineForRestock(editingItem.code || editingItem.medicineName) : null);
+    const row = getSelectedRestockMedicine() || (editingItem ? getRestockLiveMedicine(editingItem) : null);
     const realStockText = String(els.restockRealStockInput?.value || "").trim();
     if (!medicineText) {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Nama obat wajib diisi.";
@@ -5323,14 +5324,53 @@
     return String(item?.realStock ?? "").trim() !== "";
   }
 
+  function getRestockLiveMedicine(item) {
+    const keys = [item?.code, item?.kode, item?.medicineName, item?.nama, item?.name]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    for (let index = 0; index < keys.length; index += 1) {
+      const row = findMedicineForRestock(keys[index]);
+      if (row) return row;
+    }
+
+    return null;
+  }
+
+  function getRestockCurrentStockInfo(item) {
+    const row = getRestockLiveMedicine(item);
+    const liveStock = row && String(row.stok ?? "").trim() !== "" ? row.stok : null;
+    const stock = liveStock != null ? liveStock : item?.currentStock;
+    const unit = row ? inferRestockStockUnit(row) : (item?.stockUnit || item?.unit || "Pcs");
+
+    return {
+      row,
+      stock: String(stock == null || stock === "" ? "0" : stock).trim(),
+      unit: String(unit || "Pcs").trim() || "Pcs"
+    };
+  }
+
+  function formatRestockCurrentStock(item) {
+    const info = getRestockCurrentStockInfo(item);
+    return `${formatCell(info.stock, "stok")} ${info.unit}`;
+  }
+
+  function getRestockCurrentStockClass(item) {
+    return parseNumber(getRestockCurrentStockInfo(item).stock) <= 0 ? "is-danger" : "";
+  }
+
+  function getRestockComparisonUnit(item) {
+    return item?.realStockUnit || getRestockCurrentStockInfo(item).unit || item?.stockUnit || item?.unit || "";
+  }
+
   function getRestockStockDifference(item) {
     if (!hasRestockRealStock(item)) return null;
-    return parseNumber(item.realStock) - parseNumber(item.currentStock);
+    return parseNumber(item.realStock) - parseNumber(getRestockCurrentStockInfo(item).stock);
   }
 
   function formatRestockRealStock(item) {
     if (!hasRestockRealStock(item)) return "Belum dicek";
-    return `${formatCell(item.realStock, "stok")} ${item.realStockUnit || item.stockUnit || item.unit}`;
+    return `${formatCell(item.realStock, "stok")} ${getRestockComparisonUnit(item)}`;
   }
 
   function formatRestockStockDifference(item) {
@@ -5338,7 +5378,7 @@
     if (difference === null) return "Belum dicek";
     if (Math.abs(difference) < 0.0001) return "Sesuai";
     const prefix = difference > 0 ? "+" : "";
-    return `${prefix}${formatNumber(difference)} ${item.realStockUnit || item.stockUnit || item.unit}`;
+    return `${prefix}${formatNumber(difference)} ${getRestockComparisonUnit(item)}`;
   }
 
   function getRestockDifferenceClass(item) {
@@ -5357,7 +5397,7 @@
     const tone = ((Number(index) || 0) % 4) + 1;
     const priorityText = String(priority.label || "").toLowerCase();
     const statusText = String(status.label || "").toLowerCase();
-    const title = `${item.medicineName || "Obat"} (${priorityText})`;
+    const title = item.medicineName || "Obat";
     const source = [item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok";
     return `
       <article class="restock-card quick-medicine-card quick-tone-${tone} ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
@@ -5366,11 +5406,14 @@
         </button>
         <div class="quick-medicine-name restock-card-title-row">
           <span class="quick-name-accent" aria-hidden="true"></span>
-          <strong>${escapeHtml(title)}</strong>
+          <span class="restock-title-line">
+            <strong>${escapeHtml(title)}</strong>
+            <span class="restock-priority is-${priority.key}">${escapeHtml(priorityText)}</span>
+          </span>
           <small class="restock-card-subtitle">${escapeHtml(source)}</small>
         </div>
         <dl class="quick-medicine-list restock-card-grid">
-          <div><dt>Stok Saat Ini</dt><dd class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</dd></div>
+          <div><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
           <div><dt>Stok Real</dt><dd class="${differenceClass}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
           <div><dt>Selisih</dt><dd class="${differenceClass}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
           <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
@@ -5423,7 +5466,7 @@
   function renderRestockDetail(item) {
     const status = getRestockStatusMeta(item.status);
     const priority = getRestockPriorityMeta(item.priority);
-    const row = findMedicineForRestock(item.code || item.medicineName);
+    const row = getRestockLiveMedicine(item);
     const user = getCurrentUserRecord();
     const isOwner = isOwnerUser(user);
     const canManage = isAdminUser(user) || isOwner;
@@ -5448,7 +5491,7 @@
         </div>
       </div>
       <dl class="restock-detail-grid">
-        <div><dt>Stok Saat Ini</dt><dd class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</dd></div>
+        <div><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
         <div><dt>Stok Real</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
         <div><dt>Selisih Stok</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
         <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
