@@ -8322,8 +8322,11 @@
       writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory);
       renderSalarySlipHistory();
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = "Histori slip gaji berhasil dihapus.";
-      await fetchSalarySlipHistory({ silent: true, force: true });
+      endAppLoading(token, { force: true });
       showActionToast("Histori slip gaji berhasil dihapus.");
+      fetchSalarySlipHistory({ silent: true, force: true }).catch((syncError) => {
+        console.warn("Gagal menyinkronkan ulang histori slip gaji:", syncError);
+      });
     } catch (error) {
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji gagal dihapus.";
       showActionToast(error.message || "Histori slip gaji gagal dihapus.", "error");
@@ -8359,6 +8362,7 @@
       if (els.salarySlipHistoryStatus) {
         els.salarySlipHistoryStatus.textContent = `${formatNumber(result.deleted || 0)} histori slip gaji berhasil dihapus.`;
       }
+      endAppLoading(token, { force: true });
       showActionToast("Semua histori slip gaji berhasil dihapus.");
     } catch (error) {
       if (els.salarySlipHistoryStatus) els.salarySlipHistoryStatus.textContent = error.message || "Semua histori slip gaji gagal dihapus.";
