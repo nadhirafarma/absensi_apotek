@@ -4561,9 +4561,23 @@
       if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.orders)) {
         throw new Error(payload?.message || "Endpoint surat pesanan online belum aktif.");
       }
-      state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
+      const remoteOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
+      const localOrders = state.purchaseOrders.length
+        ? state.purchaseOrders.map(normalizePurchaseOrder).filter((order) => order.number)
+        : readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
+      const merged = new Map();
+
+      localOrders.forEach((order) => merged.set(order.number, order));
+      remoteOrders.forEach((order) => merged.set(order.number, order));
+
+      state.purchaseOrders = Array.from(merged.values())
+        .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
       writeStoredArray(PO_KEY, state.purchaseOrders);
       renderPurchaseOrders();
+
+      if (localOrders.some((order) => !remoteOrders.some((remote) => remote.number === order.number))) {
+        savePurchaseOrdersToBackend({ silent: true });
+      }
     } catch (error) {
       if (!options.silent) showActionToast(`${error.message} Data lokal tetap tersedia.`, "error");
     }
