@@ -11,6 +11,7 @@ var USER_SHEET_NAME = 'user';
 var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
+var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
 var DATA_OBAT_LAST_UPLOAD_PROPERTY = 'DATA_OBAT_LAST_UPLOAD_AT';
 var DATA_OBAT_FILTER_PROPERTY = 'DATA_OBAT_GLOBAL_FILTER';
 var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
@@ -39,6 +40,17 @@ var RESTOCK_REQUEST_HEADERS = [
   'createdAt',
   'updatedAt',
   'historyJson'
+];
+var PURCHASE_ORDER_HEADERS = [
+  'number',
+  'supplier',
+  'date',
+  'status',
+  'source',
+  'createdAt',
+  'updatedAt',
+  'createdBy',
+  'itemsJson'
 ];
 var DATA_OBAT_PRICE_HEADERS = [
   'hargabeli',
@@ -245,6 +257,14 @@ function doPost(e) {
 
     if (action == 'saveRestockRequests') {
       return handleSaveRestockRequests_(data);
+    }
+
+    if (action == 'listPurchaseOrders') {
+      return handleListPurchaseOrders_(data);
+    }
+
+    if (action == 'savePurchaseOrders') {
+      return handleSavePurchaseOrders_(data);
     }
 
     if (action == 'clearRestockRequests') {
@@ -1230,6 +1250,190 @@ function readRestockRequestFromRow_(headers, row) {
     updatedAt: pickDataValue_(raw, ['updatedat']),
     history: parseRestockHistory_(pickDataValue_(raw, ['historyjson', 'history']))
   });
+}
+
+function handleListPurchaseOrders_(data) {
+  var orders = readPurchaseOrders_();
+
+  return jsonOutput_({
+    success: true,
+    ok: true,
+    total: orders.length,
+    orders: orders
+  });
+}
+
+function handleSavePurchaseOrders_(data) {
+  var orders = data.orders || data.purchaseOrders || [];
+
+  if (Object.prototype.toString.call(orders) != '[object Array]') {
+    orders = [];
+  }
+
+  orders = orders.map(sanitizePurchaseOrder_).filter(function(order) {
+    return order.number && order.items.length;
+  });
+
+  writePurchaseOrders_(orders);
+
+  return jsonOutput_({
+    success: true,
+    ok: true,
+    total: orders.length,
+    orders: orders,
+    message: 'Surat pesanan berhasil disinkronkan online.'
+  });
+}
+
+function readPurchaseOrders_() {
+  var sheet = getPurchaseOrdersSheet_();
+  var headers = ensurePurchaseOrderHeaders_(sheet);
+  var values = sheet.getDataRange().getDisplayValues();
+
+  if (values.length < 2) return [];
+
+  return values.slice(1).map(function(row) {
+    return readPurchaseOrderFromRow_(headers, row);
+  }).filter(function(order) {
+    return order.number && order.items.length;
+  });
+}
+
+function writePurchaseOrders_(orders) {
+  var sheet = getPurchaseOrdersSheet_();
+  var headers = ensurePurchaseOrderHeaders_(sheet);
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, Math.max(headers.length, sheet.getLastColumn())).clearContent();
+  }
+
+  if (!orders.length) {
+    SpreadsheetApp.flush();
+    return;
+  }
+
+  var values = orders.map(function(order) {
+    order = sanitizePurchaseOrder_(order);
+    return headers.map(function(header) {
+      var key = normalizeHeaderKey_(header);
+      if (key == 'itemsjson') return JSON.stringify(order.items || []);
+      return order[key] != null ? order[key] : order[header] != null ? order[header] : '';
+    });
+  });
+
+  sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+  SpreadsheetApp.flush();
+}
+
+function readPurchaseOrderFromRow_(headers, row) {
+  var raw = {};
+
+  headers.forEach(function(header, index) {
+    raw[normalizeHeaderKey_(header) || ('kolom' + (index + 1))] = row[index];
+  });
+
+  return sanitizePurchaseOrder_({
+    number: pickDataValue_(raw, ['number', 'nomor']),
+    supplier: pickDataValue_(raw, ['supplier', 'suplier']),
+    date: pickDataValue_(raw, ['date', 'tanggal']),
+    status: pickDataValue_(raw, ['status']),
+    source: pickDataValue_(raw, ['source', 'sumber']),
+    createdAt: pickDataValue_(raw, ['createdat']),
+    updatedAt: pickDataValue_(raw, ['updatedat']),
+    createdBy: pickDataValue_(raw, ['createdby', 'user']),
+    items: parsePurchaseOrderItems_(pickDataValue_(raw, ['itemsjson', 'items']))
+  });
+}
+
+function getPurchaseOrdersSheet_() {
+  var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
+  return ss.getSheetByName(PURCHASE_ORDERS_SHEET_NAME) || ss.insertSheet(PURCHASE_ORDERS_SHEET_NAME);
+}
+
+function ensurePurchaseOrderHeaders_(sheet) {
+  if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 1) {
+    sheet.getRange(1, 1, 1, PURCHASE_ORDER_HEADERS.length).setValues([PURCHASE_ORDER_HEADERS]);
+    return PURCHASE_ORDER_HEADERS.slice();
+  }
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(function(header) {
+    return String(header || '').trim();
+  });
+
+  if (!headers.filter(Boolean).length) {
+    sheet.getRange(1, 1, 1, PURCHASE_ORDER_HEADERS.length).setValues([PURCHASE_ORDER_HEADERS]);
+    return PURCHASE_ORDER_HEADERS.slice();
+  }
+
+  var normalizedHeaders = headers.map(normalizeHeaderKey_);
+
+  PURCHASE_ORDER_HEADERS.forEach(function(header) {
+    if (normalizedHeaders.indexOf(normalizeHeaderKey_(header)) >= 0) return;
+    sheet.getRange(1, headers.length + 1).setValue(header);
+    headers.push(header);
+    normalizedHeaders.push(normalizeHeaderKey_(header));
+  });
+
+  return headers;
+}
+
+function sanitizePurchaseOrder_(order) {
+  order = order && typeof order == 'object' ? order : {};
+
+  var now = new Date().toISOString();
+  var createdAt = sanitizeRestockTimestamp_(order.createdAt || order.date || order.tanggal, now);
+  var updatedAt = sanitizeRestockTimestamp_(order.updatedAt || order.updated_at, createdAt);
+  var items = parsePurchaseOrderItems_(order.items || order.itemsJson);
+
+  return {
+    number: String(order.number || order.nomor || ('SP-' + new Date().getTime())).trim().slice(0, 90),
+    supplier: String(order.supplier || order.suplier || '').trim().slice(0, 180),
+    date: String(order.date || order.tanggal || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd')).trim().slice(0, 20),
+    status: normalizePurchaseOrderStatus_(order.status),
+    source: String(order.source || order.sumber || '').trim().slice(0, 80),
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    createdBy: String(order.createdBy || order.user || '').trim().slice(0, 160),
+    items: items.slice(0, 200)
+  };
+}
+
+function parsePurchaseOrderItems_(value) {
+  var items = value;
+
+  if (Object.prototype.toString.call(items) != '[object Array]') {
+    var text = String(value || '').trim();
+    if (!text) return [];
+    try {
+      items = JSON.parse(text);
+    } catch (error) {
+      items = [];
+    }
+  }
+
+  if (Object.prototype.toString.call(items) != '[object Array]') return [];
+
+  return items.map(function(item) {
+    item = item && typeof item == 'object' ? item : {};
+    return {
+      kode: String(item.kode || item.code || '').trim().slice(0, 120),
+      nama: String(item.nama || item.name || item.medicineName || 'Obat').trim().slice(0, 220),
+      qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
+      unit: String(item.unit || item.satuan || 'Pcs').trim().slice(0, 60) || 'Pcs',
+      sourceRestockId: String(item.sourceRestockId || item.restockId || '').trim().slice(0, 90)
+    };
+  }).filter(function(item) {
+    return item.nama;
+  });
+}
+
+function normalizePurchaseOrderStatus_(value) {
+  var key = normalizeLoginKey_(value || '');
+  if (key == 'draft' || key == 'draf') return 'draft';
+  if (key == 'sent' || key == 'terkirim') return 'sent';
+  if (key == 'done' || key == 'selesai') return 'done';
+  return 'saved';
 }
 
 function getRestockRequestsSheet_() {
@@ -2642,7 +2846,7 @@ function readUserRows_(sheet) {
 function getSpreadsheetBySheetName_(sheetName) {
   var name = String(sheetName || '').trim();
 
-  if (name == DATA_OBAT_SHEET_NAME || name == USER_SHEET_NAME || name == EMPLOYEE_SHEET_NAME || name == SUPPLIER_SHEET_NAME || name == RESTOCK_REQUESTS_SHEET_NAME) {
+  if (name == DATA_OBAT_SHEET_NAME || name == USER_SHEET_NAME || name == EMPLOYEE_SHEET_NAME || name == SUPPLIER_SHEET_NAME || name == RESTOCK_REQUESTS_SHEET_NAME || name == PURCHASE_ORDERS_SHEET_NAME) {
     return SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
   }
 

@@ -15,7 +15,7 @@
   const RESTOCK_KEY = "nadhira.restockRequests";
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
-  const RESTOCK_PHOTO_MAX_LENGTH = 42000;
+  const RESTOCK_PHOTO_MAX_LENGTH = 46000;
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
@@ -382,6 +382,7 @@
     loadAttendanceShiftSettingsFromBackend({ silent: true });
     loadStoredModules();
     fetchRestockRequests({ silent: true });
+    fetchPurchaseOrders({ silent: true });
     fetchDataObat();
     fetchUsers();
     fetchPharmacyProfile({ silent: true });
@@ -1077,6 +1078,7 @@
     state.lastBackgroundSyncAt = now;
     state.backgroundSyncPromise = Promise.allSettled([
       fetchRestockRequests({ silent: true }),
+      fetchPurchaseOrders({ silent: true }),
       fetchOwnerActivityLog({ silent: true }),
       fetchAttendanceRecords({ silent: true }),
       fetchSalarySlipHistory({ silent: true }),
@@ -3682,7 +3684,7 @@
     state.employees = readStoredArray(EMPLOYEE_KEY).map(normalizeEmployeeRecord);
     state.suppliers = readStoredArray(SUPPLIER_KEY).map(normalizeSupplierRecord);
     state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
-    state.purchaseOrders = readStoredArray(PO_KEY);
+    state.purchaseOrders = readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
     state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
     renderEmployees();
     renderSuppliers();
@@ -4509,6 +4511,95 @@
     return record.name || record.username || "data ini";
   }
 
+  function normalizePurchaseOrder(order = {}, index = 0) {
+    const createdAt = normalizeTimestamp(order.createdAt || order.date || new Date().toISOString()) || new Date().toISOString();
+    const updatedAt = normalizeTimestamp(order.updatedAt || createdAt) || createdAt;
+    const rawItems = Array.isArray(order.items)
+      ? order.items
+      : safeParseJsonArray(order.itemsJson || order.items || []);
+    const items = rawItems.map((item) => ({
+      kode: String(item.kode || item.code || "").trim(),
+      nama: String(item.nama || item.name || item.medicineName || "Obat").trim(),
+      qty: Math.max(1, Number(item.qty || item.quantity || 1) || 1),
+      unit: String(item.unit || item.satuan || "Pcs").trim() || "Pcs",
+      sourceRestockId: String(item.sourceRestockId || item.restockId || "").trim()
+    })).filter((item) => item.nama);
+
+    return {
+      number: String(order.number || order.nomor || `SP-${Date.now()}-${index + 1}`).trim(),
+      supplier: String(order.supplier || order.suplier || "").trim(),
+      date: String(order.date || new Date().toISOString().slice(0, 10)).slice(0, 10),
+      status: String(order.status || "saved").trim() || "saved",
+      source: String(order.source || "").trim(),
+      createdAt,
+      updatedAt,
+      createdBy: String(order.createdBy || order.user || "").trim(),
+      items
+    };
+  }
+
+  function safeParseJsonArray(value) {
+    if (Array.isArray(value)) return value;
+    try {
+      const parsed = JSON.parse(String(value || "[]"));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function persistPurchaseOrders(options = {}) {
+    state.purchaseOrders = state.purchaseOrders.map(normalizePurchaseOrder).filter((order) => order.number);
+    writeStoredArray(PO_KEY, state.purchaseOrders);
+    renderPurchaseOrders();
+    if (options.remote !== false) savePurchaseOrdersToBackend({ silent: true });
+  }
+
+  async function fetchPurchaseOrders(options = {}) {
+    try {
+      const payload = await postToApi({ action: "listPurchaseOrders" });
+      if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.orders)) {
+        throw new Error(payload?.message || "Endpoint surat pesanan online belum aktif.");
+      }
+      state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
+      writeStoredArray(PO_KEY, state.purchaseOrders);
+      renderPurchaseOrders();
+    } catch (error) {
+      if (!options.silent) showActionToast(`${error.message} Data lokal tetap tersedia.`, "error");
+    }
+  }
+
+  async function savePurchaseOrdersToBackend(options = {}) {
+    const user = getCurrentUserRecord();
+    try {
+      const payload = await postToApi({
+        action: "savePurchaseOrders",
+        orders: state.purchaseOrders,
+        role: user.role || "",
+        username: user.username || "",
+        email: user.email || ""
+      });
+      if (!payload || (payload.success !== true && payload.ok !== true)) {
+        throw new Error(payload?.message || "Surat pesanan belum tersimpan online.");
+      }
+      if (Array.isArray(payload.orders)) {
+        state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
+        writeStoredArray(PO_KEY, state.purchaseOrders);
+        renderPurchaseOrders();
+      }
+      return payload;
+    } catch (error) {
+      if (!options.silent) showActionToast(error.message || "Surat pesanan gagal disinkronkan.", "error");
+      return null;
+    }
+  }
+
+  function buildPurchaseOrderNumber(prefix = "SP") {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const count = state.purchaseOrders.filter((order) => String(order.number || "").indexOf(`${prefix}-${today}`) === 0).length + 1;
+    return `${prefix}-${today}-${String(count).padStart(3, "0")}`;
+  }
+
   function addPurchaseItem() {
     const medicineIndex = Number(els.poMedicine ? els.poMedicine.value : -1);
     const medicine = state.rows[medicineIndex];
@@ -4526,24 +4617,31 @@
     renderPurchaseItems();
   }
 
-  function savePurchaseOrder(event) {
+  async function savePurchaseOrder(event) {
     event.preventDefault();
     if (!state.purchaseItems.length) return;
+    const now = new Date().toISOString();
+    const user = getCurrentUserRecord();
 
-    const order = {
-      number: `SP-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(state.purchaseOrders.length + 1).padStart(3, "0")}`,
+    const order = normalizePurchaseOrder({
+      number: buildPurchaseOrderNumber("SP"),
       supplier: els.poSupplier ? els.poSupplier.value : "",
       date: els.poDate ? els.poDate.value : new Date().toISOString().slice(0, 10),
+      status: "saved",
+      createdAt: now,
+      updatedAt: now,
+      createdBy: user.name || user.username || "",
       items: state.purchaseItems.slice()
-    };
+    });
 
     state.purchaseOrders.unshift(order);
     state.purchaseItems = [];
-    writeStoredArray(PO_KEY, state.purchaseOrders);
+    persistPurchaseOrders({ remote: false });
+    const syncResult = await savePurchaseOrdersToBackend({ silent: true });
     addProfileActivity("Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
     renderPurchaseItems();
     renderPurchaseOrders();
-    showActionToast("Surat pesanan berhasil disimpan.");
+    showActionToast(syncResult ? "Surat pesanan berhasil disimpan online." : "Surat pesanan tersimpan lokal, akan dicoba sinkron lagi.");
   }
 
   function renderPurchaseItems() {
@@ -4579,13 +4677,17 @@
       return;
     }
 
-    els.poSavedList.innerHTML = state.purchaseOrders.slice(0, 5).map((order) => `
-      <article class="po-saved-card">
-        <strong>${escapeHtml(order.number)}</strong>
-        <span>${escapeHtml(order.date)} - ${escapeHtml(order.supplier || "Supplier belum dipilih")}</span>
-        <small>${formatNumber(order.items.length)} item</small>
-      </article>
-    `).join("");
+    els.poSavedList.innerHTML = state.purchaseOrders.slice(0, 8).map((order) => {
+      const items = (order.items || []).slice(0, 3).map((item) => `${item.nama} (${item.qty} ${item.unit})`).join(", ");
+      return `
+        <article class="po-saved-card ${order.status === "draft" ? "is-draft" : ""}">
+          <strong>${escapeHtml(order.number)}</strong>
+          <span>${escapeHtml(order.date)} - ${escapeHtml(order.supplier || "Supplier belum dipilih")}</span>
+          <small>${formatNumber(order.items.length)} item${order.status === "draft" ? " - Draft Restok" : ""}</small>
+          ${items ? `<em>${escapeHtml(items)}${order.items.length > 3 ? ", ..." : ""}</em>` : ""}
+        </article>
+      `;
+    }).join("");
   }
 
   function normalizeRestockRequest(item = {}) {
@@ -4916,8 +5018,8 @@
         const image = new Image();
         image.onerror = () => resolve(raw.length <= RESTOCK_PHOTO_MAX_LENGTH ? raw : "");
         image.onload = () => {
-          const sizes = [900, 720, 560, 420, 320];
-          const qualities = [0.72, 0.62, 0.52, 0.44, 0.36];
+          const sizes = [900, 720, 560, 420, 320, 260, 220, 180];
+          const qualities = [0.72, 0.62, 0.52, 0.44, 0.36, 0.30, 0.24, 0.20];
           let best = "";
 
           sizes.some((maxSide) => {
@@ -5244,11 +5346,18 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
         </button>
         <div class="restock-card-main">
-          <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
-          <h3>${escapeHtml(item.medicineName || "Obat")}</h3>
+          <div class="restock-card-title-row">
+            <div class="restock-card-title">
+              <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
+              <h3>${escapeHtml(item.medicineName || "Obat")}</h3>
+              <small>${escapeHtml([item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok")}</small>
+            </div>
+            ${item.photo ? `<img class="restock-card-photo" src="${escapeHtml(item.photo)}" alt="">` : ""}
+          </div>
           <div class="restock-card-grid">
             <span><small>Stok Saat Ini</small><strong class="${parseNumber(item.currentStock) <= 0 ? "is-danger" : ""}">${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.stockUnit || item.unit)}</strong></span>
             <span><small>Stok Real</small><strong class="${differenceClass}">${escapeHtml(formatRestockRealStock(item))}</strong></span>
+            <span><small>Selisih</small><strong class="${differenceClass}">${escapeHtml(formatRestockStockDifference(item))}</strong></span>
             <span><small>Permintaan</small><strong>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</strong></span>
             <span><small>Pelapor</small><strong>${escapeHtml(item.reporter || "-")}</strong></span>
             <span><small>Tanggal</small><strong>${escapeHtml(formatRestockDateTime(item.createdAt))}</strong></span>
@@ -5573,7 +5682,7 @@
     state.restockDeleteSuccessTimer = window.setTimeout(closeRestockDeleteModal, 1100);
   }
 
-  function addRestockToPurchaseOrder(id) {
+  async function addRestockToPurchaseOrder(id) {
     const item = state.restockRequests.find((request) => request.id === id);
     if (!item) return;
     const user = getCurrentUserRecord();
@@ -5583,19 +5692,59 @@
       setRestockPageMessage("Draft pesanan hanya dapat dibuat oleh owner/admin.", "error");
       return;
     }
-    state.purchaseItems.push({
+    const now = new Date().toISOString();
+    const today = new Date().toISOString().slice(0, 10);
+    const supplierKey = normalizeSearch(item.supplier || "");
+    let order = state.purchaseOrders.find((candidate) => {
+      return candidate.status === "draft"
+        && candidate.source === "restock"
+        && candidate.date === today
+        && normalizeSearch(candidate.supplier || "") === supplierKey;
+    });
+
+    if (!order) {
+      order = normalizePurchaseOrder({
+        number: buildPurchaseOrderNumber("DRF"),
+        supplier: item.supplier || "",
+        date: today,
+        status: "draft",
+        source: "restock",
+        createdAt: now,
+        updatedAt: now,
+        createdBy: user.name || user.username || "",
+        items: []
+      });
+      state.purchaseOrders.unshift(order);
+    }
+
+    const orderItem = {
       kode: item.code,
       nama: item.medicineName,
       qty: item.qty,
-      unit: item.unit
-    });
-    if (els.poSupplier && item.supplier) els.poSupplier.value = item.supplier;
+      unit: item.unit,
+      sourceRestockId: item.id
+    };
+    const existingIndex = order.items.findIndex((candidate) => candidate.sourceRestockId === item.id || (candidate.kode && candidate.kode === item.code));
+    if (existingIndex >= 0) order.items[existingIndex] = orderItem;
+    else order.items.push(orderItem);
+    order.updatedAt = now;
+    state.purchaseItems = order.items.map((candidate) => ({ ...candidate }));
+    if (els.poSupplier) els.poSupplier.value = order.supplier || item.supplier || "";
+    if (els.poDate) els.poDate.value = order.date;
+
+    persistPurchaseOrders({ remote: false });
+    const syncResult = await savePurchaseOrdersToBackend({ silent: true });
     updateRestockStatus(id, "processing");
     closeRestockDetailModal();
     renderPurchaseItems();
     renderRestockPage();
-    setRestockPageMessage(`${item.medicineName} berhasil dimasukkan ke draft pesanan pembelian.`, "success");
-    showActionToast("Obat berhasil masuk ke draft pesanan.");
+    setRestockPageMessage(
+      syncResult
+        ? `${item.medicineName} berhasil masuk ke draft pesanan online.`
+        : `${item.medicineName} berhasil masuk draft lokal, sinkron online akan dicoba lagi.`,
+      "success"
+    );
+    showActionToast(syncResult ? "Draft pesanan tersimpan online." : "Draft pesanan tersimpan lokal.");
   }
 
   function getRestockStatusMeta(status) {
