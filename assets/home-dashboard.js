@@ -16,6 +16,7 @@
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
   const RESTOCK_PHOTO_MAX_LENGTH = 46000;
+  const EMPLOYEE_FACE_ID_MAX_LENGTH = 180000;
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
@@ -231,7 +232,8 @@
         { key: "address", label: "Alamat", wide: true },
         { key: "job", label: "Jabatan" },
         { key: "email", label: "Email", type: "email" },
-        { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] }
+        { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
+        { key: "faceIdPhoto", label: "Pendaftaran Face ID", type: "face-id", wide: true }
       ]
     },
     supplier: {
@@ -288,6 +290,8 @@
     pendingRestockPhoto: "",
     pendingRestockPhotoName: "",
     pendingRestockPhotoPromise: null,
+    pendingEmployeeFaceIdPhoto: null,
+    pendingEmployeeFaceIdFileName: "",
     importHeaders: [],
     importRows: [],
     scannerStream: null,
@@ -3888,7 +3892,12 @@
       address: String(record?.address || record?.alamat || "").trim(),
       job: String(record?.job || record?.jabatan || record?.role || "").trim(),
       email: String(record?.email || record?.gmail || "").trim(),
-      status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan)
+      status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan),
+      faceIdFileId: String(record?.faceIdFileId || record?.face_id_file_id || record?.faceFileId || record?.fileIdWajah || "").trim(),
+      faceIdUrl: String(record?.faceIdUrl || record?.face_id_url || record?.faceUrl || record?.urlWajah || "").trim(),
+      faceIdImageUrl: String(record?.faceIdImageUrl || record?.face_id_image_url || record?.faceImageUrl || "").trim(),
+      faceIdLabel: String(record?.faceIdLabel || record?.face_id_label || record?.faceLabel || "").trim(),
+      faceIdRegisteredAt: String(record?.faceIdRegisteredAt || record?.face_id_registered_at || record?.faceRegisteredAt || "").trim()
     };
   }
 
@@ -4141,6 +4150,11 @@
       const nameKey = keys[0] || "name";
       const label = formatCell(row[nameKey]);
       const inactive = isInactiveStatus(row.status);
+      const faceBadge = isEmployeeTable && (row.faceIdFileId || row.faceIdUrl)
+        ? '<small class="employee-face-id-note is-ready">Face ID terdaftar</small>'
+        : isEmployeeTable
+          ? '<small class="employee-face-id-note">Belum ada Face ID</small>'
+          : "";
       const statusCell = isEmployeeTable
         ? `<td><span class="status-badge ${inactive ? "is-inactive" : ""}">${escapeHtml(normalizeRecordStatus(row.status))}</span></td>`
         : "";
@@ -4158,6 +4172,7 @@
         <td>
           <button class="simple-name-button" type="button" data-local-action="edit" data-type="${type}" data-index="${index}">
             ${escapeHtml(label)}
+            ${faceBadge}
           </button>
         </td>
         ${statusCell}
@@ -4253,6 +4268,8 @@
     state.recordIndex = index;
     const record = getLocalArray(type)[index] || {};
     const userRole = type === "user" ? String(record.role || "Operator").trim() || "Operator" : "";
+    state.pendingEmployeeFaceIdPhoto = null;
+    state.pendingEmployeeFaceIdFileName = "";
 
     els.recordModalTitle.textContent = `${index >= 0 ? "Edit" : "Tambah"} ${schema.title}`;
     els.recordModalStatus.textContent = "Lengkapi field yang tersedia.";
@@ -4282,6 +4299,13 @@
       const roleSelect = els.recordFormFields.querySelector('select[name="role"]');
       if (roleSelect) {
         roleSelect.addEventListener("change", () => setAccessCheckboxes(getDefaultAccessForRole(roleSelect.value)));
+      }
+    }
+
+    if (type === "employee") {
+      const faceIdInput = els.recordFormFields.querySelector('input[name="faceIdPhoto"]');
+      if (faceIdInput) {
+        faceIdInput.addEventListener("change", handleEmployeeFaceIdChange);
       }
     }
 
@@ -4324,6 +4348,25 @@
       `;
     }
 
+    if (field.type === "face-id") {
+      const record = state.recordType === "employee" ? getLocalArray("employee")[state.recordIndex] || {} : {};
+      const hasFaceId = Boolean(record.faceIdFileId || record.faceIdUrl);
+      const previewUrl = record.faceIdImageUrl || record.faceIdUrl || "";
+      const preview = previewUrl
+        ? `<span class="employee-face-id-preview has-image"><img src="${escapeHtml(previewUrl)}" alt=""></span>`
+        : `<span class="employee-face-id-preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"></path><path d="M4 20c1.4-3.2 4.2-5 8-5s6.6 1.8 8 5"></path><path d="M4 8V5a1 1 0 0 1 1-1h3"></path><path d="M16 4h3a1 1 0 0 1 1 1v3"></path><path d="M20 16v3a1 1 0 0 1-1 1h-3"></path><path d="M8 20H5a1 1 0 0 1-1-1v-3"></path></svg></span>`;
+      return `
+        <div class="employee-face-id-field">
+          ${preview}
+          <div class="employee-face-id-copy">
+            <strong>${hasFaceId ? "Face ID sudah terdaftar" : "Belum ada Face ID"}</strong>
+            <small id="employeeFaceIdFileName">${hasFaceId ? "Pilih foto baru jika ingin mengganti database wajah." : "Pilih foto wajah yang jelas dari kamera depan."}</small>
+            <input name="${escapeHtml(field.key)}" type="file" accept="image/*" capture="user">
+          </div>
+        </div>
+      `;
+    }
+
     const inputType = field.key === "phone" ? "tel" : (field.type || "text");
     const inputMode = field.key === "phone" ? ' inputmode="tel" autocomplete="tel"' : "";
     return `<input name="${escapeHtml(field.key)}" type="${escapeHtml(inputType)}" value="${escapeHtml(value)}"${inputMode} ${field.required ? "required" : ""}>`;
@@ -4340,6 +4383,95 @@
     hideModal(els.recordModal);
   }
 
+  async function handleEmployeeFaceIdChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const status = els.recordModalStatus;
+    if (!/^image\//.test(file.type || "")) {
+      if (status) {
+        status.textContent = "File Face ID harus berupa gambar.";
+        status.dataset.type = "error";
+      }
+      event.target.value = "";
+      return;
+    }
+
+    const loadingToken = startAppLoading("Menyiapkan foto Face ID...", 0);
+    try {
+      const raw = await readFileAsDataUrl(file);
+      const photo = await resizeEmployeeFaceIdPhoto(raw);
+
+      if (!photo) {
+        throw new Error("Foto terlalu besar atau tidak dapat diproses. Coba foto wajah yang lebih jelas.");
+      }
+
+      state.pendingEmployeeFaceIdPhoto = photo;
+      state.pendingEmployeeFaceIdFileName = file.name || "face-id.jpg";
+      const fileNameLabel = els.recordFormFields.querySelector("#employeeFaceIdFileName");
+      const preview = els.recordFormFields.querySelector(".employee-face-id-preview");
+      if (fileNameLabel) fileNameLabel.textContent = `${state.pendingEmployeeFaceIdFileName} siap didaftarkan.`;
+      if (preview) {
+        preview.classList.add("has-image");
+        preview.innerHTML = `<img src="${escapeHtml(photo)}" alt="">`;
+      }
+      if (status) {
+        status.textContent = "Foto Face ID siap disimpan ke DATABASE_WAJAH.";
+        status.dataset.type = "info";
+      }
+    } catch (error) {
+      state.pendingEmployeeFaceIdPhoto = null;
+      state.pendingEmployeeFaceIdFileName = "";
+      if (status) {
+        status.textContent = `Face ID gagal disiapkan: ${error.message}`;
+        status.dataset.type = "error";
+      }
+    } finally {
+      endAppLoading(loadingToken);
+      event.target.value = "";
+    }
+  }
+
+  function resizeEmployeeFaceIdPhoto(dataUrl) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onerror = () => resolve(dataUrl.length <= EMPLOYEE_FACE_ID_MAX_LENGTH ? dataUrl : "");
+      image.onload = () => {
+        const sizes = [720, 640, 560, 480, 420, 360, 320];
+        const qualities = [0.82, 0.76, 0.68, 0.60, 0.52, 0.44, 0.36];
+        let best = "";
+
+        sizes.some((maxSide) => {
+          const sourceWidth = image.naturalWidth || image.width || 1;
+          const sourceHeight = image.naturalHeight || image.height || 1;
+          const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+          const width = Math.max(1, Math.round(sourceWidth * scale));
+          const height = Math.max(1, Math.round(sourceHeight * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d", { alpha: false });
+          context.fillStyle = "#fff";
+          context.fillRect(0, 0, width, height);
+          context.drawImage(image, 0, 0, width, height);
+
+          return qualities.some((quality) => {
+            const value = canvas.toDataURL("image/jpeg", quality);
+            if (!best || value.length < best.length) best = value;
+            if (value.length <= EMPLOYEE_FACE_ID_MAX_LENGTH) {
+              best = value;
+              return true;
+            }
+            return false;
+          });
+        });
+
+        resolve(best && best.length <= EMPLOYEE_FACE_ID_MAX_LENGTH ? best : "");
+      };
+      image.src = dataUrl;
+    });
+  }
+
   async function saveRecord(event) {
     event.preventDefault();
     const schema = LOCAL_SCHEMAS[state.recordType];
@@ -4348,6 +4480,7 @@
     const formData = new FormData(els.recordForm);
     let record = {};
     schema.fields.forEach((field) => {
+      if (field.type === "face-id") return;
       if (field.type === "access") {
         record[field.key] = formData.getAll(field.key).map((value) => String(value || "").trim()).filter(Boolean);
         return;
@@ -4356,6 +4489,10 @@
         ? normalizePhoneNumber(formData.get(field.key))
         : String(formData.get(field.key) || "").trim();
     });
+
+    const target = getLocalArray(state.recordType);
+    const isEdit = state.recordIndex >= 0;
+    const previousRecord = isEdit ? target[state.recordIndex] || {} : {};
 
     if (state.recordType === "user") {
       const roleKey = normalizeSearch(record.role || "");
@@ -4366,12 +4503,12 @@
     }
 
     if (state.recordType === "employee") {
-      Object.assign(record, normalizeEmployeeRecord(record));
+      record = normalizeEmployeeRecord({ ...previousRecord, ...record });
+      if (state.pendingEmployeeFaceIdPhoto) {
+        record.faceIdPhoto = state.pendingEmployeeFaceIdPhoto;
+        record.faceIdFileName = state.pendingEmployeeFaceIdFileName;
+      }
     }
-
-    const target = getLocalArray(state.recordType);
-    const isEdit = state.recordIndex >= 0;
-    const previousRecord = isEdit ? target[state.recordIndex] || {} : {};
 
     if (state.recordType === "user") {
       if (els.recordModalStatus) {

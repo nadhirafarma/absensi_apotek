@@ -10,6 +10,7 @@ var DATA_OBAT_SHEET_NAME = 'data_obat';
 var USER_SHEET_NAME = 'user';
 var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
+var FACE_ID_FOLDER_NAME = 'DATABASE_WAJAH';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
 var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
 var DATA_OBAT_LAST_UPLOAD_PROPERTY = 'DATA_OBAT_LAST_UPLOAD_AT';
@@ -18,7 +19,7 @@ var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
 var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
 var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
-var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'status', 'updated_at'];
+var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'status', 'face_id_file_id', 'face_id_url', 'face_id_image_url', 'face_id_label', 'face_id_registered_at', 'updated_at'];
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
@@ -158,6 +159,10 @@ function doGet(e) {
       }
 
       return handleListLoginUsers_(readUserRows_(loginSheet));
+    }
+
+    if (String(e.parameter.action || '').trim() == 'listFaceDatabase') {
+      return handleListFaceDatabase_(e.parameter);
     }
 
     var sheetName = String(e.parameter.sheet || 'user').trim();
@@ -310,6 +315,10 @@ function doPost(e) {
       return handleListLocalRecords_(data);
     }
 
+    if (action == 'listFaceDatabase') {
+      return handleListFaceDatabase_(data);
+    }
+
     if (action == 'saveLocalRecord') {
       return handleSaveLocalRecord_(data);
     }
@@ -398,6 +407,10 @@ function handleUnlockedPostAction_(action, data) {
 
   if (action == 'listLocalRecords') {
     return handleListLocalRecords_(data);
+  }
+
+  if (action == 'listFaceDatabase') {
+    return handleListFaceDatabase_(data);
   }
 
   if (action == 'listLoginUsers') {
@@ -1830,6 +1843,11 @@ function handleSaveLocalRecord_(data) {
   var rowNumber = rowIndex >= 1 ? rowIndex + 1 : sheet.getLastRow() + 1;
   var now = new Date().toISOString();
   var normalizedHeaders = headers.map(normalizeHeaderKey_);
+  var previousRecord = rowIndex >= 1 ? readLocalRecordFromRow_(headers, values[rowIndex], config) : {};
+
+  if (config.type == 'employee') {
+    record = saveEmployeeFaceIdIfNeeded_(record, previousRecord);
+  }
 
   config.fields.forEach(function(field) {
     var column = findHeaderColumn_(normalizedHeaders, config.aliases[field] || [field]);
@@ -1860,6 +1878,148 @@ function handleSaveLocalRecord_(data) {
     record: saved,
     rowNumber: rowNumber,
     message: config.title + ' berhasil disimpan online.'
+  });
+}
+
+function saveEmployeeFaceIdIfNeeded_(record, previousRecord) {
+  record = record || {};
+  previousRecord = previousRecord || {};
+
+  var photo = String(pickRequestValueAllowEmpty_(record, ['faceIdPhoto', 'face_id_photo', 'facePhoto', 'fotoWajah', 'foto_wajah', 'wajah']) || '').trim();
+
+  if (!photo) {
+    return record;
+  }
+
+  var displayName = String(pickRequestValueAllowEmpty_(record, ['name', 'nama', 'namaLengkap', 'nama_lengkap', 'namaKaryawan']) || previousRecord.name || 'karyawan').trim();
+  var label = buildFaceIdLabel_(displayName);
+  var previousFileId = String(pickRequestValueAllowEmpty_(record, ['faceIdFileId', 'face_id_file_id', 'faceFileId']) || previousRecord.faceIdFileId || '').trim();
+  var saved = saveEmployeeFaceIdPhoto_(photo, label, previousFileId);
+
+  record.faceIdFileId = saved.fileId;
+  record.face_id_file_id = saved.fileId;
+  record.faceIdUrl = saved.fileUrl;
+  record.face_id_url = saved.fileUrl;
+  record.faceIdImageUrl = saved.imageUrl;
+  record.face_id_image_url = saved.imageUrl;
+  record.faceIdLabel = label;
+  record.face_id_label = label;
+  record.faceIdRegisteredAt = saved.registeredAt;
+  record.face_id_registered_at = saved.registeredAt;
+  record.faceIdPhoto = '';
+  record.face_id_photo = '';
+
+  return record;
+}
+
+function saveEmployeeFaceIdPhoto_(photo, label, previousFileId) {
+  var parsed = parseImageDataUrl_(photo);
+  var folder = getOrCreateFaceIdFolder_();
+  var fileName = label + '.jpg';
+
+  if (previousFileId) {
+    try {
+      DriveApp.getFileById(previousFileId).setTrashed(true);
+    } catch (error) {
+      // File lama mungkin sudah dihapus manual dari Drive.
+    }
+  }
+
+  var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return {
+    fileId: file.getId(),
+    fileUrl: file.getUrl(),
+    imageUrl: buildDriveImageUrl_(file.getId()),
+    registeredAt: new Date().toISOString()
+  };
+}
+
+function parseImageDataUrl_(value) {
+  var text = String(value || '').trim();
+  var match = text.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+
+  if (match) {
+    return {
+      mimeType: match[1],
+      base64: match[2]
+    };
+  }
+
+  return {
+    mimeType: 'image/jpeg',
+    base64: text
+  };
+}
+
+function getOrCreateFaceIdFolder_() {
+  var folders = DriveApp.getFoldersByName(FACE_ID_FOLDER_NAME);
+
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+
+  return DriveApp.createFolder(FACE_ID_FOLDER_NAME);
+}
+
+function buildFaceIdLabel_(name) {
+  var text = String(name || 'karyawan')
+    .trim()
+    .replace(/_/g, ' ')
+    .replace(/[^\w\s-]+/g, '')
+    .replace(/\s+/g, '_');
+
+  return text || 'karyawan';
+}
+
+function buildDriveImageUrl_(fileId) {
+  return fileId ? 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(fileId) : '';
+}
+
+function parseDriveFileId_(value) {
+  var text = String(value || '').trim();
+  var match = text.match(/[?&]id=([^&]+)/) || text.match(/\/d\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function handleListFaceDatabase_(data) {
+  var employees = readLocalRecordsByConfig_(getLocalRecordConfig_('employee'));
+  var faces = [];
+
+  employees.forEach(function(employee) {
+    if (!employee.name || isInactiveStatus_(employee.status)) return;
+
+    var fileId = employee.faceIdFileId || parseDriveFileId_(employee.faceIdUrl || employee.faceIdImageUrl);
+    if (!fileId) return;
+
+    try {
+      var file = DriveApp.getFileById(fileId);
+      var blob = file.getBlob();
+      var mimeType = blob.getContentType() || 'image/jpeg';
+
+      if (String(mimeType).indexOf('image/') !== 0) return;
+
+      faces.push({
+        label: employee.faceIdLabel || buildFaceIdLabel_(employee.name),
+        name: employee.name,
+        fileId: fileId,
+        fileUrl: file.getUrl(),
+        imageUrl: buildDriveImageUrl_(fileId),
+        imageDataUrl: 'data:' + mimeType + ';base64,' + Utilities.base64Encode(blob.getBytes()),
+        registeredAt: employee.faceIdRegisteredAt || ''
+      });
+    } catch (error) {
+      // Lewati file wajah yang sudah tidak tersedia tanpa menghentikan absensi.
+    }
+  });
+
+  return jsonOutput_({
+    success: true,
+    ok: true,
+    faces: faces,
+    total: faces.length
   });
 }
 
@@ -1918,6 +2078,11 @@ function getLocalRecordConfig_(type) {
         job: ['job', 'jabatan', 'role', 'posisi'],
         email: ['email', 'gmail', 'alamatemail'],
         status: ['status', 'aktif', 'keterangan'],
+        face_id_file_id: ['face_id_file_id', 'faceidfileid', 'facefileid', 'fileidwajah'],
+        face_id_url: ['face_id_url', 'faceidurl', 'faceurl', 'urlwajah'],
+        face_id_image_url: ['face_id_image_url', 'faceidimageurl', 'faceimageurl'],
+        face_id_label: ['face_id_label', 'faceidlabel', 'facelabel'],
+        face_id_registered_at: ['face_id_registered_at', 'faceidregisteredat', 'faceregisteredat'],
         updated_at: ['updated_at', 'updatedat', 'updated']
       }
     };
@@ -2004,6 +2169,11 @@ function readLocalRecordFromRow_(headers, row, config) {
       job: pickDataValue_(raw, config.aliases.job),
       email: pickDataValue_(raw, config.aliases.email),
       status: pickDataValue_(raw, config.aliases.status) || 'Aktif',
+      faceIdFileId: pickDataValue_(raw, config.aliases.face_id_file_id),
+      faceIdUrl: pickDataValue_(raw, config.aliases.face_id_url),
+      faceIdImageUrl: pickDataValue_(raw, config.aliases.face_id_image_url),
+      faceIdLabel: pickDataValue_(raw, config.aliases.face_id_label),
+      faceIdRegisteredAt: pickDataValue_(raw, config.aliases.face_id_registered_at),
       updatedAt: pickDataValue_(raw, config.aliases.updated_at)
     };
   }

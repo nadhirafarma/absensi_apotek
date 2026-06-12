@@ -1,6 +1,6 @@
 (function () {
   const MODEL_BASE = "https://nadhirafarma.github.io/absensi_apotek/weights";
-  const FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
+  const STATIC_FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const DASHBOARD_API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
@@ -368,26 +368,62 @@
       inputSize: 320,
       scoreThreshold: 0.35
     });
-    const descriptors = (await Promise.all(LABELS.map(async (label) => {
-      try {
-        const image = await faceapi.fetchImage(`${FACE_DB_BASE}/${label}.jpg`);
-        const detection = await faceapi
-          .detectSingleFace(image, descriptorOptions)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!detection) return null;
-        return new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]);
-      } catch (error) {
-        return null;
-      }
-    }))).filter(Boolean);
+    const remoteDescriptors = await loadRemoteFaceDescriptors(descriptorOptions);
+    const remoteLabels = new Set(remoteDescriptors.map((item) => normalizeKey(item.label)));
+    const staticDescriptors = await loadStaticFaceDescriptors(descriptorOptions, remoteLabels);
+    const descriptors = remoteDescriptors.concat(staticDescriptors);
 
     if (!descriptors.length) {
       throw new Error("Database wajah tidak terbaca.");
     }
 
     state.faceMatcher = new faceapi.FaceMatcher(descriptors, 0.5);
+  }
+
+  async function loadRemoteFaceDescriptors(descriptorOptions) {
+    try {
+      const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
+        method: "POST",
+        body: JSON.stringify({ action: "listFaceDatabase" }),
+        cache: "no-store"
+      }, 15000);
+      if (!response.ok) return [];
+
+      const payload = await response.json();
+      const faces = Array.isArray(payload?.faces) ? payload.faces : [];
+
+      return (await Promise.all(faces.map((face) => {
+        const label = sanitizeFaceLabel(face.label || face.name);
+        const source = String(face.imageDataUrl || face.imageUrl || "").trim();
+        return loadFaceDescriptor(label, source, descriptorOptions);
+      }))).filter(Boolean);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async function loadStaticFaceDescriptors(descriptorOptions, skippedLabels) {
+    return (await Promise.all(LABELS.map((label) => {
+      if (skippedLabels && skippedLabels.has(normalizeKey(label))) return null;
+      return loadFaceDescriptor(label, `${STATIC_FACE_DB_BASE}/${label}.jpg`, descriptorOptions);
+    }))).filter(Boolean);
+  }
+
+  async function loadFaceDescriptor(label, source, descriptorOptions) {
+    if (!label || !source) return null;
+
+    try {
+      const image = await faceapi.fetchImage(source);
+      const detection = await faceapi
+        .detectSingleFace(image, descriptorOptions)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detection) return null;
+      return new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]);
+    } catch (error) {
+      return null;
+    }
   }
 
   function warmUpLocation() {
@@ -1337,6 +1373,14 @@
 
   function formatName(label) {
     return String(label || "").replace(/_/g, " ");
+  }
+
+  function sanitizeFaceLabel(value) {
+    return String(value || "")
+      .trim()
+      .replace(/_/g, " ")
+      .replace(/[^\w\s-]+/g, "")
+      .replace(/\s+/g, "_");
   }
 
   function normalizeSearch(value) {
