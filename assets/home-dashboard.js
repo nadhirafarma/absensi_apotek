@@ -189,6 +189,7 @@
     "surat-pesanan": "Surat Pesanan Pembelian",
     "import-data-obat": "Import Data Obat",
     "akun-profil": "Akun & Profil",
+    "log-aktivitas": "Log Aktivitas",
     "manajemen-pengguna": "Manajemen Pengguna"
   };
 
@@ -207,19 +208,20 @@
     { key: "surat_pesanan", label: "Surat Pesanan Pembelian" },
     { key: "import_data_obat", label: "Import Data Obat" },
     { key: "akun_profil", label: "Akun & Profil" },
+    { key: "log_aktivitas", label: "Log Aktivitas" },
     { key: "manajemen_pengguna", label: "Manajemen Pengguna" },
     { key: "akses_semua_data", label: "Akses Semua Data (Owner)" }
   ];
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "manajemen_pengguna"],
-    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil"],
-    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"],
-    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"],
-    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil"],
-    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil"]
+    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna"],
+    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna"],
+    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -393,7 +395,7 @@
     applyProfilePreferences();
     renderProfile();
     renderProfileSecurity();
-    renderProfileActivity();
+    renderActivityLogPage();
     renderAttendanceShiftSettings();
     loadAttendanceShiftSettingsFromBackend({ silent: true });
     loadStoredModules();
@@ -670,8 +672,16 @@
       profilePasswordStrengthIcon: document.getElementById("profilePasswordStrengthIcon"),
       profilePasswordMatchIcon: document.getElementById("profilePasswordMatchIcon"),
       profilePasswordToggleButtons: Array.from(document.querySelectorAll("[data-password-target]")),
-      profileActivityList: document.getElementById("profileActivityList"),
-      clearProfileActivityButton: document.getElementById("clearProfileActivityButton"),
+      activitySearchInput: document.getElementById("activitySearchInput"),
+      activityModuleFilter: document.getElementById("activityModuleFilter"),
+      activityUserFilter: document.getElementById("activityUserFilter"),
+      activityDateFilter: document.getElementById("activityDateFilter"),
+      activityTotalCount: document.getElementById("activityTotalCount"),
+      activitySuccessCount: document.getElementById("activitySuccessCount"),
+      activityWarningCount: document.getElementById("activityWarningCount"),
+      activityErrorCount: document.getElementById("activityErrorCount"),
+      activityLogTableBody: document.getElementById("activityLogTableBody"),
+      activityLogStatus: document.getElementById("activityLogStatus"),
       profileThemeSelect: document.getElementById("profileThemeSelect"),
       profileCompactToggle: document.getElementById("profileCompactToggle"),
       profileStartDashboardToggle: document.getElementById("profileStartDashboardToggle"),
@@ -778,6 +788,10 @@
       reportMinus: document.getElementById("reportMinus"),
       reportOut: document.getElementById("reportOut")
     });
+
+    if (els.poDetailPanel && els.poDetailPanel.parentElement !== document.body) {
+      document.body.appendChild(els.poDetailPanel);
+    }
   }
 
   function bindEvents() {
@@ -913,9 +927,9 @@
     if (els.poFilterButton) els.poFilterButton.addEventListener("click", () => els.poSearchInput?.focus());
     if (els.poOrdersTableBody) els.poOrdersTableBody.addEventListener("click", handlePurchaseOrderTableClick);
     if (els.poDetailContent) els.poDetailContent.addEventListener("click", handlePurchaseDetailClick);
-    if (els.poCloseDetailButton) els.poCloseDetailButton.addEventListener("click", () => {
-      state.purchaseSelectedNumber = "";
-      renderPurchaseOrders();
+    if (els.poCloseDetailButton) els.poCloseDetailButton.addEventListener("click", closePurchaseDetailModal);
+    if (els.poDetailPanel) els.poDetailPanel.addEventListener("click", (event) => {
+      if (event.target === els.poDetailPanel) closePurchaseDetailModal();
     });
     if (els.poEditSelectedButton) els.poEditSelectedButton.addEventListener("click", editSelectedPurchaseOrder);
     if (els.poMarkProcessButton) els.poMarkProcessButton.addEventListener("click", () => updateSelectedPurchaseStatus("processing"));
@@ -996,7 +1010,10 @@
     els.profilePasswordToggleButtons.forEach((button) => {
       button.addEventListener("click", togglePasswordVisibility);
     });
-    if (els.clearProfileActivityButton) els.clearProfileActivityButton.addEventListener("click", clearProfileActivity);
+    [els.activitySearchInput, els.activityModuleFilter, els.activityUserFilter, els.activityDateFilter].forEach((control) => {
+      if (control) control.addEventListener("input", renderActivityLogPage);
+      if (control) control.addEventListener("change", renderActivityLogPage);
+    });
     if (els.homeThemeToggle) els.homeThemeToggle.addEventListener("click", toggleDashboardTheme);
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
@@ -2799,7 +2816,7 @@
     try {
       const result = await postToApi({
         action: "listActivityLog",
-        limit: isOwnerUser(user) ? 40 : 12,
+        limit: isOwnerUser(user) || isAdminUser(user) ? 200 : 80,
         role: user.role || "",
         username: user.username || "",
         email: user.email || "",
@@ -2807,7 +2824,7 @@
       });
       if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
       state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
-      renderProfileActivity();
+      renderActivityLogPage();
       updateNotificationState();
     } catch (error) {
       if (!options.silent) console.warn("Gagal membaca aktivitas owner:", error);
@@ -2823,6 +2840,9 @@
       username: String(item?.username || "").trim(),
       email: String(item?.email || "").trim(),
       scope: String(item?.scope || "").trim(),
+      module: String(item?.module || item?.modul || "").trim(),
+      status: String(item?.status || "").trim(),
+      ipAddress: String(item?.ipAddress || item?.ip || item?.ip_address || "").trim(),
       at: String(item?.at || item?.createdAt || new Date().toISOString()).trim()
     };
   }
@@ -2927,19 +2947,10 @@
       });
     }
 
-    getVisibleActivityNotificationItems().forEach((activity) => {
-      const item = normalizeActivityRecord(activity);
-      items.push({
-        ...item,
-        key: buildActivityNotificationKey(item),
-        kind: "activity",
-        title: item.title || "Aktivitas Akun",
-        detail: item.detail || "",
-        at: item.at || new Date().toISOString()
-      });
-    });
-
     getRestockNotificationItems().forEach((item) => items.push(item));
+    getPurchaseOrderNotificationItems().forEach((item) => items.push(item));
+    getMedicineNotificationItems().forEach((item) => items.push(item));
+    getProfileChangeNotificationItems().forEach((item) => items.push(item));
 
     return items
       .filter((item, index, list) => list.findIndex((entry) => entry.key === item.key) === index)
@@ -2966,6 +2977,132 @@
       })
       .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
       .slice(0, 20);
+  }
+
+  function getPurchaseOrderNotificationItems() {
+    return state.purchaseOrders
+      .map((order) => {
+        const normalized = normalizePurchaseOrder(order);
+        const status = getPurchaseOrderStatusMeta(normalized.status);
+        const at = normalized.updatedAt || normalized.createdAt || normalized.date || new Date().toISOString();
+        return {
+          key: ["purchase", normalized.number, normalized.status, at].map((part) => String(part || "").replace(/\|/g, " ")).join("|"),
+          kind: "purchase",
+          title: `Status pesanan pembelian: ${status.label}`,
+          detail: `${normalized.number || "Surat pesanan"} - ${normalized.supplier || "Supplier"} - ${formatRupiah(normalized.total || 0)}`,
+          actor: normalized.createdBy || "Pesanan Pembelian",
+          at
+        };
+      })
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+      .slice(0, 8);
+  }
+
+  function getMedicineNotificationItems() {
+    if (!state.rows.length) return [];
+    const uploadedAt = normalizeTimestamp(state.uploadedAt || "") || new Date().toISOString();
+    const categories = [
+      {
+        key: "expired",
+        kind: "expired",
+        title: "Obat Expired",
+        detail: (count) => `${formatNumber(count)} obat aktif sudah melewati tanggal expired.`,
+        rows: state.rows.filter(isActiveExpiredMedicine)
+      },
+      {
+        key: "expiring",
+        kind: "expiring",
+        title: "Obat Akan Expired",
+        detail: (count) => `${formatNumber(count)} obat aktif akan expired dalam ${formatNumber(EXPIRING_DAYS)} hari.`,
+        rows: state.rows.filter(isActiveExpiringMedicine)
+      },
+      {
+        key: "stock-empty",
+        kind: "stock",
+        title: "Stok Habis",
+        detail: (count) => `${formatNumber(count)} obat memiliki stok 0.`,
+        rows: state.rows.filter((row) => parseNumber(row.stok) === 0)
+      },
+      {
+        key: "stock-low",
+        kind: "stock",
+        title: "Stok Menipis",
+        detail: (count) => `${formatNumber(count)} obat sudah mencapai batas stok minimum.`,
+        rows: state.rows.filter(isLowStock)
+      },
+      {
+        key: "stock-minus",
+        kind: "stock",
+        title: "Stok Minus",
+        detail: (count) => `${formatNumber(count)} obat memiliki stok minus.`,
+        rows: state.rows.filter((row) => parseNumber(row.stok) < 0)
+      },
+      {
+        key: "price-loss",
+        kind: "price",
+        title: "Potensi Rugi Harga Jual",
+        detail: (count) => `${formatNumber(count)} obat memiliki harga jual lebih kecil dari modal.`,
+        rows: state.rows.filter(hasMedicineLossPrice)
+      }
+    ];
+
+    return categories
+      .filter((category) => category.rows.length)
+      .map((category) => ({
+        key: ["medicine", category.key, category.rows.length, uploadedAt].join("|"),
+        kind: category.kind,
+        title: category.title,
+        detail: category.detail(category.rows.length),
+        actor: "Sistem Data Obat",
+        at: uploadedAt
+      }));
+  }
+
+  function hasMedicineLossPrice(row) {
+    const buy = parseNumber(row.harga_beli || row.hargabeli);
+    if (buy <= 0) return false;
+    return [
+      "harga_jual_1",
+      "harga_jual_2",
+      "harga_jual_3",
+      "harga_jual_4",
+      "harga_resep_1",
+      "harga_resep_2",
+      "harga_resep_3",
+      "harga_resep_4",
+      "hargajual1",
+      "hargajual2",
+      "hargajual3",
+      "hargajual4",
+      "hargaresep1",
+      "hargaresep2",
+      "hargaresep3",
+      "hargaresep4"
+    ].some((key) => {
+      const price = parseNumber(row[key]);
+      return price > 0 && price < buy;
+    });
+  }
+
+  function getProfileChangeNotificationItems() {
+    const user = getCurrentUserRecord();
+    const source = (state.ownerActivities || []).concat(readStoredArray(PROFILE_ACTIVITY_KEY))
+      .map(normalizeActivityRecord)
+      .filter((item) => {
+        const text = normalizeSearch(`${item.title} ${item.detail} ${item.scope}`);
+        return /profil|identitas apotek|logo apotek|shift absensi|preferensi/.test(text);
+      })
+      .filter((item) => isOwnerUser(user) || isAdminUser(user) || isOwnActivityLogItem(item, user))
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0));
+
+    return source.slice(0, 5).map((item) => ({
+      key: ["profile-change", item.at, item.title, item.actor].map((part) => String(part || "").replace(/\|/g, " ")).join("|"),
+      kind: "profile",
+      title: item.title || "Perubahan Profil",
+      detail: item.detail || "Profil atau identitas apotek diperbarui.",
+      actor: item.actor || "Sistem Profil",
+      at: item.at || new Date().toISOString()
+    }));
   }
 
   function buildActivityNotificationKey(item) {
@@ -4143,6 +4280,7 @@
     renderTableBody();
     renderAttendanceDashboard();
     renderRestockPage();
+    renderActivityLogPage();
 
     if (state.activeView && !canView(state.activeView, access)) {
       const firstAllowed = ACCESS_MENUS.find((item) => access.has(item.key)) || ACCESS_MENUS[0];
@@ -4178,6 +4316,7 @@
       "surat-pesanan": "surat_pesanan",
       "import-data-obat": "import_data_obat",
       "akun-profil": "akun_profil",
+      "log-aktivitas": "log_aktivitas",
       "manajemen-pengguna": "manajemen_pengguna"
     };
     return access.has(map[viewName] || viewName);
@@ -4194,6 +4333,7 @@
       surat_pesanan: "surat-pesanan",
       import_data_obat: "import-data-obat",
       akun_profil: "akun-profil",
+      log_aktivitas: "log-aktivitas",
       manajemen_pengguna: "manajemen-pengguna"
     };
     return map[key] || "dashboard";
@@ -5186,9 +5326,9 @@
     return `<tr data-po-row="${index}"${isBlank ? ' class="is-empty-row"' : ""}>${columns.map((column) => {
       if (column.key === "no") return `<td>${isBlank ? '<button class="purchase-row-icon-button" type="button" data-po-empty-row aria-label="Baris baru">+</button>' : index + 1}</td>`;
       if (column.key === "product") return `<td>${buildPurchaseProductSearchCell(item, index)}</td>`;
-      if (column.key === "currentStock") return `<td>${isBlank ? "-" : `${escapeHtml(formatCell(item.currentStock, "stok"))} ${escapeHtml(item.currentStockUnit || "")}`}</td>`;
+      if (column.key === "currentStock") return `<td>${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.currentStock, item.currentStockUnit || ""))}</td>`;
       if (column.key === "qty") return `<td><input data-po-field="qty" data-po-index="${index}" type="number" min="1" value="${escapeHtml(isBlank ? "0" : item.qty)}"><small>${escapeHtml(item?.unit || "Pcs")}</small></td>`;
-      if (column.key === "realStock") return `<td>${isBlank ? "-" : `${escapeHtml(formatCell(item.realStock, "stok"))} ${escapeHtml(item.realStockUnit || item.currentStockUnit || "")}`}</td>`;
+      if (column.key === "realStock") return `<td>${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.realStock, item.realStockUnit || item.currentStockUnit || ""))}</td>`;
       if (column.key === "buyPrice") return `<td><input data-po-field="buyPrice" data-po-index="${index}" type="number" min="0" value="${escapeHtml(isBlank ? "0" : item.buyPrice)}"></td>`;
       if (column.key === "subtotal") return `<td data-po-subtotal="${index}">${isBlank ? "Rp 0" : formatRupiah(getPurchaseItemSubtotal(item))}</td>`;
       if (column.key === "activeSubstance") return `<td><input data-po-field="activeSubstance" data-po-index="${index}" type="text" value="${escapeHtml(item?.activeSubstance || "")}"></td>`;
@@ -5429,6 +5569,7 @@
       els.poSupplier?.focus();
       return;
     }
+    const wasEditing = Boolean(state.purchaseEditingNumber);
     const order = buildPurchaseOrderFromForm(status);
     const nextOrders = state.purchaseOrders
       .filter((candidate) => candidate.number !== order.number && candidate.number !== state.purchaseEditingNumber)
@@ -5443,7 +5584,7 @@
       state.purchaseEditingNumber = "";
       state.purchaseDraftPickedIds.clear();
       state.purchaseSelectedNumber = order.number;
-      addProfileActivity(status === "draft" ? "Draft pesanan dibuat" : "Surat pesanan dibuat", `${order.number} - ${formatNumber(order.items.length)} item`);
+      addProfileActivity(wasEditing ? "Surat pesanan diperbarui" : (status === "draft" ? "Draft pesanan dibuat" : "Surat pesanan dibuat"), `${order.number} - ${formatNumber(order.items.length)} item`);
       showPurchaseOrderList();
       showActionToast(status === "draft" ? "Draft pesanan berhasil disimpan online." : "Pesanan pembelian berhasil disimpan online.");
     } catch (error) {
@@ -5534,16 +5675,40 @@
         <td><span class="purchase-row-title">${escapeHtml(formatShortDate(order.date))}<small>${escapeHtml(order.dueDate ? `Tempo ${formatShortDate(order.dueDate)}` : order.paymentMethod || "")}</small></span></td>
         <td><span class="purchase-status-pill ${status.className}">${escapeHtml(status.label)}</span></td>
         <td>${escapeHtml(formatRupiah(order.total || 0))}</td>
-        <td><button class="purchase-row-icon-button" type="button" data-po-row-menu="${escapeHtml(order.number)}" aria-label="Pilih pesanan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5h.01"></path><path d="M12 12h.01"></path><path d="M12 19h.01"></path></svg></button></td>
+        <td>
+          <div class="purchase-row-actions">
+            <button class="purchase-row-action is-detail" type="button" data-po-view="${escapeHtml(order.number)}">Detail</button>
+            <button class="purchase-row-action is-edit" type="button" data-po-edit="${escapeHtml(order.number)}">Edit</button>
+            <button class="purchase-row-action is-delete" type="button" data-po-delete="${escapeHtml(order.number)}">Hapus</button>
+          </div>
+        </td>
       </tr>
     `;
   }
 
   function handlePurchaseOrderTableClick(event) {
+    const editButton = event.target.closest("[data-po-edit]");
+    if (editButton) {
+      event.stopPropagation();
+      state.purchaseSelectedNumber = editButton.dataset.poEdit || "";
+      editSelectedPurchaseOrder();
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-po-delete]");
+    if (deleteButton) {
+      event.stopPropagation();
+      deletePurchaseOrder(deleteButton.dataset.poDelete || "");
+      return;
+    }
+
+    const viewButton = event.target.closest("[data-po-view]");
     const row = event.target.closest("[data-po-order]");
-    if (!row) return;
-    state.purchaseSelectedNumber = row.dataset.poOrder || "";
+    const number = viewButton?.dataset.poView || row?.dataset.poOrder || "";
+    if (!number) return;
+    state.purchaseSelectedNumber = number;
     renderPurchaseOrders();
+    openPurchaseDetailModal();
   }
 
   function getSelectedPurchaseOrder() {
@@ -5601,7 +5766,46 @@
 
   function editSelectedPurchaseOrder() {
     const order = getSelectedPurchaseOrder();
-    if (order) openPurchaseOrderForm(order);
+    if (order) {
+      closePurchaseDetailModal();
+      openPurchaseOrderForm(order);
+    }
+  }
+
+  function openPurchaseDetailModal() {
+    renderPurchaseDetail();
+    showModal(els.poDetailPanel);
+  }
+
+  function closePurchaseDetailModal() {
+    hideModal(els.poDetailPanel);
+  }
+
+  async function deletePurchaseOrder(number) {
+    const targetNumber = String(number || state.purchaseSelectedNumber || "").trim();
+    if (!targetNumber) return;
+    const order = state.purchaseOrders.find((candidate) => candidate.number === targetNumber);
+    if (!order) return;
+    const confirmed = window.confirm(`Hapus surat pesanan ${targetNumber}?`);
+    if (!confirmed) return;
+
+    const nextOrders = state.purchaseOrders.filter((candidate) => candidate.number !== targetNumber);
+    const token = startAppLoading(`Menghapus pesanan ${targetNumber}...`, 0);
+    try {
+      const result = await savePurchaseOrdersToBackend({ orders: nextOrders, silent: true });
+      if (!result) throw new Error("Pesanan belum berhasil dihapus online.");
+      state.purchaseOrders = nextOrders.map(normalizePurchaseOrder);
+      writeStoredArray(PO_KEY, state.purchaseOrders);
+      state.purchaseSelectedNumber = state.purchaseOrders[0]?.number || "";
+      closePurchaseDetailModal();
+      renderPurchaseOrders();
+      addProfileActivity("Surat pesanan dihapus", `${targetNumber} - ${order.supplier || "Supplier"}`);
+      showActionToast("Surat pesanan berhasil dihapus.");
+    } catch (error) {
+      showActionToast(error.message || "Pesanan gagal dihapus.", "error");
+    } finally {
+      endAppLoading(token, { force: true });
+    }
   }
 
   async function updateSelectedPurchaseStatus(status) {
@@ -5613,7 +5817,12 @@
     try {
       const result = await savePurchaseOrdersToBackend({ orders: nextOrders, silent: true });
       if (!result) throw new Error("Status pesanan belum berhasil disimpan online.");
+      state.purchaseOrders = nextOrders.map(normalizePurchaseOrder);
+      writeStoredArray(PO_KEY, state.purchaseOrders);
       state.purchaseSelectedNumber = updated.number;
+      renderPurchaseOrders();
+      renderPurchaseDetail();
+      addProfileActivity("Status surat pesanan diperbarui", `${updated.number} menjadi ${getPurchaseOrderStatusMeta(status).label}`);
       showActionToast(`Status pesanan menjadi ${getPurchaseOrderStatusMeta(status).label}.`);
     } catch (error) {
       showActionToast(error.message || "Status pesanan gagal diubah.", "error");
@@ -6539,7 +6748,7 @@
 
   function formatRestockCurrentStock(item) {
     const info = getRestockCurrentStockInfo(item);
-    return `${formatCell(info.stock, "stok")} ${info.unit}`;
+    return formatRestockStockWithUnit(info.stock, info.unit);
   }
 
   function getRestockCurrentStockClass(item) {
@@ -6593,7 +6802,21 @@
 
   function formatRestockRealStock(item) {
     if (!hasRestockRealStock(item)) return "Belum dicek";
-    return `${formatCell(item.realStock, "stok")} ${getRestockComparisonUnit(item)}`;
+    return formatRestockStockWithUnit(item.realStock, getRestockComparisonUnit(item));
+  }
+
+  function formatRestockStockWithUnit(value, unit) {
+    const cleanUnit = String(unit || "").trim();
+    let text = formatCell(value, "stok").trim();
+    if (cleanUnit) {
+      const unitPattern = new RegExp(`(?:\\s+${escapeRegExp(cleanUnit)})+$`, "i");
+      text = text.replace(unitPattern, "").trim();
+    }
+    return [text || "0", cleanUnit].filter(Boolean).join(" ");
+  }
+
+  function escapeRegExp(value) {
+    return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function formatRestockStockDifference(item) {
@@ -6704,7 +6927,7 @@
     if (els.restockDetailStatus) els.restockDetailStatus.textContent = status.label;
     if (!els.restockDetailBody) return;
     els.restockDetailBody.innerHTML = `
-      <div class="restock-detail-summary">
+      <div class="restock-detail-summary restock-detail-summary-modern">
         <div class="restock-detail-image">
           ${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : `<img src="assets/mobile-menu/restok-obat.png" alt="">`}
         </div>
@@ -6715,17 +6938,17 @@
           <small>${escapeHtml(item.unit || inferRestockUnit(row))}</small>
         </div>
       </div>
-      <dl class="restock-detail-grid">
-        <div><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
-        <div><dt>Stok Real</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
-        <div><dt>Selisih Stok</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
-        <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
-        <div><dt>Satuan</dt><dd>${escapeHtml(item.unit)}</dd></div>
-        <div><dt>Prioritas</dt><dd>${escapeHtml(priority.label)}</dd></div>
-        <div><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
-        <div><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
-        <div><dt>Supplier</dt><dd>${escapeHtml(item.supplier || row?.suplier || "-")}</dd></div>
-        <div><dt>Kode</dt><dd>${escapeHtml(item.code || row?.kode || "-")}</dd></div>
+      <dl class="restock-detail-grid restock-detail-grid-modern">
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4z"></path><path d="M8 7V5h8v2"></path></svg></span><dt>Stok Real</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h12"></path><path d="m16 3 4 4-4 4"></path><path d="M16 17H4"></path><path d="m8 21-4-4 4-4"></path></svg></span><dt>Selisih Stok</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg></span><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 16-9 5-9-5V8l9-5 9 5Z"></path><path d="M3 8l9 5 9-5"></path></svg></span><dt>Satuan</dt><dd>${escapeHtml(item.unit)}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v16"></path><path d="M5 5h13l-2 5 2 5H5"></path></svg></span><dt>Prioritas</dt><dd>${escapeHtml(priority.label)}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></span><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><path d="M3 10h18"></path><path d="M5 4h14v18H5z"></path></svg></span><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M9 21v-7h6v7"></path></svg></span><dt>Supplier</dt><dd>${escapeHtml(item.supplier || row?.suplier || "-")}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16"></path><path d="M4 15h16"></path><path d="M10 3 8 21"></path><path d="m16 3-2 18"></path></svg></span><dt>Kode</dt><dd>${escapeHtml(item.code || row?.kode || "-")}</dd></div>
       </dl>
       <div class="restock-detail-note">
         <strong>Catatan</strong>
@@ -6734,7 +6957,7 @@
       <div class="restock-detail-actions">
         ${canSendToDraft ? `<button class="secondary-action" type="button" data-restock-detail-action="order">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>
-          Masukkan ke Draft Pesanan
+          Draft Pesanan
         </button>` : ""}
         ${canManageStatus ? `
           <button class="filter-action" type="button" data-restock-detail-action="processing">Tandai Diproses</button>
@@ -7712,36 +7935,179 @@
     setProfileStatus("", "");
   }
 
-  function renderProfileActivity() {
-    if (!els.profileActivityList) return;
-    const user = getCurrentUserRecord();
-    if (!isOwnerUser(user)) {
-      els.profileActivityList.innerHTML = "<p>Riwayat aktivitas seluruh user hanya tersedia untuk owner.</p>";
-      syncProfileActivityAccess();
+  function renderActivityLogPage() {
+    if (!els.activityLogTableBody) return;
+    const visibleLogs = getVisibleActivityLogs();
+    populateActivityLogFilters(visibleLogs);
+    const filtered = getFilteredActivityLogs(visibleLogs);
+    const total = filtered.length;
+    const success = filtered.filter((item) => item.statusKey === "success").length;
+    const warning = filtered.filter((item) => item.statusKey === "warning").length;
+    const error = filtered.filter((item) => item.statusKey === "error").length;
+
+    setText(els.activityTotalCount, formatNumber(total));
+    setText(els.activitySuccessCount, formatNumber(success));
+    setText(els.activityWarningCount, formatNumber(warning));
+    setText(els.activityErrorCount, formatNumber(error));
+
+    if (!filtered.length) {
+      els.activityLogTableBody.innerHTML = `<tr><td colspan="7" class="empty-table-cell">Belum ada log aktivitas sesuai filter.</td></tr>`;
+      if (els.activityLogStatus) els.activityLogStatus.textContent = visibleLogs.length ? "Tidak ada aktivitas sesuai filter." : "Belum ada log aktivitas.";
       return;
     }
 
-    const remoteActivity = state.ownerActivities.length ? state.ownerActivities : [];
-    const localActivity = readStoredArray(PROFILE_ACTIVITY_KEY);
-    const activity = remoteActivity.concat(localActivity)
-      .map(normalizeActivityRecord)
-      .filter((item, index, list) => {
-        const key = `${item.at}|${item.title}|${item.actor}|${item.detail}`;
-        return list.findIndex((entry) => `${entry.at}|${entry.title}|${entry.actor}|${entry.detail}` === key) === index;
-      })
-      .slice(0, 12);
-
-    if (!activity.length) {
-      els.profileActivityList.innerHTML = "<p>Belum ada aktivitas operator/kasir yang tersimpan di perangkat ini.</p>";
-      return;
-    }
-
-    els.profileActivityList.innerHTML = activity.map((item) => `
-      <article>
-        <span><strong>${escapeHtml(item.title || "Aktivitas")}</strong><small>${escapeHtml(item.detail || "")}</small><small>${escapeHtml(item.actor || "")}</small></span>
-        <time>${escapeHtml(formatLastUpdated(item.at || new Date().toISOString()).replace("Last updated ", ""))}</time>
-      </article>
+    els.activityLogTableBody.innerHTML = filtered.slice(0, 200).map((item) => `
+      <tr>
+        <td><span class="activity-time">${escapeHtml(formatActivityDateTime(item.at))}</span></td>
+        <td>
+          <span class="activity-user-cell">
+            <span class="activity-user-avatar">${escapeHtml(getInitials(item.actor || item.username || "U"))}</span>
+            <span><strong>${escapeHtml(item.actorName || item.actor || item.username || "Pengguna")}</strong><small>${escapeHtml(item.role || "Operator")}</small></span>
+          </span>
+        </td>
+        <td>${escapeHtml(item.title || "Aktivitas")}</td>
+        <td><span class="activity-module-pill">${escapeHtml(item.moduleLabel)}</span></td>
+        <td>${escapeHtml(item.detail || "-")}</td>
+        <td><span class="activity-status-pill is-${escapeHtml(item.statusKey)}">${escapeHtml(item.statusLabel)}</span></td>
+        <td>${escapeHtml(item.ipAddress || "-")}</td>
+      </tr>
     `).join("");
+    if (els.activityLogStatus) els.activityLogStatus.textContent = `Menampilkan ${formatNumber(Math.min(filtered.length, 200))} dari ${formatNumber(visibleLogs.length)} aktivitas.`;
+  }
+
+  function getVisibleActivityLogs() {
+    const user = getCurrentUserRecord();
+    const localActivity = readStoredArray(PROFILE_ACTIVITY_KEY).map(normalizeActivityRecord);
+    const remoteActivity = (state.ownerActivities || []).map(normalizeActivityRecord);
+    return remoteActivity.concat(localActivity)
+      .map(enrichActivityLogItem)
+      .filter((item) => item.title || item.detail)
+      .filter((item, index, list) => {
+        const key = buildActivityLogKey(item);
+        return list.findIndex((entry) => buildActivityLogKey(entry) === key) === index;
+      })
+      .filter((item) => canSeeActivityLogItem(item, user))
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0));
+  }
+
+  function getFilteredActivityLogs(logs) {
+    const query = normalizeSearch(els.activitySearchInput?.value || "");
+    const moduleValue = String(els.activityModuleFilter?.value || "").trim();
+    const userValue = normalizeSearch(els.activityUserFilter?.value || "");
+    const dateValue = String(els.activityDateFilter?.value || "").trim();
+
+    return (logs || []).filter((item) => {
+      const haystack = normalizeSearch([item.title, item.detail, item.actor, item.actorName, item.username, item.email, item.role, item.moduleLabel, item.statusLabel].join(" "));
+      const itemUserKey = normalizeSearch(item.actorName || item.username || item.email || item.actor);
+      const itemDate = item.at ? new Date(item.at) : null;
+      const itemDateKey = itemDate && !Number.isNaN(itemDate.getTime()) ? itemDate.toISOString().slice(0, 10) : "";
+      return (!query || haystack.includes(query))
+        && (!moduleValue || item.moduleKey === moduleValue)
+        && (!userValue || itemUserKey === userValue)
+        && (!dateValue || itemDateKey === dateValue);
+    });
+  }
+
+  function populateActivityLogFilters(logs) {
+    if (els.activityModuleFilter) {
+      const current = els.activityModuleFilter.value;
+      const modules = Array.from(new Map((logs || []).map((item) => [item.moduleKey, item.moduleLabel])).entries())
+        .filter(([key]) => key)
+        .sort((a, b) => a[1].localeCompare(b[1]));
+      els.activityModuleFilter.innerHTML = `<option value="">Semua Modul</option>${modules.map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`).join("")}`;
+      if (modules.some(([key]) => key === current)) els.activityModuleFilter.value = current;
+    }
+
+    if (els.activityUserFilter) {
+      const current = els.activityUserFilter.value;
+      const users = Array.from(new Map((logs || []).map((item) => {
+        const label = item.actorName || item.username || item.email || item.actor || "Pengguna";
+        return [normalizeSearch(label), label];
+      })).entries())
+        .filter(([key]) => key)
+        .sort((a, b) => a[1].localeCompare(b[1]));
+      els.activityUserFilter.innerHTML = `<option value="">Semua Pengguna</option>${users.map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`).join("")}`;
+      if (users.some(([key]) => key === current)) els.activityUserFilter.value = current;
+    }
+  }
+
+  function enrichActivityLogItem(item) {
+    const normalized = normalizeActivityRecord(item);
+    const module = inferActivityModule(normalized);
+    const status = inferActivityStatus(normalized);
+    return {
+      ...normalized,
+      actorName: getActivityActorName(normalized),
+      moduleKey: module.key,
+      moduleLabel: module.label,
+      statusKey: status.key,
+      statusLabel: status.label
+    };
+  }
+
+  function getActivityActorName(item) {
+    const actor = String(item.actor || "").split(" - ")[0].trim();
+    return actor || item.username || item.email || "";
+  }
+
+  function inferActivityModule(item) {
+    const source = normalizeSearch(`${item.module} ${item.scope} ${item.title} ${item.detail}`);
+    if (/surat|pesanan|purchase|po\b/.test(source)) return { key: "surat-pesanan", label: "Pesanan Pembelian" };
+    if (/restok|permintaan/.test(source)) return { key: "restok-obat", label: "Permintaan Restok" };
+    if (/import|upload|data obat|obat/.test(source)) return { key: "data-obat", label: "Data Obat" };
+    if (/absen|presensi|kehadiran|gaji|slip/.test(source)) return { key: "presensi", label: "Presensi" };
+    if (/supplier|pbf/.test(source)) return { key: "supplier", label: "Data Supplier" };
+    if (/karyawan|operator|pengguna|user/.test(source)) return { key: "pengguna", label: "Pengguna" };
+    if (/profil|password|foto|preferensi|apotek|shift/.test(source)) return { key: "akun-profil", label: "Akun & Profil" };
+    if (/login|logout|autentikasi/.test(source)) return { key: "autentikasi", label: "Autentikasi" };
+    return { key: normalizeSearch(item.module) || "sistem", label: item.module || "Sistem" };
+  }
+
+  function inferActivityStatus(item) {
+    const source = normalizeSearch(`${item.status} ${item.title} ${item.detail}`);
+    if (/gagal|error|hapus|tolak|batal|ditolak|dibatalkan/.test(source)) return { key: "error", label: "Gagal" };
+    if (/peringatan|warning|stok|expired|minus|rugi/.test(source)) return { key: "warning", label: "Peringatan" };
+    return { key: "success", label: "Berhasil" };
+  }
+
+  function canSeeActivityLogItem(item, user) {
+    if (isOwnerUser(user)) return true;
+    const own = isOwnActivityLogItem(item, user);
+    const role = normalizeSearch(user?.role);
+    const username = normalizeSearch(user?.username || user?.name || "");
+    const adminLike = role === "admin" || role === "administrator" || username === "admin";
+    if (adminLike) return own || normalizeSearch(item.role) !== "owner";
+    return own;
+  }
+
+  function isOwnActivityLogItem(item, user) {
+    if (!item || !user) return false;
+    const identityText = normalizeSearch(`${item.actor} ${item.actorName} ${item.username} ${item.email}`);
+    const keys = [user.username, user.email, user.name]
+      .map(normalizeSearch)
+      .filter(Boolean);
+    return keys.some((key) => identityText.includes(key));
+  }
+
+  function buildActivityLogKey(item) {
+    return [item.at, item.title, item.detail, item.actor, item.username, item.email].map((part) => String(part || "")).join("|");
+  }
+
+  function formatActivityDateTime(value) {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) return "-";
+    try {
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).format(date);
+    } catch (error) {
+      return date.toLocaleString();
+    }
   }
 
   function addProfileActivity(title, detail) {
@@ -7761,7 +8127,7 @@
     activity.unshift(entry);
     writeStoredArray(PROFILE_ACTIVITY_KEY, activity.slice(0, 30));
     sendActivityLog(entry);
-    renderProfileActivity();
+    renderActivityLogPage();
   }
 
   async function sendActivityLog(entry) {
@@ -7773,13 +8139,6 @@
     } catch (error) {
       // Audit tetap tersimpan lokal jika backend Apps Script belum diperbarui.
     }
-  }
-
-  function clearProfileActivity() {
-    localStorage.removeItem(PROFILE_ACTIVITY_KEY);
-    renderProfileActivity();
-    setProfileStatus("Riwayat aktivitas perangkat ini sudah dibersihkan.", "success");
-    showActionToast("Riwayat aktivitas berhasil dibersihkan.");
   }
 
   function applyProfilePreferences() {
@@ -8105,23 +8464,18 @@
   function syncProfileActivityAccess() {
     const user = getCurrentUserRecord();
     const canManageShift = canManageAttendanceShift(user);
-    const activityTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "aktivitas");
-    const activityPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "aktivitas");
     const shiftTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "shift-absensi");
     const shiftPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "shift-absensi");
     const pharmacyTab = els.profileTabButtons.find((button) => button.dataset.profileTab === "identitas-apotek");
     const pharmacyPanel = els.profilePanels.find((panel) => panel.dataset.profilePanel === "identitas-apotek");
     const isOwner = isOwnerUser(user);
 
-    if (activityTab) activityTab.hidden = true;
-    if (activityPanel) activityPanel.hidden = true;
     if (shiftTab) shiftTab.hidden = !canManageShift;
     if (shiftPanel) shiftPanel.hidden = !canManageShift;
     if (pharmacyTab) pharmacyTab.hidden = !isOwner;
     if (pharmacyPanel) pharmacyPanel.hidden = !isOwner;
 
-    if ((activityTab?.classList.contains("is-active")) ||
-        (!isOwner && pharmacyTab?.classList.contains("is-active")) ||
+    if ((!isOwner && pharmacyTab?.classList.contains("is-active")) ||
         (!canManageShift && shiftTab?.classList.contains("is-active"))) {
       switchProfileTab("profil", { openPanel: false });
     }
@@ -9567,6 +9921,7 @@
     if (viewName === "cari-data-obat" && previousView !== "cari-data-obat") {
       state.previousView = options.previousView || previousView || (isMobileViewport() ? "home" : "dashboard");
     }
+    if (viewName !== "surat-pesanan") closePurchaseDetailModal();
     state.activeView = viewName;
     document.body.classList.toggle("home-view-active", viewName === "home");
     els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
@@ -9585,6 +9940,7 @@
       fetchSalarySlipHistory({ silent: true });
     }
     if (viewName === "restok-obat") renderRestockPage();
+    if (viewName === "log-aktivitas") renderActivityLogPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
     setSidebarCollapsed(true);
   }

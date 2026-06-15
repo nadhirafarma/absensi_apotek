@@ -984,11 +984,12 @@ function handleSaveDataObatFilter_(data) {
 }
 
 function handleSaveActivityLog_(data) {
+  data = data || {};
   var item = sanitizeActivityLogItem_(data.activity || data);
   var list = readActivityLog_();
 
   list.unshift(item);
-  list = list.slice(0, 120);
+  list = list.slice(0, 300);
 
   PropertiesService.getScriptProperties().setProperty(OWNER_ACTIVITY_LOG_PROPERTY, JSON.stringify(list));
 
@@ -1000,11 +1001,13 @@ function handleSaveActivityLog_(data) {
 }
 
 function handleListActivityLog_(data) {
+  data = data || {};
   var limit = Number(data.limit || 30);
   if (!limit || limit < 1) limit = 30;
-  if (limit > 120) limit = 120;
+  if (limit > 300) limit = 300;
   var role = normalizeLoginKey_(data.role || '');
   var isOwner = role == 'owner' || normalizeLoginKey_(data.username || data.actor || '') == 'owner';
+  var isAdmin = role == 'admin' || role == 'administrator' || normalizeLoginKey_(data.username || data.actor || '') == 'admin';
   var list = readActivityLog_();
 
   if (!isOwner) {
@@ -1016,13 +1019,13 @@ function handleListActivityLog_(data) {
 
     list = list.filter(function(item) {
       var identityText = normalizeLoginKey_([item.username, item.email, item.actor].join(' '));
-      var accountText = normalizeLoginKey_([item.title, item.detail, item.scope].join(' '));
-      var isAccountEvent = /akun|profil|foto|password|preferensi|login|logout|email/.test(accountText);
+      var itemRole = normalizeLoginKey_(item.role || '');
       var isOwn = keys.some(function(key) {
         return key && identityText.indexOf(key) >= 0;
       });
 
-      return isAccountEvent && isOwn;
+      if (isAdmin) return isOwn || itemRole != 'owner';
+      return isOwn;
     });
   }
 
@@ -1057,6 +1060,9 @@ function sanitizeActivityLogItem_(item) {
     username: String(item.username || '').slice(0, 120),
     email: String(item.email || '').slice(0, 120),
     scope: String(item.scope || '').slice(0, 60),
+    module: String(item.module || item.modul || '').slice(0, 80),
+    status: String(item.status || '').slice(0, 40),
+    ipAddress: String(item.ipAddress || item.ip || item.ip_address || '').slice(0, 80),
     at: String(item.at || new Date().toISOString())
   };
 }

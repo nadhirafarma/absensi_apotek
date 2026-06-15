@@ -4905,9 +4905,19 @@ td.col-actions {
 
 .purchase-list-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+}
+
+#view-surat-pesanan {
+  overflow-x: hidden;
+}
+
+#view-surat-pesanan .purchase-page {
+  width: 142.857%;
+  transform: scale(0.7);
+  transform-origin: top left;
 }
 
 .purchase-main-panel,
@@ -4931,28 +4941,27 @@ td.col-actions {
 }
 
 .purchase-stats article {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 14px;
-  min-height: 100px;
-  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 12px;
   border: 1px solid #e5eefb;
-  border-radius: 12px;
+  border-radius: 8px;
   background: linear-gradient(145deg, #fff, #f8fbff);
 }
 
 .purchase-stat-icon {
-  grid-row: span 3;
-  width: 52px;
-  height: 52px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 8px;
 }
 
 .purchase-stat-icon svg {
-  width: 26px;
-  height: 26px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -4966,17 +4975,29 @@ td.col-actions {
 .purchase-stat-icon.is-pink { background: #fff0fa; color: #e0179a; }
 
 .purchase-stats small,
+.purchase-stats em,
+.purchase-stats strong {
+  display: inline;
+}
+
+.purchase-stats small,
 .purchase-stats em {
   color: #6076a5;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-style: normal;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .purchase-stats strong {
   color: #071955;
-  font-size: 1.45rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.purchase-stats article small::after,
+.purchase-stats article strong::after {
+  content: " ";
 }
 
 .purchase-filters {
@@ -5044,8 +5065,17 @@ td.col-actions {
   stroke-width: 2;
 }
 
-.purchase-search.is-compact {
+.purchase-search.is-compact,
+.purchase-draft-search {
   margin: 10px 0;
+}
+
+.purchase-draft-search input {
+  min-height: 40px;
+  border: 1px solid #cfe0f7;
+  border-radius: 8px;
+  padding: 10px 40px 10px 12px;
+  box-shadow: none;
 }
 
 .purchase-table-wrap,
@@ -5125,11 +5155,61 @@ td.col-actions {
   color: #5872a8;
 }
 
+.purchase-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.purchase-row-action {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #d8e5f8;
+  border-radius: 7px;
+  background: #fff;
+  color: #315dff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.purchase-row-action.is-delete {
+  color: #e42548;
+}
+
+.purchase-row-action:hover,
+.purchase-row-action:focus {
+  background: #f2f7ff;
+}
+
 .purchase-detail-panel {
-  position: sticky;
-  top: 100px;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(10, 24, 58, 0.42);
+}
+
+.purchase-detail-panel[hidden] {
+  display: none;
+}
+
+.purchase-detail-modal-card {
+  position: relative;
   display: grid;
   gap: 14px;
+  width: min(560px, 94vw);
+  max-height: min(760px, 92vh);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid #e1ebfb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(24, 48, 102, 0.24);
 }
 
 .purchase-detail-close {
@@ -5422,7 +5502,7 @@ td.col-actions {
   }
 
   .purchase-detail-panel {
-    position: static;
+    position: fixed;
   }
 
   .purchase-stats,
@@ -5432,6 +5512,14 @@ td.col-actions {
 
   .purchase-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  #view-surat-pesanan .purchase-page {
+    width: 100%;
+    transform: scale(0.48);
+    transform-origin: top left;
   }
 }
 
@@ -17915,4 +18003,347 @@ body.home-view-active .apoteker-ai-fab.is-access-hidden,
 
 .restock-medicine-result em {
   color: #33446f !important;
+}
+
+/* 20260614 purchase order, restock detail, and activity log polish. */
+.restock-request-card .modal-actions {
+  align-items: center;
+}
+
+.restock-request-card .modal-actions .secondary-action,
+.restock-request-card .modal-actions .filter-action {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 0.84rem;
+  line-height: 1;
+}
+
+.restock-request-card .modal-actions .secondary-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.restock-detail-card {
+  width: min(920px, calc(100vw - 34px));
+}
+
+.restock-detail-summary-modern {
+  grid-template-columns: 144px minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+  padding: 8px 2px 18px;
+}
+
+.restock-detail-summary-modern .restock-detail-image {
+  width: 124px;
+  height: 124px;
+  border-radius: 16px;
+}
+
+.restock-detail-summary-modern h3 {
+  margin: 18px 0 8px;
+  color: #061846;
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.restock-detail-summary-modern small {
+  color: #6f7fa3;
+  font-size: 0.9rem;
+}
+
+.restock-detail-grid-modern {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.restock-detail-grid-modern div {
+  display: grid;
+  grid-template-columns: 34px minmax(110px, 0.58fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 14px 18px;
+}
+
+.restock-detail-field-icon {
+  display: grid;
+  place-items: center;
+  color: #6578a0;
+}
+
+.restock-detail-field-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.restock-detail-grid-modern dt {
+  color: #697a9f;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.restock-detail-grid-modern dd {
+  color: #071955;
+  font-size: 0.96rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.restock-detail-note {
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.restock-detail-actions {
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+}
+
+.restock-detail-actions > button {
+  min-height: 52px;
+  display: inline-flex;
+  padding: 0 16px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  background: #fff !important;
+  box-shadow: none;
+  font-size: 0.92rem;
+  color: #1d67ff;
+}
+
+.restock-detail-actions .filter-action {
+  color: #8442f1;
+}
+
+.restock-detail-actions .restock-done-button {
+  color: #11a964;
+}
+
+.restock-detail-actions .restock-danger-button {
+  color: #ff315c;
+}
+
+.restock-detail-actions .restock-soft-button,
+.restock-detail-actions .restock-cancel-button {
+  min-height: 52px;
+}
+
+.activity-page {
+  display: grid;
+  gap: 18px;
+}
+
+.activity-toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.5fr) minmax(170px, 0.75fr) minmax(180px, 0.85fr) minmax(170px, 0.72fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e0e9f6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(25, 69, 134, 0.06);
+}
+
+.activity-toolbar select,
+.activity-toolbar input[type="date"] {
+  min-height: 46px;
+  border: 1px solid #d3e1f4;
+  border-radius: 8px;
+  background: #fff;
+  color: #253966;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.activity-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.activity-summary-grid article {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 118px;
+  padding: 20px 22px;
+  border: 1px solid #e0e9f6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.activity-summary-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+}
+
+.activity-summary-icon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.activity-summary-icon.is-blue { background: #eef1ff; color: #5947ef; }
+.activity-summary-icon.is-green { background: #e7fbf0; color: #0fae66; }
+.activity-summary-icon.is-orange { background: #fff2df; color: #f28a13; }
+.activity-summary-icon.is-red { background: #ffe8ee; color: #ef3156; }
+
+.activity-summary-grid small,
+.activity-summary-grid p {
+  color: #65769c;
+  font-weight: 800;
+}
+
+.activity-summary-grid strong {
+  display: block;
+  margin: 5px 0;
+  color: #071955;
+  font-size: 1.35rem;
+}
+
+.activity-summary-grid p {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.activity-table-wrap {
+  overflow: auto;
+  border: 1px solid #e0e9f6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.activity-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
+
+.activity-table th,
+.activity-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf2f9;
+  color: #263a67;
+  font-size: 0.84rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.activity-table th {
+  background: #fbfdff;
+  color: #526489;
+  font-weight: 900;
+}
+
+.activity-user-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-user-cell strong,
+.activity-user-cell small {
+  display: block;
+}
+
+.activity-user-cell small,
+.activity-time {
+  color: #66789f;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.activity-user-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8f0ff, #f7ecff);
+  color: #315dff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.activity-module-pill,
+.activity-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.activity-module-pill {
+  background: #edf6ff;
+  color: #1266d6;
+}
+
+.activity-status-pill.is-success {
+  background: #dcf9e8;
+  color: #098044;
+}
+
+.activity-status-pill.is-warning {
+  background: #fff2d8;
+  color: #bd7000;
+}
+
+.activity-status-pill.is-error {
+  background: #ffe8ee;
+  color: #d72548;
+}
+
+@media (max-width: 980px) {
+  .activity-toolbar,
+  .activity-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .restock-detail-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .activity-toolbar,
+  .activity-summary-grid,
+  .restock-detail-grid-modern {
+    grid-template-columns: 1fr;
+  }
+
+  .restock-detail-summary-modern {
+    grid-template-columns: 1fr;
+  }
+}
+
+#view-surat-pesanan .purchase-form-page {
+  width: 142.857%;
+  transform: scale(0.7);
+  transform-origin: top left;
+}
+
+@media (max-width: 760px) {
+  #view-surat-pesanan .purchase-form-page {
+    width: 100%;
+    transform: scale(0.34);
+    transform-origin: top left;
+  }
 }

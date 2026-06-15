@@ -209,13 +209,15 @@
       body: JSON.stringify({
         action: "saveActivityLog",
         activity: {
-          title: "Login aplikasi",
+          title: "Login ke sistem",
           detail: "Akun berhasil masuk ke dashboard",
           actor: `${session.name || session.username || "Akun"} - ${session.role || "Operator"}`,
           role: session.role || "",
           username: session.username || "",
           email: session.email || "",
           scope: "account",
+          module: "Autentikasi",
+          status: "success",
           at: new Date().toISOString()
         }
       }),

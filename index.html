@@ -144,6 +144,15 @@
           </svg>
           <span class="sidebar-label">Akun & Profil</span>
         </button>
+        <button class="sidebar-link" type="button" data-view-target="log-aktivitas" data-access-key="log_aktivitas" title="Log Aktivitas">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
+            <path d="M8 11h8"></path>
+            <path d="M8 15h5"></path>
+            <path d="M18 11l2 2 3-4"></path>
+          </svg>
+          <span class="sidebar-label">Log Aktivitas</span>
+        </button>
         <button class="sidebar-link" type="button" data-view-target="manajemen-pengguna" data-access-key="manajemen_pengguna" title="Manajemen Pengguna">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -381,6 +390,17 @@
                   </svg>
                 </span>
                 <strong>Restok<br>Obat</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="log-aktivitas" data-access-key="log_aktivitas">
+                <span class="mobile-home-icon icon-report">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
+                    <path d="M8 11h8"></path>
+                    <path d="M8 15h5"></path>
+                    <path d="M18 11l2 2 3-4"></path>
+                  </svg>
+                </span>
+                <strong>Log<br>Aktivitas</strong>
               </button>
               <button class="mobile-home-card" type="button" data-view-target="manajemen-pengguna" data-access-key="manajemen_pengguna">
                 <span class="mobile-home-icon icon-users">
@@ -896,18 +916,6 @@
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
                   Pesanan Baru
                 </button>
-                <button class="purchase-soft-button" id="poImportDraftButton" type="button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
-                  Import Draft
-                </button>
-                <button class="purchase-soft-button" id="poExportButton" type="button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path></svg>
-                  Export Excel
-                </button>
-                <button class="purchase-soft-button" id="poFilterButton" type="button">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
-                  Filter Lanjutan
-                </button>
               </div>
             </header>
 
@@ -940,7 +948,8 @@
                 <p class="purchase-page-info" id="poListStatus">Belum ada data pesanan pembelian.</p>
               </div>
 
-              <aside class="purchase-detail-panel" id="poDetailPanel">
+              <aside class="purchase-detail-panel dashboard-modal" id="poDetailPanel" hidden>
+                <div class="purchase-detail-modal-card">
                 <button class="purchase-detail-close" id="poCloseDetailButton" type="button" aria-label="Tutup detail">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
@@ -966,6 +975,7 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>
                     Cetak
                   </button>
+                </div>
                 </div>
               </aside>
             </div>
@@ -1055,7 +1065,7 @@
 
                 <section class="purchase-summary-card">
                   <div class="purchase-card-head"><span class="purchase-mini-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><div><h3>Draft Restok Obat</h3><p>Buat draft berdasarkan kebutuhan restok obat.</p></div></div>
-                  <label class="purchase-search is-compact"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
+                  <label class="purchase-search purchase-draft-search"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
                   <div id="poDraftList" class="purchase-draft-list"></div>
                 </section>
               </aside>
@@ -1118,13 +1128,12 @@
               <div class="module-head">
                 <div>
                   <h2>Akun & Profil</h2>
-                  <p>Kelola identitas, keamanan, riwayat, dan preferensi tampilan perangkat ini.</p>
+                  <p>Kelola identitas, keamanan, dan preferensi tampilan perangkat ini.</p>
                 </div>
               </div>
               <div class="profile-tabs" role="tablist" aria-label="Pengaturan akun">
                 <button class="profile-tab is-active" type="button" data-profile-tab="profil">Profil</button>
                 <button class="profile-tab" type="button" data-profile-tab="keamanan">Keamanan</button>
-                <button class="profile-tab" type="button" data-profile-tab="aktivitas">Aktivitas</button>
                 <button class="profile-tab" type="button" data-profile-tab="preferensi">Preferensi</button>
                 <button class="profile-tab" type="button" data-profile-tab="identitas-apotek">Identitas Apotek</button>
                 <button class="profile-tab" type="button" data-profile-tab="shift-absensi">Shift Absensi</button>
@@ -1177,18 +1186,6 @@
                     <button class="secondary-action" type="submit">Simpan Password Baru</button>
                   </div>
                 </form>
-              </section>
-
-              <section class="profile-panel" data-profile-panel="aktivitas">
-                <button class="profile-panel-close" type="button" data-profile-panel-close aria-label="Tutup aktivitas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
-                <div class="module-head compact-head">
-                  <div>
-                    <h3>Riwayat Aktivitas</h3>
-                    <p>Catatan aktivitas akun pada perangkat ini.</p>
-                  </div>
-                  <button class="text-button" id="clearProfileActivityButton" type="button">Bersihkan</button>
-                </div>
-                <div class="activity-list" id="profileActivityList"></div>
               </section>
 
               <section class="profile-panel" data-profile-panel="preferensi">
@@ -1277,6 +1274,48 @@
               </div>
             </section>
           </div>
+        </section>
+
+        <section class="dashboard-view" id="view-log-aktivitas" data-view="log-aktivitas">
+          <section class="activity-page module-card" aria-labelledby="activityLogTitle">
+            <div class="module-head">
+              <div>
+                <h2 id="activityLogTitle">Log Aktivitas</h2>
+                <p>Riwayat aktivitas pengguna dalam sistem.</p>
+              </div>
+            </div>
+
+            <div class="activity-toolbar">
+              <label class="dashboard-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
+                <input id="activitySearchInput" type="search" placeholder="Cari aktivitas, pengguna, atau modul...">
+              </label>
+              <select id="activityModuleFilter" aria-label="Filter modul aktivitas">
+                <option value="">Semua Modul</option>
+              </select>
+              <select id="activityUserFilter" aria-label="Filter pengguna aktivitas">
+                <option value="">Semua Pengguna</option>
+              </select>
+              <input id="activityDateFilter" type="date" aria-label="Filter tanggal aktivitas">
+            </div>
+
+            <div class="activity-summary-grid">
+              <article><span class="activity-summary-icon is-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12h6"></path><path d="M9 16h6"></path><path d="M9 8h2"></path><path d="M5 4h14v16H5z"></path></svg></span><div><small>Total Aktivitas</small><strong id="activityTotalCount">0</strong><p>Semua aktivitas tercatat</p></div></article>
+              <article><span class="activity-summary-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path><circle cx="12" cy="12" r="9"></circle></svg></span><div><small>Berhasil</small><strong id="activitySuccessCount">0</strong><p>Aktivitas selesai</p></div></article>
+              <article><span class="activity-summary-icon is-orange"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg></span><div><small>Peringatan</small><strong id="activityWarningCount">0</strong><p>Perlu diperhatikan</p></div></article>
+              <article><span class="activity-summary-icon is-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path><circle cx="12" cy="12" r="9"></circle></svg></span><div><small>Gagal</small><strong id="activityErrorCount">0</strong><p>Aktivitas gagal</p></div></article>
+            </div>
+
+            <div class="activity-table-wrap">
+              <table class="activity-table">
+                <thead>
+                  <tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Modul</th><th>Detail</th><th>Status</th><th>IP Address</th></tr>
+                </thead>
+                <tbody id="activityLogTableBody"></tbody>
+              </table>
+            </div>
+            <p class="table-status" id="activityLogStatus">Belum ada log aktivitas.</p>
+          </section>
         </section>
 
         <section class="dashboard-view" id="view-manajemen-pengguna" data-view="manajemen-pengguna">
