@@ -820,6 +820,11 @@
 
     document.addEventListener("click", (event) => {
       if (!event.target.closest(".purchase-row-menu")) closePurchaseRowMenus();
+      if (event.target.closest(".table-row-menu-trigger")) {
+        window.setTimeout(() => closeTableActionMenus(event.target.closest(".table-row-menu")), 0);
+      } else if (!event.target.closest(".table-row-menu")) {
+        closeTableActionMenus();
+      }
     });
 
     if (els.searchInput) {
@@ -1719,15 +1724,10 @@
           <td class="col-no">${start + index + 1}</td>
           ${columns.map((column) => `<td data-column="${escapeHtml(column.key)}">${escapeHtml(formatCell(row[column.key], column.key))}</td>`).join("")}
           <td class="col-actions">
-            <div class="row-actions">
-              ${allowEdit ? `<button class="table-action table-action-edit" type="button" data-action="edit-medicine" data-index="${rowIndex}" aria-label="Edit ${escapeHtml(row.nama || row.kode || "obat")}">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
-              </button>` : ""}
-              ${allowDelete ? `<button class="table-action table-action-delete" type="button" data-action="delete-medicine" data-index="${rowIndex}" aria-label="Hapus ${escapeHtml(row.nama || row.kode || "obat")}">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
-              </button>` : ""}
-              ${!allowEdit && !allowDelete ? `<span class="muted-action">-</span>` : ""}
-            </div>
+            ${renderTableActionMenu([
+              allowEdit ? `<button class="table-row-menu-action" type="button" data-action="edit-medicine" data-index="${rowIndex}">Edit</button>` : "",
+              allowDelete ? `<button class="table-row-menu-action is-danger" type="button" data-action="delete-medicine" data-index="${rowIndex}">Hapus</button>` : ""
+            ], `Aksi ${row.nama || row.kode || "obat"}`)}
           </td>
         </tr>
       `;
@@ -4391,13 +4391,7 @@
         ? `<td><span class="status-badge ${inactive ? "is-inactive" : ""}">${escapeHtml(normalizeRecordStatus(row.status))}</span></td>`
         : "";
       const toggleButton = isEmployeeTable
-        ? `
-            <button class="table-action table-action-status ${inactive ? "is-activate" : "is-deactivate"}" type="button" data-local-action="toggle-status" data-type="${type}" data-index="${index}" aria-label="${inactive ? "Aktifkan karyawan" : "Nonaktifkan karyawan"}" title="${inactive ? "Aktifkan" : "Nonaktifkan"}">
-              ${inactive
-                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>'
-                : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M10 8v8"></path><path d="M14 8v8"></path></svg>'}
-            </button>
-          `
+        ? `<button class="table-row-menu-action" type="button" data-local-action="toggle-status" data-type="${type}" data-index="${index}">${inactive ? "Aktifkan" : "Nonaktifkan"}</button>`
         : "";
       return `
       <tr>
@@ -4409,15 +4403,11 @@
         </td>
         ${statusCell}
         <td>
-          <div class="row-actions">
-            ${toggleButton}
-            <button class="table-action table-action-edit" type="button" data-local-action="edit" data-type="${type}" data-index="${index}" aria-label="Edit">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
-            </button>
-            <button class="table-action table-action-delete" type="button" data-local-action="delete" data-type="${type}" data-index="${index}" aria-label="Hapus">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
-            </button>
-          </div>
+          ${renderTableActionMenu([
+            toggleButton,
+            `<button class="table-row-menu-action" type="button" data-local-action="edit" data-type="${type}" data-index="${index}">Edit</button>`,
+            `<button class="table-row-menu-action is-danger" type="button" data-local-action="delete" data-type="${type}" data-index="${index}">Hapus</button>`
+          ], `Aksi ${label}`)}
         </td>
       </tr>
     `;
@@ -4452,14 +4442,10 @@
           <td><span class="status-badge ${normalizeSearch(user.status) === "non aktif" || normalizeSearch(user.status) === "nonaktif" ? "is-inactive" : ""}">${escapeHtml(user.status || "Aktif")}</span></td>
           <td><span class="access-summary">${escapeHtml(formatAccessSummary(user))}</span></td>
           <td>
-            <div class="row-actions">
-              <button class="table-action table-action-edit" type="button" data-local-action="edit" data-type="user" data-index="${index}" aria-label="Edit user">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
-              </button>
-              <button class="table-action table-action-delete" type="button" data-local-action="delete" data-type="user" data-index="${index}" aria-label="Hapus user">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
-              </button>
-            </div>
+            ${renderTableActionMenu([
+              `<button class="table-row-menu-action" type="button" data-local-action="edit" data-type="user" data-index="${index}">Edit</button>`,
+              `<button class="table-row-menu-action is-danger" type="button" data-local-action="delete" data-type="user" data-index="${index}">Hapus</button>`
+            ], `Aksi ${user.name || user.username || "user"}`)}
           </td>
         </tr>
       `;
@@ -5235,10 +5221,32 @@
     if (els.poSupplierPhone && !els.poSupplierPhone.value) els.poSupplierPhone.value = supplier.phone || "";
   }
 
-  function buildPurchaseOrderNumber(prefix = "SP") {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const count = state.purchaseOrders.filter((order) => String(order.number || "").indexOf(`${prefix}-${today}`) === 0).length + 1;
-    return `${prefix}-${today}-${String(count).padStart(3, "0")}`;
+  function buildPurchaseOrderNumber(dateValue = null) {
+    const sourceDate = String(dateValue || els.poDate?.value || new Date().toISOString().slice(0, 10)).slice(0, 10);
+    const parts = sourceDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const key = parts ? `${parts[1].slice(-2)}${parts[2]}${parts[3]}` : formatPurchaseOrderDateKey(new Date());
+    const legacyKey = parts ? `${parts[1]}${parts[2]}${parts[3]}` : `20${key}`;
+    let maxSequence = 0;
+
+    state.purchaseOrders.forEach((order) => {
+      [order.number, order.manualNumber].forEach((value) => {
+        const text = String(value || "").trim();
+        const modern = text.match(new RegExp(`(?:^|[^0-9])${key}-(\\d{1,})$`));
+        const legacy = text.match(new RegExp(`(?:^|-)${legacyKey}-(\\d{1,})$`));
+        const sequence = Number((modern || legacy || [])[1] || 0);
+        if (sequence > maxSequence) maxSequence = sequence;
+      });
+    });
+
+    return `${key}-${String(maxSequence + 1).padStart(3, "0")}`;
+  }
+
+  function formatPurchaseOrderDateKey(date) {
+    const safeDate = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+    const year = String(safeDate.getFullYear()).slice(-2);
+    const month = String(safeDate.getMonth() + 1).padStart(2, "0");
+    const day = String(safeDate.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
   }
 
   function addPurchaseItem() {
@@ -5521,9 +5529,8 @@
     if (els.poSummaryTax) els.poSummaryTax.textContent = formatRupiah(totals.tax);
     if (els.poSummaryTotal) els.poSummaryTotal.textContent = formatRupiah(totals.total);
     if (els.poNumber) {
-      const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
       const manualNumber = String(els.poManualNumber?.value || "").trim();
-      els.poNumber.textContent = manualNumber || (state.purchaseEditingNumber || buildPurchaseOrderNumber(typeMeta.prefix));
+      els.poNumber.textContent = manualNumber || (state.purchaseEditingNumber || buildPurchaseOrderNumber(els.poDate?.value));
     }
   }
 
@@ -5533,7 +5540,7 @@
     const typeMeta = getPurchaseOrderTypeMeta(els.poType?.value || "regular");
     const manualNumber = String(els.poManualNumber?.value || "").trim();
     const existing = state.purchaseEditingNumber ? state.purchaseOrders.find((order) => order.number === state.purchaseEditingNumber) : null;
-    const number = state.purchaseEditingNumber || manualNumber || buildPurchaseOrderNumber(typeMeta.prefix);
+    const number = state.purchaseEditingNumber || manualNumber || buildPurchaseOrderNumber(els.poDate?.value);
     const note = [els.poNote?.value, els.poAdditionalNote?.value].map((value) => String(value || "").trim()).filter(Boolean).join("\n");
     return normalizePurchaseOrder({
       ...(existing || {}),
@@ -5815,7 +5822,11 @@
     if (!targetNumber) return;
     const order = state.purchaseOrders.find((candidate) => candidate.number === targetNumber);
     if (!order) return;
-    const confirmed = window.confirm(`Hapus surat pesanan ${targetNumber}?`);
+    const confirmed = await showConfirmDialog(`Hapus surat pesanan ${targetNumber}?`, {
+      title: "Hapus Surat Pesanan",
+      confirmLabel: "Hapus",
+      cancelLabel: "Batal"
+    });
     if (!confirmed) return;
 
     const nextOrders = state.purchaseOrders.filter((candidate) => candidate.number !== targetNumber);
@@ -5920,87 +5931,114 @@
     window.setTimeout(() => printWindow.print(), 450);
   }
 
-  function buildPurchaseOrderPrintHtml(order) {
+  function getOwnerProfileForPrint() {
+    const owner = state.users.find((user) => isOwnerUser(user));
+    return owner ? normalizeUserRecord(owner) : getProfileData();
+  }
+
+  function inferCityFromAddress(address) {
+    const parts = String(address || "").split(",").map((part) => part.trim()).filter(Boolean);
+    if (parts.length >= 3) return parts[1];
+    return "";
+  }
+
+  function getPurchasePrintProfileContext(order) {
     const profile = getPharmacyProfile();
+    const ownerProfile = getOwnerProfileForPrint();
+    const address = profile.address || ownerProfile.address || "Jl. Raya Desa Terate Kecamatan Sirah Pulau Padang Kabupaten Ogan Komering Ilir Sumatera Selatan, 30651";
+    return {
+      brandName: profile.name && profile.name !== "Apotek Anda" ? profile.name : "Apotek Nadhira Farma",
+      address,
+      city: profile.city || inferCityFromAddress(address) || order.city || "S.P. Padang",
+      phone: profile.phone || ownerProfile.phone || "",
+      email: profile.email || ownerProfile.email || "",
+      website: profile.website || "",
+      logo: profile.logo || PLATFORM_LOGO,
+      pharmacist: profile.responsiblePharmacist || ownerProfile.name || "Apoteker Penanggung Jawab",
+      sipa: profile.sipaNumber || "",
+      sia: profile.licenseNumber || ""
+    };
+  }
+
+  function getPurchasePrintNumber(order) {
+    const raw = String(order.manualNumber || order.number || "").trim().replace(/^No\.?\s*SP\.?\s*/i, "");
+    const legacy = raw.match(/^(?:SPP|SP|DRF|OTT|PSI|NAR|ALK)-(\d{4})(\d{2})(\d{2})-(\d{1,})$/i);
+    if (legacy) return `${legacy[1].slice(-2)}${legacy[2]}${legacy[3]}-${String(Number(legacy[4]) || legacy[4]).padStart(3, "0")}`;
+    return raw;
+  }
+
+  function buildPurchaseOrderPrintHtml(order) {
+    const context = getPurchasePrintProfileContext(order);
     const type = getPurchaseOrderTypeMeta(order.type);
     const rows = buildPurchaseOrderPrintRows(order);
-    const brandName = profile.name && profile.name !== "Apotek Anda" ? profile.name : "Apotek Nadhira Farma";
-    const address = profile.address || "Jl. Raya Desa Terate Kecamatan Sirah Pulau Padang Kabupaten Ogan Komering Ilir Sumatera Selatan, 30651";
-    const phone = profile.phone || "";
-    const email = profile.email || "";
-    const website = profile.website || "";
-    const logo = profile.logo || PLATFORM_LOGO;
-    const pharmacist = profile.responsiblePharmacist || "Apt. Lilin Syukria, S.Farm.";
-    const sipa = profile.sipaNumber || "017/DPMPTSP/SIPA/V/2021";
-    const sia = profile.licenseNumber || "010/DPMPTSP/SIA/VI/2021";
+    const printNumber = getPurchasePrintNumber(order);
     return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>${escapeHtml(order.number)} - ${escapeHtml(type.printTitle)}</title>
   <style>
-    @page { size: A4; margin: 10mm; }
+    @page { size: A4; margin: 9mm 10mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 13px; }
-    .sheet { min-height: 281mm; padding: 2mm 5mm 16mm; position: relative; }
-    .header { position: relative; min-height: 30mm; padding: 0 0 5mm; border-bottom: 2px solid #0758d8; text-align: center; }
-    .brand-logo { position: absolute; left: 0; top: 0; width: 24mm; height: 24mm; display: grid; place-items: center; border: 1.8px solid #0758d8; border-radius: 9px; padding: 2mm; }
-    .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
-    .brand-text { min-height: 24mm; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 26mm; }
-    .brand-text h1 { margin: 0 0 2mm; color: #0758d8; font-size: 30px; line-height: 1.05; font-weight: 800; }
-    .brand-text p { margin: 0; line-height: 1.25; font-size: 13px; }
-    .title { text-align: center; color: #0758d8; margin: 7mm 0 7mm; }
-    .title h2 { margin: 0 0 2mm; font-size: 28px; line-height: 1.05; text-transform: uppercase; letter-spacing: 0; }
-    .title p { margin: 0; color: #111; font-size: 15px; }
-    .lines { margin-top: 0; }
-    .lines p, .usage p { margin: 0 0 4px; line-height: 1.28; }
-    .line { display: grid; grid-template-columns: 36mm 4mm minmax(62mm, 1fr); gap: 4mm; align-items: end; margin: 5px 0; max-width: 132mm; }
-    .line .blank { min-height: 16px; border-bottom: 1px solid #777; padding: 0 2mm 1px; line-height: 1.12; }
-    .line .blank:empty::after { content: "\\00a0"; }
-    .supplier-block { margin-top: 10mm; }
-    .table-lead { margin: 8mm 0 3mm !important; }
-    table { width: 100%; border-collapse: collapse; table-layout: auto; margin: 0; }
-    col.no-col { width: 10mm; }
-    col.name-col { width: 43%; }
-    col.qty-col { width: 16mm; }
-    col.unit-col { width: 22mm; }
+    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; }
+    .sheet { width: 190mm; min-height: 278mm; margin: 0 auto; padding: 0 3mm; }
+    .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #111; text-align: center; }
+    .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
+    .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .brand-text h1 { margin: 0 0 1mm; font-size: 14px; line-height: 1.1; font-weight: 700; }
+    .brand-text p { margin: 0; line-height: 1.2; }
+    .title { text-align: center; margin: 4mm 0 5mm; }
+    .title h2 { margin: 0 0 1mm; font-size: 13px; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; }
+    .title p { margin: 0; color: #111; font-size: 10px; }
+    .lines, .usage { width: 100%; }
+    .lines p, .usage p { margin: 0 0 2px; line-height: 1.15; }
+    .line { display: grid; grid-template-columns: 30mm 3mm 1fr; gap: 2mm; align-items: start; margin: 0; max-width: 96mm; line-height: 1.12; }
+    .line .blank { min-height: 10px; white-space: pre-wrap; }
+    .line .blank:empty::after { content: "-"; }
+    .supplier-block { margin-top: 5mm; }
+    .table-lead { margin: 4mm 0 2mm !important; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; font-size: 9px; }
+    col.no-col { width: 9mm; }
+    col.name-col { width: 46%; }
+    col.qty-col { width: 22mm; }
+    col.unit-col { width: 20mm; }
     col.active-col { width: 22%; }
     col.form-col { width: 18%; }
-    th { background: #0758d8; color: #fff; font-size: 13px; font-weight: 800; text-align: center; }
-    th, td { border: 1.4px solid #0758d8; padding: 4px 6px; min-height: 22px; line-height: 1.16; vertical-align: middle; }
+    th { background: #f2f2f2; color: #111; font-size: 9px; font-weight: 700; text-align: left; }
+    th, td { border-top: 1px solid #111; border-bottom: 1px solid #111; border-left: 0; border-right: 0; padding: 3px 5px; height: 16px; line-height: 1.12; vertical-align: middle; }
     td.no, th.no, td.qty, th.qty, td.unit, th.unit { text-align: center; white-space: nowrap; }
-    td.name { font-weight: 700; }
-    tr.empty-row td { height: 23px; }
-    .usage { margin-top: 7mm; }
-    .usage .line { grid-template-columns: 34mm 4mm minmax(88mm, 1fr); max-width: 155mm; margin: 5px 0; }
-    .sign { width: 76mm; margin: 8mm 12mm 0 auto; text-align: center; font-size: 13px; }
-    .sign-space { height: 18mm; }
-    .footer { position: absolute; left: 5mm; right: 5mm; bottom: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 42mm; align-items: center; height: 11mm; border: 1.4px solid #0758d8; border-radius: 8px 8px 0 0; overflow: hidden; color: #0758d8; font-size: 12px; }
-    .footer span { display: flex; align-items: center; justify-content: center; padding: 0 6mm; border-right: 1.4px solid #0758d8; height: 100%; white-space: nowrap; }
-    .footer b { height: 100%; background: #0758d8; }
-    @media print { .sheet { min-height: 281mm; } }
+    td.name { font-weight: 600; }
+    tr.empty-row td { height: 14px; }
+    .usage { margin-top: 5mm; }
+    .usage .line { grid-template-columns: 28mm 3mm 1fr; max-width: 118mm; }
+    .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: 9.5px; }
+    .sign-space { height: 22mm; }
+    .sign p { margin: 0 0 2px; line-height: 1.15; }
+    @media print { .sheet { min-height: 278mm; } }
   </style>
 </head>
 <body>
   <main class="sheet">
     <header class="header">
       <section class="brand-logo">
-        <img src="${escapeHtml(logo)}" alt="">
+        <img src="${escapeHtml(context.logo)}" alt="">
       </section>
       <section class="brand-text">
-        <h1>${escapeHtml(brandName)}</h1>
-        <p>${escapeHtml(address)}</p>
+        <h1>${escapeHtml(context.brandName)}</h1>
+        <p>${escapeHtml(context.address)}</p>
+        <p>${escapeHtml(context.phone || "")}</p>
       </section>
+      <span></span>
     </header>
     <section class="title">
       <h2>${escapeHtml(type.printTitle)}</h2>
-      <p>No. SP: ${escapeHtml(order.manualNumber || order.number)}</p>
+      <p>No. SP. ${escapeHtml(printNumber)}</p>
     </section>
     <section class="lines">
       <p>Yang bertanda tangan di bawah ini,</p>
-      ${printLine("nama", pharmacist)}
-      ${printLine("jabatan", "Apoteker Penanggung Jawab")}
-      ${printLine("telepon", phone)}
+      ${printLine("nama", context.pharmacist)}
+      ${printLine("jabatan", "Apoteker")}
+      ${printLine("telepon", context.phone)}
       <div class="supplier-block">
         <p>${escapeHtml(getPurchasePrintIntro(order.type))}</p>
         ${printLine("nama distributor", order.supplier || order.recipient)}
@@ -6013,23 +6051,17 @@
     ${buildPurchasePrintTable(order, rows)}
     <section class="usage">
       <p>${escapeHtml(getPurchasePrintUsageLead(order.type))}</p>
-      ${printLine("Nama Sarana", brandName)}
-      ${printLine("Alamat Sarana", address)}
-      ${printLine("Nomor SIA", sia)}
-      ${printLine("Nomor SIPA", sipa)}
+      ${printLine("nama sarana", context.brandName)}
+      ${printLine("alamat sarana", context.address)}
+      ${printLine("nomor SIA", context.sia)}
+      ${printLine("nomor SIPA", context.sipa)}
     </section>
     <section class="sign">
-      <p>${escapeHtml(order.city || "SP. Padang")}, __________________ 20_____</p>
+      <p>${escapeHtml(context.city)}, ${escapeHtml(formatPurchasePrintDate(order.date))}</p>
       <div class="sign-space"></div>
-      <p>(______________________________)</p>
-      <p>Apoteker Penanggung Jawab</p>
+      <p>${escapeHtml(context.pharmacist)}</p>
+      <p>${escapeHtml(context.sipa || "")}</p>
     </section>
-    <footer class="footer">
-      <span>${escapeHtml(phone || "______________")}</span>
-      <span>${escapeHtml(email || "______________")}</span>
-      <span>${escapeHtml(website || "______________")}</span>
-      <b></b>
-    </footer>
   </main>
 </body>
 </html>`;
@@ -6039,6 +6071,10 @@
     return `<p class="line"><span>${escapeHtml(label)}</span><b>:</b><span class="blank">${escapeHtml(value || "")}</span></p>`;
   }
 
+  function formatPurchasePrintDate(value) {
+    return formatShortDate(value || new Date().toISOString().slice(0, 10));
+  }
+
   function buildPurchasePrintTable(order, rows) {
     if (isControlledPurchaseOrderType(order.type)) {
       return `<table class="purchase-print-table is-controlled"><colgroup><col class="no-col"><col class="name-col"><col class="active-col"><col class="form-col"><col class="unit-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Zat Aktif</th><th>Bentuk Sediaan</th><th class="unit">Satuan</th><th class="qty">Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -6046,12 +6082,12 @@
     if (normalizePurchaseOrderType(order.type) === "alkes") {
       return `<table class="purchase-print-table is-alkes"><colgroup><col class="no-col"><col class="name-col"><col class="active-col"><col class="unit-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th class="unit">Satuan</th><th class="qty">Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
-    return `<table class="purchase-print-table is-regular"><colgroup><col class="no-col"><col class="name-col"><col class="qty-col"><col class="unit-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Jumlah</th><th class="unit">Satuan</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="purchase-print-table is-regular"><colgroup><col class="no-col"><col class="name-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function buildPurchaseOrderPrintRows(order) {
     const type = normalizePurchaseOrderType(order.type);
-    const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 5;
+    const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 4;
     const filled = (order.items || []).map((item, index) => {
       if (isControlledPurchaseOrderType(type)) {
         return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm || item.strength)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
@@ -6059,7 +6095,7 @@
       if (type === "alkes") {
         return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
       }
-      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)}</td><td class="unit">${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
     });
     const empty = Array.from({ length: Math.max(0, 5 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
     return filled.concat(empty).join("");
@@ -7409,6 +7445,7 @@
       phone: String(value.phone || value.telepon || value.noHp || "").trim(),
       email: String(value.email || "").trim(),
       website: String(value.website || value.social || "").trim(),
+      city: String(value.city || value.kota || value.locationCity || "").trim(),
       latitude: String(value.latitude || value.lat || "").trim(),
       longitude: String(value.longitude || value.lng || value.lon || "").trim(),
       gpsAccuracy: String(value.gpsAccuracy || value.accuracy || "").trim(),
@@ -9018,14 +9055,10 @@
         <td>${formatPayrollMoney(employee.debt)}</td>
         <td>${formatPayrollMoney(employee.other)}</td>
         <td>
-          <div class="row-actions">
-            <button class="table-action table-action-edit" type="button" data-payroll-action="edit" data-index="${index}" aria-label="Edit data gaji">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"></path></svg>
-            </button>
-            <button class="table-action table-action-delete" type="button" data-payroll-action="delete" data-index="${index}" aria-label="Hapus data gaji">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
-            </button>
-          </div>
+          ${renderTableActionMenu([
+            `<button class="table-row-menu-action" type="button" data-payroll-action="edit" data-index="${index}">Edit</button>`,
+            `<button class="table-row-menu-action is-danger" type="button" data-payroll-action="delete" data-index="${index}">Hapus</button>`
+          ], `Aksi gaji ${employee.name || employee.nip || ""}`)}
         </td>
       </tr>
     `).join("");
@@ -9851,6 +9884,23 @@
 
   function setText(element, value) {
     if (element) element.textContent = value;
+  }
+
+  function renderTableActionMenu(actions, label = "Aksi") {
+    const content = actions.filter(Boolean).join("");
+    if (!content.trim()) return `<span class="muted-action">-</span>`;
+    return `
+      <details class="table-row-menu">
+        <summary class="table-row-menu-trigger" aria-label="${escapeHtml(label)}">&#8942;</summary>
+        <div class="table-row-menu-list">${content}</div>
+      </details>
+    `;
+  }
+
+  function closeTableActionMenus(except = null) {
+    document.querySelectorAll(".table-row-menu[open]").forEach((menu) => {
+      if (menu !== except) menu.removeAttribute("open");
+    });
   }
 
   function showConfirmDialog(message, options = {}) {

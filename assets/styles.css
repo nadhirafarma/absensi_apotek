@@ -5224,6 +5224,79 @@ td.col-actions {
   background: #f2f7ff;
 }
 
+.table-row-menu {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.table-row-menu[open] {
+  z-index: 80;
+}
+
+.table-row-menu-trigger {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d7e5ff;
+  border-radius: 8px;
+  background: #fff;
+  color: #2f61d8;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+}
+
+.table-row-menu-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.table-row-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 118px;
+  display: none;
+  padding: 6px;
+  border: 1px solid #dbe7ff;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 38px rgba(22, 45, 92, 0.18);
+}
+
+.table-row-menu[open] .table-row-menu-list {
+  display: grid;
+  gap: 4px;
+}
+
+.table-row-menu-action {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #0b2d7a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.table-row-menu-action.is-danger {
+  color: #f04772;
+}
+
+.table-row-menu-action:hover,
+.table-row-menu-action:focus {
+  background: rgba(46, 109, 255, 0.08);
+  outline: none;
+}
+
 .purchase-detail-panel {
   position: fixed;
   inset: 0;
