@@ -818,6 +818,10 @@
       showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
     }, true);
 
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".purchase-row-menu")) closePurchaseRowMenus();
+    });
+
     if (els.searchInput) {
       els.searchInput.addEventListener("input", () => {
         state.page = 1;
@@ -5676,20 +5680,31 @@
         <td><span class="purchase-status-pill ${status.className}">${escapeHtml(status.label)}</span></td>
         <td>${escapeHtml(formatRupiah(order.total || 0))}</td>
         <td>
-          <div class="purchase-row-actions">
-            <button class="purchase-row-action is-detail" type="button" data-po-view="${escapeHtml(order.number)}">Detail</button>
-            <button class="purchase-row-action is-edit" type="button" data-po-edit="${escapeHtml(order.number)}">Edit</button>
-            <button class="purchase-row-action is-delete" type="button" data-po-delete="${escapeHtml(order.number)}">Hapus</button>
-          </div>
+          <details class="purchase-row-menu">
+            <summary class="purchase-row-menu-trigger" aria-label="Aksi ${escapeHtml(order.number)}">&#8942;</summary>
+            <div class="purchase-row-actions">
+              <button class="purchase-row-action is-detail" type="button" data-po-view="${escapeHtml(order.number)}">Detail</button>
+              <button class="purchase-row-action is-edit" type="button" data-po-edit="${escapeHtml(order.number)}">Edit</button>
+              <button class="purchase-row-action is-delete" type="button" data-po-delete="${escapeHtml(order.number)}">Hapus</button>
+            </div>
+          </details>
         </td>
       </tr>
     `;
   }
 
   function handlePurchaseOrderTableClick(event) {
+    const menuToggle = event.target.closest(".purchase-row-menu-trigger");
+    if (menuToggle) {
+      event.stopPropagation();
+      window.setTimeout(() => closePurchaseRowMenus(menuToggle.closest(".purchase-row-menu")), 0);
+      return;
+    }
+
     const editButton = event.target.closest("[data-po-edit]");
     if (editButton) {
       event.stopPropagation();
+      closePurchaseRowMenus();
       state.purchaseSelectedNumber = editButton.dataset.poEdit || "";
       editSelectedPurchaseOrder();
       return;
@@ -5698,17 +5713,31 @@
     const deleteButton = event.target.closest("[data-po-delete]");
     if (deleteButton) {
       event.stopPropagation();
+      closePurchaseRowMenus();
       deletePurchaseOrder(deleteButton.dataset.poDelete || "");
       return;
     }
 
     const viewButton = event.target.closest("[data-po-view]");
+    if (viewButton) {
+      event.stopPropagation();
+      closePurchaseRowMenus();
+    } else if (event.target.closest(".purchase-row-menu")) {
+      event.stopPropagation();
+      return;
+    }
     const row = event.target.closest("[data-po-order]");
     const number = viewButton?.dataset.poView || row?.dataset.poOrder || "";
     if (!number) return;
     state.purchaseSelectedNumber = number;
     renderPurchaseOrders();
     openPurchaseDetailModal();
+  }
+
+  function closePurchaseRowMenus(except = null) {
+    document.querySelectorAll(".purchase-row-menu[open]").forEach((menu) => {
+      if (menu !== except) menu.removeAttribute("open");
+    });
   }
 
   function getSelectedPurchaseOrder() {
@@ -5912,49 +5941,61 @@
   <style>
     @page { size: A4; margin: 10mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #111827; font-family: Arial, Helvetica, sans-serif; font-size: 12.5px; }
-    .sheet { min-height: 277mm; padding: 10px 12px 0; position: relative; }
-    .header { display: grid; grid-template-columns: 1fr 0.8fr; gap: 20px; align-items: start; padding-bottom: 18px; border-bottom: 2px solid #0758d8; }
-    .brand { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: center; }
-    .brand img { width: 104px; height: 104px; object-fit: contain; border: 2px solid #0758d8; border-radius: 18px; padding: 10px; }
-    .brand h1 { margin: 0 0 8px; color: #0758d8; font-size: 30px; line-height: 1.05; }
-    .brand p, .title p, .lines p, .usage p { margin: 4px 0; line-height: 1.35; }
-    .title { text-align: right; color: #0758d8; }
-    .title h2 { margin: 10px 0 16px; font-size: 34px; line-height: 1.08; text-transform: uppercase; }
-    .title p { color: #111827; font-size: 15px; }
-    .lines { margin-top: 26px; }
-    .line { display: grid; grid-template-columns: 160px 16px minmax(220px, 360px); gap: 8px; align-items: end; margin: 12px 0; }
-    .line .blank { min-height: 18px; border-bottom: 1px solid #777; }
-    .supplier-block { margin-top: 28px; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 22px; }
-    th { background: #0758d8; color: #fff; font-size: 14px; font-weight: 800; }
-    th, td { border: 1.5px solid #0758d8; padding: 9px 8px; height: 34px; vertical-align: middle; }
-    td.no, th.no { width: 58px; text-align: center; }
-    .usage { margin-top: 28px; padding: 16px; border: 1.5px solid #0758d8; border-radius: 10px; }
-    .usage .line { grid-template-columns: 140px 16px 1fr; margin: 10px 0; }
-    .sign { width: 330px; margin: 28px 60px 0 auto; text-align: center; font-size: 14px; }
-    .sign-space { height: 54px; }
-    .footer { position: absolute; left: 12px; right: 12px; bottom: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 220px; gap: 14px; align-items: center; height: 52px; border: 1.5px solid #0758d8; border-radius: 10px 10px 0 0; overflow: hidden; color: #0758d8; }
-    .footer span { display: flex; align-items: center; gap: 10px; padding: 0 18px; border-right: 1.5px solid #0758d8; height: 100%; }
+    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 13px; }
+    .sheet { min-height: 281mm; padding: 2mm 5mm 16mm; position: relative; }
+    .header { position: relative; min-height: 30mm; padding: 0 0 5mm; border-bottom: 2px solid #0758d8; text-align: center; }
+    .brand-logo { position: absolute; left: 0; top: 0; width: 24mm; height: 24mm; display: grid; place-items: center; border: 1.8px solid #0758d8; border-radius: 9px; padding: 2mm; }
+    .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .brand-text { min-height: 24mm; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 26mm; }
+    .brand-text h1 { margin: 0 0 2mm; color: #0758d8; font-size: 30px; line-height: 1.05; font-weight: 800; }
+    .brand-text p { margin: 0; line-height: 1.25; font-size: 13px; }
+    .title { text-align: center; color: #0758d8; margin: 7mm 0 7mm; }
+    .title h2 { margin: 0 0 2mm; font-size: 28px; line-height: 1.05; text-transform: uppercase; letter-spacing: 0; }
+    .title p { margin: 0; color: #111; font-size: 15px; }
+    .lines { margin-top: 0; }
+    .lines p, .usage p { margin: 0 0 4px; line-height: 1.28; }
+    .line { display: grid; grid-template-columns: 36mm 4mm minmax(62mm, 1fr); gap: 4mm; align-items: end; margin: 5px 0; max-width: 132mm; }
+    .line .blank { min-height: 16px; border-bottom: 1px solid #777; padding: 0 2mm 1px; line-height: 1.12; }
+    .line .blank:empty::after { content: "\\00a0"; }
+    .supplier-block { margin-top: 10mm; }
+    .table-lead { margin: 8mm 0 3mm !important; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; margin: 0; }
+    col.no-col { width: 10mm; }
+    col.name-col { width: 43%; }
+    col.qty-col { width: 16mm; }
+    col.unit-col { width: 22mm; }
+    col.active-col { width: 22%; }
+    col.form-col { width: 18%; }
+    th { background: #0758d8; color: #fff; font-size: 13px; font-weight: 800; text-align: center; }
+    th, td { border: 1.4px solid #0758d8; padding: 4px 6px; min-height: 22px; line-height: 1.16; vertical-align: middle; }
+    td.no, th.no, td.qty, th.qty, td.unit, th.unit { text-align: center; white-space: nowrap; }
+    td.name { font-weight: 700; }
+    tr.empty-row td { height: 23px; }
+    .usage { margin-top: 7mm; }
+    .usage .line { grid-template-columns: 34mm 4mm minmax(88mm, 1fr); max-width: 155mm; margin: 5px 0; }
+    .sign { width: 76mm; margin: 8mm 12mm 0 auto; text-align: center; font-size: 13px; }
+    .sign-space { height: 18mm; }
+    .footer { position: absolute; left: 5mm; right: 5mm; bottom: 0; display: grid; grid-template-columns: 1fr 1fr 1fr 42mm; align-items: center; height: 11mm; border: 1.4px solid #0758d8; border-radius: 8px 8px 0 0; overflow: hidden; color: #0758d8; font-size: 12px; }
+    .footer span { display: flex; align-items: center; justify-content: center; padding: 0 6mm; border-right: 1.4px solid #0758d8; height: 100%; white-space: nowrap; }
     .footer b { height: 100%; background: #0758d8; }
-    @media print { .sheet { min-height: 277mm; } }
+    @media print { .sheet { min-height: 281mm; } }
   </style>
 </head>
 <body>
   <main class="sheet">
     <header class="header">
-      <section class="brand">
+      <section class="brand-logo">
         <img src="${escapeHtml(logo)}" alt="">
-        <div>
-          <h1>${escapeHtml(brandName)}</h1>
-          <p>${escapeHtml(address)}</p>
-        </div>
       </section>
-      <section class="title">
-        <h2>${escapeHtml(type.printTitle)}</h2>
-        <p>No. SP: ${escapeHtml(order.manualNumber || order.number)}</p>
+      <section class="brand-text">
+        <h1>${escapeHtml(brandName)}</h1>
+        <p>${escapeHtml(address)}</p>
       </section>
     </header>
+    <section class="title">
+      <h2>${escapeHtml(type.printTitle)}</h2>
+      <p>No. SP: ${escapeHtml(order.manualNumber || order.number)}</p>
+    </section>
     <section class="lines">
       <p>Yang bertanda tangan di bawah ini,</p>
       ${printLine("nama", pharmacist)}
@@ -5967,7 +6008,7 @@
         ${printLine("", "")}
         ${printLine("telepon", order.supplierPhone)}
       </div>
-      <p style="margin-top:26px;">${escapeHtml(getPurchasePrintTableLead(order.type))}</p>
+      <p class="table-lead">${escapeHtml(getPurchasePrintTableLead(order.type))}</p>
     </section>
     ${buildPurchasePrintTable(order, rows)}
     <section class="usage">
@@ -6000,12 +6041,12 @@
 
   function buildPurchasePrintTable(order, rows) {
     if (isControlledPurchaseOrderType(order.type)) {
-      return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Zat Aktif</th><th>Bentuk Sediaan</th><th>Satuan</th><th>Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+      return `<table class="purchase-print-table is-controlled"><colgroup><col class="no-col"><col class="name-col"><col class="active-col"><col class="form-col"><col class="unit-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Zat Aktif</th><th>Bentuk Sediaan</th><th class="unit">Satuan</th><th class="qty">Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
     if (normalizePurchaseOrderType(order.type) === "alkes") {
-      return `<table><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th>Satuan</th><th>Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+      return `<table class="purchase-print-table is-alkes"><colgroup><col class="no-col"><col class="name-col"><col class="active-col"><col class="unit-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Alat Kesehatan</th><th>Spesifikasi</th><th class="unit">Satuan</th><th class="qty">Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
-    return `<table><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Jumlah</th><th>Satuan</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="purchase-print-table is-regular"><colgroup><col class="no-col"><col class="name-col"><col class="qty-col"><col class="unit-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Jumlah</th><th class="unit">Satuan</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function buildPurchaseOrderPrintRows(order) {
@@ -6013,14 +6054,14 @@
     const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 5;
     const filled = (order.items || []).map((item, index) => {
       if (isControlledPurchaseOrderType(type)) {
-        return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm || item.strength)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm || item.strength)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
       }
       if (type === "alkes") {
-        return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
       }
-      return `<tr><td class="no">${index + 1}</td><td>${escapeHtml(item.nama)}</td><td>${escapeHtml(item.qty)}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)}</td><td class="unit">${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
     });
-    const empty = Array.from({ length: Math.max(0, 5 - filled.length) }, () => `<tr>${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
+    const empty = Array.from({ length: Math.max(0, 5 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
     return filled.concat(empty).join("");
   }
 
@@ -8011,24 +8052,70 @@
   function populateActivityLogFilters(logs) {
     if (els.activityModuleFilter) {
       const current = els.activityModuleFilter.value;
-      const modules = Array.from(new Map((logs || []).map((item) => [item.moduleKey, item.moduleLabel])).entries())
-        .filter(([key]) => key)
-        .sort((a, b) => a[1].localeCompare(b[1]));
+      const modules = getActivityModuleOptions(logs);
       els.activityModuleFilter.innerHTML = `<option value="">Semua Modul</option>${modules.map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`).join("")}`;
       if (modules.some(([key]) => key === current)) els.activityModuleFilter.value = current;
     }
 
     if (els.activityUserFilter) {
       const current = els.activityUserFilter.value;
-      const users = Array.from(new Map((logs || []).map((item) => {
-        const label = item.actorName || item.username || item.email || item.actor || "Pengguna";
-        return [normalizeSearch(label), label];
-      })).entries())
-        .filter(([key]) => key)
-        .sort((a, b) => a[1].localeCompare(b[1]));
+      const users = getActivityUserOptions(logs);
       els.activityUserFilter.innerHTML = `<option value="">Semua Pengguna</option>${users.map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`).join("")}`;
       if (users.some(([key]) => key === current)) els.activityUserFilter.value = current;
     }
+  }
+
+  function getActivityModuleOptions(logs = []) {
+    const baseModules = [
+      ["dashboard", "Dashboard"],
+      ["absensi-face-id", "Absensi Face ID"],
+      ["presensi", "Presensi"],
+      ["cari-data-obat", "Cari Data Obat"],
+      ["data-obat", "Data Obat"],
+      ["data-karyawan", "Data Karyawan"],
+      ["data-supplier", "Data Supplier"],
+      ["restok-obat", "Restok Obat"],
+      ["surat-pesanan", "Surat Pesanan Pembelian"],
+      ["import-data-obat", "Import Data Obat"],
+      ["akun-profil", "Akun & Profil"],
+      ["log-aktivitas", "Log Aktivitas"],
+      ["manajemen-pengguna", "Manajemen Pengguna"],
+      ["autentikasi", "Autentikasi"]
+    ];
+    const modules = new Map(baseModules);
+
+    (logs || []).forEach((item) => {
+      if (item.moduleKey && item.moduleLabel && !modules.has(item.moduleKey)) {
+        modules.set(item.moduleKey, item.moduleLabel);
+      }
+    });
+
+    return Array.from(modules.entries());
+  }
+
+  function getActivityUserOptions(logs = []) {
+    const users = new Map();
+    const addUser = (keyValue, labelValue) => {
+      const label = String(labelValue || keyValue || "").trim();
+      const key = normalizeSearch(keyValue || label);
+      if (!key || !label || users.has(key)) return;
+      users.set(key, label);
+    };
+
+    state.employees
+      .filter(isActiveRecord)
+      .forEach((employee) => addUser(employee.name || employee.email || employee.phone, employee.name || employee.email || employee.phone));
+
+    state.users
+      .filter(isActiveRecord)
+      .forEach((user) => addUser(user.name || user.username || user.email, user.name || user.username || user.email));
+
+    (logs || []).forEach((item) => {
+      const label = item.actorName || item.username || item.email || item.actor || "Pengguna";
+      addUser(label, label);
+    });
+
+    return Array.from(users.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }
 
   function enrichActivityLogItem(item) {
@@ -8052,14 +8139,16 @@
 
   function inferActivityModule(item) {
     const source = normalizeSearch(`${item.module} ${item.scope} ${item.title} ${item.detail}`);
-    if (/surat|pesanan|purchase|po\b/.test(source)) return { key: "surat-pesanan", label: "Pesanan Pembelian" };
-    if (/restok|permintaan/.test(source)) return { key: "restok-obat", label: "Permintaan Restok" };
+    if (/surat|pesanan|purchase|po\b/.test(source)) return { key: "surat-pesanan", label: "Surat Pesanan Pembelian" };
+    if (/restok|permintaan/.test(source)) return { key: "restok-obat", label: "Restok Obat" };
+    if (/login|logout|autentikasi/.test(source)) return { key: "autentikasi", label: "Autentikasi" };
+    if (/absensi face|face id/.test(source)) return { key: "absensi-face-id", label: "Absensi Face ID" };
     if (/import|upload|data obat|obat/.test(source)) return { key: "data-obat", label: "Data Obat" };
     if (/absen|presensi|kehadiran|gaji|slip/.test(source)) return { key: "presensi", label: "Presensi" };
-    if (/supplier|pbf/.test(source)) return { key: "supplier", label: "Data Supplier" };
-    if (/karyawan|operator|pengguna|user/.test(source)) return { key: "pengguna", label: "Pengguna" };
+    if (/supplier|pbf/.test(source)) return { key: "data-supplier", label: "Data Supplier" };
+    if (/karyawan/.test(source)) return { key: "data-karyawan", label: "Data Karyawan" };
+    if (/operator|pengguna|user/.test(source)) return { key: "manajemen-pengguna", label: "Manajemen Pengguna" };
     if (/profil|password|foto|preferensi|apotek|shift/.test(source)) return { key: "akun-profil", label: "Akun & Profil" };
-    if (/login|logout|autentikasi/.test(source)) return { key: "autentikasi", label: "Autentikasi" };
     return { key: normalizeSearch(item.module) || "sistem", label: item.module || "Sistem" };
   }
 
@@ -9942,7 +10031,6 @@
     if (viewName === "restok-obat") renderRestockPage();
     if (viewName === "log-aktivitas") renderActivityLogPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
-    setSidebarCollapsed(true);
   }
 
   function maybeShowHomePrayerReminder() {
@@ -10150,9 +10238,7 @@
   }
 
   function applySavedSidebarState() {
-    const stored = localStorage.getItem(SIDEBAR_KEY);
-    const collapsed = stored == null ? true : stored === "1";
-    setSidebarCollapsed(collapsed, { persist: false });
+    setSidebarCollapsed(isMobileViewport(), { persist: false });
   }
 
   function toggleSidebar() {
@@ -10174,9 +10260,7 @@
     if (!els.sidebarToggle) return;
 
     const paths = Array.from(els.sidebarToggle.querySelectorAll("svg path"));
-    const lines = collapsed
-      ? ["M7 4v16", "M12 4v16", "M17 4v16"]
-      : ["M4 7h16", "M4 12h16", "M4 17h16"];
+    const lines = ["M4 7h16", "M4 12h16", "M4 17h16"];
 
     paths.forEach((path, index) => {
       if (lines[index]) path.setAttribute("d", lines[index]);

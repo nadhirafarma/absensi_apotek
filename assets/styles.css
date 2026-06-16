@@ -5156,13 +5156,54 @@ td.col-actions {
 }
 
 .purchase-row-actions {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  min-width: 96px;
+  padding: 6px;
+  border: 1px solid #dbe7f8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(25, 69, 134, 0.16);
+}
+
+.purchase-row-menu {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.purchase-row-menu[open] .purchase-row-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+}
+
+.purchase-row-menu-trigger {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8e5f8;
+  border-radius: 7px;
+  background: #fff;
+  color: #315dff;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+}
+
+.purchase-row-menu-trigger::-webkit-details-marker {
+  display: none;
 }
 
 .purchase-row-action {
   min-height: 28px;
+  width: 100%;
   padding: 0 9px;
   border: 1px solid #d8e5f8;
   border-radius: 7px;
@@ -5171,6 +5212,7 @@ td.col-actions {
   font-size: 0.72rem;
   font-weight: 900;
   cursor: pointer;
+  text-align: left;
 }
 
 .purchase-row-action.is-delete {
@@ -5203,13 +5245,15 @@ td.col-actions {
   display: grid;
   gap: 14px;
   width: min(560px, 94vw);
-  max-height: min(760px, 92vh);
+  max-height: min(1086px, calc(92vh / 0.7));
   overflow: auto;
   padding: 18px;
   border: 1px solid #e1ebfb;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 28px 70px rgba(24, 48, 102, 0.24);
+  transform: scale(0.7);
+  transform-origin: center;
 }
 
 .purchase-detail-close {
@@ -18340,10 +18384,40 @@ body.home-view-active .apoteker-ai-fab.is-access-hidden,
   transform-origin: top left;
 }
 
+#view-surat-pesanan .purchase-table-wrap {
+  overflow: visible;
+}
+
+#view-log-aktivitas {
+  overflow-x: hidden;
+}
+
+body.sidebar-open .global-sidebar-toggle,
+body.sidebar-collapsed .global-sidebar-toggle {
+  left: 20px !important;
+}
+
+@media (min-width: 761px) {
+  #view-log-aktivitas .activity-page {
+    width: 125%;
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
+}
+
 @media (max-width: 760px) {
   #view-surat-pesanan .purchase-form-page {
     width: 100%;
     transform: scale(0.34);
     transform-origin: top left;
+  }
+
+  #view-surat-pesanan .purchase-table-wrap {
+    overflow: auto;
+  }
+
+  body.sidebar-open .global-sidebar-toggle,
+  body.sidebar-collapsed .global-sidebar-toggle {
+    left: 14px !important;
   }
 }
