@@ -6240,6 +6240,7 @@
   <style>
     @page { size: ${paperSize} ${orientation}; margin: 0; }
     * { box-sizing: border-box; }
+    html, body, .sheet, .sheet * { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body { margin: 0; color: #111827; background: ${settings.preview ? "#3d3d3d" : "#fff"}; font-family: Arial, Helvetica, sans-serif; font-size: ${fontSize}px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .print-preview-toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; background: #1f2937; color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.22); }
     .print-preview-toolbar strong { font-size: 14px; }
@@ -6254,19 +6255,19 @@
     .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #1f2937; text-align: center; }
     .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
     .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .brand-text h1 { margin: 0 0 1mm; font-size: ${fontSize + 4}px; line-height: 1.1; font-weight: 700; }
-    .brand-text p { margin: 0; line-height: 1.2; }
+    .brand-text h1 { margin: 0 0 1mm; font-size: ${fontSize + 4}px !important; line-height: 1.1; font-weight: 700; }
+    .brand-text p { margin: 0; font-size: ${fontSize}px !important; line-height: 1.2; }
     .title { text-align: center; margin: 4mm 0 5mm; }
     .title h2 { margin: 0 0 1mm; font-size: ${fontSize + 3}px; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; }
-    .title p { margin: 0; color: #111; font-size: ${fontSize}px; }
+    .title p { margin: 0; color: #111; font-size: ${fontSize}px !important; }
     .lines, .usage { width: 100%; }
-    .lines p, .usage p { margin: 0 0 2px; line-height: 1.15; }
-    .line { display: grid; grid-template-columns: 30mm 3mm 1fr; gap: 2mm; align-items: start; margin: 0; max-width: 96mm; line-height: 1.12; }
+    .lines p, .usage p { margin: 0 0 2px; font-size: ${fontSize}px !important; line-height: 1.15; }
+    .line { display: grid; grid-template-columns: 30mm 3mm 1fr; gap: 2mm; align-items: start; margin: 0; max-width: 96mm; font-size: ${fontSize}px !important; line-height: 1.12; }
     .line .blank { min-height: 10px; white-space: pre-wrap; }
     .line .blank:empty::after { content: "-"; }
     .supplier-block { margin-top: 5mm; }
     .table-lead { margin: 4mm 0 2mm !important; }
-    table { width: 100%; border: 1.2px solid #1f2937; border-collapse: separate; border-spacing: 0; border-radius: 2mm; overflow: hidden; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px; }
+    table { width: 100%; border: 1.2px solid #1f2937; border-collapse: separate; border-spacing: 0; border-radius: 2mm; overflow: hidden; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px !important; }
     col.no-col { width: 9mm; }
     col.name-col { width: auto; }
     col.qty-col { width: 16mm; }
@@ -6286,7 +6287,7 @@
     .print-notes { max-width: 118mm; margin-top: 4mm; color: #334155; font-size: ${Math.max(7, fontSize - 2)}px; line-height: 1.25; }
     .print-notes p { margin: 0 0 1mm; }
     .print-notes strong { color: #111827; }
-    .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: ${fontSize}px; }
+    .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: ${fontSize}px !important; }
     .sign-space { height: 22mm; }
     .sign p { margin: 0 0 2px; line-height: 1.15; }
     .print-footer { position: absolute; left: ${sideMargin}mm; right: ${sideMargin}mm; bottom: 5.5mm; display: flex; justify-content: space-between; gap: 10mm; border-top: 1px solid #d7deeb; padding-top: 2mm; color: #64748b; font-size: ${Math.max(7, fontSize - 2)}px; }
