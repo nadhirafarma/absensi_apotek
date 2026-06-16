@@ -13,6 +13,9 @@
   const mobileHeroDateTime = document.getElementById("mobileHeroDateTime");
   const mobileHeroGreetingName = document.getElementById("mobileHeroGreetingName");
   const mobileHeroProfileAvatar = document.getElementById("mobileHeroProfileAvatar");
+  const mobileHeroProfileMiniAvatar = document.getElementById("mobileHeroProfileMiniAvatar");
+  const mobileHeroAccountName = document.getElementById("mobileHeroAccountName");
+  const mobileHeroAccountMeta = document.getElementById("mobileHeroAccountMeta");
   const connectionStatus = document.getElementById("connectionStatus");
   const profileMenu = document.getElementById("profileMenu");
   const profileMenuButton = document.getElementById("profileMenuButton");
@@ -93,8 +96,11 @@
     setAvatarContent(profileAvatar, profilePhoto, initials);
     setAvatarContent(profileMiniAvatar, profilePhoto, initials);
     setAvatarContent(mobileHeroProfileAvatar, profilePhoto, initials);
+    setAvatarContent(mobileHeroProfileMiniAvatar, profilePhoto, initials);
     if (profileAccountName) profileAccountName.textContent = accountName;
     if (profileAccountMeta) profileAccountMeta.textContent = accountMeta;
+    if (mobileHeroAccountName) mobileHeroAccountName.textContent = accountName;
+    if (mobileHeroAccountMeta) mobileHeroAccountMeta.textContent = accountMeta;
     if (homeProfileName) homeProfileName.textContent = accountName;
     if (homeProfileRole) homeProfileRole.textContent = accountMeta;
     if (mobileHeroGreetingName) mobileHeroGreetingName.textContent = accountName;

@@ -448,7 +448,11 @@
       mobileHeroNotificationDot: document.getElementById("mobileHeroNotificationDot"),
       mobileHeroThemeButton: document.getElementById("mobileHeroThemeButton"),
       mobileHeroProfileButton: document.getElementById("mobileHeroProfileButton"),
+      mobileHeroProfilePopover: document.getElementById("mobileHeroProfilePopover"),
       mobileHeroProfileAvatar: document.getElementById("mobileHeroProfileAvatar"),
+      mobileHeroProfileMiniAvatar: document.getElementById("mobileHeroProfileMiniAvatar"),
+      mobileHeroAccountName: document.getElementById("mobileHeroAccountName"),
+      mobileHeroAccountMeta: document.getElementById("mobileHeroAccountMeta"),
       mobileHeroGreetingName: document.getElementById("mobileHeroGreetingName"),
       homeThemeToggle: document.getElementById("homeThemeToggle"),
       homeMenuGrid: document.querySelector(".home-menu-grid"),
@@ -1067,7 +1071,7 @@
     if (els.mobileHeroNotificationButton) els.mobileHeroNotificationButton.addEventListener("click", openNotification);
     if (els.mobileHeroThemeButton) els.mobileHeroThemeButton.addEventListener("click", toggleDashboardTheme);
     if (els.mobileHeroProfileButton) {
-      els.mobileHeroProfileButton.addEventListener("click", () => switchView("akun-profil"));
+      els.mobileHeroProfileButton.addEventListener("click", toggleMobileHeroProfilePopover);
     }
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
@@ -1188,7 +1192,13 @@
         closeRestockDeleteModal();
         stopDashboardScanner();
         closeHomePrayerReminder();
+        closeMobileHeroProfilePopover();
       }
+    });
+    document.addEventListener("click", (event) => {
+      if (!els.mobileHeroProfilePopover || els.mobileHeroProfilePopover.hidden) return;
+      if (event.target.closest("#mobileHeroProfilePopover, #mobileHeroProfileButton")) return;
+      closeMobileHeroProfilePopover();
     });
     window.addEventListener("resize", () => {
       const collapsed = document.body.classList.contains("sidebar-collapsed");
@@ -3327,6 +3337,19 @@
     els.notificationPopover.style.width = `${width}px`;
     els.notificationPopover.style.left = `${left}px`;
     els.notificationPopover.style.top = `${rect.bottom + 10}px`;
+  }
+
+  function toggleMobileHeroProfilePopover(event) {
+    if (event) event.stopPropagation();
+    if (!els.mobileHeroProfilePopover) return;
+    const isOpen = !els.mobileHeroProfilePopover.hidden;
+    els.mobileHeroProfilePopover.hidden = isOpen;
+    if (els.mobileHeroProfileButton) els.mobileHeroProfileButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
+  }
+
+  function closeMobileHeroProfilePopover() {
+    if (els.mobileHeroProfilePopover) els.mobileHeroProfilePopover.hidden = true;
+    if (els.mobileHeroProfileButton) els.mobileHeroProfileButton.setAttribute("aria-expanded", "false");
   }
 
   function handleTableAction(event) {
@@ -7988,7 +8011,10 @@
 
   function formatMobileHeroPharmacyName(name) {
     const text = String(name || DEFAULT_PHARMACY_PROFILE.name || "").trim();
-    return (text.replace(/^apotek\s+/i, "") || text || "Nadhira Farma").toUpperCase();
+    const withoutPrefix = text.replace(/^apotek\s+/i, "") || text || "Nadhira Farma";
+    return withoutPrefix
+      .toLowerCase()
+      .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
   }
 
   function setImageSource(element, src) {
@@ -8419,6 +8445,7 @@
     setAvatarContent(document.getElementById("profileMiniAvatar"), profile);
     setAvatarContent(els.profileLargeAvatar, profile);
     setAvatarContent(els.mobileHeroProfileAvatar, profile);
+    setAvatarContent(els.mobileHeroProfileMiniAvatar, profile);
   }
 
   function setAvatarContent(element, profile) {
@@ -11352,8 +11379,12 @@
 
     if (els.profileName) els.profileName.textContent = name;
     if (els.mobileHeroGreetingName) els.mobileHeroGreetingName.textContent = name;
+    if (els.mobileHeroAccountName) els.mobileHeroAccountName.textContent = name;
+    if (els.mobileHeroAccountMeta) els.mobileHeroAccountMeta.textContent = role;
     if (els.mobileHeroProfileButton) {
       els.mobileHeroProfileButton.setAttribute("aria-label", `Akun ${name}`);
+      els.mobileHeroProfileButton.setAttribute("aria-haspopup", "menu");
+      els.mobileHeroProfileButton.setAttribute("aria-expanded", "false");
       els.mobileHeroProfileButton.title = `Akun ${name}`;
     }
     if (accountName) accountName.textContent = name;

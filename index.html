@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v23">
-  <script defer src="assets/auth-guard.js?v=20260617-ui-v23"></script>
-  <script defer src="assets/app.js?v=20260617-ui-v23"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v24">
+  <script defer src="assets/auth-guard.js?v=20260617-ui-v24"></script>
+  <script defer src="assets/app.js?v=20260617-ui-v24"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260617-ui-v23"></script>
+  <script defer src="assets/home-dashboard.js?v=20260617-ui-v24"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -175,8 +175,8 @@
                 <img id="mobileHeroPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
               </span>
               <span class="mobile-hero-brand-copy">
-                <small>APOTEK</small>
-                <strong id="mobileHeroPharmacyName">NADHIRA FARMA</strong>
+                <small>Apotek</small>
+                <strong id="mobileHeroPharmacyName">Nadhira Farma</strong>
                 <span class="mobile-hero-date-pill">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 2v4"></path>
@@ -216,6 +216,23 @@
                 <span class="mobile-hero-avatar" id="mobileHeroProfileAvatar">AK</span>
               </button>
             </div>
+          </div>
+          <div class="mobile-hero-profile-popover" id="mobileHeroProfilePopover" role="menu" hidden>
+            <div class="mobile-hero-profile-summary">
+              <span class="mobile-hero-profile-mini" id="mobileHeroProfileMiniAvatar">AK</span>
+              <span>
+                <strong id="mobileHeroAccountName">Akun</strong>
+                <small id="mobileHeroAccountMeta">Nadhira Farma</small>
+              </span>
+            </div>
+            <button class="mobile-hero-logout" type="button" role="menuitem" data-logout-button>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <path d="M16 17l5-5-5-5"></path>
+                <path d="M21 12H9"></path>
+              </svg>
+              Logout
+            </button>
           </div>
           <div class="mobile-hero-welcome">
             <p>Selamat Datang,</p>
