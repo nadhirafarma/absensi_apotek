@@ -244,6 +244,7 @@
       fields: [
         { key: "name", label: "Nama Supplier", required: true },
         { key: "address", label: "Alamat", wide: true },
+        { key: "city", label: "Kota" },
         { key: "phone", label: "No HP" },
         { key: "pic", label: "PIC/Sales" }
       ]
@@ -283,6 +284,7 @@
     purchaseDraftPickedIds: new Set(),
     purchaseProductSearches: {},
     purchaseProductResults: {},
+    purchaseActiveProductSearchIndex: null,
     restockRequests: [],
     restockMineOnly: false,
     restockDetailId: "",
@@ -577,6 +579,7 @@
       poNumber: document.getElementById("poNumber"),
       poProductHead: document.getElementById("poProductHead"),
       poProductRows: document.getElementById("poProductRows"),
+      poProductSearchPopup: document.getElementById("poProductSearchPopup"),
       poDraftList: document.getElementById("poDraftList"),
       poSummaryItems: document.getElementById("poSummaryItems"),
       poSummaryQty: document.getElementById("poSummaryQty"),
@@ -798,6 +801,8 @@
     if (els.sidebarToggle) els.sidebarToggle.addEventListener("click", toggleSidebar);
     if (els.sidebarScrim) els.sidebarScrim.addEventListener("click", () => setSidebarCollapsed(true));
     window.addEventListener("resize", handleViewportRoute);
+    window.addEventListener("resize", positionPurchaseProductResults);
+    window.addEventListener("scroll", positionPurchaseProductResults, true);
 
     els.viewButtons.forEach((button) => {
       button.addEventListener("click", () => {
@@ -820,6 +825,7 @@
 
     document.addEventListener("click", (event) => {
       if (!event.target.closest(".purchase-row-menu")) closePurchaseRowMenus();
+      if (!event.target.closest(".purchase-product-search, .purchase-product-floating-results")) hidePurchaseProductResults();
       if (event.target.closest(".table-row-menu-trigger")) {
         window.setTimeout(() => closeTableActionMenus(event.target.closest(".table-row-menu")), 0);
       } else if (!event.target.closest(".table-row-menu")) {
@@ -952,6 +958,8 @@
     if (els.poProductRows) els.poProductRows.addEventListener("input", handlePurchaseProductInput);
     if (els.poProductRows) els.poProductRows.addEventListener("change", handlePurchaseProductInput);
     if (els.poProductRows) els.poProductRows.addEventListener("click", handlePurchaseProductClick);
+    if (els.poProductRows) els.poProductRows.addEventListener("focusin", handlePurchaseProductFocus);
+    if (els.poProductSearchPopup) els.poProductSearchPopup.addEventListener("click", handlePurchaseProductClick);
     if (els.poDraftList) els.poDraftList.addEventListener("click", handlePurchaseDraftClick);
     if (els.poAddSupplierButton) els.poAddSupplierButton.addEventListener("click", () => openRecordModal("supplier"));
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
@@ -4135,7 +4143,10 @@
       name: String(record?.name || record?.supplier || record?.suplier || record?.nama || record?.nama_supplier || "").trim(),
       address: String(record?.address || record?.alamat || "").trim(),
       phone: normalizePhoneNumber(record?.phone || record?.noHp || record?.no_hp || record?.telepon || ""),
-      pic: String(record?.pic || record?.sales || record?.cp || record?.kontak || "").trim()
+      pic: String(record?.pic || record?.sales || record?.cp || record?.kontak || "").trim(),
+      sales: String(record?.sales || record?.pic || record?.cp || record?.kontak || "").trim(),
+      contact: String(record?.contact || record?.kontak || record?.pic || record?.sales || "").trim(),
+      city: String(record?.city || record?.kota || record?.kabupaten || record?.domisili || "").trim()
     };
   }
 
@@ -4977,9 +4988,9 @@
       supplier: String(order.supplier || order.suplier || "").trim(),
       supplierAddress: String(order.supplierAddress || order.alamatPbf || order.alamat || "").trim(),
       supplierPhone: String(order.supplierPhone || order.phone || order.telepon || "").trim(),
-      city: String(order.city || order.kota || "S.P. Padang").trim() || "S.P. Padang",
+      city: String(order.city || order.kota || "").trim(),
       recipient: String(order.recipient || order.kepada || order.yth || "").trim(),
-      purpose: String(order.purpose || order.kebutuhan || "Untuk membantu kebutuhan Apotek Nadhira Farma").trim(),
+      purpose: String(order.purpose || order.kebutuhan || "").trim(),
       paymentMethod: String(order.paymentMethod || order.metodePembayaran || order.payment || "Tunai").trim() || "Tunai",
       dueDate: String(order.dueDate || order.jatuhTempo || "").slice(0, 10),
       note: String(order.note || order.catatan || "").trim(),
@@ -5155,6 +5166,8 @@
     state.purchaseDraftPickedIds = new Set();
     state.purchaseProductSearches = {};
     state.purchaseProductResults = {};
+    state.purchaseActiveProductSearchIndex = null;
+    hidePurchaseProductResults();
     state.purchaseItems = editing ? editing.items.map((item) => ({ ...item })) : [];
     if (els.purchaseListView) els.purchaseListView.hidden = true;
     if (els.purchaseFormView) els.purchaseFormView.hidden = false;
@@ -5167,12 +5180,12 @@
     if (els.poDueDate) els.poDueDate.value = editing?.dueDate || "";
     if (els.poSupplierAddress) els.poSupplierAddress.value = editing?.supplierAddress || "";
     if (els.poSupplierPhone) els.poSupplierPhone.value = editing?.supplierPhone || "";
-    if (els.poCity) els.poCity.value = editing?.city || "S.P. Padang";
+    if (els.poCity) els.poCity.value = editing?.city || "";
     if (els.poRecipient) els.poRecipient.value = editing?.recipient || "";
     if (els.poDiscount) els.poDiscount.value = String(editing?.discount || 0);
     if (els.poNote) els.poNote.value = editing?.note || "";
     if (els.poAdditionalNote) els.poAdditionalNote.value = editing?.additionalNote || "";
-    if (els.poPurpose) els.poPurpose.value = editing?.purpose || "Untuk membantu kebutuhan Apotek Nadhira Farma";
+    if (els.poPurpose) els.poPurpose.value = editing?.purpose || "";
     if (!editing) fillPurchaseSupplierFields();
     updatePurchaseOrderTypeFields();
     renderPurchaseItems();
@@ -5189,9 +5202,6 @@
           ? type !== "alkes"
           : false;
     });
-    if (els.poPurpose) {
-      els.poPurpose.closest("label")?.toggleAttribute("hidden", type === "regular" || type === "alkes");
-    }
     renderPurchaseItems();
   }
 
@@ -5204,7 +5214,7 @@
     if (!medicine) return;
     if (els.poUnit && !els.poUnit.value) els.poUnit.value = medicine.satuan_beli || medicine.satuan_1 || "Pcs";
     if (els.poActiveSubstance && !els.poActiveSubstance.value) els.poActiveSubstance.value = medicine.komposisi || "";
-    if (els.poDosageForm && !els.poDosageForm.value) els.poDosageForm.value = medicine.kategori || "";
+    if (els.poDosageForm) els.poDosageForm.value = "";
     if (els.poStrength && !els.poStrength.value) els.poStrength.value = medicine.kekuatan || "";
     if (els.poItemNote && !els.poItemNote.value) els.poItemNote.value = medicine.no_batch ? `Batch ${medicine.no_batch}` : "";
   }
@@ -5213,12 +5223,14 @@
     const supplierName = els.poSupplier?.value || "";
     const supplier = state.suppliers.find((item) => normalizeSearch(item.name) === normalizeSearch(supplierName));
     if (!supplier) {
-      if (els.poRecipient && !els.poRecipient.value) els.poRecipient.value = supplierName;
+      if (els.poRecipient) els.poRecipient.value = "";
+      if (els.poCity) els.poCity.value = "";
       return;
     }
-    if (els.poRecipient) els.poRecipient.value = supplier.name || supplierName;
-    if (els.poSupplierAddress && !els.poSupplierAddress.value) els.poSupplierAddress.value = supplier.address || "";
-    if (els.poSupplierPhone && !els.poSupplierPhone.value) els.poSupplierPhone.value = supplier.phone || "";
+    if (els.poRecipient) els.poRecipient.value = supplier.pic || supplier.sales || supplier.contact || "";
+    if (els.poCity) els.poCity.value = supplier.city || "";
+    if (els.poSupplierAddress) els.poSupplierAddress.value = supplier.address || "";
+    if (els.poSupplierPhone) els.poSupplierPhone.value = supplier.phone || "";
   }
 
   function buildPurchaseOrderNumber(dateValue = null) {
@@ -5291,7 +5303,7 @@
       buyPrice,
       subtotal: qty * buyPrice,
       activeSubstance: String(medicine?.komposisi || restockItem?.activeSubstance || "").trim(),
-      dosageForm: String(medicine?.kategori || restockItem?.dosageForm || "").trim(),
+      dosageForm: String(restockItem?.dosageForm || "").trim(),
       strength: String(medicine?.kekuatan || restockItem?.strength || "").trim(),
       note: String(restockItem?.note || (medicine?.no_batch ? `Batch ${medicine.no_batch}` : "")).trim(),
       sourceRestockId: String(restockItem?.id || "").trim()
@@ -5352,20 +5364,23 @@
 
   function buildPurchaseProductSearchCell(item, index) {
     const value = item?.nama || state.purchaseProductSearches[index] || "";
-    const results = state.purchaseProductResults[index] || [];
     return `
       <div class="purchase-product-search">
         <input data-po-field="productSearch" data-po-index="${index}" type="search" value="${escapeHtml(value)}" placeholder="Cari obat / barcode">
-        <div class="purchase-product-results" data-po-results="${index}" ${results.length ? "" : "hidden"}>
-          ${results.map((row, resultIndex) => `
-            <button class="purchase-product-result" type="button" data-po-select-product="${index}" data-po-result-index="${resultIndex}">
-              <strong>${escapeHtml(row.nama || row.kode || "Obat")}</strong>
-              <small>${escapeHtml([row.kode, `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`, row.suplier].filter(Boolean).join(" - "))}</small>
-            </button>
-          `).join("")}
-        </div>
       </div>
     `;
+  }
+
+  function handlePurchaseProductFocus(event) {
+    const target = event.target.closest('input[data-po-field="productSearch"]');
+    if (!target) return;
+    const index = Number(target.dataset.poIndex);
+    if (!Number.isFinite(index)) return;
+    state.purchaseActiveProductSearchIndex = index;
+    const query = String(target.value || "");
+    state.purchaseProductSearches[index] = query;
+    state.purchaseProductResults[index] = getPurchaseProductSearchResults(query);
+    renderPurchaseProductResultList(index);
   }
 
   function handlePurchaseProductInput(event) {
@@ -5375,6 +5390,7 @@
     if (!field || !Number.isFinite(index)) return;
     if (field === "productSearch") {
       const query = String(target.value || "");
+      state.purchaseActiveProductSearchIndex = index;
       state.purchaseProductSearches[index] = query;
       state.purchaseProductResults[index] = getPurchaseProductSearchResults(query);
       renderPurchaseProductResultList(index);
@@ -5392,16 +5408,45 @@
   }
 
   function renderPurchaseProductResultList(index) {
-    const container = els.poProductRows?.querySelector(`[data-po-results="${index}"]`);
+    const container = els.poProductSearchPopup;
     if (!container) return;
     const results = state.purchaseProductResults[index] || [];
     container.hidden = !results.length;
+    container.dataset.poResults = String(index);
     container.innerHTML = results.map((row, resultIndex) => `
       <button class="purchase-product-result" type="button" data-po-select-product="${index}" data-po-result-index="${resultIndex}">
         <strong>${escapeHtml(row.nama || row.kode || "Obat")}</strong>
         <small>${escapeHtml([row.kode, `${formatCell(row.stok, "stok")} ${inferRestockStockUnit(row)}`, row.suplier].filter(Boolean).join(" - "))}</small>
       </button>
     `).join("");
+    positionPurchaseProductResults();
+  }
+
+  function positionPurchaseProductResults() {
+    const container = els.poProductSearchPopup;
+    const index = state.purchaseActiveProductSearchIndex;
+    if (!container || container.hidden || index === null || index === undefined) return;
+    const input = els.poProductRows?.querySelector(`input[data-po-field="productSearch"][data-po-index="${index}"]`);
+    if (!input) {
+      hidePurchaseProductResults();
+      return;
+    }
+    const rect = input.getBoundingClientRect();
+    const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    const width = Math.min(Math.max(rect.width, 320), Math.max(280, viewportWidth - 32));
+    const left = Math.min(Math.max(16, rect.left), Math.max(16, viewportWidth - width - 16));
+    const top = Math.min(rect.bottom + 8, Math.max(12, window.innerHeight - 320));
+    container.style.width = `${width}px`;
+    container.style.left = `${left}px`;
+    container.style.top = `${top}px`;
+  }
+
+  function hidePurchaseProductResults() {
+    state.purchaseActiveProductSearchIndex = null;
+    if (!els.poProductSearchPopup) return;
+    els.poProductSearchPopup.hidden = true;
+    els.poProductSearchPopup.innerHTML = "";
+    els.poProductSearchPopup.removeAttribute("data-po-results");
   }
 
   function getPurchaseProductSearchResults(query) {
@@ -5435,6 +5480,7 @@
       const medicine = (state.purchaseProductResults[rowIndex] || [])[resultIndex];
       if (!medicine) return;
       addPurchaseItemFromSource(medicine, null);
+      hidePurchaseProductResults();
       if (els.poSupplier && !els.poSupplier.value && medicine.suplier) {
         els.poSupplier.value = medicine.suplier;
         fillPurchaseSupplierFields();
@@ -5550,9 +5596,9 @@
       supplier: els.poSupplier?.value || "",
       supplierAddress: els.poSupplierAddress?.value || "",
       supplierPhone: els.poSupplierPhone?.value || "",
-      city: els.poCity?.value || "S.P. Padang",
-      recipient: els.poRecipient?.value || els.poSupplier?.value || "",
-      purpose: els.poPurpose?.value || "Untuk membantu kebutuhan Apotek Nadhira Farma",
+      city: els.poCity?.value || "",
+      recipient: els.poRecipient?.value || "",
+      purpose: els.poPurpose?.value || "",
       paymentMethod: els.poPaymentMethod?.value || "Tunai",
       dueDate: els.poDueDate?.value || "",
       note,
@@ -5913,22 +5959,92 @@
     return getSelectedPurchaseOrder();
   }
 
-  function printPurchaseOrder() {
+  async function printPurchaseOrder() {
     const order = getPurchaseOrderForPrint();
     if (!order || !order.items.length) {
       showActionToast("Tambahkan item surat pesanan terlebih dahulu.", "error");
       return;
     }
-    const printWindow = window.open("", "_blank", "width=900,height=1200");
+    const settings = await showPurchasePrintSettingsDialog();
+    if (!settings) return;
+    openPurchasePrintPreview(order, settings);
+  }
+
+  function openPurchasePrintPreview(order, settings) {
+    const printWindow = window.open("", "_blank", "width=1080,height=920");
     if (!printWindow) {
-      window.print();
+      showActionToast("Popup pratinjau cetak diblokir browser.", "error");
       return;
     }
     printWindow.document.open();
-    printWindow.document.write(buildPurchaseOrderPrintHtml(order));
+    printWindow.document.write(buildPurchaseOrderPrintHtml(order, { ...settings, preview: true }));
     printWindow.document.close();
     printWindow.focus();
-    window.setTimeout(() => printWindow.print(), 450);
+  }
+
+  function showPurchasePrintSettingsDialog(defaults = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("section");
+      overlay.className = "purchase-print-settings-overlay";
+      overlay.innerHTML = `
+        <form class="purchase-print-settings-card" role="dialog" aria-modal="true" aria-label="Pengaturan cetak surat pesanan">
+          <header>
+            <span class="purchase-mini-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg></span>
+            <div>
+              <strong>Pengaturan Cetak</strong>
+              <p>Pilih format surat pesanan sebelum membuka pratinjau.</p>
+            </div>
+          </header>
+          <label>Orientasi Halaman
+            <select name="orientation">
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </label>
+          <label>Ukuran Kertas
+            <select name="paperSize">
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="A6">A6</option>
+            </select>
+          </label>
+          <label>Ukuran Huruf
+            <input name="fontSize" type="number" min="7" max="13" step="0.5" value="${escapeHtml(defaults.fontSize || "10")}">
+          </label>
+          <div class="purchase-print-settings-actions">
+            <button class="is-secondary" type="button" data-print-cancel>Batal</button>
+            <button class="is-primary" type="submit">Buka Pratinjau</button>
+          </div>
+        </form>
+      `;
+      document.body.appendChild(overlay);
+      document.body.classList.add("dashboard-modal-open");
+
+      const form = overlay.querySelector("form");
+      const orientation = form?.elements.orientation;
+      const paperSize = form?.elements.paperSize;
+      if (orientation) orientation.value = defaults.orientation || "portrait";
+      if (paperSize) paperSize.value = defaults.paperSize || "A4";
+
+      const finish = (value) => {
+        overlay.remove();
+        syncModalOpenState();
+        resolve(value);
+      };
+
+      overlay.querySelector("[data-print-cancel]")?.addEventListener("click", () => finish(null));
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) finish(null);
+      });
+      form?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        finish({
+          orientation: String(form.elements.orientation.value || "portrait"),
+          paperSize: String(form.elements.paperSize.value || "A4"),
+          fontSize: Math.min(13, Math.max(7, Number(form.elements.fontSize.value || 10) || 10))
+        });
+      });
+    });
   }
 
   function getOwnerProfileForPrint() {
@@ -5949,7 +6065,7 @@
     return {
       brandName: profile.name && profile.name !== "Apotek Anda" ? profile.name : "Apotek Nadhira Farma",
       address,
-      city: profile.city || inferCityFromAddress(address) || order.city || "S.P. Padang",
+      city: profile.city || ownerProfile.city || inferCityFromAddress(address) || "",
       phone: profile.phone || ownerProfile.phone || "",
       email: profile.email || ownerProfile.email || "",
       website: profile.website || "",
@@ -5967,29 +6083,45 @@
     return raw;
   }
 
-  function buildPurchaseOrderPrintHtml(order) {
+  function buildPurchaseOrderPrintHtml(order, settings = {}) {
     const context = getPurchasePrintProfileContext(order);
     const type = getPurchaseOrderTypeMeta(order.type);
     const rows = buildPurchaseOrderPrintRows(order);
     const printNumber = getPurchasePrintNumber(order);
+    const orientation = settings.orientation === "landscape" ? "landscape" : "portrait";
+    const paperSize = ["A4", "A5", "A6"].includes(settings.paperSize) ? settings.paperSize : "A4";
+    const fontSize = Math.min(13, Math.max(7, Number(settings.fontSize || 10) || 10));
+    const paperMap = { A4: [210, 297], A5: [148, 210], A6: [105, 148] };
+    const paper = paperMap[paperSize] || paperMap.A4;
+    const pageWidth = orientation === "landscape" ? paper[1] : paper[0];
+    const pageHeight = orientation === "landscape" ? paper[0] : paper[1];
+    const sheetWidth = Math.max(82, pageWidth - 20);
+    const sheetMinHeight = Math.max(124, pageHeight - 18);
     return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escapeHtml(order.number)} - ${escapeHtml(type.printTitle)}</title>
+  <title>Surat Pesanan</title>
   <style>
-    @page { size: A4; margin: 9mm 10mm; }
+    @page { size: ${paperSize} ${orientation}; margin: 9mm 10mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; }
-    .sheet { width: 190mm; min-height: 278mm; margin: 0 auto; padding: 0 3mm; }
+    body { margin: 0; color: #111; background: ${settings.preview ? "#3d3d3d" : "#fff"}; font-family: Arial, Helvetica, sans-serif; font-size: ${fontSize}px; }
+    .print-preview-toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; background: #1f2937; color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.22); }
+    .print-preview-toolbar strong { font-size: 14px; }
+    .print-preview-toolbar small { color: #cbd5e1; }
+    .print-preview-toolbar div { display: flex; gap: 8px; align-items: center; }
+    .print-preview-toolbar button { min-height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 9px; background: rgba(255,255,255,.10); color: #fff; font-weight: 800; cursor: pointer; }
+    .print-preview-toolbar button.is-primary { border-color: transparent; background: linear-gradient(135deg, #315dff, #d615b8); }
+    .preview-shell { padding: ${settings.preview ? "18px 0 42px" : "0"}; }
+    .sheet { width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: 0 3mm; background: #fff; }
     .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #111; text-align: center; }
     .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
     .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .brand-text h1 { margin: 0 0 1mm; font-size: 14px; line-height: 1.1; font-weight: 700; }
+    .brand-text h1 { margin: 0 0 1mm; font-size: ${fontSize + 4}px; line-height: 1.1; font-weight: 700; }
     .brand-text p { margin: 0; line-height: 1.2; }
     .title { text-align: center; margin: 4mm 0 5mm; }
-    .title h2 { margin: 0 0 1mm; font-size: 13px; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; }
-    .title p { margin: 0; color: #111; font-size: 10px; }
+    .title h2 { margin: 0 0 1mm; font-size: ${fontSize + 3}px; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; }
+    .title p { margin: 0; color: #111; font-size: ${fontSize}px; }
     .lines, .usage { width: 100%; }
     .lines p, .usage p { margin: 0 0 2px; line-height: 1.15; }
     .line { display: grid; grid-template-columns: 30mm 3mm 1fr; gap: 2mm; align-items: start; margin: 0; max-width: 96mm; line-height: 1.12; }
@@ -5997,27 +6129,34 @@
     .line .blank:empty::after { content: "-"; }
     .supplier-block { margin-top: 5mm; }
     .table-lead { margin: 4mm 0 2mm !important; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; font-size: 9px; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px; }
     col.no-col { width: 9mm; }
-    col.name-col { width: 46%; }
-    col.qty-col { width: 22mm; }
-    col.unit-col { width: 20mm; }
-    col.active-col { width: 22%; }
-    col.form-col { width: 18%; }
-    th { background: #f2f2f2; color: #111; font-size: 9px; font-weight: 700; text-align: left; }
+    col.name-col { width: auto; }
+    col.qty-col { width: 16mm; }
+    col.unit-col { width: 15mm; }
+    col.active-col { width: 20%; }
+    col.form-col { width: 15%; }
+    th { background: #f2f2f2; color: #111; font-size: ${Math.max(7, fontSize - 1)}px; font-weight: 700; text-align: left; }
     th, td { border-top: 1px solid #111; border-bottom: 1px solid #111; border-left: 0; border-right: 0; padding: 3px 5px; height: 16px; line-height: 1.12; vertical-align: middle; }
     td.no, th.no, td.qty, th.qty, td.unit, th.unit { text-align: center; white-space: nowrap; }
     td.name { font-weight: 600; }
     tr.empty-row td { height: 14px; }
     .usage { margin-top: 5mm; }
     .usage .line { grid-template-columns: 28mm 3mm 1fr; max-width: 118mm; }
-    .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: 9.5px; }
+    .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: ${fontSize}px; }
     .sign-space { height: 22mm; }
     .sign p { margin: 0 0 2px; line-height: 1.15; }
-    @media print { .sheet { min-height: 278mm; } }
+    @media print {
+      body { background: #fff; }
+      .print-preview-toolbar { display: none; }
+      .preview-shell { padding: 0; }
+      .sheet { min-height: ${sheetMinHeight}mm; }
+    }
   </style>
 </head>
 <body>
+  ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small></span><div><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
+  <div class="preview-shell">
   <main class="sheet">
     <header class="header">
       <section class="brand-logo">
@@ -6063,6 +6202,12 @@
       <p>${escapeHtml(context.sipa || "")}</p>
     </section>
   </main>
+  </div>
+  ${settings.preview ? `<script>
+    const runPrint = () => window.print();
+    document.getElementById("printNowButton")?.addEventListener("click", runPrint);
+    document.getElementById("downloadPdfButton")?.addEventListener("click", runPrint);
+  </script>` : ""}
 </body>
 </html>`;
   }
@@ -6090,14 +6235,14 @@
     const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 4;
     const filled = (order.items || []).map((item, index) => {
       if (isControlledPurchaseOrderType(type)) {
-        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm || item.strength)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
       }
       if (type === "alkes") {
         return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
       }
       return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
     });
-    const empty = Array.from({ length: Math.max(0, 5 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
+    const empty = Array.from({ length: Math.max(0, 2 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
     return filled.concat(empty).join("");
   }
 

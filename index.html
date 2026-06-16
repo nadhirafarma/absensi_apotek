@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260616-ui-v17">
-  <script defer src="assets/auth-guard.js?v=20260616-ui-v17"></script>
-  <script defer src="assets/app.js?v=20260616-ui-v17"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260616-ui-v18">
+  <script defer src="assets/auth-guard.js?v=20260616-ui-v18"></script>
+  <script defer src="assets/app.js?v=20260616-ui-v18"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260616-ui-v17"></script>
+  <script defer src="assets/home-dashboard.js?v=20260616-ui-v18"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -188,13 +188,6 @@
               <rect x="3" y="4" width="18" height="18" rx="2"></rect>
             </svg>
             <span id="todayLabel"></span>
-          </span>
-          <span class="status-item status-time">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M12 7v5l3 2"></path>
-            </svg>
-            <span id="clockLabel"></span>
           </span>
           <button class="notification-action" id="homeNotificationButton" type="button" aria-label="Notifikasi data obat" title="Notifikasi data obat">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1014,12 +1007,11 @@
                     <label>Metode Pembayaran *<select id="poPaymentMethod"><option value="Tunai">Tunai</option><option value="Transfer">Transfer</option><option value="Tempo">Tempo</option><option value="Konsinyasi">Konsinyasi</option></select></label>
                     <label>Jatuh Tempo Pembayaran<input id="poDueDate" type="date"></label>
                     <label>Sales / Kontak<input id="poRecipient" type="text" placeholder="Nama sales atau kontak"></label>
-                    <label>Kota<input id="poCity" type="text" value="S.P. Padang"></label>
+                    <label>Kota<input id="poCity" type="text" placeholder="Kota supplier"></label>
                     <label class="wide-field">Alamat PBF<input id="poSupplierAddress" type="text" placeholder="Alamat supplier/PBF"></label>
                     <label>HP/Telp.<input id="poSupplierPhone" type="text" placeholder="Nomor kontak supplier"></label>
                     <label>Diskon<input id="poDiscount" type="number" min="0" value="0"></label>
                     <label class="wide-field">Catatan (Opsional)<input id="poNote" type="text" placeholder="Tulis catatan untuk pesanan ini"></label>
-                    <label class="wide-field po-controlled-field" data-po-field="regulated">Kebutuhan/Penggunaan<input id="poPurpose" type="text" placeholder="Untuk membantu kebutuhan Apotek Nadhira Farma"></label>
                   </div>
                 </form>
 
@@ -1031,6 +1023,7 @@
                       <tbody id="poProductRows"></tbody>
                     </table>
                   </div>
+                  <div id="poProductSearchPopup" class="purchase-product-floating-results" hidden></div>
                   <div id="poItemsList" class="po-items" hidden></div>
                   <select id="poMedicine" hidden></select>
                   <input id="poQty" type="hidden" value="1">

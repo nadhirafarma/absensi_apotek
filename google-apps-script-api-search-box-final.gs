@@ -21,7 +21,7 @@ var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
 var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
 var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'status', 'face_id_file_id', 'face_id_url', 'face_id_image_url', 'face_id_label', 'face_id_registered_at', 'updated_at'];
-var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'phone', 'pic', 'updated_at'];
+var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'city', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
   'code',
@@ -1519,7 +1519,7 @@ function sanitizePurchaseOrder_(order) {
     supplier: String(order.supplier || order.suplier || '').trim().slice(0, 180),
     supplierAddress: String(order.supplierAddress || order.alamatPbf || order.alamat || '').trim().slice(0, 240),
     supplierPhone: String(order.supplierPhone || order.phone || order.telepon || '').trim().slice(0, 80),
-    city: String(order.city || order.kota || 'S.P. Padang').trim().slice(0, 120) || 'S.P. Padang',
+    city: String(order.city || order.kota || '').trim().slice(0, 120),
     recipient: String(order.recipient || order.kepada || order.yth || '').trim().slice(0, 180),
     purpose: String(order.purpose || order.kebutuhan || '').trim().slice(0, 260),
     paymentMethod: String(order.paymentMethod || order.metodePembayaran || order.payment || 'Tunai').trim().slice(0, 80) || 'Tunai',
