@@ -5379,9 +5379,12 @@
       { key: "product", label: type === "alkes" ? "Alat Kesehatan" : "Produk", className: "purchase-col-product" }
     ];
     if (isControlledPurchaseOrderType(type)) {
-      columns.push({ key: "activeSubstance", label: "Zat Aktif" }, { key: "dosageForm", label: "Bentuk Sediaan" });
+      columns.push(
+        { key: "activeSubstance", label: "Zat Aktif", className: "purchase-col-active" },
+        { key: "dosageForm", label: "Bentuk Sediaan", className: "purchase-col-form" }
+      );
     }
-    if (type === "alkes") columns.push({ key: "strength", label: "Spesifikasi" });
+    if (type === "alkes") columns.push({ key: "strength", label: "Spesifikasi", className: "purchase-col-strength" });
     columns.push(
       { key: "currentStock", label: "Stok Sistem", className: "purchase-col-stock" },
       { key: "qty", label: "Kuantitas / Qty", className: "purchase-col-qty" },
@@ -5389,7 +5392,7 @@
       { key: "buyPrice", label: "Harga Beli Satuan", className: "purchase-col-price" },
       { key: "subtotal", label: "Sub Total", className: "purchase-col-subtotal" },
       { key: "note", label: "Keterangan", className: "purchase-col-note" },
-      { key: "action", label: "Aksi" }
+      { key: "action", label: "Aksi", className: "purchase-col-action" }
     );
     return columns;
   }
@@ -5419,10 +5422,10 @@
       if (column.key === "buyPrice") return `<td class="purchase-col-price"><input data-po-field="buyPrice" data-po-index="${index}" type="number" min="0" value="${escapeHtml(isBlank ? "0" : item.buyPrice)}"></td>`;
       if (column.key === "subtotal") return `<td class="purchase-col-subtotal" data-po-subtotal="${index}">${isBlank ? "Rp 0" : formatRupiah(getPurchaseItemSubtotal(item))}</td>`;
       if (column.key === "note") return `<td class="purchase-col-note"><input data-po-field="note" data-po-index="${index}" type="text" value="${escapeHtml(item?.note || "")}" placeholder="Keterangan"></td>`;
-      if (column.key === "activeSubstance") return `<td><input data-po-field="activeSubstance" data-po-index="${index}" type="text" value="${escapeHtml(item?.activeSubstance || "")}"></td>`;
-      if (column.key === "dosageForm") return `<td><input data-po-field="dosageForm" data-po-index="${index}" type="text" value="${escapeHtml(item?.dosageForm || "")}"></td>`;
-      if (column.key === "strength") return `<td><input data-po-field="strength" data-po-index="${index}" type="text" value="${escapeHtml(item?.strength || "")}"></td>`;
-      return `<td>${isBlank ? "" : `<button class="purchase-row-icon-button" type="button" data-po-remove="${index}" aria-label="Hapus item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button>`}</td>`;
+      if (column.key === "activeSubstance") return `<td class="purchase-col-active"><input data-po-field="activeSubstance" data-po-index="${index}" type="text" value="${escapeHtml(item?.activeSubstance || "")}"></td>`;
+      if (column.key === "dosageForm") return `<td class="purchase-col-form"><input data-po-field="dosageForm" data-po-index="${index}" type="text" value="${escapeHtml(item?.dosageForm || "")}"></td>`;
+      if (column.key === "strength") return `<td class="purchase-col-strength"><input data-po-field="strength" data-po-index="${index}" type="text" value="${escapeHtml(item?.strength || "")}"></td>`;
+      return `<td class="purchase-col-action">${isBlank ? "" : `<button class="purchase-row-icon-button" type="button" data-po-remove="${index}" aria-label="Hapus item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button>`}</td>`;
     }).join("")}</tr>`;
   }
 
@@ -6219,11 +6222,21 @@
     const footerTime = formatPurchasePrintFooterTime(new Date());
     const printNotes = buildPurchasePrintNotes(order);
     const whatsappText = buildPurchaseWhatsAppText(order, type, printNumber, context);
+    const pdfFilename = `surat-pesanan-${String(printNumber || order.number || "pesanan").replace(/[^a-z0-9-]+/gi, "-")}.pdf`;
+    const pdfConfig = {
+      filename: pdfFilename,
+      orientation,
+      paperSize: paperSize.toLowerCase(),
+      title: `${type.printTitle} No. SP. ${printNumber}`,
+      whatsappText,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(whatsappText)}`
+    };
     return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title> </title>
+  ${settings.preview ? '<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>' : ""}
   <style>
     @page { size: ${paperSize} ${orientation}; margin: 0; }
     * { box-sizing: border-box; }
@@ -6234,6 +6247,8 @@
     .print-preview-toolbar div { display: flex; gap: 8px; align-items: center; }
     .print-preview-toolbar button { min-height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 9px; background: rgba(255,255,255,.10); color: #fff; font-weight: 800; cursor: pointer; }
     .print-preview-toolbar button.is-primary { border-color: transparent; background: linear-gradient(135deg, #315dff, #d615b8); }
+    .print-preview-toolbar button.is-busy { opacity: .72; pointer-events: none; }
+    .print-preview-status { min-height: 16px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
     .preview-shell { padding: ${settings.preview ? "18px 0 42px" : "0"}; }
     .sheet { position: relative; width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; background: #fff; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
     .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #1f2937; text-align: center; }
@@ -6281,10 +6296,18 @@
       .preview-shell { padding: 0; }
       .sheet { min-height: ${sheetMinHeight}mm; box-shadow: none; }
     }
+    @media (max-width: 760px) {
+      .print-preview-toolbar { display: grid; grid-template-columns: 1fr; align-items: stretch; gap: 9px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
+      .print-preview-toolbar > span { display: grid; gap: 2px; }
+      .print-preview-toolbar div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .print-preview-toolbar button { min-height: 42px; padding-inline: 10px; font-size: 12px; }
+      .preview-shell { padding: 10px 0 28px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .sheet { margin-inline: 8px; }
+    }
   </style>
 </head>
 <body>
-  ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small></span><div><button type="button" id="sendWhatsappButton">Kirim WA</button><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
+  ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small><em class="print-preview-status" id="printPreviewStatus"></em></span><div><button type="button" id="previewBackButton">Kembali</button><button type="button" id="sendWhatsappButton">Kirim WA PDF</button><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
   <div class="preview-shell">
   <main class="sheet">
     <header class="header">
@@ -6335,14 +6358,136 @@
   </main>
   </div>
   ${settings.preview ? `<script>
-    const whatsappUrl = ${JSON.stringify(`https://wa.me/?text=${encodeURIComponent(whatsappText)}`)};
+    const pdfConfig = ${JSON.stringify(pdfConfig)};
+    const statusEl = document.getElementById("printPreviewStatus");
+    const setStatus = (message) => {
+      if (statusEl) statusEl.textContent = message || "";
+    };
+    const setBusy = (button, busy, label) => {
+      if (!button) return;
+      if (busy) {
+        button.dataset.originalText = button.textContent;
+        button.textContent = label || "Memproses...";
+        button.classList.add("is-busy");
+        button.disabled = true;
+      } else {
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.classList.remove("is-busy");
+        button.disabled = false;
+      }
+    };
     const runPrint = () => {
       document.title = " ";
       window.print();
     };
-    document.getElementById("sendWhatsappButton")?.addEventListener("click", () => window.open(whatsappUrl, "_blank", "noopener"));
+    const waitForPdfLibraries = async () => {
+      const started = Date.now();
+      while ((!window.html2canvas || !window.jspdf?.jsPDF) && Date.now() - started < 12000) {
+        await new Promise((resolve) => setTimeout(resolve, 120));
+      }
+      if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        throw new Error("Library PDF belum berhasil dimuat. Cek koneksi internet lalu coba lagi.");
+      }
+    };
+    const createPdfBlob = async () => {
+      await waitForPdfLibraries();
+      if (document.fonts?.ready) await document.fonts.ready;
+      const sheet = document.querySelector(".sheet");
+      if (!sheet) throw new Error("Halaman surat belum siap dibuat PDF.");
+      const canvas = await window.html2canvas(sheet, {
+        backgroundColor: "#ffffff",
+        scale: Math.min(2.4, Math.max(1.4, window.devicePixelRatio || 1.6)),
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+      const pdf = new window.jspdf.jsPDF({
+        orientation: pdfConfig.orientation,
+        unit: "mm",
+        format: pdfConfig.paperSize
+      });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const sliceHeight = Math.max(1, Math.floor(canvas.width * pageHeight / pageWidth));
+      const sliceCanvas = document.createElement("canvas");
+      const sliceContext = sliceCanvas.getContext("2d");
+      sliceCanvas.width = canvas.width;
+      let offsetY = 0;
+      while (offsetY < canvas.height) {
+        const currentHeight = Math.min(sliceHeight, canvas.height - offsetY);
+        sliceCanvas.height = currentHeight;
+        sliceContext.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        sliceContext.fillStyle = "#ffffff";
+        sliceContext.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        sliceContext.drawImage(canvas, 0, offsetY, canvas.width, currentHeight, 0, 0, canvas.width, currentHeight);
+        if (offsetY > 0) pdf.addPage();
+        const imageHeight = currentHeight * pageWidth / canvas.width;
+        pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, pageWidth, imageHeight);
+        offsetY += currentHeight;
+      }
+      return pdf.output("blob");
+    };
+    const downloadBlob = (blob) => {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = pdfConfig.filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+    };
+    const downloadPdf = async (button) => {
+      setBusy(button, true, "Membuat PDF...");
+      setStatus("Menyiapkan file PDF...");
+      try {
+        const blob = await createPdfBlob();
+        downloadBlob(blob);
+        setStatus("PDF berhasil disiapkan.");
+      } catch (error) {
+        setStatus(error.message || "PDF gagal dibuat.");
+        alert(error.message || "PDF gagal dibuat.");
+      } finally {
+        setBusy(button, false);
+      }
+    };
+    const sendWhatsappPdf = async (button) => {
+      setBusy(button, true, "Menyiapkan PDF...");
+      setStatus("Menyiapkan PDF untuk WhatsApp...");
+      try {
+        const blob = await createPdfBlob();
+        const file = new File([blob], pdfConfig.filename, { type: "application/pdf" });
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          await navigator.share({
+            files: [file],
+            title: pdfConfig.title,
+            text: "Surat pesanan dalam format PDF."
+          });
+          setStatus("PDF siap dikirim lewat aplikasi yang dipilih.");
+          return;
+        }
+        downloadBlob(blob);
+        window.open(pdfConfig.whatsappUrl, "_blank", "noopener");
+        setStatus("Browser ini belum mendukung lampiran PDF langsung. PDF diunduh, lalu WhatsApp dibuka.");
+      } catch (error) {
+        setStatus(error.message || "PDF gagal dikirim.");
+        alert(error.message || "PDF gagal dikirim.");
+      } finally {
+        setBusy(button, false);
+      }
+    };
+    const goBack = () => {
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        window.setTimeout(() => history.length > 1 ? history.back() : undefined, 160);
+        return;
+      }
+      if (history.length > 1) history.back();
+    };
+    document.getElementById("previewBackButton")?.addEventListener("click", goBack);
+    document.getElementById("sendWhatsappButton")?.addEventListener("click", (event) => sendWhatsappPdf(event.currentTarget));
     document.getElementById("printNowButton")?.addEventListener("click", runPrint);
-    document.getElementById("downloadPdfButton")?.addEventListener("click", runPrint);
+    document.getElementById("downloadPdfButton")?.addEventListener("click", (event) => downloadPdf(event.currentTarget));
   </script>` : ""}
 </body>
 </html>`;
