@@ -20374,7 +20374,7 @@ body.sidebar-collapsed .global-sidebar-toggle {
   }
 
   .mobile-hero-brand-copy {
-    padding-top: 0 !important;
+    padding-top: 4px !important;
     display: grid !important;
     grid-template-columns: auto minmax(0, 1fr) !important;
     align-items: baseline !important;
@@ -20404,7 +20404,7 @@ body.sidebar-collapsed .global-sidebar-toggle {
     width: max-content !important;
     max-width: 100% !important;
     min-height: 23px !important;
-    margin-top: 1px !important;
+    margin-top: 4px !important;
     padding: 3px 7px !important;
     gap: 5px !important;
     border-radius: 8px !important;
@@ -20448,18 +20448,24 @@ body.sidebar-collapsed .global-sidebar-toggle {
   }
 
   .mobile-hero-welcome {
-    gap: 1px !important;
+    gap: 0 !important;
     padding-bottom: 0 !important;
+    transform: translateY(-4px) !important;
   }
 
   .mobile-hero-welcome p,
   .mobile-hero-welcome > span {
     font-size: 0.76rem !important;
-    font-weight: 700 !important;
+    font-weight: 500 !important;
     line-height: 1.18 !important;
   }
 
+  .mobile-hero-welcome p {
+    margin-bottom: 3px !important;
+  }
+
   .mobile-hero-welcome h2 {
+    margin-bottom: 3px !important;
     font-size: calc(0.76rem + 1px) !important;
     font-weight: 800 !important;
     line-height: 1.18 !important;
@@ -20620,6 +20626,14 @@ body.sidebar-collapsed .global-sidebar-toggle {
 
   .mobile-hero-brand {
     gap: 7px !important;
+  }
+
+  .mobile-hero-brand-copy {
+    padding-top: 4px !important;
+  }
+
+  .mobile-hero-date-pill {
+    margin-top: 3px !important;
   }
 
   .mobile-hero-brand-copy small {

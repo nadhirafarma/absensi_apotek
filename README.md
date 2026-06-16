@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-17 04:05 WIB: menyesuaikan lagi header mobile agar nama apotek sejajar dengan logo, tanggal/jam sedikit turun, teks selamat datang dan semangat bekerja normal tidak bold, pesan WhatsApp PDF hanya berisi nomor Surat Pesanan, serta print/PDF dikunci satu halaman jika tidak ada konten halaman kedua.
 - 2026-06-17 03:35 WIB: memadatkan header mobile agar tidak memakan setengah layar, membuat brand "Apotek Nadhira Farma" satu baris dengan "Nadhira Farma" sedikit lebih besar, memperkecil logo/notifikasi/tema/foto user, mengembalikan klik foto user ke popup logout, menghilangkan celah atas header, serta memperbaiki posisi foto profil di halaman Akun & Profil.
 - 2026-06-17 03:05 WIB: mengganti header mobile semua menu mengikuti referensi Nadhira Farma, menambahkan tombol tema di antara notifikasi dan profil, menjaga header fixed sampai tepat setelah teks "Semangat bekerja hari ini.", mengarahkan default logo ke `logo.png`, serta membatasi gesture kembali hanya dari swipe tepi kiri layar.
 - 2026-06-17 02:05 WIB: menyesuaikan ulang Surat Pesanan mobile; daftar pesanan dan tabel produk/edit pesanan dibuat horizontal-scroll seperti spreadsheet, header mobile dirapikan agar tidak bertumpuk, serta HTML pratinjau/PDF dikunci dengan `text-size-adjust: 100%` dan ukuran font eksplisit agar hasil mobile sama dengan versi desktop.

@@ -6297,7 +6297,7 @@
     .print-preview-toolbar button.is-busy { opacity: .72; pointer-events: none; }
     .print-preview-status { min-height: 16px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
     .preview-shell { padding: ${settings.preview ? "18px 0 42px" : "0"}; }
-    .sheet { position: relative; width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; background: #fff; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
+    .sheet { position: relative; width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; background: #fff; box-sizing: border-box; page-break-after: avoid; break-after: avoid; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
     .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #1f2937; text-align: center; }
     .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
     .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -6341,7 +6341,7 @@
       body { background: #fff; }
       .print-preview-toolbar { display: none; }
       .preview-shell { padding: 0; }
-      .sheet { min-height: ${sheetMinHeight}mm; box-shadow: none; }
+      .sheet { height: ${sheetMinHeight}mm; min-height: 0; overflow: hidden; box-shadow: none; page-break-after: avoid; break-after: avoid; }
     }
     @media (max-width: 760px) {
       .print-preview-toolbar { display: grid; grid-template-columns: 1fr; align-items: stretch; gap: 9px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
@@ -6456,17 +6456,21 @@
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const sliceHeight = Math.max(1, Math.floor(canvas.width * pageHeight / pageWidth));
+      const pageRemainder = canvas.height - sliceHeight;
+      const blankPageTolerance = Math.max(12, Math.ceil(sliceHeight * 0.018));
+      const canvasHeightForPdf = pageRemainder > 0 && pageRemainder <= blankPageTolerance ? sliceHeight : canvas.height;
       const sliceCanvas = document.createElement("canvas");
       const sliceContext = sliceCanvas.getContext("2d");
       sliceCanvas.width = canvas.width;
       let offsetY = 0;
-      while (offsetY < canvas.height) {
-        const currentHeight = Math.min(sliceHeight, canvas.height - offsetY);
+      while (offsetY < canvasHeightForPdf) {
+        const currentHeight = Math.min(sliceHeight, canvasHeightForPdf - offsetY);
+        const sourceHeight = Math.min(currentHeight, canvas.height - offsetY);
         sliceCanvas.height = currentHeight;
         sliceContext.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
         sliceContext.fillStyle = "#ffffff";
         sliceContext.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-        sliceContext.drawImage(canvas, 0, offsetY, canvas.width, currentHeight, 0, 0, canvas.width, currentHeight);
+        sliceContext.drawImage(canvas, 0, offsetY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
         if (offsetY > 0) pdf.addPage();
         const imageHeight = currentHeight * pageWidth / canvas.width;
         pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, pageWidth, imageHeight);
@@ -6508,7 +6512,7 @@
           await navigator.share({
             files: [file],
             title: pdfConfig.title,
-            text: "Surat pesanan dalam format PDF."
+            text: pdfConfig.whatsappText
           });
           setStatus("PDF siap dikirim lewat aplikasi yang dipilih.");
           return;
@@ -6603,25 +6607,7 @@
   }
 
   function buildPurchaseWhatsAppText(order = {}, type = {}, printNumber = "", context = {}) {
-    const items = Array.isArray(order.items) ? order.items : [];
-    const lines = [
-      `${type.printTitle || "SURAT PESANAN"} No. SP. ${printNumber || order.number || "-"}`,
-      `Apotek: ${context.brandName || "-"}`,
-      `Supplier: ${order.supplier || "-"}`,
-      `Tanggal: ${formatPurchasePrintDate(order.date)}`,
-      "",
-      "Daftar Pesanan:"
-    ];
-    items.forEach((item, index) => {
-      const note = getPurchasePrintItemNote(item);
-      lines.push(`${index + 1}. ${item.nama || item.name || "Obat"} - ${formatNumber(Number(item.qty) || 0)} ${item.unit || "Pcs"}${note ? ` (${note})` : ""}`);
-    });
-    const notes = [order.note, order.additionalNote]
-      .map((value) => String(value || "").trim())
-      .filter(Boolean);
-    if (notes.length) lines.push("", notes.map((note) => `Note: ${note}`).join("\n"));
-    lines.push("", `Total: ${formatRupiah(order.total || 0)}`);
-    return lines.join("\n");
+    return `Surat Pesanan No. SP. ${printNumber || order.number || "-"}`;
   }
 
   function getPurchasePrintIntro(type) {
