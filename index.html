@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v22">
-  <script defer src="assets/auth-guard.js?v=20260617-ui-v22"></script>
-  <script defer src="assets/app.js?v=20260617-ui-v22"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v23">
+  <script defer src="assets/auth-guard.js?v=20260617-ui-v23"></script>
+  <script defer src="assets/app.js?v=20260617-ui-v23"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260617-ui-v22"></script>
+  <script defer src="assets/home-dashboard.js?v=20260617-ui-v23"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -168,6 +168,61 @@
 
     <div class="dashboard-main">
       <header class="dashboard-topbar">
+        <section class="mobile-hero-header" id="mobileHeroHeader" aria-label="Header mobile">
+          <div class="mobile-hero-main">
+            <div class="mobile-hero-brand">
+              <span class="mobile-hero-logo-tile">
+                <img id="mobileHeroPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
+              </span>
+              <span class="mobile-hero-brand-copy">
+                <small>APOTEK</small>
+                <strong id="mobileHeroPharmacyName">NADHIRA FARMA</strong>
+                <span class="mobile-hero-date-pill">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 2v4"></path>
+                    <path d="M16 2v4"></path>
+                    <path d="M3 10h18"></path>
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                  </svg>
+                  <time id="mobileHeroDateTime">16 Jun 2026 11:50:49</time>
+                </span>
+              </span>
+            </div>
+            <div class="mobile-hero-actions" aria-label="Aksi cepat">
+              <button class="mobile-hero-action mobile-hero-notification" id="mobileHeroNotificationButton" type="button" aria-label="Notifikasi" title="Notifikasi">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                  <path d="M10 21h4"></path>
+                </svg>
+                <span class="mobile-hero-dot" id="mobileHeroNotificationDot" hidden></span>
+              </button>
+              <button class="mobile-hero-action mobile-hero-theme" id="mobileHeroThemeButton" type="button" aria-label="Ganti tema" title="Ganti tema">
+                <svg class="mobile-hero-sun" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v3"></path>
+                  <path d="M12 19v3"></path>
+                  <path d="M2 12h3"></path>
+                  <path d="M19 12h3"></path>
+                  <path d="m4.9 4.9 2.1 2.1"></path>
+                  <path d="m17 17 2.1 2.1"></path>
+                  <path d="m19.1 4.9-2.1 2.1"></path>
+                  <path d="m7 17-2.1 2.1"></path>
+                </svg>
+                <svg class="mobile-hero-moon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"></path>
+                </svg>
+              </button>
+              <button class="mobile-hero-action mobile-hero-user" id="mobileHeroProfileButton" type="button" aria-label="Akun profil" title="Akun profil">
+                <span class="mobile-hero-avatar" id="mobileHeroProfileAvatar">AK</span>
+              </button>
+            </div>
+          </div>
+          <div class="mobile-hero-welcome">
+            <p>Selamat Datang,</p>
+            <h2><span id="mobileHeroGreetingName">Administrator</span> <span aria-hidden="true">&#128075;</span></h2>
+            <span>Semangat bekerja hari ini.</span>
+          </div>
+        </section>
         <div class="dashboard-title">
           <a class="home-brand-link" href="index.html" aria-label="Indo Apotek">
             <img id="homeHeaderPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">

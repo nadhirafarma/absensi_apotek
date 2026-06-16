@@ -30,7 +30,7 @@
   const HOME_MENU_ORDER_KEY = "nadhira.homeMenuOrder";
   const SALARY_HISTORY_KEY = "nadhira.salarySlipHistory";
   const REPORT_CACHE_KEY = "nadhira.reportCache";
-  const PLATFORM_LOGO = "assets/indo-apotek-mark.png";
+  const PLATFORM_LOGO = "logo.png";
   const LOADING_LOGO = "assets/indo-apotek-mark-transparent.png";
   const BACKGROUND_SYNC_INTERVAL_MS = 120000;
   const BACKGROUND_SYNC_MIN_GAP_MS = 45000;
@@ -353,6 +353,7 @@
     touchStartX: 0,
     touchStartY: 0,
     touchStartAt: 0,
+    touchEdgeSwipeActive: false,
     appLoadingTimer: null,
     appLoadingMaxTimer: null,
     appLoadingShownAt: 0,
@@ -441,6 +442,14 @@
       mobileHomePharmacyLogo: document.getElementById("mobileHomePharmacyLogo"),
       mobileHomePharmacyName: document.getElementById("mobileHomePharmacyName"),
       mobileHomePharmacySubtitle: document.getElementById("mobileHomePharmacySubtitle"),
+      mobileHeroPharmacyLogo: document.getElementById("mobileHeroPharmacyLogo"),
+      mobileHeroPharmacyName: document.getElementById("mobileHeroPharmacyName"),
+      mobileHeroNotificationButton: document.getElementById("mobileHeroNotificationButton"),
+      mobileHeroNotificationDot: document.getElementById("mobileHeroNotificationDot"),
+      mobileHeroThemeButton: document.getElementById("mobileHeroThemeButton"),
+      mobileHeroProfileButton: document.getElementById("mobileHeroProfileButton"),
+      mobileHeroProfileAvatar: document.getElementById("mobileHeroProfileAvatar"),
+      mobileHeroGreetingName: document.getElementById("mobileHeroGreetingName"),
       homeThemeToggle: document.getElementById("homeThemeToggle"),
       homeMenuGrid: document.querySelector(".home-menu-grid"),
       homeProfileName: document.getElementById("homeProfileName"),
@@ -1055,6 +1064,11 @@
       if (control) control.addEventListener("change", renderActivityLogPage);
     });
     if (els.homeThemeToggle) els.homeThemeToggle.addEventListener("click", toggleDashboardTheme);
+    if (els.mobileHeroNotificationButton) els.mobileHeroNotificationButton.addEventListener("click", openNotification);
+    if (els.mobileHeroThemeButton) els.mobileHeroThemeButton.addEventListener("click", toggleDashboardTheme);
+    if (els.mobileHeroProfileButton) {
+      els.mobileHeroProfileButton.addEventListener("click", () => switchView("akun-profil"));
+    }
     if (els.profileThemeSelect) els.profileThemeSelect.addEventListener("change", saveProfilePreferences);
     if (els.profileCompactToggle) els.profileCompactToggle.addEventListener("change", saveProfilePreferences);
     if (els.profileStartDashboardToggle) els.profileStartDashboardToggle.addEventListener("change", saveProfilePreferences);
@@ -2888,7 +2902,7 @@
   }
 
   function updateNotificationState() {
-    if (!els.notificationButton || !els.notificationDot) return;
+    if (!els.notificationButton && !els.mobileHeroNotificationButton) return;
 
     const items = getNotificationItems();
     const seen = new Set(readSeenNotificationKeys());
@@ -2897,11 +2911,17 @@
       ? `Ada ${count} notifikasi baru`
       : "Tidak ada notifikasi terbaru";
 
-    els.notificationDot.hidden = count < 1;
-    els.notificationDot.textContent = count > 0 ? (count > 9 ? "9+" : String(count)) : "";
-    els.notificationButton.classList.toggle("has-unread", count > 0);
-    els.notificationButton.title = label;
-    els.notificationButton.setAttribute("aria-label", label);
+    [els.notificationDot, els.mobileHeroNotificationDot].forEach((dot) => {
+      if (!dot) return;
+      dot.hidden = count < 1;
+      dot.textContent = count > 0 ? (count > 9 ? "9+" : String(count)) : "";
+    });
+    [els.notificationButton, els.mobileHeroNotificationButton].forEach((button) => {
+      if (!button) return;
+      button.classList.toggle("has-unread", count > 0);
+      button.title = label;
+      button.setAttribute("aria-label", label);
+    });
   }
 
   function openNotification() {
@@ -3297,8 +3317,11 @@
   }
 
   function positionNotificationPopover() {
-    if (!els.notificationPopover || !els.notificationButton) return;
-    const rect = els.notificationButton.getBoundingClientRect();
+    const anchor = isMobileViewport() && els.mobileHeroNotificationButton
+      ? els.mobileHeroNotificationButton
+      : els.notificationButton;
+    if (!els.notificationPopover || !anchor) return;
+    const rect = anchor.getBoundingClientRect();
     const width = Math.min(380, window.innerWidth - 24);
     const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
     els.notificationPopover.style.width = `${width}px`;
@@ -7950,15 +7973,22 @@
     setImageSource(els.sidebarPharmacyLogo, logo);
     setImageSource(els.homeHeaderPharmacyLogo, logo);
     setImageSource(els.mobileHomePharmacyLogo, logo);
+    setImageSource(els.mobileHeroPharmacyLogo, logo);
     setImageSource(els.appLoadingLogo, LOADING_LOGO);
     if (els.sidebarPharmacyName) els.sidebarPharmacyName.textContent = name;
     if (els.homeHeaderPharmacyName) els.homeHeaderPharmacyName.textContent = name;
     if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
+    if (els.mobileHeroPharmacyName) els.mobileHeroPharmacyName.textContent = formatMobileHeroPharmacyName(name);
     if (els.sidebarPharmacySubtitle) els.sidebarPharmacySubtitle.textContent = subtitle;
     if (els.homeHeaderPharmacySubtitle) els.homeHeaderPharmacySubtitle.textContent = "Sistem Informasi Apotek Digital";
     if (els.mobileHomePharmacySubtitle) els.mobileHomePharmacySubtitle.textContent = subtitle;
     if (els.sidebarPharmacyBrand) els.sidebarPharmacyBrand.setAttribute("aria-label", name);
     document.title = `${name} - Dashboard`;
+  }
+
+  function formatMobileHeroPharmacyName(name) {
+    const text = String(name || DEFAULT_PHARMACY_PROFILE.name || "").trim();
+    return (text.replace(/^apotek\s+/i, "") || text || "Nadhira Farma").toUpperCase();
   }
 
   function setImageSource(element, src) {
@@ -8388,6 +8418,7 @@
     setAvatarContent(document.getElementById("profileAvatar"), profile);
     setAvatarContent(document.getElementById("profileMiniAvatar"), profile);
     setAvatarContent(els.profileLargeAvatar, profile);
+    setAvatarContent(els.mobileHeroProfileAvatar, profile);
   }
 
   function setAvatarContent(element, profile) {
@@ -8761,11 +8792,13 @@
   }
 
   function updateThemeToggle(theme) {
-    if (!els.homeThemeToggle) return;
     const isDark = theme === "dark";
-    els.homeThemeToggle.classList.toggle("is-dark", isDark);
-    els.homeThemeToggle.setAttribute("aria-label", isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap");
-    els.homeThemeToggle.title = isDark ? "Mode gelap" : "Mode terang";
+    [els.homeThemeToggle, els.mobileHeroThemeButton].forEach((button) => {
+      if (!button) return;
+      button.classList.toggle("is-dark", isDark);
+      button.setAttribute("aria-label", isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap");
+      button.title = isDark ? "Mode gelap" : "Mode terang";
+    });
   }
 
   function toggleDashboardTheme() {
@@ -10699,22 +10732,32 @@
     if (shouldIgnoreSwipeTarget(event.target)) return;
 
     const touch = event.touches[0];
+    const edgeLimit = Math.max(24, Math.min(36, Math.round(window.innerWidth * 0.08)));
+    state.touchEdgeSwipeActive = touch.clientX <= edgeLimit;
+    if (!state.touchEdgeSwipeActive) {
+      state.touchStartAt = 0;
+      return;
+    }
     state.touchStartX = touch.clientX;
     state.touchStartY = touch.clientY;
     state.touchStartAt = Date.now();
   }
 
   function handleGlobalTouchEnd(event) {
-    if (!isMobileViewport() || !state.touchStartAt || !event.changedTouches || !event.changedTouches.length) return;
+    if (!isMobileViewport() || !state.touchStartAt || !state.touchEdgeSwipeActive || !event.changedTouches || !event.changedTouches.length) {
+      state.touchEdgeSwipeActive = false;
+      return;
+    }
 
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - state.touchStartX;
     const deltaY = touch.clientY - state.touchStartY;
     const elapsed = Date.now() - state.touchStartAt;
     state.touchStartAt = 0;
+    state.touchEdgeSwipeActive = false;
 
-    if (elapsed > 900 || Math.abs(deltaX) < 78 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-    navigateBySwipe(deltaX > 0 ? -1 : 1);
+    if (elapsed > 900 || deltaX < 78 || deltaX < Math.abs(deltaY) * 1.35) return;
+    navigateBySwipe(-1);
   }
 
   function shouldIgnoreSwipeTarget(target) {
@@ -11308,6 +11351,11 @@
     const accountMeta = document.getElementById("profileAccountMeta");
 
     if (els.profileName) els.profileName.textContent = name;
+    if (els.mobileHeroGreetingName) els.mobileHeroGreetingName.textContent = name;
+    if (els.mobileHeroProfileButton) {
+      els.mobileHeroProfileButton.setAttribute("aria-label", `Akun ${name}`);
+      els.mobileHeroProfileButton.title = `Akun ${name}`;
+    }
     if (accountName) accountName.textContent = name;
     if (accountMeta) accountMeta.textContent = role;
   }

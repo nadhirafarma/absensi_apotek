@@ -10,6 +10,9 @@
   const homeGreeting = document.getElementById("homeGreeting");
   const homeProfileName = document.getElementById("homeProfileName");
   const homeProfileRole = document.getElementById("homeProfileRole");
+  const mobileHeroDateTime = document.getElementById("mobileHeroDateTime");
+  const mobileHeroGreetingName = document.getElementById("mobileHeroGreetingName");
+  const mobileHeroProfileAvatar = document.getElementById("mobileHeroProfileAvatar");
   const connectionStatus = document.getElementById("connectionStatus");
   const profileMenu = document.getElementById("profileMenu");
   const profileMenuButton = document.getElementById("profileMenuButton");
@@ -39,6 +42,17 @@
     timeZone: "Asia/Jakarta"
   });
 
+  const mobileHeroDateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Jakarta"
+  });
+
   function updateClock() {
     const now = new Date();
 
@@ -49,6 +63,10 @@
     [clockLabel, homeClockLabel].forEach(function (label) {
       if (label) label.textContent = `${timeFormatter.format(now)} WIB`;
     });
+
+    if (mobileHeroDateTime) {
+      mobileHeroDateTime.textContent = mobileHeroDateTimeFormatter.format(now).replace(",", "");
+    }
 
     if (homeGreeting) homeGreeting.textContent = getGreeting(now);
   }
@@ -74,10 +92,12 @@
 
     setAvatarContent(profileAvatar, profilePhoto, initials);
     setAvatarContent(profileMiniAvatar, profilePhoto, initials);
+    setAvatarContent(mobileHeroProfileAvatar, profilePhoto, initials);
     if (profileAccountName) profileAccountName.textContent = accountName;
     if (profileAccountMeta) profileAccountMeta.textContent = accountMeta;
     if (homeProfileName) homeProfileName.textContent = accountName;
     if (homeProfileRole) homeProfileRole.textContent = accountMeta;
+    if (mobileHeroGreetingName) mobileHeroGreetingName.textContent = accountName;
 
     profileMenuButton.setAttribute("aria-label", `Akun ${accountName}`);
     profileMenuButton.title = `Akun ${accountName}`;
