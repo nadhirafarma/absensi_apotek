@@ -553,12 +553,15 @@
       poSupplier: document.getElementById("poSupplier"),
       poDate: document.getElementById("poDate"),
       poPaymentMethod: document.getElementById("poPaymentMethod"),
+      poDueDaysField: document.getElementById("poDueDaysField"),
+      poDueDays: document.getElementById("poDueDays"),
       poDueDate: document.getElementById("poDueDate"),
       poSupplierAddress: document.getElementById("poSupplierAddress"),
       poSupplierPhone: document.getElementById("poSupplierPhone"),
       poCity: document.getElementById("poCity"),
       poRecipient: document.getElementById("poRecipient"),
       poDiscount: document.getElementById("poDiscount"),
+      poTaxEnabled: document.getElementById("poTaxEnabled"),
       poNote: document.getElementById("poNote"),
       poAdditionalNote: document.getElementById("poAdditionalNote"),
       poReferenceFilter: document.getElementById("poReferenceFilter"),
@@ -581,10 +584,13 @@
       poProductRows: document.getElementById("poProductRows"),
       poProductSearchPopup: document.getElementById("poProductSearchPopup"),
       poDraftList: document.getElementById("poDraftList"),
+      poSummaryModal: document.getElementById("poSummaryModal"),
+      poSummaryForm: document.getElementById("poSummaryForm"),
+      poSummaryCloseButton: document.getElementById("poSummaryCloseButton"),
+      poSummaryCancelButton: document.getElementById("poSummaryCancelButton"),
       poSummaryItems: document.getElementById("poSummaryItems"),
       poSummaryQty: document.getElementById("poSummaryQty"),
       poSummarySubtotal: document.getElementById("poSummarySubtotal"),
-      poSummaryDiscount: document.getElementById("poSummaryDiscount"),
       poSummaryTax: document.getElementById("poSummaryTax"),
       poSummaryTotal: document.getElementById("poSummaryTotal"),
       poAddSupplierButton: document.getElementById("poAddSupplierButton"),
@@ -795,6 +801,12 @@
     if (els.poDetailPanel && els.poDetailPanel.parentElement !== document.body) {
       document.body.appendChild(els.poDetailPanel);
     }
+    if (els.poProductSearchPopup && els.poProductSearchPopup.parentElement !== document.body) {
+      document.body.appendChild(els.poProductSearchPopup);
+    }
+    if (els.poSummaryModal && els.poSummaryModal.parentElement !== document.body) {
+      document.body.appendChild(els.poSummaryModal);
+    }
   }
 
   function bindEvents() {
@@ -932,7 +944,7 @@
     if (els.poNewButton) els.poNewButton.addEventListener("click", () => openPurchaseOrderForm());
     if (els.poBackButton) els.poBackButton.addEventListener("click", showPurchaseOrderList);
     if (els.poSaveDraftButton) els.poSaveDraftButton.addEventListener("click", () => savePurchaseOrder(null, "draft"));
-    if (els.poSaveOrderButton) els.poSaveOrderButton.addEventListener("click", () => savePurchaseOrder(null, "open"));
+    if (els.poSaveOrderButton) els.poSaveOrderButton.addEventListener("click", () => requestPurchaseOrderSave("open"));
     if (els.poImportDraftButton) els.poImportDraftButton.addEventListener("click", () => {
       openPurchaseOrderForm();
       els.poReferenceFilter?.focus();
@@ -963,11 +975,22 @@
     if (els.poDraftList) els.poDraftList.addEventListener("click", handlePurchaseDraftClick);
     if (els.poAddSupplierButton) els.poAddSupplierButton.addEventListener("click", () => openRecordModal("supplier"));
     if (els.addPoItemButton) els.addPoItemButton.addEventListener("click", addPurchaseItem);
-    if (els.poForm) els.poForm.addEventListener("submit", (event) => savePurchaseOrder(event, "open"));
+    if (els.poForm) els.poForm.addEventListener("submit", (event) => requestPurchaseOrderSave("open", event));
+    if (els.poSummaryForm) els.poSummaryForm.addEventListener("submit", (event) => savePurchaseOrder(event, "open", { confirmed: true }));
+    [els.poSummaryCloseButton, els.poSummaryCancelButton].forEach((button) => {
+      if (button) button.addEventListener("click", closePurchaseSummaryModal);
+    });
+    if (els.poSummaryModal) els.poSummaryModal.addEventListener("click", (event) => {
+      if (event.target === els.poSummaryModal) closePurchaseSummaryModal();
+    });
     if (els.poType) els.poType.addEventListener("change", updatePurchaseOrderTypeFields);
     if (els.poMedicine) els.poMedicine.addEventListener("change", fillPurchaseMedicineFields);
     if (els.poSupplier) els.poSupplier.addEventListener("change", fillPurchaseSupplierFields);
+    if (els.poPaymentMethod) els.poPaymentMethod.addEventListener("change", updatePurchaseDueFields);
+    if (els.poDate) els.poDate.addEventListener("change", updatePurchaseDueDateFromDays);
+    if (els.poDueDays) els.poDueDays.addEventListener("input", updatePurchaseDueDateFromDays);
     if (els.poDiscount) els.poDiscount.addEventListener("input", renderPurchaseItems);
+    if (els.poTaxEnabled) els.poTaxEnabled.addEventListener("change", renderPurchaseItems);
     if (els.poReferenceFilter) els.poReferenceFilter.addEventListener("input", () => {
       populatePurchaseRestockReferences();
       renderPurchaseDraftList();
@@ -4555,6 +4578,8 @@
   }
 
   function renderRecordControl(field, value, role = "Operator") {
+    if (field.key === "phone") value = normalizePhoneNumber(value);
+
     if (field.type === "access") {
       const selected = new Set(normalizeAccessList(value, role));
       return `
@@ -4987,7 +5012,7 @@
       manualNumber: String(order.manualNumber || order.noSp || order.no_sp || "").trim(),
       supplier: String(order.supplier || order.suplier || "").trim(),
       supplierAddress: String(order.supplierAddress || order.alamatPbf || order.alamat || "").trim(),
-      supplierPhone: String(order.supplierPhone || order.phone || order.telepon || "").trim(),
+      supplierPhone: normalizePhoneNumber(order.supplierPhone || order.phone || order.telepon || ""),
       city: String(order.city || order.kota || "").trim(),
       recipient: String(order.recipient || order.kepada || order.yth || "").trim(),
       purpose: String(order.purpose || order.kebutuhan || "").trim(),
@@ -5178,16 +5203,19 @@
     if (els.poDate) els.poDate.value = editing?.date || new Date().toISOString().slice(0, 10);
     if (els.poPaymentMethod) els.poPaymentMethod.value = editing?.paymentMethod || "Tunai";
     if (els.poDueDate) els.poDueDate.value = editing?.dueDate || "";
+    if (els.poDueDays) els.poDueDays.value = editing?.dueDate ? String(getPurchaseDueDays(editing.date, editing.dueDate) || "") : "";
     if (els.poSupplierAddress) els.poSupplierAddress.value = editing?.supplierAddress || "";
     if (els.poSupplierPhone) els.poSupplierPhone.value = editing?.supplierPhone || "";
     if (els.poCity) els.poCity.value = editing?.city || "";
     if (els.poRecipient) els.poRecipient.value = editing?.recipient || "";
     if (els.poDiscount) els.poDiscount.value = String(editing?.discount || 0);
+    if (els.poTaxEnabled) els.poTaxEnabled.checked = Number(editing?.taxRate ?? 0.11) > 0;
     if (els.poNote) els.poNote.value = editing?.note || "";
     if (els.poAdditionalNote) els.poAdditionalNote.value = editing?.additionalNote || "";
     if (els.poPurpose) els.poPurpose.value = editing?.purpose || "";
     if (!editing) fillPurchaseSupplierFields();
     updatePurchaseOrderTypeFields();
+    updatePurchaseDueFields();
     renderPurchaseItems();
     renderPurchaseDraftList();
   }
@@ -5216,7 +5244,7 @@
     if (els.poActiveSubstance && !els.poActiveSubstance.value) els.poActiveSubstance.value = medicine.komposisi || "";
     if (els.poDosageForm) els.poDosageForm.value = "";
     if (els.poStrength && !els.poStrength.value) els.poStrength.value = medicine.kekuatan || "";
-    if (els.poItemNote && !els.poItemNote.value) els.poItemNote.value = medicine.no_batch ? `Batch ${medicine.no_batch}` : "";
+    if (els.poItemNote && !els.poItemNote.value) els.poItemNote.value = "";
   }
 
   function fillPurchaseSupplierFields() {
@@ -5231,6 +5259,40 @@
     if (els.poCity) els.poCity.value = supplier.city || "";
     if (els.poSupplierAddress) els.poSupplierAddress.value = supplier.address || "";
     if (els.poSupplierPhone) els.poSupplierPhone.value = supplier.phone || "";
+  }
+
+  function updatePurchaseDueFields() {
+    const isTempo = normalizeSearch(els.poPaymentMethod?.value || "") === "tempo";
+    if (els.poDueDaysField) els.poDueDaysField.hidden = !isTempo;
+    if (isTempo) {
+      window.setTimeout(() => els.poDueDays?.focus(), 0);
+      if (els.poDueDays?.value) updatePurchaseDueDateFromDays();
+    }
+  }
+
+  function updatePurchaseDueDateFromDays() {
+    if (normalizeSearch(els.poPaymentMethod?.value || "") !== "tempo") return;
+    const days = Math.max(0, Math.floor(Number(els.poDueDays?.value || 0) || 0));
+    if (!days) return;
+    const baseDate = parseDateValue(els.poDate?.value || new Date().toISOString().slice(0, 10)) || new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+    if (els.poDueDate) els.poDueDate.value = formatDateInput(baseDate);
+  }
+
+  function getPurchaseDueDays(startValue, dueValue) {
+    const start = parseDateValue(startValue);
+    const due = parseDateValue(dueValue);
+    if (!start || !due) return 0;
+    return Math.max(0, Math.round((due.getTime() - start.getTime()) / 86400000));
+  }
+
+  function formatDateInput(value) {
+    const date = value instanceof Date ? value : parseDateValue(value);
+    if (!date || Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   function buildPurchaseOrderNumber(dateValue = null) {
@@ -5305,7 +5367,7 @@
       activeSubstance: String(medicine?.komposisi || restockItem?.activeSubstance || "").trim(),
       dosageForm: String(restockItem?.dosageForm || "").trim(),
       strength: String(medicine?.kekuatan || restockItem?.strength || "").trim(),
-      note: String(restockItem?.note || (medicine?.no_batch ? `Batch ${medicine.no_batch}` : "")).trim(),
+      note: String(restockItem?.note || "").trim(),
       sourceRestockId: String(restockItem?.id || "").trim()
     };
   }
@@ -5314,18 +5376,19 @@
     const type = normalizePurchaseOrderType(els.poType?.value || "regular");
     const columns = [
       { key: "no", label: "No.", className: "is-no" },
-      { key: "product", label: type === "alkes" ? "Alat Kesehatan" : "Produk" }
+      { key: "product", label: type === "alkes" ? "Alat Kesehatan" : "Produk", className: "purchase-col-product" }
     ];
     if (isControlledPurchaseOrderType(type)) {
       columns.push({ key: "activeSubstance", label: "Zat Aktif" }, { key: "dosageForm", label: "Bentuk Sediaan" });
     }
     if (type === "alkes") columns.push({ key: "strength", label: "Spesifikasi" });
     columns.push(
-      { key: "currentStock", label: "Stok Sistem" },
-      { key: "qty", label: "Kuantitas / Qty" },
-      { key: "realStock", label: "Stok Real" },
-      { key: "buyPrice", label: "Harga Beli Satuan" },
-      { key: "subtotal", label: "Sub Total" },
+      { key: "currentStock", label: "Stok Sistem", className: "purchase-col-stock" },
+      { key: "qty", label: "Kuantitas / Qty", className: "purchase-col-qty" },
+      { key: "realStock", label: "Stok Real", className: "purchase-col-stock" },
+      { key: "buyPrice", label: "Harga Beli Satuan", className: "purchase-col-price" },
+      { key: "subtotal", label: "Sub Total", className: "purchase-col-subtotal" },
+      { key: "note", label: "Keterangan", className: "purchase-col-note" },
       { key: "action", label: "Aksi" }
     );
     return columns;
@@ -5340,7 +5403,7 @@
       return;
     }
     const columns = getPurchaseProductColumns();
-    els.poProductHead.innerHTML = `<tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr>`;
+    els.poProductHead.innerHTML = `<tr>${columns.map((column) => `<th${column.className ? ` class="${escapeHtml(column.className)}"` : ""}>${escapeHtml(column.label)}</th>`).join("")}</tr>`;
     const rows = state.purchaseItems.concat([null]);
     els.poProductRows.innerHTML = rows.map((item, index) => buildPurchaseProductRow(item, index, columns)).join("");
   }
@@ -5349,17 +5412,31 @@
     const isBlank = !item;
     return `<tr data-po-row="${index}"${isBlank ? ' class="is-empty-row"' : ""}>${columns.map((column) => {
       if (column.key === "no") return `<td>${isBlank ? '<button class="purchase-row-icon-button" type="button" data-po-empty-row aria-label="Baris baru">+</button>' : index + 1}</td>`;
-      if (column.key === "product") return `<td>${buildPurchaseProductSearchCell(item, index)}</td>`;
-      if (column.key === "currentStock") return `<td>${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.currentStock, item.currentStockUnit || ""))}</td>`;
-      if (column.key === "qty") return `<td><input data-po-field="qty" data-po-index="${index}" type="number" min="1" value="${escapeHtml(isBlank ? "0" : item.qty)}"><small>${escapeHtml(item?.unit || "Pcs")}</small></td>`;
-      if (column.key === "realStock") return `<td>${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.realStock, item.realStockUnit || item.currentStockUnit || ""))}</td>`;
-      if (column.key === "buyPrice") return `<td><input data-po-field="buyPrice" data-po-index="${index}" type="number" min="0" value="${escapeHtml(isBlank ? "0" : item.buyPrice)}"></td>`;
-      if (column.key === "subtotal") return `<td data-po-subtotal="${index}">${isBlank ? "Rp 0" : formatRupiah(getPurchaseItemSubtotal(item))}</td>`;
+      if (column.key === "product") return `<td class="purchase-col-product">${buildPurchaseProductSearchCell(item, index)}</td>`;
+      if (column.key === "currentStock") return `<td class="purchase-col-stock">${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.currentStock, item.currentStockUnit || ""))}</td>`;
+      if (column.key === "qty") return `<td class="purchase-col-qty"><div class="purchase-qty-control"><input data-po-field="qty" data-po-index="${index}" type="number" min="1" value="${escapeHtml(isBlank ? "0" : item.qty)}"><select data-po-field="unit" data-po-index="${index}" aria-label="Satuan">${renderPurchaseUnitOptions(item)}</select></div></td>`;
+      if (column.key === "realStock") return `<td class="purchase-col-stock">${isBlank ? "-" : escapeHtml(formatRestockStockWithUnit(item.realStock, item.realStockUnit || item.currentStockUnit || ""))}</td>`;
+      if (column.key === "buyPrice") return `<td class="purchase-col-price"><input data-po-field="buyPrice" data-po-index="${index}" type="number" min="0" value="${escapeHtml(isBlank ? "0" : item.buyPrice)}"></td>`;
+      if (column.key === "subtotal") return `<td class="purchase-col-subtotal" data-po-subtotal="${index}">${isBlank ? "Rp 0" : formatRupiah(getPurchaseItemSubtotal(item))}</td>`;
+      if (column.key === "note") return `<td class="purchase-col-note"><input data-po-field="note" data-po-index="${index}" type="text" value="${escapeHtml(item?.note || "")}" placeholder="Keterangan"></td>`;
       if (column.key === "activeSubstance") return `<td><input data-po-field="activeSubstance" data-po-index="${index}" type="text" value="${escapeHtml(item?.activeSubstance || "")}"></td>`;
       if (column.key === "dosageForm") return `<td><input data-po-field="dosageForm" data-po-index="${index}" type="text" value="${escapeHtml(item?.dosageForm || "")}"></td>`;
       if (column.key === "strength") return `<td><input data-po-field="strength" data-po-index="${index}" type="text" value="${escapeHtml(item?.strength || "")}"></td>`;
       return `<td>${isBlank ? "" : `<button class="purchase-row-icon-button" type="button" data-po-remove="${index}" aria-label="Hapus item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button>`}</td>`;
     }).join("")}</tr>`;
+  }
+
+  function getPurchaseUnitOptions(item = null) {
+    const medicine = item ? findMedicineForRestock(item.kode || item.nama) : null;
+    const current = String(item?.unit || "").trim();
+    return unique([current].concat(getRestockUnitOptions(medicine), ["Box", "Strip", "Tablet", "Botol", "Pcs"]))
+      .map((unit) => String(unit || "").trim())
+      .filter(Boolean);
+  }
+
+  function renderPurchaseUnitOptions(item = null) {
+    const current = String(item?.unit || "Pcs").trim() || "Pcs";
+    return getPurchaseUnitOptions(item).map((unit) => `<option value="${escapeHtml(unit)}"${unit === current ? " selected" : ""}>${escapeHtml(unit)}</option>`).join("");
   }
 
   function buildPurchaseProductSearchCell(item, index) {
@@ -5433,12 +5510,15 @@
     }
     const rect = input.getBoundingClientRect();
     const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-    const width = Math.min(Math.max(rect.width, 320), Math.max(280, viewportWidth - 32));
+    const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    const width = Math.min(Math.max(rect.width, 260), Math.max(240, viewportWidth - 32));
     const left = Math.min(Math.max(16, rect.left), Math.max(16, viewportWidth - width - 16));
-    const top = Math.min(rect.bottom + 8, Math.max(12, window.innerHeight - 320));
+    const top = rect.bottom + 6;
+    const maxHeight = Math.max(120, Math.min(238, viewportHeight - rect.bottom - 18));
     container.style.width = `${width}px`;
     container.style.left = `${left}px`;
     container.style.top = `${top}px`;
+    container.style.maxHeight = `${maxHeight}px`;
   }
 
   function hidePurchaseProductResults() {
@@ -5555,7 +5635,8 @@
     const subtotal = state.purchaseItems.reduce((sum, item) => sum + getPurchaseItemSubtotal(item), 0);
     const discount = Math.max(0, parseNumber(els.poDiscount?.value || 0));
     const taxable = Math.max(0, subtotal - discount);
-    const tax = Math.round(taxable * 0.11);
+    const taxEnabled = els.poTaxEnabled ? els.poTaxEnabled.checked : true;
+    const tax = taxEnabled ? Math.round(taxable * 0.11) : 0;
     return {
       items: state.purchaseItems.length,
       qty: state.purchaseItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0),
@@ -5587,7 +5668,7 @@
     const manualNumber = String(els.poManualNumber?.value || "").trim();
     const existing = state.purchaseEditingNumber ? state.purchaseOrders.find((order) => order.number === state.purchaseEditingNumber) : null;
     const number = state.purchaseEditingNumber || manualNumber || buildPurchaseOrderNumber(els.poDate?.value);
-    const note = [els.poNote?.value, els.poAdditionalNote?.value].map((value) => String(value || "").trim()).filter(Boolean).join("\n");
+    const note = String(els.poNote?.value || "").trim();
     return normalizePurchaseOrder({
       ...(existing || {}),
       number,
@@ -5595,16 +5676,16 @@
       manualNumber: manualNumber || number,
       supplier: els.poSupplier?.value || "",
       supplierAddress: els.poSupplierAddress?.value || "",
-      supplierPhone: els.poSupplierPhone?.value || "",
+      supplierPhone: normalizePhoneNumber(els.poSupplierPhone?.value || ""),
       city: els.poCity?.value || "",
       recipient: els.poRecipient?.value || "",
       purpose: els.poPurpose?.value || "",
       paymentMethod: els.poPaymentMethod?.value || "Tunai",
       dueDate: els.poDueDate?.value || "",
       note,
-      additionalNote: els.poAdditionalNote?.value || "",
+      additionalNote: String(els.poAdditionalNote?.value || "").trim(),
       discount: els.poDiscount?.value || 0,
-      taxRate: 0.11,
+      taxRate: els.poTaxEnabled && !els.poTaxEnabled.checked ? 0 : 0.11,
       date: els.poDate?.value || new Date().toISOString().slice(0, 10),
       status,
       source: existing?.source || "",
@@ -5615,15 +5696,50 @@
     });
   }
 
-  async function savePurchaseOrder(event, status = "open") {
-    if (event) event.preventDefault();
+  function validatePurchaseOrderBeforeSave() {
     if (!state.purchaseItems.length) {
       showActionToast("Tambahkan minimal satu produk terlebih dahulu.", "error");
-      return;
+      return false;
     }
     if (!String(els.poSupplier?.value || "").trim()) {
       showActionToast("Supplier wajib dipilih.", "error");
       els.poSupplier?.focus();
+      return false;
+    }
+    return true;
+  }
+
+  function requestPurchaseOrderSave(status = "open", event = null) {
+    if (event) event.preventDefault();
+    if (!validatePurchaseOrderBeforeSave()) return;
+    if (status === "draft") {
+      savePurchaseOrder(null, "draft", { confirmed: true });
+      return;
+    }
+    openPurchaseSummaryModal();
+  }
+
+  function openPurchaseSummaryModal() {
+    renderPurchaseSummary();
+    if (!els.poSummaryModal) {
+      savePurchaseOrder(null, "open", { confirmed: true });
+      return;
+    }
+    els.poSummaryModal.hidden = false;
+    document.body.classList.add("dashboard-modal-open");
+    window.setTimeout(() => els.poDiscount?.focus(), 0);
+  }
+
+  function closePurchaseSummaryModal() {
+    if (els.poSummaryModal) els.poSummaryModal.hidden = true;
+    syncModalOpenState();
+  }
+
+  async function savePurchaseOrder(event, status = "open", options = {}) {
+    if (event) event.preventDefault();
+    if (!validatePurchaseOrderBeforeSave()) return;
+    if (status !== "draft" && options.confirmed !== true) {
+      openPurchaseSummaryModal();
       return;
     }
     const wasEditing = Boolean(state.purchaseEditingNumber);
@@ -5642,6 +5758,7 @@
       state.purchaseDraftPickedIds.clear();
       state.purchaseSelectedNumber = order.number;
       addProfileActivity(wasEditing ? "Surat pesanan diperbarui" : (status === "draft" ? "Draft pesanan dibuat" : "Surat pesanan dibuat"), `${order.number} - ${formatNumber(order.items.length)} item`);
+      closePurchaseSummaryModal();
       showPurchaseOrderList();
       showActionToast(status === "draft" ? "Draft pesanan berhasil disimpan online." : "Pesanan pembelian berhasil disimpan online.");
     } catch (error) {
@@ -6095,17 +6212,22 @@
     const paper = paperMap[paperSize] || paperMap.A4;
     const pageWidth = orientation === "landscape" ? paper[1] : paper[0];
     const pageHeight = orientation === "landscape" ? paper[0] : paper[1];
-    const sheetWidth = Math.max(82, pageWidth - 20);
-    const sheetMinHeight = Math.max(124, pageHeight - 18);
+    const sheetWidth = pageWidth;
+    const sheetMinHeight = pageHeight;
+    const sideMargin = paperSize === "A6" ? 10 : paperSize === "A5" ? 16 : 22;
+    const verticalMargin = paperSize === "A6" ? 8 : 11;
+    const footerTime = formatPurchasePrintFooterTime(new Date());
+    const printNotes = buildPurchasePrintNotes(order);
+    const whatsappText = buildPurchaseWhatsAppText(order, type, printNumber, context);
     return `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Surat Pesanan</title>
+  <title> </title>
   <style>
-    @page { size: ${paperSize} ${orientation}; margin: 9mm 10mm; }
+    @page { size: ${paperSize} ${orientation}; margin: 0; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: #111; background: ${settings.preview ? "#3d3d3d" : "#fff"}; font-family: Arial, Helvetica, sans-serif; font-size: ${fontSize}px; }
+    body { margin: 0; color: #111827; background: ${settings.preview ? "#3d3d3d" : "#fff"}; font-family: Arial, Helvetica, sans-serif; font-size: ${fontSize}px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .print-preview-toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; background: #1f2937; color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.22); }
     .print-preview-toolbar strong { font-size: 14px; }
     .print-preview-toolbar small { color: #cbd5e1; }
@@ -6113,8 +6235,8 @@
     .print-preview-toolbar button { min-height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 9px; background: rgba(255,255,255,.10); color: #fff; font-weight: 800; cursor: pointer; }
     .print-preview-toolbar button.is-primary { border-color: transparent; background: linear-gradient(135deg, #315dff, #d615b8); }
     .preview-shell { padding: ${settings.preview ? "18px 0 42px" : "0"}; }
-    .sheet { width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: 0 3mm; background: #fff; }
-    .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #111; text-align: center; }
+    .sheet { position: relative; width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; background: #fff; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
+    .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #1f2937; text-align: center; }
     .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
     .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .brand-text h1 { margin: 0 0 1mm; font-size: ${fontSize + 4}px; line-height: 1.1; font-weight: 700; }
@@ -6129,33 +6251,40 @@
     .line .blank:empty::after { content: "-"; }
     .supplier-block { margin-top: 5mm; }
     .table-lead { margin: 4mm 0 2mm !important; }
-    table { width: 100%; border-collapse: collapse; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px; }
+    table { width: 100%; border: 1.2px solid #1f2937; border-collapse: separate; border-spacing: 0; border-radius: 2mm; overflow: hidden; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px; }
     col.no-col { width: 9mm; }
     col.name-col { width: auto; }
     col.qty-col { width: 16mm; }
     col.unit-col { width: 15mm; }
     col.active-col { width: 20%; }
     col.form-col { width: 15%; }
-    th { background: #f2f2f2; color: #111; font-size: ${Math.max(7, fontSize - 1)}px; font-weight: 700; text-align: left; }
-    th, td { border-top: 1px solid #111; border-bottom: 1px solid #111; border-left: 0; border-right: 0; padding: 3px 5px; height: 16px; line-height: 1.12; vertical-align: middle; }
+    th { background: #eef3ff; color: #111827; font-size: ${Math.max(7, fontSize - 1)}px; font-weight: 700; text-align: left; }
+    th, td { border: 0; border-top: 1px solid #c7d2e5; border-left: 1px solid #c7d2e5; padding: 3px 5px; height: 16px; line-height: 1.12; vertical-align: middle; }
+    thead th { border-top: 0; }
+    th:first-child, td:first-child { border-left: 0; }
+    tbody tr:nth-child(even) td { background: #fbfdff; }
     td.no, th.no, td.qty, th.qty, td.unit, th.unit { text-align: center; white-space: nowrap; }
-    td.name { font-weight: 600; }
+    td.name { color: #071955; font-weight: 700; }
     tr.empty-row td { height: 14px; }
     .usage { margin-top: 5mm; }
     .usage .line { grid-template-columns: 28mm 3mm 1fr; max-width: 118mm; }
+    .print-notes { max-width: 118mm; margin-top: 4mm; color: #334155; font-size: ${Math.max(7, fontSize - 2)}px; line-height: 1.25; }
+    .print-notes p { margin: 0 0 1mm; }
+    .print-notes strong { color: #111827; }
     .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: ${fontSize}px; }
     .sign-space { height: 22mm; }
     .sign p { margin: 0 0 2px; line-height: 1.15; }
+    .print-footer { position: absolute; left: ${sideMargin}mm; right: ${sideMargin}mm; bottom: 5.5mm; display: flex; justify-content: space-between; gap: 10mm; border-top: 1px solid #d7deeb; padding-top: 2mm; color: #64748b; font-size: ${Math.max(7, fontSize - 2)}px; }
     @media print {
       body { background: #fff; }
       .print-preview-toolbar { display: none; }
       .preview-shell { padding: 0; }
-      .sheet { min-height: ${sheetMinHeight}mm; }
+      .sheet { min-height: ${sheetMinHeight}mm; box-shadow: none; }
     }
   </style>
 </head>
 <body>
-  ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small></span><div><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
+  ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small></span><div><button type="button" id="sendWhatsappButton">Kirim WA</button><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
   <div class="preview-shell">
   <main class="sheet">
     <header class="header">
@@ -6195,16 +6324,23 @@
       ${printLine("nomor SIA", context.sia)}
       ${printLine("nomor SIPA", context.sipa)}
     </section>
+    ${printNotes ? `<section class="print-notes">${printNotes}</section>` : ""}
     <section class="sign">
       <p>${escapeHtml(context.city)}, ${escapeHtml(formatPurchasePrintDate(order.date))}</p>
       <div class="sign-space"></div>
       <p>${escapeHtml(context.pharmacist)}</p>
       <p>${escapeHtml(context.sipa || "")}</p>
     </section>
+    <footer class="print-footer"><span>${escapeHtml(footerTime)}</span><span>${escapeHtml(type.printTitle)}</span></footer>
   </main>
   </div>
   ${settings.preview ? `<script>
-    const runPrint = () => window.print();
+    const whatsappUrl = ${JSON.stringify(`https://wa.me/?text=${encodeURIComponent(whatsappText)}`)};
+    const runPrint = () => {
+      document.title = " ";
+      window.print();
+    };
+    document.getElementById("sendWhatsappButton")?.addEventListener("click", () => window.open(whatsappUrl, "_blank", "noopener"));
     document.getElementById("printNowButton")?.addEventListener("click", runPrint);
     document.getElementById("downloadPdfButton")?.addEventListener("click", runPrint);
   </script>` : ""}
@@ -6218,6 +6354,19 @@
 
   function formatPurchasePrintDate(value) {
     return formatShortDate(value || new Date().toISOString().slice(0, 10));
+  }
+
+  function formatPurchasePrintFooterTime(value) {
+    const date = value instanceof Date ? value : new Date(value || Date.now());
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta"
+    }).format(date);
   }
 
   function buildPurchasePrintTable(order, rows) {
@@ -6234,16 +6383,53 @@
     const type = normalizePurchaseOrderType(order.type);
     const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 4;
     const filled = (order.items || []).map((item, index) => {
+      const note = getPurchasePrintItemNote(item);
       if (isControlledPurchaseOrderType(type)) {
-        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
       }
       if (type === "alkes") {
-        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || item.note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
       }
-      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(item.note)}</td></tr>`;
+      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(note)}</td></tr>`;
     });
     const empty = Array.from({ length: Math.max(0, 2 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
     return filled.concat(empty).join("");
+  }
+
+  function getPurchasePrintItemNote(item = {}) {
+    const note = String(item.note || "").trim();
+    return /^batch\b[\s:,-]*/i.test(note) ? "" : note;
+  }
+
+  function buildPurchasePrintNotes(order = {}) {
+    const seen = new Set();
+    const notes = [order.note, order.additionalNote]
+      .flatMap((value) => String(value || "").split(/\n+/))
+      .map((value) => value.trim())
+      .filter((value) => value && !seen.has(value) && seen.add(value));
+    return notes.map((note) => `<p><strong>Note :</strong> ${escapeHtml(note)}</p>`).join("");
+  }
+
+  function buildPurchaseWhatsAppText(order = {}, type = {}, printNumber = "", context = {}) {
+    const items = Array.isArray(order.items) ? order.items : [];
+    const lines = [
+      `${type.printTitle || "SURAT PESANAN"} No. SP. ${printNumber || order.number || "-"}`,
+      `Apotek: ${context.brandName || "-"}`,
+      `Supplier: ${order.supplier || "-"}`,
+      `Tanggal: ${formatPurchasePrintDate(order.date)}`,
+      "",
+      "Daftar Pesanan:"
+    ];
+    items.forEach((item, index) => {
+      const note = getPurchasePrintItemNote(item);
+      lines.push(`${index + 1}. ${item.nama || item.name || "Obat"} - ${formatNumber(Number(item.qty) || 0)} ${item.unit || "Pcs"}${note ? ` (${note})` : ""}`);
+    });
+    const notes = [order.note, order.additionalNote]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    if (notes.length) lines.push("", notes.map((note) => `Note: ${note}`).join("\n"));
+    lines.push("", `Total: ${formatRupiah(order.total || 0)}`);
+    return lines.join("\n");
   }
 
   function getPurchasePrintIntro(type) {
@@ -7587,7 +7773,7 @@
       logo: normalizePharmacyLogo(logo),
       name: name || DEFAULT_PHARMACY_PROFILE.name,
       address,
-      phone: String(value.phone || value.telepon || value.noHp || "").trim(),
+      phone: normalizePhoneNumber(value.phone || value.telepon || value.noHp || ""),
       email: String(value.email || "").trim(),
       website: String(value.website || value.social || "").trim(),
       city: String(value.city || value.kota || value.locationCity || "").trim(),

@@ -3,7 +3,7 @@
 PENTING UNTUK AGEN BERIKUTNYA:
 - Folder kerja utama website adalah: `C:\Users\asus\Documents\Website Sarch Box Data Obat dan Presensi`.
 - Folder tersebut BUKAN git repository, jadi perubahan tidak otomatis tampil di GitHub Pages.
-- Repository deploy GitHub Pages yang benar adalah: `.deploy_absensi_apotek_20260525`.
+- Repository deploy GitHub Pages yang benar saat ini adalah: `.github-deploy\20260616_131302\absensi_apotek`.
 - Remote deploy: `https://github.com/nadhirafarma/absensi_apotek.git`.
 - Website live: `https://nadhirafarma.github.io/absensi_apotek/`.
 - Jangan menimpa pekerjaan lokal sebelum membandingkan file sumber utama dengan repository deploy.
@@ -11,6 +11,9 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-17 01:05 WIB: menindaklanjuti Surat Pesanan Pembelian; daftar pesanan kembali menjadi tabel sederhana tanpa kotak per baris, menu aksi terlihat penuh saat diklik, ringkasan simpan memakai popup, tempo pembayaran menampilkan input jumlah hari dan otomatis menghitung jatuh tempo, daftar produk melebar sampai sisi kanan, draft restok dibatasi tinggi dengan scroll, printout menampilkan Note di bawah kiri, Keterangan tidak lagi otomatis berisi no batch, nomor HP dinormalisasi sebagai teks agar 0 depan tampil, serta pratinjau print memiliki tombol Kirim WA.
+- 2026-06-16 20:50 WIB: merapikan Surat Pesanan Pembelian; popup cari obat tetap di bawah input, qty+satuan dibuat satu kolom, kolom harga beli diperkecil, subtotal diperlebar, diskon/PPN ringkasan bisa disesuaikan, daftar pesanan memakai kolom modern, serta pratinjau/print memakai margin A4 lebih rapi dan tabel obat tertutup.
+- 2026-06-16 20:50 WIB: Apps Script Search API dideploy ulang ke deployment `AKfycbx4VAvlPoMSSiWNFtq1gvDkEROieHHEwnVACqu19gwe5F9lZzsis-hQuMF0bISAbTKK @108`.
 - 2026-06-13 02:35 WIB: membangun ulang halaman Surat Pesanan Pembelian dengan dashboard/list/detail, form pesanan baru, dropdown supplier dan jenis SP, pencarian produk/barcode, kolom dinamis untuk Biasa/Prekursor/Obat-Obat Tertentu/Psikotropika/Narkotika/Alkes, draft restok online, export CSV, print surat, serta aksi edit/proses/terima/batal.
 - 2026-06-13 02:35 WIB: memperbarui Apps Script Search API untuk menyimpan data purchase order lintas perangkat, menyimpan foto laporan restok ke Drive folder `foto_restock_obat`, dan mengembalikan URL foto agar tidak tersimpan sebagai base64 lokal.
 - 2026-06-13 02:35 WIB: Apps Script Search API produksi dideploy ulang ke deployment `AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu @104`.

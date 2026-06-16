@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260616-ui-v18">
-  <script defer src="assets/auth-guard.js?v=20260616-ui-v18"></script>
-  <script defer src="assets/app.js?v=20260616-ui-v18"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v20">
+  <script defer src="assets/auth-guard.js?v=20260617-ui-v20"></script>
+  <script defer src="assets/app.js?v=20260617-ui-v20"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260616-ui-v18"></script>
+  <script defer src="assets/home-dashboard.js?v=20260617-ui-v20"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -1005,12 +1005,12 @@
                     <label>Tanggal Pemesanan *<input id="poDate" type="date"></label>
                     <label>Jenis Surat Pesanan *<select id="poType"><option value="regular">Biasa</option><option value="prekursor">Prekursor</option><option value="ott">Obat-Obat Tertentu</option><option value="psikotropika">Psikotropika</option><option value="narkotika">Narkotika</option><option value="alkes">Alkes</option></select></label>
                     <label>Metode Pembayaran *<select id="poPaymentMethod"><option value="Tunai">Tunai</option><option value="Transfer">Transfer</option><option value="Tempo">Tempo</option><option value="Konsinyasi">Konsinyasi</option></select></label>
+                    <label id="poDueDaysField" class="purchase-due-days-field" hidden>Tempo (Hari)<input id="poDueDays" type="number" min="1" step="1" placeholder="Jumlah hari"></label>
                     <label>Jatuh Tempo Pembayaran<input id="poDueDate" type="date"></label>
                     <label>Sales / Kontak<input id="poRecipient" type="text" placeholder="Nama sales atau kontak"></label>
                     <label>Kota<input id="poCity" type="text" placeholder="Kota supplier"></label>
                     <label class="wide-field">Alamat PBF<input id="poSupplierAddress" type="text" placeholder="Alamat supplier/PBF"></label>
-                    <label>HP/Telp.<input id="poSupplierPhone" type="text" placeholder="Nomor kontak supplier"></label>
-                    <label>Diskon<input id="poDiscount" type="number" min="0" value="0"></label>
+                    <label>HP/Telp.<input id="poSupplierPhone" type="text" inputmode="tel" autocomplete="tel" placeholder="Nomor kontak supplier"></label>
                     <label class="wide-field">Catatan (Opsional)<input id="poNote" type="text" placeholder="Tulis catatan untuk pesanan ini"></label>
                   </div>
                 </form>
@@ -1045,24 +1045,33 @@
 
               <aside class="purchase-form-side">
                 <section class="purchase-summary-card">
-                  <div class="purchase-card-head"><h3>Ringkasan Pesanan</h3><span id="poNumber">Nomor otomatis akan dibuat saat disimpan.</span></div>
-                  <dl>
-                    <div><dt>Total Item</dt><dd id="poSummaryItems">0 item</dd></div>
-                    <div><dt>Total Kuantitas</dt><dd id="poSummaryQty">0</dd></div>
-                    <div><dt>Subtotal</dt><dd id="poSummarySubtotal">Rp 0</dd></div>
-                    <div><dt>Diskon</dt><dd id="poSummaryDiscount">Rp 0</dd></div>
-                    <div><dt>PPN (11%)</dt><dd id="poSummaryTax">Rp 0</dd></div>
-                    <div class="is-total"><dt>Total</dt><dd id="poSummaryTotal">Rp 0</dd></div>
-                  </dl>
-                </section>
-
-                <section class="purchase-summary-card">
                   <div class="purchase-card-head"><span class="purchase-mini-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><div><h3>Draft Restok Obat</h3><p>Buat draft berdasarkan kebutuhan restok obat.</p></div></div>
                   <label class="purchase-search purchase-draft-search"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
                   <div id="poDraftList" class="purchase-draft-list"></div>
                 </section>
               </aside>
             </div>
+          </section>
+
+          <section class="purchase-order-summary-modal dashboard-modal" id="poSummaryModal" hidden>
+            <form class="purchase-order-summary-card" id="poSummaryForm" role="dialog" aria-modal="true" aria-labelledby="poSummaryModalTitle">
+              <button class="purchase-detail-close" id="poSummaryCloseButton" type="button" aria-label="Tutup ringkasan">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+              <div class="purchase-card-head"><h3 id="poSummaryModalTitle">Ringkasan Pesanan</h3><span id="poNumber">Nomor otomatis akan dibuat saat disimpan.</span></div>
+              <dl>
+                <div><dt>Total Item</dt><dd id="poSummaryItems">0 item</dd></div>
+                <div><dt>Total Kuantitas</dt><dd id="poSummaryQty">0</dd></div>
+                <div><dt>Subtotal</dt><dd id="poSummarySubtotal">Rp 0</dd></div>
+                <div class="purchase-summary-edit-row"><dt>Diskon</dt><dd><label class="purchase-money-input"><span>Rp</span><input id="poDiscount" type="number" min="0" value="0" inputmode="numeric"></label></dd></div>
+                <div class="purchase-summary-edit-row"><dt><label class="purchase-tax-toggle"><input id="poTaxEnabled" type="checkbox" checked><span>PPN (11%)</span></label></dt><dd id="poSummaryTax">Rp 0</dd></div>
+                <div class="is-total"><dt>Total</dt><dd id="poSummaryTotal">Rp 0</dd></div>
+              </dl>
+              <div class="purchase-summary-actions">
+                <button class="purchase-soft-button" id="poSummaryCancelButton" type="button">Kembali Edit</button>
+                <button class="purchase-primary-button" id="poSummaryConfirmButton" type="submit">Konfirmasi Simpan</button>
+              </div>
+            </form>
           </section>
         </section>
 

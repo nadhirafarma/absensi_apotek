@@ -18594,3 +18594,601 @@ body.sidebar-collapsed .global-sidebar-toggle {
     left: 14px !important;
   }
 }
+
+/* 20260616 Surat Pesanan: compact product table, anchored search popup, editable totals, and cleaner list columns. */
+.purchase-product-floating-results {
+  transform: none !important;
+  overscroll-behavior: contain;
+}
+
+.purchase-product-table {
+  min-width: 1040px;
+  table-layout: fixed;
+}
+
+.purchase-product-table th,
+.purchase-product-table td {
+  overflow: visible;
+}
+
+.purchase-product-table th.is-no,
+.purchase-product-table tr > td:first-child {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  text-align: center;
+}
+
+.purchase-product-table .purchase-col-qty {
+  width: 128px;
+  min-width: 128px;
+  max-width: 128px;
+}
+
+.purchase-product-table .purchase-col-price {
+  width: 124px;
+  min-width: 124px;
+  max-width: 124px;
+}
+
+.purchase-product-table .purchase-col-subtotal {
+  width: 178px;
+  min-width: 178px;
+  max-width: 178px;
+  color: #061846;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.purchase-qty-control {
+  display: grid;
+  grid-template-columns: minmax(42px, 0.78fr) minmax(58px, 0.92fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.purchase-qty-control input,
+.purchase-qty-control select,
+.purchase-col-price input {
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 7px;
+  font-size: 0.8rem;
+}
+
+.purchase-qty-control select {
+  cursor: pointer;
+}
+
+.purchase-summary-edit-row {
+  align-items: center;
+}
+
+.purchase-money-input {
+  width: min(150px, 100%);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #cfe0f7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.purchase-money-input span {
+  display: grid;
+  min-height: 36px;
+  place-items: center;
+  background: #f3f7ff;
+  color: #6076a5;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.purchase-money-input input {
+  min-width: 0;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: #071955;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-align: right;
+  outline: none;
+}
+
+.purchase-tax-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.purchase-tax-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #315dff;
+}
+
+#view-surat-pesanan .purchase-table-wrap {
+  overflow: visible;
+  padding: 6px;
+  border-color: #e6eefb;
+  background: linear-gradient(180deg, #fbfdff, #f7faff);
+}
+
+.purchase-table {
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 6px 7px;
+}
+
+.purchase-table th,
+.purchase-table td {
+  border: 0;
+}
+
+.purchase-table th {
+  padding: 4px 10px 6px;
+  background: transparent;
+  color: #526a9b;
+  font-size: 0.74rem;
+  text-transform: none;
+}
+
+.purchase-table td {
+  padding: 12px 10px;
+  border: 1px solid #e2ebf8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(25, 69, 134, 0.045);
+}
+
+.purchase-table tr.is-selected {
+  outline: 0;
+  background: transparent;
+}
+
+.purchase-table tr.is-selected td {
+  border-color: #b9ccff;
+  background: #f8fbff;
+  box-shadow: 0 10px 26px rgba(49, 93, 255, 0.08);
+}
+
+.purchase-table tbody tr:hover td {
+  border-color: #c9d8f8;
+  background: #fbfdff;
+}
+
+.purchase-table td:nth-last-child(2) {
+  color: #071955;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  #view-surat-pesanan .purchase-page {
+    transform: scale(0.42);
+    transform-origin: top left;
+  }
+
+  #view-surat-pesanan .purchase-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .purchase-table {
+    min-width: 780px;
+  }
+}
+
+/* 20260617 Surat Pesanan: summary modal, slimmer search popup, connected order rows, and safer input columns. */
+.purchase-form-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.24fr);
+}
+
+.purchase-product-floating-results {
+  gap: 3px;
+  max-height: min(238px, 38vh) !important;
+  padding: 5px;
+  border-radius: 9px;
+  box-shadow: 0 14px 32px rgba(24, 70, 135, 0.16);
+}
+
+.purchase-product-result {
+  gap: 1px;
+  padding: 8px 9px;
+  border-radius: 7px;
+}
+
+.purchase-product-result strong {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.purchase-product-result small {
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+
+.purchase-product-table {
+  min-width: 1240px;
+  table-layout: fixed;
+}
+
+.purchase-product-table .purchase-col-product {
+  width: 210px;
+  min-width: 210px;
+}
+
+.purchase-product-table .purchase-col-stock {
+  width: 116px;
+  min-width: 116px;
+  white-space: nowrap;
+}
+
+.purchase-product-table .purchase-col-qty {
+  width: 178px;
+  min-width: 178px;
+  max-width: none;
+}
+
+.purchase-product-table .purchase-col-price {
+  width: 126px;
+  min-width: 126px;
+  max-width: none;
+}
+
+.purchase-product-table .purchase-col-subtotal {
+  width: 154px;
+  min-width: 154px;
+  max-width: none;
+}
+
+.purchase-product-table .purchase-col-note {
+  width: 178px;
+  min-width: 178px;
+}
+
+.purchase-qty-control {
+  grid-template-columns: minmax(58px, 0.72fr) minmax(88px, 1fr);
+}
+
+.purchase-qty-control input,
+.purchase-qty-control select,
+.purchase-col-price input,
+.purchase-col-note input {
+  min-height: 38px;
+  padding-inline: 8px;
+  font-size: 0.82rem;
+}
+
+.purchase-qty-control select {
+  text-overflow: ellipsis;
+}
+
+.purchase-summary-edit-row dd,
+.purchase-summary-card dd,
+.purchase-order-summary-card dd {
+  margin-left: auto;
+  text-align: right;
+}
+
+.purchase-money-input {
+  justify-self: end;
+}
+
+.purchase-order-summary-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 25, 85, 0.34);
+  backdrop-filter: blur(7px);
+}
+
+.purchase-order-summary-modal[hidden] {
+  display: none;
+}
+
+.purchase-order-summary-card {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #dbe7fb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(7, 25, 85, 0.22);
+}
+
+.purchase-order-summary-card .purchase-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.purchase-order-summary-card .purchase-card-head h3 {
+  margin: 0;
+  color: #071955;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.purchase-order-summary-card .purchase-card-head p {
+  margin: 4px 0 0;
+  color: #6578a8;
+  font-size: 0.78rem;
+}
+
+.purchase-order-summary-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.purchase-order-summary-card dl div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #edf2fb;
+  border-radius: 9px;
+  background: #fbfdff;
+}
+
+.purchase-order-summary-card dt {
+  color: #61759e;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.purchase-order-summary-card dd {
+  margin: 0;
+  color: #071955;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.purchase-order-summary-card dl div.is-total {
+  background: #f1efff;
+}
+
+.purchase-order-summary-card dl div.is-total dd {
+  color: #5b2cff;
+}
+
+.purchase-summary-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+#view-surat-pesanan .purchase-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px;
+  border-color: #e4edfb;
+  background: #fff;
+}
+
+.purchase-table {
+  min-width: 940px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.purchase-table th,
+.purchase-table td {
+  border: 0;
+  box-shadow: none;
+}
+
+.purchase-table th {
+  padding: 9px 10px;
+  border-bottom: 1px solid #d9e6f7;
+  background: #f8fbff;
+  color: #526a9b;
+  font-size: 0.74rem;
+}
+
+.purchase-table td {
+  padding: 12px 10px;
+  border-top: 1px solid #e1ebf8;
+  border-bottom: 1px solid #e1ebf8;
+  border-radius: 0;
+  background: #fff;
+}
+
+.purchase-table td:first-child {
+  border-left: 1px solid #e1ebf8;
+  border-radius: 8px 0 0 8px;
+}
+
+.purchase-table td:last-child {
+  border-right: 1px solid #e1ebf8;
+  border-radius: 0 8px 8px 0;
+}
+
+.purchase-table tr.is-selected td,
+.purchase-table tbody tr:hover td {
+  border-color: #c9d8f8;
+  background: #f9fcff;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .purchase-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-product-table {
+    min-width: 1120px;
+  }
+
+  .purchase-table {
+    min-width: 880px;
+  }
+}
+
+/* 20260617 follow-up: simple connected order list, visible action menu, full-width product editor. */
+.purchase-form-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+}
+
+.purchase-form-main {
+  display: contents;
+}
+
+#purchaseOrderForm {
+  grid-column: 1;
+}
+
+.purchase-form-side {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.purchase-product-card,
+.purchase-form-main > .purchase-card:not(#purchaseOrderForm):not(.purchase-product-card) {
+  grid-column: 1 / -1;
+}
+
+.purchase-form-side .purchase-summary-card {
+  padding: 14px;
+}
+
+.purchase-draft-list {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.purchase-draft-card {
+  padding: 10px;
+}
+
+.purchase-draft-card-actions button {
+  min-height: 30px;
+  padding-inline: 8px;
+}
+
+.purchase-due-days-field:not([hidden]) {
+  display: grid;
+}
+
+#view-surat-pesanan .purchase-table-wrap {
+  overflow: visible;
+  padding: 0;
+  border: 1px solid #e2ebf8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.purchase-table {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.purchase-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid #dce7f7;
+  background: #f8fbff;
+  color: #526a9b;
+  font-size: 0.74rem;
+  text-align: left;
+}
+
+.purchase-table td {
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid #e7eefb;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.purchase-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.purchase-table td:first-child,
+.purchase-table td:last-child {
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.purchase-table tr.is-selected td,
+.purchase-table tbody tr:hover td {
+  border-color: #e0e9fa;
+  background: #f8fbff;
+  box-shadow: none;
+}
+
+.purchase-row-menu {
+  position: relative;
+  z-index: 80;
+}
+
+.purchase-row-menu[open] {
+  z-index: 2147483000;
+}
+
+.purchase-row-actions {
+  right: 0;
+  top: calc(100% + 7px);
+  z-index: 2147483001;
+  min-width: 112px;
+}
+
+.purchase-product-table {
+  min-width: 1280px;
+}
+
+@media (max-width: 1180px) {
+  .purchase-form-main {
+    display: grid;
+    gap: 16px;
+  }
+
+  .purchase-form-side,
+  #purchaseOrderForm,
+  .purchase-product-card,
+  .purchase-form-main > .purchase-card:not(#purchaseOrderForm):not(.purchase-product-card) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  #view-surat-pesanan .purchase-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  #view-surat-pesanan .purchase-form-page {
+    width: 100%;
+    transform: scale(0.28);
+    transform-origin: top left;
+  }
+
+  .purchase-table {
+    min-width: 780px;
+  }
+}
