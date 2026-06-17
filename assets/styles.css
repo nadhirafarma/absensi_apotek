@@ -21314,3 +21314,233 @@ body.sidebar-collapsed .global-sidebar-toggle {
     width: 100%;
   }
 }
+
+/* 20260618 grouped restock requests, desktop density, logs, and horizontal mobile tables. */
+@media (min-width: 821px) {
+  body:not(.home-view-active) .dashboard-content {
+    zoom: 0.9;
+  }
+}
+
+.restock-form-page.is-editing .restock-draft-panel {
+  display: grid !important;
+}
+
+.restock-form-page.is-editing #restockSaveDraftButton,
+.restock-form-page.is-editing #restockSubmitDraftButton {
+  display: inline-flex !important;
+}
+
+.restock-detail-items-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dce7f8;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.restock-detail-items-card > strong {
+  color: #071955;
+  font-size: 0.96rem;
+}
+
+.restock-detail-items-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.restock-detail-items-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+}
+
+.restock-detail-items-table th,
+.restock-detail-items-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #e7eef9;
+  text-align: left;
+  color: #071955;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.restock-detail-items-table th {
+  background: #f7f9ff;
+  color: #536792;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.restock-detail-items-table td strong,
+.restock-detail-items-table td small {
+  display: block;
+}
+
+.restock-detail-items-table td small {
+  margin-top: 3px;
+  color: #60749f;
+  font-size: 0.72rem;
+}
+
+.restock-detail-actions .secondary-action,
+.restock-detail-actions .secondary-action:visited {
+  color: #fff !important;
+}
+
+.activity-toolbar {
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(150px, 200px) minmax(150px, 180px) repeat(4, max-content);
+}
+
+.activity-tool-button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #dbe7fb;
+  border-radius: 10px;
+  background: #fff;
+  color: #2368ff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.activity-tool-button.is-danger {
+  color: #ff2554;
+  border-color: #ffd3df;
+  background: #fff7fa;
+}
+
+.activity-tool-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.activity-log-check {
+  width: 18px;
+  height: 18px;
+  accent-color: #6b4df6;
+}
+
+.purchase-product-card {
+  width: 100%;
+}
+
+.purchase-product-table-wrap {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.purchase-product-table {
+  width: 100%;
+  min-width: 1480px !important;
+  table-layout: fixed;
+}
+
+.purchase-product-table .purchase-col-product {
+  width: 310px !important;
+}
+
+.purchase-product-table .purchase-col-stock {
+  width: 140px !important;
+}
+
+.purchase-product-table .purchase-col-qty {
+  width: 165px !important;
+}
+
+.purchase-product-table .purchase-col-price {
+  width: 140px !important;
+}
+
+.purchase-product-table .purchase-col-subtotal {
+  width: 150px !important;
+}
+
+.purchase-product-table .purchase-col-note {
+  width: 170px !important;
+}
+
+.purchase-product-table .purchase-col-action {
+  width: 70px !important;
+}
+
+.purchase-product-table .purchase-product-input {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .restock-table-wrap,
+  .restock-draft-table-wrap,
+  .restock-detail-items-scroll,
+  .activity-table-wrap,
+  .purchase-table-wrap,
+  .purchase-product-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .restock-table,
+  .restock-draft-table {
+    min-width: 980px !important;
+  }
+
+  .activity-table {
+    min-width: 1060px;
+  }
+
+  #view-surat-pesanan .purchase-form-page {
+    width: 100% !important;
+    transform: none !important;
+    transform-origin: initial !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table,
+  #view-surat-pesanan .purchase-product-table thead,
+  #view-surat-pesanan .purchase-product-table tbody,
+  #view-surat-pesanan .purchase-product-table tr,
+  #view-surat-pesanan .purchase-product-table th,
+  #view-surat-pesanan .purchase-product-table td {
+    display: revert !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table {
+    display: table !important;
+    min-width: 1480px !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table thead {
+    display: table-header-group !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table tbody {
+    display: table-row-group !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table tr {
+    display: table-row !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #view-surat-pesanan .purchase-product-table th,
+  #view-surat-pesanan .purchase-product-table td {
+    display: table-cell !important;
+    width: auto;
+  }
+
+  #view-surat-pesanan .purchase-product-table td::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .activity-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+}

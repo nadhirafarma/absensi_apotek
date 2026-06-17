@@ -24,6 +24,9 @@ var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'sta
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'city', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
+  'requestGroupId',
+  'requestNumber',
+  'requestItemIndex',
   'code',
   'medicineName',
   'currentStock',
@@ -271,6 +274,10 @@ function doPost(e) {
 
     if (action == 'listActivityLog') {
       return handleListActivityLog_(data);
+    }
+
+    if (action == 'deleteActivityLog') {
+      return handleDeleteActivityLog_(data);
     }
 
     if (action == 'getAttendanceShiftSettings') {
@@ -1036,6 +1043,53 @@ function handleListActivityLog_(data) {
   });
 }
 
+function handleDeleteActivityLog_(data) {
+  data = data || {};
+  var role = normalizeLoginKey_(data.role || '');
+  var username = normalizeLoginKey_(data.username || data.actor || '');
+  var isAllowed = role == 'owner' || role == 'admin' || role == 'administrator' || username == 'owner';
+
+  if (!isAllowed) {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Hanya owner/admin yang dapat menghapus log aktivitas.'
+    });
+  }
+
+  var mode = String(data.mode || '').trim();
+  var keys = data.keys || [];
+  var date = String(data.date || '').trim();
+  if (Object.prototype.toString.call(keys) != '[object Array]') keys = [];
+  var keyMap = {};
+  keys.forEach(function(key) {
+    keyMap[String(key || '')] = true;
+  });
+
+  var list = readActivityLog_();
+  var before = list.length;
+  if (mode == 'all') {
+    list = [];
+  } else if (mode == 'date') {
+    list = list.filter(function(item) {
+      return getActivityDateKey_(item.at) != date;
+    });
+  } else {
+    list = list.filter(function(item) {
+      return !keyMap[buildActivityLogKey_(item)];
+    });
+  }
+
+  PropertiesService.getScriptProperties().setProperty(OWNER_ACTIVITY_LOG_PROPERTY, JSON.stringify(list.slice(0, 300)));
+
+  return jsonOutput_({
+    success: true,
+    ok: true,
+    deleted: before - list.length,
+    activities: list
+  });
+}
+
 function readActivityLog_() {
   var stored = String(PropertiesService.getScriptProperties().getProperty(OWNER_ACTIVITY_LOG_PROPERTY) || '').trim();
 
@@ -1051,8 +1105,11 @@ function readActivityLog_() {
 
 function sanitizeActivityLogItem_(item) {
   item = item && typeof item == 'object' ? item : {};
+  var at = String(item.at || new Date().toISOString());
+  var rawKey = [at, item.title, item.detail, item.actor, item.username, item.email].join('|');
 
   return {
+    id: String(item.id || item.activityId || buildSimpleHash_(rawKey)).slice(0, 80),
     title: String(item.title || 'Aktivitas').slice(0, 120),
     detail: String(item.detail || '').slice(0, 220),
     actor: String(item.actor || '').slice(0, 120),
@@ -1063,8 +1120,29 @@ function sanitizeActivityLogItem_(item) {
     module: String(item.module || item.modul || '').slice(0, 80),
     status: String(item.status || '').slice(0, 40),
     ipAddress: String(item.ipAddress || item.ip || item.ip_address || '').slice(0, 80),
-    at: String(item.at || new Date().toISOString())
+    at: at
   };
+}
+
+function buildActivityLogKey_(item) {
+  item = sanitizeActivityLogItem_(item);
+  return item.id || [item.at, item.title, item.detail, item.actor, item.username, item.email].join('|');
+}
+
+function getActivityDateKey_(value) {
+  var date = new Date(String(value || ''));
+  if (isNaN(date.getTime())) return '';
+  return Utilities.formatDate(date, 'Asia/Jakarta', 'yyyy-MM-dd');
+}
+
+function buildSimpleHash_(value) {
+  var text = String(value || '');
+  var hash = 0;
+  for (var i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash = hash | 0;
+  }
+  return 'log-' + Math.abs(hash);
 }
 
 function handleGetAttendanceShiftSettings_() {
@@ -1320,6 +1398,9 @@ function readRestockRequestFromRow_(headers, row) {
 
   return sanitizeRestockRequest_({
     id: pickDataValue_(raw, ['id']),
+    requestGroupId: pickDataValue_(raw, ['requestgroupid', 'requestid', 'groupid', 'batchid']),
+    requestNumber: pickDataValue_(raw, ['requestnumber', 'requestno', 'nopermintaan', 'no_permintaan']),
+    requestItemIndex: pickDataValue_(raw, ['requestitemindex', 'itemindex', 'noitem']),
     code: pickDataValue_(raw, ['code', 'kode']),
     medicineName: pickDataValue_(raw, ['medicinename', 'nama', 'namaobat']),
     currentStock: pickDataValue_(raw, ['currentstock', 'stok']),
@@ -1677,8 +1758,13 @@ function sanitizeRestockRequest_(item) {
     photo = '';
   }
 
+  var restockId = String(item.id || ('RST-' + new Date().getTime())).slice(0, 90);
+
   return {
-    id: String(item.id || ('RST-' + new Date().getTime())).slice(0, 90),
+    id: restockId,
+    requestGroupId: String(item.requestGroupId || item.requestId || item.groupId || item.batchId || item.id || restockId).trim().slice(0, 90),
+    requestNumber: String(item.requestNumber || item.requestNo || item.noPermintaan || item.no_permintaan || '').trim().slice(0, 80),
+    requestItemIndex: Math.max(1, Number(item.requestItemIndex || item.itemIndex || item.noItem || 1) || 1),
     code: String(item.code || item.kode || '').trim().slice(0, 120),
     medicineName: String(item.medicineName || item.nama || item.name || '').trim().slice(0, 220),
     currentStock: String(item.currentStock || item.stok || '0').trim().slice(0, 80),

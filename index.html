@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v26">
-  <script defer src="assets/auth-guard.js?v=20260617-ui-v26"></script>
-  <script defer src="assets/app.js?v=20260617-ui-v26"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260618-ui-v27">
+  <script defer src="assets/auth-guard.js?v=20260618-ui-v27"></script>
+  <script defer src="assets/app.js?v=20260618-ui-v27"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260617-ui-v26"></script>
+  <script defer src="assets/home-dashboard.js?v=20260618-ui-v27"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -930,11 +930,6 @@
             <header class="restock-dashboard-head">
               <div>
                 <h2 id="restockPageTitle">Permintaan Restok</h2>
-                <nav class="restock-breadcrumb" aria-label="Navigasi restok">
-                  <span>Home</span>
-                  <span>Persediaan</span>
-                  <strong>Permintaan Restok</strong>
-                </nav>
               </div>
               <button class="restock-primary-button" id="restockAddButton" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
@@ -1462,6 +1457,10 @@
                 <option value="">Semua Pengguna</option>
               </select>
               <input id="activityDateFilter" type="date" aria-label="Filter tanggal aktivitas">
+              <button class="activity-tool-button" id="activitySelectAllButton" type="button">Pilih Semua</button>
+              <button class="activity-tool-button" id="activityDeleteSelectedButton" type="button">Hapus Terpilih</button>
+              <button class="activity-tool-button" id="activityDeleteDateButton" type="button">Hapus Tanggal</button>
+              <button class="activity-tool-button is-danger" id="activityDeleteAllButton" type="button">Hapus Semua</button>
             </div>
 
             <div class="activity-summary-grid">
@@ -1474,7 +1473,7 @@
             <div class="activity-table-wrap">
               <table class="activity-table">
                 <thead>
-                  <tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Modul</th><th>Detail</th><th>Status</th><th>IP Address</th></tr>
+                  <tr><th>Pilih</th><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Modul</th><th>Detail</th><th>Status</th><th>IP Address</th></tr>
                 </thead>
                 <tbody id="activityLogTableBody"></tbody>
               </table>

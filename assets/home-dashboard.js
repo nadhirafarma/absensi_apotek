@@ -289,6 +289,7 @@
     restockMineOnly: false,
     restockDetailId: "",
     restockEditingId: "",
+    restockEditingGroupId: "",
     restockDraftItems: [],
     restockDraftEditingIndex: -1,
     restockSelectionMode: false,
@@ -332,6 +333,8 @@
     pendingProfilePhoto: null,
     pendingProfilePhotoName: "",
     ownerActivities: [],
+    selectedActivityLogKeys: new Set(),
+    activityViewLogAt: {},
     attendanceRecords: [],
     attendanceGroups: [],
     attendanceDate: "",
@@ -709,6 +712,10 @@
       activityModuleFilter: document.getElementById("activityModuleFilter"),
       activityUserFilter: document.getElementById("activityUserFilter"),
       activityDateFilter: document.getElementById("activityDateFilter"),
+      activitySelectAllButton: document.getElementById("activitySelectAllButton"),
+      activityDeleteSelectedButton: document.getElementById("activityDeleteSelectedButton"),
+      activityDeleteDateButton: document.getElementById("activityDeleteDateButton"),
+      activityDeleteAllButton: document.getElementById("activityDeleteAllButton"),
       activityTotalCount: document.getElementById("activityTotalCount"),
       activitySuccessCount: document.getElementById("activitySuccessCount"),
       activityWarningCount: document.getElementById("activityWarningCount"),
@@ -1082,6 +1089,11 @@
       if (control) control.addEventListener("input", renderActivityLogPage);
       if (control) control.addEventListener("change", renderActivityLogPage);
     });
+    if (els.activityLogTableBody) els.activityLogTableBody.addEventListener("change", handleActivityLogSelectionChange);
+    if (els.activitySelectAllButton) els.activitySelectAllButton.addEventListener("click", toggleAllVisibleActivityLogs);
+    if (els.activityDeleteSelectedButton) els.activityDeleteSelectedButton.addEventListener("click", () => deleteActivityLogs("selected"));
+    if (els.activityDeleteDateButton) els.activityDeleteDateButton.addEventListener("click", () => deleteActivityLogs("date"));
+    if (els.activityDeleteAllButton) els.activityDeleteAllButton.addEventListener("click", () => deleteActivityLogs("all"));
     if (els.homeThemeToggle) els.homeThemeToggle.addEventListener("click", toggleDashboardTheme);
     if (els.mobileHeroNotificationButton) els.mobileHeroNotificationButton.addEventListener("click", openNotification);
     if (els.mobileHeroThemeButton) els.mobileHeroThemeButton.addEventListener("click", toggleDashboardTheme);
@@ -2890,7 +2902,7 @@
     try {
       const result = await postToApi({
         action: "listActivityLog",
-        limit: isOwnerUser(user) || isAdminUser(user) ? 200 : 80,
+        limit: isOwnerUser(user) || isAdminUser(user) ? 300 : 120,
         role: user.role || "",
         username: user.username || "",
         email: user.email || "",
@@ -2906,7 +2918,11 @@
   }
 
   function normalizeActivityRecord(item) {
+    const fallbackKey = [item?.at || item?.createdAt, item?.title, item?.detail, item?.actor, item?.username, item?.email]
+      .map((part) => String(part || "").trim())
+      .join("|");
     return {
+      id: String(item?.id || item?.activityId || hashString(fallbackKey)).trim(),
       title: String(item?.title || "Aktivitas").trim(),
       detail: String(item?.detail || "").trim(),
       actor: String(item?.actor || "").trim(),
@@ -2919,6 +2935,16 @@
       ipAddress: String(item?.ipAddress || item?.ip || item?.ip_address || "").trim(),
       at: String(item?.at || item?.createdAt || new Date().toISOString()).trim()
     };
+  }
+
+  function hashString(value) {
+    const text = String(value || "");
+    let hash = 0;
+    for (let index = 0; index < text.length; index += 1) {
+      hash = ((hash << 5) - hash) + text.charCodeAt(index);
+      hash |= 0;
+    }
+    return `log-${Math.abs(hash)}`;
   }
 
   function getLatestOwnerActivityAt() {
@@ -5202,11 +5228,17 @@
   function getPurchaseOrderRestockOptions() {
     const query = normalizeSearch(els.poReferenceFilter?.value || "");
     const picked = state.purchaseDraftPickedIds || new Set();
-    return state.restockRequests
-      .filter((item) => item.status !== "rejected" && item.status !== "done")
-      .filter((item) => !picked.has(item.id))
-      .filter((item) => {
-        const haystack = normalizeSearch([item.medicineName, item.code, item.supplier, item.reporter].join(" "));
+    return getRestockRequestGroups()
+      .filter((group) => group.status !== "rejected" && group.status !== "done")
+      .filter((group) => !picked.has(group.id))
+      .filter((group) => {
+        const haystack = normalizeSearch([
+          group.requestNumber,
+          group.medicineSummary,
+          group.supplier,
+          group.reporter,
+          group.items.map((item) => [item.medicineName, item.code, item.supplier].join(" ")).join(" ")
+        ].join(" "));
         return !query || haystack.includes(query);
       })
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
@@ -5217,15 +5249,15 @@
     if (!els.poRestockReference) return;
     const current = els.poRestockReference.value;
     const options = getPurchaseOrderRestockOptions();
-    els.poRestockReference.innerHTML = `<option value="">Pilih referensi restok</option>${options.map((item) => {
-      const label = `${item.medicineName || item.code} - ${item.qty} ${item.unit}${item.supplier ? ` - ${item.supplier}` : ""}`;
-      return `<option value="${escapeHtml(item.id)}">${escapeHtml(label)}</option>`;
+    els.poRestockReference.innerHTML = `<option value="">Pilih referensi restok</option>${options.map((group) => {
+      const label = `${group.requestNumber || getRestockRequestNumber(group)} - ${formatNumber(group.itemCount)} item - total ${formatNumber(group.totalQty)}`;
+      return `<option value="${escapeHtml(group.id)}">${escapeHtml(label)}</option>`;
     }).join("")}`;
-    if (options.some((item) => item.id === current)) els.poRestockReference.value = current;
+    if (options.some((group) => group.id === current)) els.poRestockReference.value = current;
   }
 
   function applyPurchaseRestockReference() {
-    const item = state.restockRequests.find((request) => request.id === els.poRestockReference?.value);
+    const item = getRestockGroupById(els.poRestockReference?.value)?.items?.[0];
     if (!item) return;
     const rowIndex = state.rows.findIndex((row) => {
       return normalizeSearch(row.kode) === normalizeSearch(item.code) || normalizeSearch(row.nama) === normalizeSearch(item.medicineName);
@@ -5387,7 +5419,7 @@
   function addPurchaseItem() {
     const medicineIndex = Number(els.poMedicine ? els.poMedicine.value : -1);
     const medicine = state.rows[medicineIndex];
-    const restockItem = state.restockRequests.find((request) => request.id === els.poRestockReference?.value);
+    const restockItem = getRestockGroupById(els.poRestockReference?.value)?.items?.[0];
     if (medicine || restockItem) {
       addPurchaseItemFromSource(medicine, restockItem);
     }
@@ -5405,6 +5437,17 @@
     delete state.purchaseProductSearches[state.purchaseItems.length];
     delete state.purchaseProductResults[state.purchaseItems.length];
     renderPurchaseItems();
+    renderPurchaseDraftList();
+  }
+
+  function addPurchaseItemsFromRestockGroup(group) {
+    const items = group?.items || [];
+    if (!items.length) return;
+    items.forEach((restockItem) => {
+      const medicine = findMedicineForRestock(restockItem.code || restockItem.medicineName);
+      addPurchaseItemFromSource(medicine, restockItem);
+    });
+    if (group.id) state.purchaseDraftPickedIds.add(group.id);
     renderPurchaseDraftList();
   }
 
@@ -5641,8 +5684,8 @@
     }
     els.poDraftList.innerHTML = drafts.slice(0, 30).map((item) => `
       <article class="purchase-draft-card" data-po-draft="${escapeHtml(item.id)}">
-        <strong>${escapeHtml(item.medicineName || item.code || "Obat")}</strong>
-        <small>${escapeHtml([item.code, `${item.qty} ${item.unit}`, item.supplier].filter(Boolean).join(" - "))}</small>
+        <strong>${escapeHtml(item.requestNumber || getRestockRequestNumber(item))}</strong>
+        <small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.medicineSummary, item.supplier].filter(Boolean).join(" - "))}</small>
         <div class="purchase-draft-card-actions">
           <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih</button>
           <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
@@ -5658,13 +5701,12 @@
     const deleteButton = event.target.closest("[data-po-draft-delete]");
     const id = addButton?.dataset.poDraftAdd || editButton?.dataset.poDraftEdit || deleteButton?.dataset.poDraftDelete || "";
     if (!id) return;
-    const draft = state.restockRequests.find((request) => request.id === id);
+    const draft = getRestockGroupById(id);
     if (!draft) return;
     if (addButton) {
-      const medicine = findMedicineForRestock(draft.code || draft.medicineName);
-      addPurchaseItemFromSource(medicine, draft);
-      if (els.poSupplier && !els.poSupplier.value && draft.supplier) {
-        els.poSupplier.value = draft.supplier;
+      addPurchaseItemsFromRestockGroup(draft);
+      if (els.poSupplier && !els.poSupplier.value && draft.items?.[0]?.supplier) {
+        els.poSupplier.value = draft.items[0].supplier;
         fillPurchaseSupplierFields();
       }
       return;
@@ -5676,7 +5718,7 @@
     if (deleteButton) {
       const token = startAppLoading("Menghapus draft restok...", 0);
       try {
-        state.restockRequests = state.restockRequests.filter((request) => request.id !== id);
+        state.restockRequests = state.restockRequests.filter((request) => getRestockGroupId(request) !== draft.id);
         const result = await saveRestockRequestsToBackend({ silent: true });
         if (!result) throw new Error("Draft restok belum tersimpan online.");
         persistRestockRequests({ remote: false });
@@ -6674,8 +6716,13 @@
     const unit = String(item.unit || item.requestUnit || item.satuan || medicine?.satuan_beli || medicine?.satuan_1 || "Pcs").trim() || "Pcs";
     const stockUnit = String(item.stockUnit || item.currentStockUnit || item.satuanStok || inferRestockStockUnit(medicine) || unit).trim() || unit;
     const realStockValue = item.realStock ?? item.stokReal ?? item.stok_real ?? item.physicalStock ?? item.stokFisik ?? item.stok_fisik ?? "";
+    const id = String(item.id || `RST-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`);
+    const requestGroupId = String(item.requestGroupId || item.requestId || item.groupId || item.batchId || item.batch_id || id).trim() || id;
     return {
-      id: String(item.id || `RST-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`),
+      id,
+      requestGroupId,
+      requestNumber: String(item.requestNumber || item.requestNo || item.noPermintaan || item.no_permintaan || "").trim(),
+      requestItemIndex: Math.max(1, Number(item.requestItemIndex || item.itemIndex || item.noItem || 1) || 1),
       code: String(item.code || item.kode || medicine?.kode || "").trim(),
       medicineName: String(item.medicineName || item.nama || item.name || medicine?.nama || "").trim(),
       currentStock: String(item.currentStock || item.stok || medicine?.stok || "0").trim(),
@@ -6751,6 +6798,97 @@
       if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
       return null;
     }
+  }
+
+  function getRestockGroupId(item) {
+    return String(item?.requestGroupId || item?.requestId || item?.groupId || item?.batchId || item?.id || "").trim();
+  }
+
+  function getRestockRequestGroups(requests = state.restockRequests) {
+    const map = new Map();
+    (requests || []).map(normalizeRestockRequest).forEach((item) => {
+      const groupId = getRestockGroupId(item) || item.id;
+      if (!map.has(groupId)) {
+        map.set(groupId, {
+          id: groupId,
+          requestGroupId: groupId,
+          requestNumber: item.requestNumber || "",
+          items: [],
+          reporter: item.reporter || "",
+          reporterKey: item.reporterKey || "",
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        });
+      }
+      const group = map.get(groupId);
+      group.items.push({ ...item, requestGroupId: groupId });
+      if (!group.requestNumber && item.requestNumber) group.requestNumber = item.requestNumber;
+      if (!group.reporter && item.reporter) group.reporter = item.reporter;
+      if (!group.reporterKey && item.reporterKey) group.reporterKey = item.reporterKey;
+      if (!group.createdAt || new Date(item.createdAt) < new Date(group.createdAt)) group.createdAt = item.createdAt;
+      if (!group.updatedAt || new Date(item.updatedAt) > new Date(group.updatedAt)) group.updatedAt = item.updatedAt;
+    });
+
+    return Array.from(map.values()).map((group, index) => {
+      const items = group.items
+        .sort((a, b) => (Number(a.requestItemIndex) || 0) - (Number(b.requestItemIndex) || 0) || String(a.createdAt).localeCompare(String(b.createdAt)));
+      const suppliers = unique(items.map((item) => item.supplier).filter(Boolean));
+      const names = items.map((item) => item.medicineName || item.code || "Obat").filter(Boolean);
+      const status = getRestockGroupStatus(items);
+      const priority = getRestockGroupPriority(items);
+      const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+      return {
+        ...group,
+        items,
+        index,
+        status,
+        priority,
+        qty: totalQty,
+        totalQty,
+        itemCount: items.length,
+        medicineName: names[0] || "Obat",
+        medicineSummary: names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2} item` : names.join(", "),
+        code: items[0]?.code || "",
+        supplier: suppliers.length > 1 ? `${suppliers[0]} +${suppliers.length - 1}` : suppliers[0] || "",
+        note: items.map((item) => item.note).filter(Boolean).join("; "),
+        requestNumber: group.requestNumber || buildRestockRequestNumber(group.createdAt, group.id, index)
+      };
+    }).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+  }
+
+  function getRestockGroupById(id) {
+    const key = String(id || "").trim();
+    if (!key) return null;
+    return getRestockRequestGroups().find((group) => group.id === key || group.items.some((item) => item.id === key)) || null;
+  }
+
+  function getRestockGroupStatus(items = []) {
+    if (!items.length) return "pending";
+    if (items.every((item) => item.status === "done")) return "done";
+    if (items.every((item) => item.status === "rejected")) return "rejected";
+    if (items.some((item) => item.status === "processing")) return "processing";
+    if (items.some((item) => item.status === "pending")) return "pending";
+    return items[0]?.status || "pending";
+  }
+
+  function getRestockGroupPriority(items = []) {
+    if (items.some((item) => item.priority === "urgent")) return "urgent";
+    if (items.some((item) => item.priority === "important")) return "important";
+    return "normal";
+  }
+
+  function buildRestockRequestNumber(value, seed, index = 0) {
+    const date = parseDateValue(value) || new Date();
+    const parts = new Intl.DateTimeFormat("en", { year: "2-digit", month: "2-digit", timeZone: "Asia/Jakarta" })
+      .formatToParts(date)
+      .reduce((map, part) => {
+        map[part.type] = part.value;
+        return map;
+      }, {});
+    const period = `${parts.year || "00"}${parts.month || "00"}`;
+    const digitSource = String(seed || index + 1).replace(/\D/g, "");
+    const serial = String(Number(digitSource.slice(-5)) || index + 1).padStart(5, "0");
+    return `RR-${period}-${serial}`;
   }
 
   function populateRestockMedicineOptions() {
@@ -6930,70 +7068,58 @@
   }
 
   function openRestockRequestModal(id = "") {
-    const editingItem = id ? state.restockRequests.find((request) => request.id === id) : null;
-    if (editingItem && !canEditRestockRequest(editingItem)) {
+    const editingGroup = id ? getRestockGroupById(id) : null;
+    const editingItem = editingGroup?.items?.[0] || null;
+    if (editingGroup && !canEditRestockRequest(editingGroup)) {
       setRestockPageMessage("Data restok hanya bisa diedit oleh owner/admin, atau saat status masih pending.", "error");
       return;
     }
-    if (!editingItem) {
+    if (editingGroup) {
+      state.restockDraftItems = editingGroup.items.map((item) => ({ ...item }));
+      state.restockDraftEditingIndex = -1;
+      state.restockEditingGroupId = editingGroup.id;
+    } else {
       state.restockDraftItems = [];
       state.restockDraftEditingIndex = -1;
+      state.restockEditingGroupId = "";
     }
     state.restockSelectedMedicineKey = "";
-    state.restockEditingId = editingItem ? editingItem.id : "";
+    state.restockEditingId = "";
     state.pendingRestockPhoto = "";
     state.pendingRestockPhotoName = "";
     state.pendingRestockPhotoPromise = null;
     if (els.restockRequestForm) els.restockRequestForm.reset();
-    if (els.restockRequestTitle) els.restockRequestTitle.textContent = editingItem ? "Edit Data Obat Restok" : "Tambah Item Restok";
-    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = editingItem ? "Simpan Perubahan" : "Tambah ke Daftar";
+    if (els.restockRequestTitle) els.restockRequestTitle.textContent = editingGroup ? `Edit Permintaan ${editingGroup.requestNumber || getRestockRequestNumber(editingGroup)}` : "Tambah Item Restok";
+    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = "Tambah ke Daftar";
     if (els.restockRequestStatus) {
-      els.restockRequestStatus.textContent = editingItem
-        ? "Ubah jumlah, satuan, prioritas, atau catatan restok."
+      els.restockRequestStatus.textContent = editingGroup
+        ? "Tambah, ubah, atau hapus item di daftar restok lalu simpan perubahan."
         : "Cari obat, lengkapi detail, lalu tambahkan ke daftar restok.";
     }
-    const row = editingItem ? getRestockLiveMedicine(editingItem) : null;
-    const currentStockInfo = editingItem ? getRestockCurrentStockInfo(editingItem) : null;
-    if (row) state.restockSelectedMedicineKey = getRestockMedicineKey(row);
-    if (els.restockMedicineInput) {
-      els.restockMedicineInput.value = editingItem ? (editingItem.medicineName || row?.nama || "") : "";
-    }
-    if (els.restockCurrentStockInput) {
-      els.restockCurrentStockInput.value = editingItem
-        ? `${formatCell(currentStockInfo.stock, "stok")} ${currentStockInfo.unit}`
-        : "";
-    }
-    if (els.restockRealStockInput) {
-      const realStockSource = editingItem
-        ? (hasRestockRealStock(editingItem) ? editingItem.realStock : currentStockInfo.stock)
-        : "";
-      els.restockRealStockInput.value = editingItem
-        ? formatRestockNumberInputValue(realStockSource)
-        : "";
-    }
-    if (els.restockQtyInput) els.restockQtyInput.value = editingItem ? String(editingItem.qty || 1) : "1";
-    if (els.restockPrioritySelect) els.restockPrioritySelect.value = editingItem ? editingItem.priority || "urgent" : "urgent";
-    if (els.restockNoteInput) els.restockNoteInput.value = editingItem ? editingItem.note || "" : "";
+    if (els.restockMedicineInput) els.restockMedicineInput.value = "";
+    if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = "";
+    if (els.restockRealStockInput) els.restockRealStockInput.value = "";
+    if (els.restockQtyInput) els.restockQtyInput.value = "1";
+    if (els.restockPrioritySelect) els.restockPrioritySelect.value = "urgent";
+    if (els.restockNoteInput) els.restockNoteInput.value = "";
     if (els.restockPhotoLabel) els.restockPhotoLabel.textContent = "Upload Foto";
     if (els.restockMedicineResults) {
       els.restockMedicineResults.hidden = true;
       els.restockMedicineResults.innerHTML = "";
     }
-    populateRestockUnitOptions(editingItem ? editingItem.unit : "");
-    populateRestockRealStockUnitOptions(
-      editingItem ? editingItem.realStockUnit || currentStockInfo?.unit || "" : "",
-      row
-    );
+    populateRestockUnitOptions("");
+    populateRestockRealStockUnitOptions("");
     renderRestockDraftItems();
     if (els.restockDashboardView) els.restockDashboardView.hidden = true;
     if (els.restockRequestModal) els.restockRequestModal.hidden = false;
-    if (els.restockRequestModal) els.restockRequestModal.classList.toggle("is-editing", Boolean(editingItem));
+    if (els.restockRequestModal) els.restockRequestModal.classList.toggle("is-editing", Boolean(editingGroup));
     syncModalOpenState();
     window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
   }
 
   function closeRestockRequestModal() {
     state.restockEditingId = "";
+    state.restockEditingGroupId = "";
     state.restockDraftEditingIndex = -1;
     if (els.restockRequestModal) {
       els.restockRequestModal.hidden = true;
@@ -7289,28 +7415,45 @@
   }
 
   async function submitRestockDraftItems(mode = "send") {
-    if (state.restockEditingId) {
-      els.restockRequestForm?.requestSubmit();
-      return;
-    }
     if (!state.restockDraftItems.length) {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Tambahkan minimal 1 item restok ke daftar terlebih dahulu.";
       return;
     }
-    const token = startAppLoading(mode === "draft" ? "Menyimpan draft restok..." : "Mengirim laporan restok...", 0);
+    const isEditingGroup = Boolean(state.restockEditingGroupId);
+    const token = startAppLoading(isEditingGroup ? "Menyimpan perubahan permintaan restok..." : (mode === "draft" ? "Menyimpan draft restok..." : "Mengirim laporan restok..."), 0);
     try {
-      const items = state.restockDraftItems.map((item) => normalizeRestockRequest(item));
-      state.restockRequests = items.concat(state.restockRequests);
+      const now = new Date().toISOString();
+      const existingGroup = isEditingGroup ? getRestockGroupById(state.restockEditingGroupId) : null;
+      const groupId = existingGroup?.id || `RRG-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
+      const requestNumber = existingGroup?.requestNumber || buildRestockRequestNumber(now, groupId, getRestockRequestGroups().length + 1);
+      const user = getCurrentUserRecord();
+      const items = state.restockDraftItems.map((item, index) => normalizeRestockRequest({
+        ...item,
+        id: isEditingGroup && item.id ? item.id : `${groupId}-${String(index + 1).padStart(2, "0")}-${Math.random().toString(16).slice(2, 6)}`,
+        requestGroupId: groupId,
+        requestNumber,
+        requestItemIndex: index + 1,
+        createdAt: isEditingGroup ? (item.createdAt || existingGroup?.createdAt || now) : now,
+        updatedAt: now,
+        status: item.status || existingGroup?.status || "pending",
+        reporter: item.reporter || existingGroup?.reporter || user.name || user.username || "Operator",
+        reporterKey: item.reporterKey || existingGroup?.reporterKey || user.username || user.email || "",
+        history: (item.history || []).concat({ status: isEditingGroup ? "edited" : "pending", at: now, by: user.name || "Operator" })
+      }));
+      state.restockRequests = isEditingGroup
+        ? state.restockRequests.filter((item) => getRestockGroupId(item) !== groupId).concat(items)
+        : items.concat(state.restockRequests);
       persistRestockRequests({ remote: false });
       const syncResult = await saveRestockRequestsToBackend({ silent: true });
       if (!syncResult) throw new Error("Data restok belum berhasil disimpan online.");
-      addProfileActivity(mode === "draft" ? "Draft restok dibuat" : "Permintaan restok dibuat", `${formatNumber(items.length)} item - total qty ${formatNumber(items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0))}`);
+      addProfileActivity(isEditingGroup ? "Permintaan restok diperbarui" : (mode === "draft" ? "Draft restok dibuat" : "Permintaan restok dibuat"), `${requestNumber} - ${formatNumber(items.length)} item - total qty ${formatNumber(items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0))}`);
       state.restockDraftItems = [];
       state.restockDraftEditingIndex = -1;
+      state.restockEditingGroupId = "";
       closeRestockRequestModal();
       renderRestockPage();
-      setRestockPageMessage(mode === "draft" ? "Draft restok berhasil disimpan online dan siap dipilih di Surat Pesanan." : "Laporan restok berhasil dikirim online dan siap diproses ke Surat Pesanan.", "success");
-      showActionToast(mode === "draft" ? "Draft restok berhasil disimpan." : "Laporan restok berhasil dikirim.");
+      setRestockPageMessage(isEditingGroup ? "Permintaan restok berhasil diperbarui online." : (mode === "draft" ? "Draft restok berhasil disimpan online dan siap dipilih di Surat Pesanan." : "Laporan restok berhasil dikirim online dan siap diproses ke Surat Pesanan."), "success");
+      showActionToast(isEditingGroup ? "Permintaan restok berhasil diperbarui." : (mode === "draft" ? "Draft restok berhasil disimpan." : "Laporan restok berhasil dikirim."));
     } catch (error) {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = `Restok gagal disimpan: ${error.message}`;
       showActionToast(error.message || "Restok gagal disimpan.", "error");
@@ -7323,10 +7466,11 @@
     if (!els.restockList) return;
     pruneRestockSelection();
     const rows = getFilteredRestockRequests();
-    const total = state.restockRequests.length;
-    const pending = state.restockRequests.filter((item) => item.status === "pending").length;
-    const processing = state.restockRequests.filter((item) => item.status === "processing").length;
-    const done = state.restockRequests.filter((item) => item.status === "done").length;
+    const groups = getRestockRequestGroups();
+    const total = groups.length;
+    const pending = groups.filter((item) => item.status === "pending").length;
+    const processing = groups.filter((item) => item.status === "processing").length;
+    const done = groups.filter((item) => item.status === "done").length;
 
     setText(els.restockTotalCount, formatNumber(total));
     setText(els.restockPendingCount, formatNumber(pending));
@@ -7337,7 +7481,7 @@
       els.restockStatusText.textContent = getRestockSelectionCount()
         ? `${formatNumber(getRestockSelectionCount())} data restok dipilih. Ketuk ikon hapus untuk menghapus data terpilih.`
         : total
-          ? `${formatNumber(rows.length)} dari ${formatNumber(total)} laporan restok ditampilkan.`
+          ? `${formatNumber(rows.length)} dari ${formatNumber(total)} permintaan restok ditampilkan.`
           : "Belum ada laporan restok. Tambahkan obat habis dari tombol utama.";
     }
     if (els.restockMineButton) els.restockMineButton.classList.toggle("is-active", state.restockMineOnly);
@@ -7406,7 +7550,7 @@
   }
 
   function enterRestockSelectionMode(id = "") {
-    const item = id ? state.restockRequests.find((request) => request.id === id) : null;
+    const item = id ? getRestockGroupById(id) : null;
     if (item && !canDeleteRestockRequest(item)) {
       state.restockSelectionMode = false;
       setRestockPageMessage("Akun ini hanya bisa memilih data restok yang masih pending.", "error");
@@ -7425,7 +7569,7 @@
   }
 
   function toggleRestockSelection(id, options = {}) {
-    const item = state.restockRequests.find((request) => request.id === id);
+    const item = getRestockGroupById(id);
     if (!item) return;
     if (!canDeleteRestockRequest(item)) {
       setRestockPageMessage("Akun ini hanya bisa memilih data restok yang masih pending.", "error");
@@ -7438,7 +7582,7 @@
   }
 
   function pruneRestockSelection() {
-    const validIds = new Set(state.restockRequests.map((item) => item.id));
+    const validIds = new Set(getRestockRequestGroups().map((item) => item.id));
     state.selectedRestockIds.forEach((id) => {
       if (!validIds.has(id)) state.selectedRestockIds.delete(id);
     });
@@ -7451,7 +7595,7 @@
   }
 
   function getSelectedRestockDeleteCandidates() {
-    return state.restockRequests.filter((item) => state.selectedRestockIds.has(item.id) && canDeleteRestockRequest(item));
+    return getRestockRequestGroups().filter((item) => state.selectedRestockIds.has(item.id) && canDeleteRestockRequest(item));
   }
 
   function canEditRestockRequest(item) {
@@ -7473,8 +7617,15 @@
     const status = String(els.restockStatusFilter?.value || "").trim();
     const user = getCurrentUserRecord();
     const userKeys = [user.username, user.email, user.name].map(normalizeSearch).filter(Boolean);
-    return state.restockRequests.filter((item) => {
-      const haystack = normalizeSearch([item.medicineName, item.code, item.reporter, item.supplier, item.note].join(" "));
+    return getRestockRequestGroups().filter((item) => {
+      const haystack = normalizeSearch([
+        item.requestNumber,
+        item.medicineSummary,
+        item.reporter,
+        item.supplier,
+        item.note,
+        item.items.map((entry) => [entry.medicineName, entry.code, entry.supplier, entry.note].join(" ")).join(" ")
+      ].join(" "));
       const searchMatch = !query || haystack.includes(query);
       const statusMatch = !status || item.status === status;
       const mineMatch = !state.restockMineOnly || userKeys.includes(normalizeSearch(item.reporterKey)) || userKeys.includes(normalizeSearch(item.reporter));
@@ -7601,22 +7752,12 @@
   }
 
   function getRestockRequestNumber(item, index = 0) {
-    const date = parseDateValue(item.createdAt || item.updatedAt) || new Date();
-    const parts = new Intl.DateTimeFormat("en", { year: "2-digit", month: "2-digit", timeZone: "Asia/Jakarta" })
-      .formatToParts(date)
-      .reduce((map, part) => {
-        map[part.type] = part.value;
-        return map;
-      }, {});
-    const period = `${parts.year || "00"}${parts.month || "00"}`;
-    const digitSource = String(item.id || index + 1).replace(/\D/g, "");
-    const serial = String(Number(digitSource.slice(-5)) || index + 1).padStart(5, "0");
-    return `RR-${period}-${serial}`;
+    if (item?.requestNumber) return item.requestNumber;
+    return buildRestockRequestNumber(item?.createdAt || item?.updatedAt, item?.requestGroupId || item?.id, index);
   }
 
   function renderRestockCard(item, index) {
     const status = getRestockStatusMeta(item.status);
-    const priority = getRestockPriorityMeta(item.priority);
     const isSelected = state.selectedRestockIds.has(item.id);
     const canDelete = canDeleteRestockRequest(item);
     const canEdit = canEditRestockRequest(item);
@@ -7633,12 +7774,12 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
           </button>
         </td>
-        <td><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml(item.medicineName || item.code || "Obat")}</small></td>
+        <td><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml(item.medicineSummary || item.medicineName || item.code || "Obat")}</small></td>
         <td>${dateText}</td>
         <td>${escapeHtml(item.reporter || "-")}</td>
         <td><button class="restock-status-chip is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}">${status.icon}${escapeHtml(status.label)}</button></td>
-        <td><strong>1 item</strong><small>${escapeHtml(item.medicineName || "-")}</small></td>
-        <td>${escapeHtml(formatNumber(item.qty || 0))}</td>
+        <td><strong>${escapeHtml(formatNumber(item.itemCount || 1))} item</strong><small>${escapeHtml(item.medicineSummary || "-")}</small></td>
+        <td>${escapeHtml(formatNumber(item.totalQty || item.qty || 0))}</td>
         <td>
           <div class="restock-row-actions">
             <button class="restock-view-button" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg> Lihat</button>
@@ -7720,9 +7861,9 @@
   }
 
   function openRestockDetailModal(id) {
-    const item = state.restockRequests.find((request) => request.id === id);
+    const item = getRestockGroupById(id);
     if (!item) return;
-    state.restockDetailId = id;
+    state.restockDetailId = item.id;
     renderRestockDetail(item);
     showModal(els.restockDetailModal);
   }
@@ -7730,7 +7871,6 @@
   function renderRestockDetail(item) {
     const status = getRestockStatusMeta(item.status);
     const priority = getRestockPriorityMeta(item.priority);
-    const row = getRestockLiveMedicine(item);
     const user = getCurrentUserRecord();
     const isOwner = isOwnerUser(user);
     const canManage = isAdminUser(user) || isOwner;
@@ -7745,27 +7885,46 @@
     els.restockDetailBody.innerHTML = `
       <div class="restock-detail-summary restock-detail-summary-modern">
         <div class="restock-detail-image">
-          ${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : `<img src="assets/mobile-menu/restok-obat.png" alt="">`}
+          ${item.items?.[0]?.photo ? `<img src="${escapeHtml(item.items[0].photo)}" alt="">` : `<img src="assets/mobile-menu/restok-obat.png" alt="">`}
         </div>
         <div>
           <span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span>
           <span class="restock-status-label is-${status.key}">${status.icon}${escapeHtml(status.label)}</span>
-          <h3>${escapeHtml(item.medicineName)}</h3>
-          <small>${escapeHtml(item.unit || inferRestockUnit(row))}</small>
+          <h3>${escapeHtml(item.requestNumber || getRestockRequestNumber(item))}</h3>
+          <small>${escapeHtml(`${formatNumber(item.itemCount || item.items?.length || 0)} item - total qty ${formatNumber(item.totalQty || 0)}`)}</small>
         </div>
       </div>
       <dl class="restock-detail-grid restock-detail-grid-modern">
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4z"></path><path d="M8 7V5h8v2"></path></svg></span><dt>Stok Real</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h12"></path><path d="m16 3 4 4-4 4"></path><path d="M16 17H4"></path><path d="m8 21-4-4 4-4"></path></svg></span><dt>Selisih Stok</dt><dd class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg></span><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 16-9 5-9-5V8l9-5 9 5Z"></path><path d="M3 8l9 5 9-5"></path></svg></span><dt>Satuan</dt><dd>${escapeHtml(item.unit)}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg></span><dt>Total Item</dt><dd>${escapeHtml(formatNumber(item.itemCount || item.items?.length || 0))} item</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 16-9 5-9-5V8l9-5 9 5Z"></path><path d="M3 8l9 5 9-5"></path></svg></span><dt>Total Qty</dt><dd>${escapeHtml(formatNumber(item.totalQty || 0))}</dd></div>
         <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v16"></path><path d="M5 5h13l-2 5 2 5H5"></path></svg></span><dt>Prioritas</dt><dd>${escapeHtml(priority.label)}</dd></div>
         <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></span><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
         <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><path d="M3 10h18"></path><path d="M5 4h14v18H5z"></path></svg></span><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M9 21v-7h6v7"></path></svg></span><dt>Supplier</dt><dd>${escapeHtml(item.supplier || row?.suplier || "-")}</dd></div>
-        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16"></path><path d="M4 15h16"></path><path d="M10 3 8 21"></path><path d="m16 3-2 18"></path></svg></span><dt>Kode</dt><dd>${escapeHtml(item.code || row?.kode || "-")}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M9 21v-7h6v7"></path></svg></span><dt>Supplier</dt><dd>${escapeHtml(item.supplier || "-")}</dd></div>
+        <div><span class="restock-detail-field-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16"></path><path d="M4 15h16"></path><path d="M10 3 8 21"></path><path d="m16 3-2 18"></path></svg></span><dt>No. Permintaan</dt><dd>${escapeHtml(item.requestNumber || getRestockRequestNumber(item))}</dd></div>
       </dl>
+      <div class="restock-detail-items-card">
+        <strong>Daftar Obat Restok</strong>
+        <div class="restock-detail-items-scroll">
+          <table class="restock-detail-items-table">
+            <thead><tr><th>No</th><th>Obat</th><th>Stok Sistem</th><th>Stok Real</th><th>Qty</th><th>Satuan</th><th>Supplier</th><th>Catatan</th></tr></thead>
+            <tbody>
+              ${(item.items || []).map((entry, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td><strong>${escapeHtml(entry.medicineName || entry.code || "Obat")}</strong><small>${escapeHtml(entry.code || "-")}</small></td>
+                  <td>${escapeHtml(formatRestockCurrentStock(entry))}</td>
+                  <td class="${escapeHtml(getRestockDifferenceClass(entry))}">${escapeHtml(formatRestockRealStock(entry))}</td>
+                  <td>${escapeHtml(formatNumber(entry.qty || 0))}</td>
+                  <td>${escapeHtml(entry.unit || "-")}</td>
+                  <td>${escapeHtml(entry.supplier || "-")}</td>
+                  <td>${escapeHtml(entry.note || "-")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div class="restock-detail-note">
         <strong>Catatan</strong>
         <p>${escapeHtml(item.note || "Tidak ada catatan.")}</p>
@@ -7826,7 +7985,7 @@
   }
 
   async function updateRestockStatus(id, status) {
-    const item = state.restockRequests.find((request) => request.id === id);
+    const item = getRestockGroupById(id);
     if (!item) return;
     const user = getCurrentUserRecord();
     const isOwner = isOwnerUser(user);
@@ -7839,29 +7998,35 @@
       setRestockPageMessage("Status selesai hanya dapat diedit kembali oleh owner.", "error");
       return;
     }
-    item.status = status;
-    item.updatedAt = new Date().toISOString();
-    item.history = (item.history || []).concat({ status, at: item.updatedAt, by: user.name || "Admin" });
+    const groupId = item.id;
+    const updatedAt = new Date().toISOString();
+    state.restockRequests.forEach((request) => {
+      if (getRestockGroupId(request) !== groupId) return;
+      request.status = status;
+      request.updatedAt = updatedAt;
+      request.history = (request.history || []).concat({ status, at: updatedAt, by: user.name || "Admin" });
+    });
     persistRestockRequests({ remote: false });
     const syncResult = await saveRestockRequestsToBackend({ silent: true });
-    addProfileActivity("Status restok diperbarui", `${item.medicineName} - ${getRestockStatusMeta(status).label}`);
+    const updatedGroup = getRestockGroupById(groupId) || item;
+    addProfileActivity("Status restok diperbarui", `${updatedGroup.requestNumber || getRestockRequestNumber(updatedGroup)} - ${getRestockStatusMeta(status).label}`);
     renderRestockPage();
-    renderRestockDetail(item);
+    renderRestockDetail(updatedGroup);
     showActionToast(syncResult
       ? `Status restok ${getRestockStatusMeta(status).label.toLowerCase()} berhasil disimpan online.`
       : `Status restok ${getRestockStatusMeta(status).label.toLowerCase()} tersimpan lokal.`);
   }
 
   async function cancelRestockRequest(id) {
-    const item = state.restockRequests.find((request) => request.id === id);
+    const item = getRestockGroupById(id);
     if (!item || item.status !== "pending") {
       setRestockPageMessage("Laporan hanya bisa dibatalkan saat status masih pending.", "error");
       return;
     }
-    state.restockRequests = state.restockRequests.filter((request) => request.id !== id);
+    state.restockRequests = state.restockRequests.filter((request) => getRestockGroupId(request) !== item.id);
     persistRestockRequests({ remote: false });
     const syncResult = await saveRestockRequestsToBackend({ silent: true });
-    addProfileActivity("Laporan restok dibatalkan", item?.medicineName || "Restok obat");
+    addProfileActivity("Laporan restok dibatalkan", item.requestNumber || getRestockRequestNumber(item));
     closeRestockDetailModal();
     renderRestockPage();
     showActionToast(syncResult ? "Laporan restok berhasil dibatalkan online." : "Laporan restok berhasil dibatalkan lokal.");
@@ -7997,8 +8162,8 @@
       if (els.restockDeleteStatus) els.restockDeleteStatus.textContent = "Tidak ada data yang cocok untuk dihapus.";
       return;
     }
-    const ids = new Set(candidates.map((item) => item.id));
-    state.restockRequests = state.restockRequests.filter((item) => !ids.has(item.id));
+    const ids = new Set(candidates.map((item) => getRestockGroupId(item) || item.id));
+    state.restockRequests = state.restockRequests.filter((item) => !ids.has(getRestockGroupId(item) || item.id));
     persistRestockRequests();
     addProfileActivity("Hapus data restok", `${formatNumber(candidates.length)} laporan restok dihapus`);
     if (state.restockDetailId && ids.has(state.restockDetailId)) closeRestockDetailModal();
@@ -8021,7 +8186,7 @@
   }
 
   async function addRestockToPurchaseOrder(id) {
-    const item = state.restockRequests.find((request) => request.id === id);
+    const item = getRestockGroupById(id);
     if (!item) return;
     const user = getCurrentUserRecord();
     const isOwner = isOwnerUser(user);
@@ -8031,9 +8196,13 @@
       return;
     }
     if (item.status === "pending") {
-      item.status = "processing";
-      item.updatedAt = new Date().toISOString();
-      item.history = (item.history || []).concat({ status: "processing", at: item.updatedAt, by: user.name || "Admin", note: "Masuk draft pesanan pembelian" });
+      const updatedAt = new Date().toISOString();
+      state.restockRequests.forEach((request) => {
+        if (getRestockGroupId(request) !== item.id) return;
+        request.status = "processing";
+        request.updatedAt = updatedAt;
+        request.history = (request.history || []).concat({ status: "processing", at: updatedAt, by: user.name || "Admin", note: "Masuk draft pesanan pembelian" });
+      });
       const syncResult = await saveRestockRequestsToBackend({ silent: true });
       if (!syncResult) throw new Error("Draft restok belum tersimpan online.");
       if (Array.isArray(syncResult.requests)) {
@@ -8044,7 +8213,7 @@
     closeRestockDetailModal();
     renderRestockPage();
     renderPurchaseDraftList();
-    setRestockPageMessage(`${item.medicineName} masuk draft pesanan pembelian online.`, "success");
+    setRestockPageMessage(`${item.requestNumber || getRestockRequestNumber(item)} masuk draft pesanan pembelian online.`, "success");
     showActionToast("Draft restok siap dipilih di Pesanan Pembelian.");
   }
 
@@ -8780,13 +8949,15 @@
     setText(els.activityErrorCount, formatNumber(error));
 
     if (!filtered.length) {
-      els.activityLogTableBody.innerHTML = `<tr><td colspan="7" class="empty-table-cell">Belum ada log aktivitas sesuai filter.</td></tr>`;
+      els.activityLogTableBody.innerHTML = `<tr><td colspan="8" class="empty-table-cell">Belum ada log aktivitas sesuai filter.</td></tr>`;
       if (els.activityLogStatus) els.activityLogStatus.textContent = visibleLogs.length ? "Tidak ada aktivitas sesuai filter." : "Belum ada log aktivitas.";
+      updateActivityDeleteButtons(filtered);
       return;
     }
 
     els.activityLogTableBody.innerHTML = filtered.slice(0, 200).map((item) => `
       <tr>
+        <td><input class="activity-log-check" type="checkbox" value="${escapeHtml(buildActivityLogKey(item))}" ${state.selectedActivityLogKeys.has(buildActivityLogKey(item)) ? "checked" : ""} aria-label="Pilih log aktivitas"></td>
         <td><span class="activity-time">${escapeHtml(formatActivityDateTime(item.at))}</span></td>
         <td>
           <span class="activity-user-cell">
@@ -8802,6 +8973,105 @@
       </tr>
     `).join("");
     if (els.activityLogStatus) els.activityLogStatus.textContent = `Menampilkan ${formatNumber(Math.min(filtered.length, 200))} dari ${formatNumber(visibleLogs.length)} aktivitas.`;
+    updateActivityDeleteButtons(filtered);
+  }
+
+  function updateActivityDeleteButtons(filtered = getFilteredActivityLogs(getVisibleActivityLogs())) {
+    const selectedCount = state.selectedActivityLogKeys.size;
+    if (els.activityDeleteSelectedButton) {
+      els.activityDeleteSelectedButton.disabled = selectedCount < 1;
+      els.activityDeleteSelectedButton.textContent = selectedCount ? `Hapus Terpilih (${formatNumber(selectedCount)})` : "Hapus Terpilih";
+    }
+    if (els.activitySelectAllButton) {
+      const visibleKeys = filtered.slice(0, 200).map(buildActivityLogKey);
+      const allSelected = visibleKeys.length > 0 && visibleKeys.every((key) => state.selectedActivityLogKeys.has(key));
+      els.activitySelectAllButton.textContent = allSelected ? "Batal Pilih" : "Pilih Semua";
+      els.activitySelectAllButton.disabled = visibleKeys.length < 1;
+    }
+    if (els.activityDeleteDateButton) els.activityDeleteDateButton.disabled = !String(els.activityDateFilter?.value || "").trim();
+  }
+
+  function handleActivityLogSelectionChange(event) {
+    const checkbox = event.target.closest(".activity-log-check");
+    if (!checkbox) return;
+    if (checkbox.checked) state.selectedActivityLogKeys.add(checkbox.value);
+    else state.selectedActivityLogKeys.delete(checkbox.value);
+    updateActivityDeleteButtons();
+  }
+
+  function toggleAllVisibleActivityLogs() {
+    const filtered = getFilteredActivityLogs(getVisibleActivityLogs()).slice(0, 200);
+    const keys = filtered.map(buildActivityLogKey);
+    const allSelected = keys.length > 0 && keys.every((key) => state.selectedActivityLogKeys.has(key));
+    keys.forEach((key) => {
+      if (allSelected) state.selectedActivityLogKeys.delete(key);
+      else state.selectedActivityLogKeys.add(key);
+    });
+    renderActivityLogPage();
+  }
+
+  async function deleteActivityLogs(mode) {
+    const logs = getVisibleActivityLogs();
+    const dateValue = String(els.activityDateFilter?.value || "").trim();
+    const candidates = logs.filter((item) => {
+      if (mode === "selected") return state.selectedActivityLogKeys.has(buildActivityLogKey(item));
+      if (mode === "date") return dateValue && getActivityDateKey(item.at) === dateValue;
+      return true;
+    });
+    if (!candidates.length) {
+      showActionToast("Tidak ada log aktivitas yang cocok untuk dihapus.", "error");
+      return;
+    }
+    const labelMap = {
+      selected: `${formatNumber(candidates.length)} log terpilih`,
+      date: `log tanggal ${dateValue}`,
+      all: "semua log aktivitas"
+    };
+    const confirmed = await showConfirmDialog(`Hapus ${labelMap[mode] || "log aktivitas"}?`, {
+      title: "Hapus Log Aktivitas",
+      confirmLabel: "Hapus"
+    });
+    if (!confirmed) return;
+
+    const keys = new Set(candidates.map(buildActivityLogKey));
+    const remoteKeys = new Set((state.ownerActivities || []).map((item) => buildActivityLogKey(normalizeActivityRecord(item))));
+    state.ownerActivities = (state.ownerActivities || []).filter((item) => !keys.has(buildActivityLogKey(normalizeActivityRecord(item))));
+    const local = readStoredArray(PROFILE_ACTIVITY_KEY).map(normalizeActivityRecord)
+      .filter((item) => !keys.has(buildActivityLogKey(item)));
+    writeStoredArray(PROFILE_ACTIVITY_KEY, local);
+    state.selectedActivityLogKeys.clear();
+    renderActivityLogPage();
+
+    try {
+      await postToApi({
+        action: "deleteActivityLog",
+        mode,
+        keys: Array.from(keys),
+        date: dateValue,
+        role: getCurrentUserRecord().role || "",
+        username: getCurrentUserRecord().username || "",
+        email: getCurrentUserRecord().email || ""
+      });
+      await fetchOwnerActivityLog({ silent: true });
+      showActionToast(`${formatNumber(candidates.length)} log aktivitas berhasil dihapus online.`);
+    } catch (error) {
+      if (Array.from(keys).some((key) => remoteKeys.has(key))) {
+        showActionToast("Log lokal sudah dihapus. Hapus online menunggu Apps Script terbaru.", "error");
+      } else {
+        showActionToast(`${formatNumber(candidates.length)} log aktivitas lokal berhasil dihapus.`);
+      }
+    }
+  }
+
+  function getActivityDateKey(value) {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Jakarta"
+    }).format(date);
   }
 
   function getVisibleActivityLogs() {
@@ -8828,8 +9098,7 @@
     return (logs || []).filter((item) => {
       const haystack = normalizeSearch([item.title, item.detail, item.actor, item.actorName, item.username, item.email, item.role, item.moduleLabel, item.statusLabel].join(" "));
       const itemUserKey = normalizeSearch(item.actorName || item.username || item.email || item.actor);
-      const itemDate = item.at ? new Date(item.at) : null;
-      const itemDateKey = itemDate && !Number.isNaN(itemDate.getTime()) ? itemDate.toISOString().slice(0, 10) : "";
+      const itemDateKey = getActivityDateKey(item.at);
       return (!query || haystack.includes(query))
         && (!moduleValue || item.moduleKey === moduleValue)
         && (!userValue || itemUserKey === userValue)
@@ -8967,7 +9236,7 @@
   }
 
   function buildActivityLogKey(item) {
-    return [item.at, item.title, item.detail, item.actor, item.username, item.email].map((part) => String(part || "")).join("|");
+    return item?.id || [item.at, item.title, item.detail, item.actor, item.username, item.email].map((part) => String(part || "")).join("|");
   }
 
   function formatActivityDateTime(value) {
@@ -8992,6 +9261,7 @@
     const profile = getProfileData();
     const user = getCurrentUserRecord() || {};
     const entry = {
+      id: `ACT-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
       title,
       detail,
       actor: `${profile.name || profile.username || "Akun"} - ${profile.role || "Operator"}`,
@@ -10834,6 +11104,17 @@
     if (viewName === "restok-obat") renderRestockPage();
     if (viewName === "log-aktivitas") renderActivityLogPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
+    maybeLogViewActivity(viewName, previousView, options);
+  }
+
+  function maybeLogViewActivity(viewName, previousView, options = {}) {
+    if (!previousView || previousView === viewName || options.skipHistory || options.fromHistory || options.fromBack) return;
+    if (viewName === "home") return;
+    const now = Date.now();
+    const last = Number(state.activityViewLogAt[viewName] || 0);
+    if (now - last < 5 * 60 * 1000) return;
+    state.activityViewLogAt[viewName] = now;
+    addProfileActivity(`Buka menu ${VIEW_TITLES[viewName] || viewName}`, `Pengguna membuka modul ${VIEW_TITLES[viewName] || viewName}`);
   }
 
   function maybeShowHomePrayerReminder() {
