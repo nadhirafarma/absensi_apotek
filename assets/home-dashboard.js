@@ -289,6 +289,8 @@
     restockMineOnly: false,
     restockDetailId: "",
     restockEditingId: "",
+    restockDraftItems: [],
+    restockDraftEditingIndex: -1,
     restockSelectionMode: false,
     selectedRestockIds: new Set(),
     restockLongPressTimer: null,
@@ -608,6 +610,7 @@
       poSummaryTotal: document.getElementById("poSummaryTotal"),
       poAddSupplierButton: document.getElementById("poAddSupplierButton"),
       restockPage: document.querySelector(".restock-page"),
+      restockDashboardView: document.getElementById("restockDashboardView"),
       restockBackButton: document.getElementById("restockBackButton"),
       restockStatusText: document.getElementById("restockStatusText"),
       restockTotalCount: document.getElementById("restockTotalCount"),
@@ -640,6 +643,14 @@
       restockNoteInput: document.getElementById("restockNoteInput"),
       restockPhotoInput: document.getElementById("restockPhotoInput"),
       restockPhotoLabel: document.getElementById("restockPhotoLabel"),
+      restockDraftList: document.getElementById("restockDraftList"),
+      restockDraftCount: document.getElementById("restockDraftCount"),
+      restockDraftTotalItem: document.getElementById("restockDraftTotalItem"),
+      restockDraftSummary: document.getElementById("restockDraftSummary"),
+      restockDraftTotalQty: document.getElementById("restockDraftTotalQty"),
+      restockClearDraftButton: document.getElementById("restockClearDraftButton"),
+      restockSaveDraftButton: document.getElementById("restockSaveDraftButton"),
+      restockSubmitDraftButton: document.getElementById("restockSubmitDraftButton"),
       restockDetailModal: document.getElementById("restockDetailModal"),
       restockDetailTitle: document.getElementById("restockDetailTitle"),
       restockDetailStatus: document.getElementById("restockDetailStatus"),
@@ -1028,6 +1039,10 @@
     if (els.restockMedicineResults) els.restockMedicineResults.addEventListener("click", handleRestockMedicineResultClick);
     if (els.restockBarcodeButton) els.restockBarcodeButton.addEventListener("click", startDashboardScanner);
     if (els.restockPhotoInput) els.restockPhotoInput.addEventListener("change", handleRestockPhotoChange);
+    if (els.restockDraftList) els.restockDraftList.addEventListener("click", handleRestockDraftListAction);
+    if (els.restockClearDraftButton) els.restockClearDraftButton.addEventListener("click", clearRestockDraftItems);
+    if (els.restockSaveDraftButton) els.restockSaveDraftButton.addEventListener("click", () => submitRestockDraftItems("draft"));
+    if (els.restockSubmitDraftButton) els.restockSubmitDraftButton.addEventListener("click", () => submitRestockDraftItems("send"));
     [els.closeRestockRequestButton, els.cancelRestockRequestButton].forEach((button) => {
       if (button) button.addEventListener("click", closeRestockRequestModal);
     });
@@ -1045,7 +1060,7 @@
     });
     [els.restockRequestModal, els.restockDetailModal, els.restockDeleteModal].forEach((modal) => {
       if (modal) modal.addEventListener("click", (event) => {
-        if (event.target === modal) hideModal(modal);
+        if (event.target === modal && modal.classList.contains("dashboard-modal")) hideModal(modal);
       });
     });
     if (els.importFileInput) els.importFileInput.addEventListener("change", handleImportFileChange);
@@ -6920,18 +6935,22 @@
       setRestockPageMessage("Data restok hanya bisa diedit oleh owner/admin, atau saat status masih pending.", "error");
       return;
     }
+    if (!editingItem) {
+      state.restockDraftItems = [];
+      state.restockDraftEditingIndex = -1;
+    }
     state.restockSelectedMedicineKey = "";
     state.restockEditingId = editingItem ? editingItem.id : "";
     state.pendingRestockPhoto = "";
     state.pendingRestockPhotoName = "";
     state.pendingRestockPhotoPromise = null;
     if (els.restockRequestForm) els.restockRequestForm.reset();
-    if (els.restockRequestTitle) els.restockRequestTitle.textContent = editingItem ? "Edit Data Obat Restok" : "Tambah Permintaan Restok";
-    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = editingItem ? "Simpan Perubahan" : "Kirim Laporan";
+    if (els.restockRequestTitle) els.restockRequestTitle.textContent = editingItem ? "Edit Data Obat Restok" : "Tambah Item Restok";
+    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = editingItem ? "Simpan Perubahan" : "Tambah ke Daftar";
     if (els.restockRequestStatus) {
       els.restockRequestStatus.textContent = editingItem
         ? "Ubah jumlah, satuan, prioritas, atau catatan restok."
-        : "Isi kebutuhan restok obat yang stoknya kosong atau menipis.";
+        : "Cari obat, lengkapi detail, lalu tambahkan ke daftar restok.";
     }
     const row = editingItem ? getRestockLiveMedicine(editingItem) : null;
     const currentStockInfo = editingItem ? getRestockCurrentStockInfo(editingItem) : null;
@@ -6965,13 +6984,24 @@
       editingItem ? editingItem.realStockUnit || currentStockInfo?.unit || "" : "",
       row
     );
-    showModal(els.restockRequestModal);
+    renderRestockDraftItems();
+    if (els.restockDashboardView) els.restockDashboardView.hidden = true;
+    if (els.restockRequestModal) els.restockRequestModal.hidden = false;
+    if (els.restockRequestModal) els.restockRequestModal.classList.toggle("is-editing", Boolean(editingItem));
+    syncModalOpenState();
     window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
   }
 
   function closeRestockRequestModal() {
     state.restockEditingId = "";
-    hideModal(els.restockRequestModal);
+    state.restockDraftEditingIndex = -1;
+    if (els.restockRequestModal) {
+      els.restockRequestModal.hidden = true;
+      els.restockRequestModal.classList.remove("is-editing");
+    }
+    if (els.restockDashboardView) els.restockDashboardView.hidden = false;
+    syncModalOpenState();
+    renderRestockPage();
   }
 
   function closeRestockDetailModal() {
@@ -7048,6 +7078,54 @@
     });
   }
 
+  function buildRestockRequestFromForm(row, medicineText, realStockText, realStockUnit, options = {}) {
+    const user = getCurrentUserRecord();
+    const now = options.now || new Date().toISOString();
+    const source = options.source || {};
+    return normalizeRestockRequest({
+      ...source,
+      id: source.id || `RST-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+      code: row?.kode || source.code || "",
+      medicineName: row?.nama || medicineText || source.medicineName,
+      currentStock: row?.stok || els.restockCurrentStockInput?.value || source.currentStock || "0",
+      stockUnit: row ? inferRestockStockUnit(row) : source.stockUnit,
+      realStock: realStockText,
+      realStockUnit,
+      unit: els.restockUnitSelect?.value || source.unit || inferRestockUnit(row),
+      qty: els.restockQtyInput?.value || source.qty || 1,
+      priority: els.restockPrioritySelect?.value || source.priority || "normal",
+      status: source.status || "pending",
+      reporter: source.reporter || user.name || user.username || "Operator",
+      reporterKey: source.reporterKey || user.username || user.email || "",
+      note: els.restockNoteInput?.value || "",
+      photo: state.pendingRestockPhoto || source.photo || "",
+      supplier: row?.suplier || source.supplier || "",
+      createdAt: source.createdAt || now,
+      updatedAt: now,
+      history: Array.isArray(source.history) && source.history.length
+        ? source.history.concat({ status: options.historyStatus || "edited", at: now, by: user.name || "Operator" })
+        : [{ status: options.historyStatus || "pending", at: now, by: user.name || "Operator" }]
+    });
+  }
+
+  function resetRestockItemFormAfterDraft() {
+    state.restockSelectedMedicineKey = "";
+    state.pendingRestockPhoto = "";
+    state.pendingRestockPhotoName = "";
+    state.pendingRestockPhotoPromise = null;
+    state.restockDraftEditingIndex = -1;
+    if (els.restockRequestForm) els.restockRequestForm.reset();
+    if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = "";
+    if (els.restockRealStockInput) els.restockRealStockInput.value = "";
+    if (els.restockMedicineResults) {
+      els.restockMedicineResults.hidden = true;
+      els.restockMedicineResults.innerHTML = "";
+    }
+    populateRestockUnitOptions();
+    populateRestockRealStockUnitOptions();
+    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = "Tambah ke Daftar";
+  }
+
   async function saveRestockRequest(event) {
     event.preventDefault();
     const medicineText = String(els.restockMedicineInput?.value || "").trim();
@@ -7074,9 +7152,24 @@
       els.restockRealStockInput?.focus();
       return;
     }
+    const realStockUnit = String(els.restockRealStockUnitSelect?.value || (row ? inferRestockRealStockUnit(row) : editingItem?.realStockUnit || editingItem?.stockUnit || "Pcs")).trim() || "Pcs";
+    if (!editingItem) {
+      if (state.pendingRestockPhotoPromise) await state.pendingRestockPhotoPromise;
+      const draft = buildRestockRequestFromForm(row, medicineText, realStockText, realStockUnit);
+      if (state.restockDraftEditingIndex >= 0) {
+        state.restockDraftItems[state.restockDraftEditingIndex] = draft;
+        if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Item restok berhasil diperbarui di daftar.";
+      } else {
+        state.restockDraftItems.push(draft);
+        if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Item restok ditambahkan ke daftar. Tambahkan item lain atau kirim laporan.";
+      }
+      resetRestockItemFormAfterDraft();
+      renderRestockDraftItems();
+      window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
+      return;
+    }
     const loadingToken = startAppLoading(editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok obat...", 0);
     const user = getCurrentUserRecord();
-    const realStockUnit = String(els.restockRealStockUnitSelect?.value || (row ? inferRestockRealStockUnit(row) : editingItem?.realStockUnit || editingItem?.stockUnit || "Pcs")).trim() || "Pcs";
     try {
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = editingItem ? "Menyimpan perubahan restok..." : "Mengirim laporan restok...";
       await delay(80);
@@ -7084,45 +7177,13 @@
       await delay(450);
       const now = new Date().toISOString();
       if (editingItem) {
-        Object.assign(editingItem, normalizeRestockRequest({
-          ...editingItem,
-          code: row?.kode || editingItem.code || "",
-          medicineName: row?.nama || medicineText || editingItem.medicineName,
-          currentStock: row?.stok || editingItem.currentStock || "0",
-          stockUnit: row ? inferRestockStockUnit(row) : editingItem.stockUnit,
-          realStock: realStockText,
-          realStockUnit: realStockUnit,
-          unit: els.restockUnitSelect?.value || editingItem.unit,
-          qty: els.restockQtyInput?.value || editingItem.qty || 1,
-          priority: els.restockPrioritySelect?.value || editingItem.priority || "normal",
-          note: els.restockNoteInput?.value || "",
-          photo: state.pendingRestockPhoto || editingItem.photo || "",
-          supplier: row?.suplier || editingItem.supplier || "",
-          updatedAt: now,
-          history: (editingItem.history || []).concat({ status: "edited", at: now, by: user.name || "Operator" })
+        Object.assign(editingItem, buildRestockRequestFromForm(row, medicineText, realStockText, realStockUnit, {
+          source: editingItem,
+          now,
+          historyStatus: "edited"
         }));
       } else {
-        const request = normalizeRestockRequest({
-          id: `RST-${Date.now()}`,
-          code: row.kode || "",
-          medicineName: row.nama || medicineText,
-          currentStock: row.stok || els.restockCurrentStockInput?.value || "0",
-          stockUnit: inferRestockStockUnit(row),
-          realStock: realStockText,
-          realStockUnit: realStockUnit,
-          unit: els.restockUnitSelect?.value || inferRestockUnit(row),
-          qty: els.restockQtyInput?.value || 1,
-          priority: els.restockPrioritySelect?.value || "normal",
-          status: "pending",
-          reporter: user.name || user.username || "Operator",
-          reporterKey: user.username || user.email || "",
-          note: els.restockNoteInput?.value || "",
-          photo: state.pendingRestockPhoto,
-          supplier: row.suplier || "",
-          createdAt: now,
-          updatedAt: now,
-          history: [{ status: "pending", at: now, by: user.name || "Operator" }]
-        });
+        const request = buildRestockRequestFromForm(row, medicineText, realStockText, realStockUnit, { now });
         state.restockRequests.unshift(request);
       }
       persistRestockRequests({ remote: false });
@@ -7140,6 +7201,121 @@
       if (els.restockRequestStatus) els.restockRequestStatus.textContent = `Laporan gagal disimpan: ${error.message}`;
     } finally {
       endAppLoading(loadingToken);
+    }
+  }
+
+  function renderRestockDraftItems() {
+    const items = Array.isArray(state.restockDraftItems) ? state.restockDraftItems : [];
+    const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+    setText(els.restockDraftCount, `(${formatNumber(items.length)})`);
+    setText(els.restockDraftTotalItem, `Total ${formatNumber(items.length)} Item`);
+    setText(els.restockDraftSummary, items.length ? `${formatNumber(items.length)} item terdaftar` : "Belum ada item restok.");
+    setText(els.restockDraftTotalQty, formatNumber(totalQty));
+    if (!els.restockDraftList) return;
+    if (!items.length) {
+      els.restockDraftList.innerHTML = `
+        <tr class="restock-draft-empty-row">
+          <td colspan="9">Belum ada item. Cari obat di atas lalu klik Tambah ke Daftar.</td>
+        </tr>
+      `;
+      return;
+    }
+    els.restockDraftList.innerHTML = items.map((item, index) => {
+      const priority = getRestockPriorityMeta(item.priority);
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td><strong>${escapeHtml(item.medicineName || "Obat")}</strong><small>${escapeHtml(item.code || item.supplier || "-")}</small></td>
+          <td>${escapeHtml(formatRestockCurrentStock(item))}</td>
+          <td class="${escapeHtml(getRestockDifferenceClass(item))}">${escapeHtml(formatRestockRealStock(item))}</td>
+          <td>${escapeHtml(item.qty)}</td>
+          <td>${escapeHtml(item.unit)}</td>
+          <td><span class="restock-priority is-${priority.key}">${escapeHtml(priority.label)}</span></td>
+          <td>${escapeHtml(item.note || "-")}</td>
+          <td>
+            <span class="restock-draft-row-actions">
+              <button type="button" data-restock-draft-edit="${index}" aria-label="Edit item restok">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+              </button>
+              <button type="button" data-restock-draft-delete="${index}" aria-label="Hapus item restok">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+              </button>
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function handleRestockDraftListAction(event) {
+    const editButton = event.target.closest("[data-restock-draft-edit]");
+    const deleteButton = event.target.closest("[data-restock-draft-delete]");
+    if (!editButton && !deleteButton) return;
+    const index = Number(editButton?.dataset.restockDraftEdit ?? deleteButton?.dataset.restockDraftDelete);
+    const item = state.restockDraftItems[index];
+    if (!item) return;
+    if (deleteButton) {
+      state.restockDraftItems.splice(index, 1);
+      if (state.restockDraftEditingIndex === index) state.restockDraftEditingIndex = -1;
+      renderRestockDraftItems();
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Item restok dihapus dari daftar.";
+      return;
+    }
+    state.restockDraftEditingIndex = index;
+    populateRestockFormFromItem(item);
+    if (els.restockSubmitLabel) els.restockSubmitLabel.textContent = "Perbarui Daftar";
+    if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Ubah item lalu klik Perbarui Daftar.";
+    window.setTimeout(() => els.restockMedicineInput?.focus(), 80);
+  }
+
+  function populateRestockFormFromItem(item) {
+    const row = getRestockLiveMedicine(item);
+    if (row) state.restockSelectedMedicineKey = getRestockMedicineKey(row);
+    if (els.restockMedicineInput) els.restockMedicineInput.value = item.medicineName || row?.nama || "";
+    if (els.restockCurrentStockInput) els.restockCurrentStockInput.value = formatRestockCurrentStock(item);
+    if (els.restockRealStockInput) els.restockRealStockInput.value = formatRestockNumberInputValue(item.realStock);
+    populateRestockUnitOptions(item.unit || inferRestockUnit(row));
+    populateRestockRealStockUnitOptions(item.realStockUnit || inferRestockRealStockUnit(row), row);
+    if (els.restockQtyInput) els.restockQtyInput.value = String(item.qty || 1);
+    if (els.restockPrioritySelect) els.restockPrioritySelect.value = item.priority || "normal";
+    if (els.restockNoteInput) els.restockNoteInput.value = item.note || "";
+  }
+
+  function clearRestockDraftItems() {
+    state.restockDraftItems = [];
+    state.restockDraftEditingIndex = -1;
+    renderRestockDraftItems();
+    if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Daftar restok dikosongkan.";
+  }
+
+  async function submitRestockDraftItems(mode = "send") {
+    if (state.restockEditingId) {
+      els.restockRequestForm?.requestSubmit();
+      return;
+    }
+    if (!state.restockDraftItems.length) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = "Tambahkan minimal 1 item restok ke daftar terlebih dahulu.";
+      return;
+    }
+    const token = startAppLoading(mode === "draft" ? "Menyimpan draft restok..." : "Mengirim laporan restok...", 0);
+    try {
+      const items = state.restockDraftItems.map((item) => normalizeRestockRequest(item));
+      state.restockRequests = items.concat(state.restockRequests);
+      persistRestockRequests({ remote: false });
+      const syncResult = await saveRestockRequestsToBackend({ silent: true });
+      if (!syncResult) throw new Error("Data restok belum berhasil disimpan online.");
+      addProfileActivity(mode === "draft" ? "Draft restok dibuat" : "Permintaan restok dibuat", `${formatNumber(items.length)} item - total qty ${formatNumber(items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0))}`);
+      state.restockDraftItems = [];
+      state.restockDraftEditingIndex = -1;
+      closeRestockRequestModal();
+      renderRestockPage();
+      setRestockPageMessage(mode === "draft" ? "Draft restok berhasil disimpan online dan siap dipilih di Surat Pesanan." : "Laporan restok berhasil dikirim online dan siap diproses ke Surat Pesanan.", "success");
+      showActionToast(mode === "draft" ? "Draft restok berhasil disimpan." : "Laporan restok berhasil dikirim.");
+    } catch (error) {
+      if (els.restockRequestStatus) els.restockRequestStatus.textContent = `Restok gagal disimpan: ${error.message}`;
+      showActionToast(error.message || "Restok gagal disimpan.", "error");
+    } finally {
+      endAppLoading(token);
     }
   }
 
@@ -7175,12 +7351,16 @@
 
     if (!rows.length) {
       els.restockList.innerHTML = `
-        <article class="restock-empty-card">
-          <img src="assets/mobile-menu/restok-obat.png" alt="">
-          <strong>Belum ada laporan sesuai filter</strong>
-          <p>Gunakan tombol Tambah Obat Habis untuk membuat permintaan restok baru.</p>
-          <button class="restock-soft-button" type="button" data-restock-action="add">Tambah Laporan</button>
-        </article>
+        <tr class="restock-empty-row">
+          <td colspan="8">
+            <span class="restock-empty-state">
+              <img src="assets/mobile-menu/restok-obat.png" alt="">
+              <strong>Belum ada permintaan sesuai filter</strong>
+              <small>Gunakan tombol Buat Permintaan Restok untuk menambahkan kebutuhan restok obat.</small>
+              <button class="restock-soft-button" type="button" data-restock-action="add">Buat Permintaan</button>
+            </span>
+          </td>
+        </tr>
       `;
     } else {
       els.restockList.innerHTML = rows.map(renderRestockCard).join("");
@@ -7420,42 +7600,60 @@
     return "is-warning";
   }
 
+  function getRestockRequestNumber(item, index = 0) {
+    const date = parseDateValue(item.createdAt || item.updatedAt) || new Date();
+    const parts = new Intl.DateTimeFormat("en", { year: "2-digit", month: "2-digit", timeZone: "Asia/Jakarta" })
+      .formatToParts(date)
+      .reduce((map, part) => {
+        map[part.type] = part.value;
+        return map;
+      }, {});
+    const period = `${parts.year || "00"}${parts.month || "00"}`;
+    const digitSource = String(item.id || index + 1).replace(/\D/g, "");
+    const serial = String(Number(digitSource.slice(-5)) || index + 1).padStart(5, "0");
+    return `RR-${period}-${serial}`;
+  }
+
   function renderRestockCard(item, index) {
     const status = getRestockStatusMeta(item.status);
     const priority = getRestockPriorityMeta(item.priority);
     const isSelected = state.selectedRestockIds.has(item.id);
     const canDelete = canDeleteRestockRequest(item);
-    const differenceClass = getRestockDifferenceClass(item);
-    const tone = ((Number(index) || 0) % 4) + 1;
-    const priorityText = String(priority.label || "").toLowerCase();
-    const statusText = String(status.label || "").toLowerCase();
-    const title = item.medicineName || "Obat";
-    const source = [item.code, item.supplier].filter(Boolean).join(" - ") || "Laporan restok";
-    const photo = item.photo ? `<img class="restock-card-photo-inline" src="${escapeHtml(item.photo)}" alt="">` : "";
+    const canEdit = canEditRestockRequest(item);
+    const user = getCurrentUserRecord();
+    const canManage = isAdminUser(user) || isOwnerUser(user);
+    const canSendToDraft = canManage && item.status !== "rejected";
+    const requestNumber = getRestockRequestNumber(item, index);
+    const dateText = formatRestockDateTime(item.createdAt).replace(", ", "<br>");
     return `
-      <article class="restock-card quick-medicine-card quick-tone-${tone} ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
-        <button class="restock-select-toggle ${isSelected ? "is-selected" : ""}" type="button" data-restock-action="select" data-restock-id="${escapeHtml(item.id)}" aria-pressed="${isSelected ? "true" : "false"}" aria-label="${escapeHtml(isSelected ? "Batalkan pilihan" : "Pilih data restok")}" ${canDelete ? "" : "disabled"}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
-        </button>
-        <div class="quick-medicine-name restock-card-title-row">
-          <span class="quick-name-accent" aria-hidden="true"></span>
-          <span class="restock-title-line">
-            <strong>${escapeHtml(title)}</strong>
-            <span class="restock-priority is-${priority.key}">${escapeHtml(priorityText)}</span>
-          </span>
-          <small class="restock-card-subtitle">${escapeHtml(source)}</small>
-          ${photo}
-        </div>
-        <dl class="quick-medicine-list restock-card-grid">
-          <div><dt>Stok Saat Ini</dt><dd class="${getRestockCurrentStockClass(item)}">${escapeHtml(formatRestockCurrentStock(item))}</dd></div>
-          <div><dt>Stok Real</dt><dd class="${differenceClass}">${escapeHtml(formatRestockRealStock(item))}</dd></div>
-          <div><dt>Selisih</dt><dd class="${differenceClass}">${escapeHtml(formatRestockStockDifference(item))}</dd></div>
-          <div><dt>Permintaan</dt><dd>${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</dd></div>
-          <div><dt>Pelapor</dt><dd>${escapeHtml(item.reporter || "-")}</dd></div>
-          <div><dt>Tanggal</dt><dd>${escapeHtml(formatRestockDateTime(item.createdAt))}</dd></div>
-          <div><dt>Status</dt><dd><button class="restock-status-inline is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}" aria-label="${escapeHtml("Buka detail " + status.label)}">(${escapeHtml(statusText)})</button></dd></div>
-        </dl>
-      </article>
+      <tr class="restock-card restock-table-row ${isSelected ? "is-selected" : ""} ${!canDelete ? "is-locked-selection" : ""}" data-restock-id="${escapeHtml(item.id)}">
+        <td>
+          <span class="restock-row-number">${index + 1}</span>
+          <button class="restock-select-toggle ${isSelected ? "is-selected" : ""}" type="button" data-restock-action="select" data-restock-id="${escapeHtml(item.id)}" aria-pressed="${isSelected ? "true" : "false"}" aria-label="${escapeHtml(isSelected ? "Batalkan pilihan" : "Pilih data restok")}" ${canDelete ? "" : "disabled"}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
+          </button>
+        </td>
+        <td><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml(item.medicineName || item.code || "Obat")}</small></td>
+        <td>${dateText}</td>
+        <td>${escapeHtml(item.reporter || "-")}</td>
+        <td><button class="restock-status-chip is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}">${status.icon}${escapeHtml(status.label)}</button></td>
+        <td><strong>1 item</strong><small>${escapeHtml(item.medicineName || "-")}</small></td>
+        <td>${escapeHtml(formatNumber(item.qty || 0))}</td>
+        <td>
+          <div class="restock-row-actions">
+            <button class="restock-view-button" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg> Lihat</button>
+            <details class="restock-row-menu">
+              <summary aria-label="Aksi lainnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12h.01"></path><path d="M19 12h.01"></path><path d="M5 12h.01"></path></svg></summary>
+              <div>
+                ${canEdit ? `<button type="button" data-restock-action="edit" data-restock-id="${escapeHtml(item.id)}">Edit</button>` : ""}
+                ${canSendToDraft ? `<button type="button" data-restock-action="order" data-restock-id="${escapeHtml(item.id)}">Kirim ke Surat Pesanan</button>` : ""}
+                ${canManage ? `<button type="button" data-restock-action="processing" data-restock-id="${escapeHtml(item.id)}">Tandai Terkirim</button><button type="button" data-restock-action="done" data-restock-id="${escapeHtml(item.id)}">Selesai</button><button type="button" data-restock-action="rejected" data-restock-id="${escapeHtml(item.id)}">Batalkan</button>` : ""}
+                ${canDelete ? `<button class="is-danger" type="button" data-restock-action="delete" data-restock-id="${escapeHtml(item.id)}">Hapus</button>` : ""}
+              </div>
+            </details>
+          </div>
+        </td>
+      </tr>
     `;
   }
 
@@ -7464,7 +7662,7 @@
     renderRestockPage();
   }
 
-  function handleRestockListAction(event) {
+  async function handleRestockListAction(event) {
     clearRestockLongPress();
     const button = event.target.closest("[data-restock-action]");
     if (state.restockSelectionMode) {
@@ -7486,7 +7684,39 @@
       enterRestockSelectionMode(button.dataset.restockId);
       return;
     }
-    if (action === "detail") openRestockDetailModal(button.dataset.restockId);
+    const id = button.dataset.restockId || "";
+    if (action === "detail") {
+      openRestockDetailModal(id);
+      return;
+    }
+    if (action === "edit") {
+      openRestockRequestModal(id);
+      return;
+    }
+    if (action === "delete") {
+      state.selectedRestockIds.clear();
+      state.selectedRestockIds.add(id);
+      state.restockSelectionMode = true;
+      openRestockDeleteModal();
+      return;
+    }
+    if (["order", "processing", "done", "rejected"].includes(action)) {
+      const labelMap = {
+        order: "Mengirim restok ke Surat Pesanan...",
+        processing: "Menandai restok terkirim...",
+        done: "Menandai restok selesai...",
+        rejected: "Membatalkan permintaan restok..."
+      };
+      const token = startAppLoading(labelMap[action] || "Memproses restok...", 0);
+      try {
+        if (action === "order") await addRestockToPurchaseOrder(id);
+        else await updateRestockStatus(id, action === "processing" ? "processing" : action);
+      } catch (error) {
+        showActionToast(error.message || "Aksi restok gagal diproses.", "error");
+      } finally {
+        endAppLoading(token);
+      }
+    }
   }
 
   function openRestockDetailModal(id) {
@@ -7542,13 +7772,13 @@
       </div>
       <div class="restock-detail-actions">
         ${canSendToDraft ? `<button class="secondary-action" type="button" data-restock-detail-action="order">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>
-          Draft Pesanan
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+          Kirim ke Surat Pesanan
         </button>` : ""}
         ${canManageStatus ? `
-          <button class="filter-action" type="button" data-restock-detail-action="processing">Tandai Diproses</button>
+          <button class="filter-action" type="button" data-restock-detail-action="processing">Tandai Terkirim</button>
           <button class="restock-done-button" type="button" data-restock-detail-action="done">Selesai</button>
-          <button class="restock-danger-button" type="button" data-restock-detail-action="rejected">Tolak</button>
+          <button class="restock-danger-button" type="button" data-restock-detail-action="rejected">Batalkan</button>
         ` : ""}
         ${canEditRestock ? `<button class="restock-soft-button" type="button" data-restock-detail-action="edit-medicine">Edit Data Obat</button>` : ""}
         ${canCancel ? `<button class="restock-cancel-button" type="button" data-restock-detail-action="cancel">Batalkan Laporan</button>` : ""}
@@ -7820,10 +8050,10 @@
 
   function getRestockStatusMeta(status) {
     const map = {
-      pending: { key: "pending", label: "Menunggu Admin", notification: "Permintaan Restok Baru", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' },
-      processing: { key: "processing", label: "Sedang Diproses", notification: "Status Restok Diperbarui", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>' },
+      pending: { key: "pending", label: "Menunggu Persetujuan", notification: "Permintaan Restok Baru", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' },
+      processing: { key: "processing", label: "Terkirim", notification: "Status Restok Diperbarui", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>' },
       done: { key: "done", label: "Selesai", notification: "Restok Selesai", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>' },
-      rejected: { key: "rejected", label: "Ditolak", notification: "Laporan Ditolak", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>' }
+      rejected: { key: "rejected", label: "Dibatalkan", notification: "Laporan Dibatalkan", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>' }
     };
     return map[status] || map.pending;
   }

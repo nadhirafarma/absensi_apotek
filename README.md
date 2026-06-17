@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-17 23:45 WIB: merombak halaman Restok Obat menjadi dashboard Permintaan Restok dengan kartu ringkasan, tabel daftar permintaan, sub-halaman Tambah Item Restok, daftar draft multi-item, aksi lihat/edit/hapus/kirim ke Surat Pesanan, serta tetap memakai sinkron online `restock_requests` agar data live antar perangkat dan otomatis muncul di Draft Restok Obat pada Surat Pesanan.
 - 2026-06-17 04:05 WIB: menyesuaikan lagi header mobile agar nama apotek sejajar dengan logo, tanggal/jam sedikit turun, teks selamat datang dan semangat bekerja normal tidak bold, pesan WhatsApp PDF hanya berisi nomor Surat Pesanan, serta print/PDF dikunci satu halaman jika tidak ada konten halaman kedua.
 - 2026-06-17 03:35 WIB: memadatkan header mobile agar tidak memakan setengah layar, membuat brand "Apotek Nadhira Farma" satu baris dengan "Nadhira Farma" sedikit lebih besar, memperkecil logo/notifikasi/tema/foto user, mengembalikan klik foto user ke popup logout, menghilangkan celah atas header, serta memperbaiki posisi foto profil di halaman Akun & Profil.
 - 2026-06-17 03:05 WIB: mengganti header mobile semua menu mengikuti referensi Nadhira Farma, menambahkan tombol tema di antara notifikasi dan profil, menjaga header fixed sampai tepat setelah teks "Semangat bekerja hari ini.", mengarahkan default logo ke `logo.png`, serta membatasi gesture kembali hanya dari swipe tepi kiri layar.
@@ -35054,5 +35055,4 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 </body>
 </html>
 ````
-
 

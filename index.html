@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v25">
-  <script defer src="assets/auth-guard.js?v=20260617-ui-v25"></script>
-  <script defer src="assets/app.js?v=20260617-ui-v25"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260617-ui-v26">
+  <script defer src="assets/auth-guard.js?v=20260617-ui-v26"></script>
+  <script defer src="assets/app.js?v=20260617-ui-v26"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260617-ui-v25"></script>
+  <script defer src="assets/home-dashboard.js?v=20260617-ui-v26"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -926,48 +926,139 @@
         </section>
 
         <section class="dashboard-view" id="view-restok-obat" data-view="restok-obat">
-          <section class="restock-page" aria-labelledby="restockPageTitle">
-            <header class="restock-hero">
-              <h2 id="restockPageTitle">Restok Obat</h2>
-              <p id="restockStatusText" class="restock-hero-copy">Laporan kekosongan obat dan permintaan restok.</p>
-          </header>
+          <section class="restock-page restock-dashboard-view" id="restockDashboardView" aria-labelledby="restockPageTitle">
+            <header class="restock-dashboard-head">
+              <div>
+                <h2 id="restockPageTitle">Permintaan Restok</h2>
+                <nav class="restock-breadcrumb" aria-label="Navigasi restok">
+                  <span>Home</span>
+                  <span>Persediaan</span>
+                  <strong>Permintaan Restok</strong>
+                </nav>
+              </div>
+              <button class="restock-primary-button" id="restockAddButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                Buat Permintaan Restok
+              </button>
+            </header>
 
             <section class="restock-stats" aria-label="Ringkasan restok">
-              <article><span class="restock-stat-icon is-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><small>Total Item</small><strong id="restockTotalCount">0</strong></article>
-              <article><span class="restock-stat-icon is-purple"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="9"></circle></svg></span><small>Menunggu</small><strong id="restockPendingCount">0</strong></article>
-              <article><span class="restock-stat-icon is-orange"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg></span><small>Diproses</small><strong id="restockProcessCount">0</strong></article>
-              <article><span class="restock-stat-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg></span><small>Selesai</small><strong id="restockDoneCount">0</strong></article>
+              <article><span class="restock-stat-icon is-purple"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l1 3h3v15H4V6h3Z"></path><path d="M9 11h6"></path><path d="M9 16h6"></path></svg></span><small>Total Permintaan</small><strong id="restockTotalCount">0</strong><em>Semua permintaan</em></article>
+              <article><span class="restock-stat-icon is-orange"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><small>Menunggu Persetujuan</small><strong id="restockPendingCount">0</strong><em>Belum diproses</em></article>
+              <article><span class="restock-stat-icon is-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg></span><small>Terkirim</small><strong id="restockProcessCount">0</strong><em>Sudah dikirim</em></article>
+              <article><span class="restock-stat-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></span><small>Selesai</small><strong id="restockDoneCount">0</strong><em>Selesai diproses</em></article>
             </section>
 
-          <div class="restock-toolbar">
-            <label class="restock-search">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
-              <input id="restockSearchInput" type="search" placeholder="Cari nama obat / pelapor...">
-            </label>
-            <button class="restock-primary-button" id="restockAddButton" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-              Tambah
-            </button>
-            <button class="restock-delete-toolbar-button" id="restockDeleteButton" type="button" aria-label="Hapus data restok" title="Hapus data restok">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
-            </button>
-            <button class="restock-icon-button" id="restockMineButton" type="button" aria-label="Tampilkan laporan saya" title="Laporan saya">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path></svg>
-            </button>
-              <select id="restockStatusFilter" aria-label="Filter status restok">
-                <option value="">Semua Status</option>
-                <option value="pending">Menunggu</option>
-                <option value="processing">Diproses</option>
-                <option value="done">Selesai</option>
-                <option value="rejected">Ditolak</option>
-              </select>
-            </div>
+            <section class="restock-list-panel">
+              <div class="restock-list-head">
+                <div>
+                  <h3>Daftar Permintaan Restok</h3>
+                  <p id="restockStatusText">Kelola dan pantau semua permintaan restok obat.</p>
+                </div>
+                <div class="restock-toolbar">
+                  <label class="restock-search">
+                    <input id="restockSearchInput" type="search" placeholder="Cari permintaan...">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
+                  </label>
+                  <select id="restockStatusFilter" aria-label="Filter status restok">
+                    <option value="">Semua Status</option>
+                    <option value="pending">Menunggu Persetujuan</option>
+                    <option value="processing">Terkirim</option>
+                    <option value="done">Selesai</option>
+                    <option value="rejected">Dibatalkan</option>
+                  </select>
+                  <button class="restock-icon-button" id="restockMineButton" type="button" aria-label="Tampilkan permintaan saya" title="Permintaan saya">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path></svg>
+                  </button>
+                  <button class="restock-delete-toolbar-button" id="restockDeleteButton" type="button" aria-label="Hapus data restok" title="Hapus data restok">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="restock-table-wrap">
+                <table class="restock-table">
+                  <thead>
+                    <tr><th>No</th><th>No. Permintaan</th><th>Tanggal</th><th>Dibuat Oleh</th><th>Status</th><th>Total Item</th><th>Total Qty</th><th>Aksi</th></tr>
+                  </thead>
+                  <tbody id="restockList" aria-live="polite"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
 
-          <div class="restock-layout">
-            <section class="restock-list" id="restockList" aria-live="polite"></section>
-          </div>
+          <section class="restock-form-page" id="restockRequestModal" hidden>
+            <header class="restock-form-head">
+              <button class="purchase-back-button" id="closeRestockRequestButton" type="button" aria-label="Kembali">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+              </button>
+              <div>
+                <h2 id="restockRequestTitle">Tambah Item Restok</h2>
+                <p id="restockRequestStatus">Cari obat, lengkapi detail, lalu tambahkan ke daftar restok.</p>
+              </div>
+            </header>
+
+            <form class="restock-request-card" id="restockRequestForm">
+              <div class="restock-form-grid">
+                <label class="restock-medicine-search-field">1. Cari Obat <span>*</span>
+                  <span class="dashboard-search restock-medicine-search">
+                    <input id="restockMedicineInput" type="search" placeholder="Cari nama obat / barcode / kode produk..." autocomplete="off" required>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
+                    <button class="barcode-scan-button" id="restockBarcodeButton" type="button" aria-label="Scan barcode obat" title="Scan barcode obat">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2"></path><path d="M17 4h2a1 1 0 0 1 1 1v2"></path><path d="M20 17v2a1 1 0 0 1-1 1h-2"></path><path d="M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M7 8v8"></path><path d="M11 8v8"></path><path d="M14 8v8"></path><path d="M17 8v8"></path></svg>
+                    </button>
+                  </span>
+                  <div class="restock-medicine-results" id="restockMedicineResults" hidden></div>
+                </label>
+                <label>2. Stok Saat Ini<input id="restockCurrentStockInput" type="text" placeholder="Stok sistem akan otomatis terisi" readonly></label>
+                <label>3. Stok Real <span>*</span><span class="restock-stock-input-row"><input id="restockRealStockInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Isi stok fisik saat ini" required><select id="restockRealStockUnitSelect" aria-label="Satuan stok real"></select></span></label>
+                <label>4. Qty Restok yang Dibutuhkan <span>*</span><input id="restockQtyInput" type="number" min="1" step="1" placeholder="Masukkan jumlah" required></label>
+                <label>5. Satuan <span>*</span><select id="restockUnitSelect" required></select></label>
+                <label>6. Prioritas <span>*</span><select id="restockPrioritySelect" required><option value="urgent">Mendesak</option><option value="important">Penting</option><option value="normal">Normal</option></select></label>
+                <label>7. Catatan<textarea id="restockNoteInput" rows="2" placeholder="Catatan (opsional)"></textarea></label>
+              </div>
+              <div class="restock-form-actions">
+                <button class="restock-primary-button" type="submit">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                  <span id="restockSubmitLabel">Tambah ke Daftar</span>
+                </button>
+              </div>
+            </form>
+
+            <section class="restock-draft-panel">
+              <div class="restock-draft-head">
+                <div>
+                  <h3>Daftar Restok <span id="restockDraftCount">(0)</span></h3>
+                  <p>Periksa kembali daftar obat yang akan direstok sebelum mengirim laporan.</p>
+                </div>
+                <div class="restock-draft-tools">
+                  <button class="restock-cancel-button" id="restockClearDraftButton" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+                    Hapus Semua
+                  </button>
+                  <span id="restockDraftTotalItem">Total 0 Item</span>
+                </div>
+              </div>
+              <div class="restock-draft-table-wrap">
+                <table class="restock-draft-table">
+                  <thead><tr><th>No</th><th>Obat</th><th>Stok Saat Ini<br>(Sistem)</th><th>Stok Real<br>(Fisik)</th><th>Qty Restok</th><th>Satuan</th><th>Prioritas</th><th>Catatan</th><th>Aksi</th></tr></thead>
+                  <tbody id="restockDraftList"></tbody>
+                </table>
+              </div>
+              <div class="restock-draft-footer">
+                <span id="restockDraftSummary">Belum ada item restok.</span>
+                <strong>Total Qty Restok <output id="restockDraftTotalQty">0</output></strong>
+              </div>
+              <div class="restock-draft-actions">
+                <button class="purchase-soft-button" id="cancelRestockRequestButton" type="button">Kembali</button>
+                <button class="purchase-soft-button" id="restockSaveDraftButton" type="button">Simpan Draft</button>
+                <button class="restock-primary-button" id="restockSubmitDraftButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+                  Kirim Laporan Restok
+                </button>
+              </div>
+            </section>
+          </section>
         </section>
-      </section>
 
         <section class="dashboard-view" id="view-surat-pesanan" data-view="surat-pesanan">
           <section class="purchase-page" id="purchaseListView">
@@ -1423,79 +1514,6 @@
       </main>
     </div>
   </div>
-
-  <section class="dashboard-modal restock-modal" id="restockRequestModal" hidden>
-    <form class="modal-card restock-request-card" id="restockRequestForm">
-      <div class="modal-head">
-        <div>
-          <h2 id="restockRequestTitle">Tambah Permintaan Restok</h2>
-          <p id="restockRequestStatus">Isi kebutuhan restok obat yang stoknya kosong atau menipis.</p>
-        </div>
-        <button class="icon-button" id="closeRestockRequestButton" type="button" aria-label="Tutup form restok">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-        </button>
-      </div>
-          <div class="restock-form-grid">
-            <label class="wide-field restock-medicine-search-field">Nama Obat <span>*</span>
-              <span class="dashboard-search restock-medicine-search">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg>
-                <input id="restockMedicineInput" type="search" placeholder="Cari nama obat / barcode / kode produk..." autocomplete="off" required>
-                <button class="barcode-scan-button" id="restockBarcodeButton" type="button" aria-label="Scan barcode obat" title="Scan barcode obat">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
-                    <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
-                    <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path>
-                    <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
-                    <path d="M7 8v8"></path>
-                    <path d="M11 8v8"></path>
-                    <path d="M14 8v8"></path>
-                    <path d="M17 8v8"></path>
-                  </svg>
-                </button>
-              </span>
-              <div class="restock-medicine-results" id="restockMedicineResults" hidden></div>
-            </label>
-        <label>Stok Saat Ini
-          <input id="restockCurrentStockInput" type="text" readonly>
-        </label>
-        <label>Stok Real <span>*</span>
-          <span class="restock-stock-input-row">
-            <input id="restockRealStockInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Isi stok fisik saat dicek" required>
-            <select id="restockRealStockUnitSelect" aria-label="Satuan stok real"></select>
-          </span>
-        </label>
-        <label>Qty Restok yang Dibutuhkan <span>*</span>
-          <input id="restockQtyInput" type="number" min="1" step="1" value="1" required>
-        </label>
-        <label>Satuan <span>*</span>
-          <select id="restockUnitSelect" required></select>
-        </label>
-        <label>Prioritas <span>*</span>
-          <select id="restockPrioritySelect" required>
-            <option value="urgent">Mendesak</option>
-            <option value="important">Penting</option>
-            <option value="normal">Normal</option>
-          </select>
-        </label>
-        <label class="wide-field">Catatan
-          <textarea id="restockNoteInput" rows="4" placeholder="Contoh: sering dicari pelanggan hari ini"></textarea>
-        </label>
-        <label class="restock-upload-box wide-field">
-          <input id="restockPhotoInput" type="file" accept="image/*">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4Z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-          <strong id="restockPhotoLabel">Upload Foto</strong>
-          <small>JPG, PNG maks. 2MB</small>
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button class="filter-action" id="cancelRestockRequestButton" type="button">Batal</button>
-        <button class="secondary-action" type="submit">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
-          <span id="restockSubmitLabel">Kirim Laporan</span>
-        </button>
-      </div>
-    </form>
-  </section>
 
   <section class="dashboard-modal restock-modal" id="restockDetailModal" hidden>
     <div class="modal-card restock-detail-card" role="dialog" aria-modal="true" aria-labelledby="restockDetailTitle">
