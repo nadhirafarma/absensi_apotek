@@ -290,7 +290,6 @@
     restockDetailId: "",
     restockEditingId: "",
     restockEditingGroupId: "",
-    restockLoading: false,
     restockDraftItems: [],
     restockDraftEditingIndex: -1,
     restockSelectionMode: false,
@@ -6766,20 +6765,20 @@
   }
 
   async function fetchRestockRequests(options = {}) {
-    state.restockLoading = true;
-    if (state.activeView === "restok-obat") renderRestockPage();
     try {
       const payload = await postToApi({ action: "listRestockRequests" });
       if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.requests)) {
         throw new Error(payload?.message || "Endpoint restok online belum aktif.");
       }
-      state.restockRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
-      persistRestockRequests({ remote: false });
-      state.restockLoading = false;
-      renderRestockPage();
+      const nextRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
+      const previousSignature = JSON.stringify(state.restockRequests);
+      const nextSignature = JSON.stringify(nextRequests);
+      if (previousSignature !== nextSignature) {
+        state.restockRequests = nextRequests;
+        persistRestockRequests({ remote: false });
+        renderRestockPage();
+      }
     } catch (error) {
-      state.restockLoading = false;
-      if (state.activeView === "restok-obat") renderRestockPage();
       if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
     }
   }
@@ -7506,21 +7505,6 @@
       els.restockDeleteButton.setAttribute("aria-label", selectedCount ? `Hapus ${formatNumber(selectedCount)} data restok terpilih` : "Hapus data restok");
     }
 
-    if (state.restockLoading) {
-      els.restockList.innerHTML = `
-        <tr class="restock-empty-row">
-          <td colspan="8">
-            <span class="restock-empty-state">
-              <strong>Memuat permintaan restok...</strong>
-              <small>Data online sedang disinkronkan.</small>
-            </span>
-          </td>
-        </tr>
-      `;
-      if (els.restockStatusText) els.restockStatusText.textContent = "Memuat permintaan restok online...";
-      return;
-    }
-
     if (!rows.length) {
       els.restockList.innerHTML = `
         <tr class="restock-empty-row">
@@ -7788,10 +7772,6 @@
     const status = getRestockStatusMeta(item.status);
     const isSelected = state.selectedRestockIds.has(item.id);
     const canDelete = canDeleteRestockRequest(item);
-    const canEdit = canEditRestockRequest(item);
-    const user = getCurrentUserRecord();
-    const canManage = isAdminUser(user) || isOwnerUser(user);
-    const canSendToDraft = canManage && item.status !== "rejected";
     const requestNumber = getRestockRequestNumber(item, index);
     const dateText = formatRestockDateTime(item.createdAt).replace(", ", "<br>");
     return `
@@ -7811,15 +7791,6 @@
         <td>
           <div class="restock-row-actions">
             <button class="restock-view-button" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg> Lihat</button>
-            <details class="restock-row-menu">
-              <summary aria-label="Aksi lainnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12h.01"></path><path d="M19 12h.01"></path><path d="M5 12h.01"></path></svg></summary>
-              <div>
-                ${canEdit ? `<button type="button" data-restock-action="edit" data-restock-id="${escapeHtml(item.id)}">Edit</button>` : ""}
-                ${canSendToDraft ? `<button type="button" data-restock-action="order" data-restock-id="${escapeHtml(item.id)}">Kirim ke Surat Pesanan</button>` : ""}
-                ${canManage ? `<button type="button" data-restock-action="processing" data-restock-id="${escapeHtml(item.id)}">Tandai Terkirim</button><button type="button" data-restock-action="done" data-restock-id="${escapeHtml(item.id)}">Selesai</button><button type="button" data-restock-action="rejected" data-restock-id="${escapeHtml(item.id)}">Batalkan</button>` : ""}
-                ${canDelete ? `<button class="is-danger" type="button" data-restock-action="delete" data-restock-id="${escapeHtml(item.id)}">Hapus</button>` : ""}
-              </div>
-            </details>
           </div>
         </td>
       </tr>

@@ -20686,6 +20686,10 @@ body.sidebar-collapsed .global-sidebar-toggle {
   gap: 24px !important;
 }
 
+.restock-dashboard-view[hidden] {
+  display: none !important;
+}
+
 .restock-dashboard-head,
 .restock-form-head,
 .restock-list-head,
