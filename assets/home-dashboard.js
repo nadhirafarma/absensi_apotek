@@ -16,7 +16,7 @@
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
   const RESTOCK_PHOTO_MAX_LENGTH = 220000;
-  const EMPLOYEE_FACE_ID_MAX_LENGTH = 180000;
+  const EMPLOYEE_FACE_ID_MAX_LENGTH = 42000;
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
@@ -4503,7 +4503,7 @@
       const nameKey = keys[0] || "name";
       const label = formatCell(row[nameKey]);
       const inactive = isInactiveStatus(row.status);
-      const faceBadge = isEmployeeTable && (row.faceIdFileId || row.faceIdUrl)
+      const faceBadge = isEmployeeTable && (row.faceIdFileId || row.faceIdUrl || row.faceIdImageUrl)
         ? '<small class="employee-face-id-note is-ready">Face ID terdaftar</small>'
         : isEmployeeTable
           ? '<small class="employee-face-id-note">Belum ada Face ID</small>'
@@ -4691,7 +4691,7 @@
 
     if (field.type === "face-id") {
       const record = state.recordType === "employee" ? getLocalArray("employee")[state.recordIndex] || {} : {};
-      const hasFaceId = Boolean(record.faceIdFileId || record.faceIdUrl);
+      const hasFaceId = Boolean(record.faceIdFileId || record.faceIdUrl || record.faceIdImageUrl);
       const previewUrl = record.faceIdImageUrl || record.faceIdUrl || "";
       const preview = previewUrl
         ? `<span class="employee-face-id-preview has-image"><img src="${escapeHtml(previewUrl)}" alt=""></span>`
@@ -5007,24 +5007,43 @@
         .some((value) => value && keys.includes(value));
     });
 
-    if (!user) return null;
+    const role = employee.job || user?.role || "Operator";
+    const nextUser = normalizeUserRecord(user
+      ? {
+          ...user,
+          name: user.name || employee.name,
+          email: user.email || employee.email,
+          phone: user.phone || employee.phone,
+          address: user.address || employee.address,
+          status: normalizeRecordStatus(employee.status)
+        }
+      : {
+          name: employee.name,
+          username: employee.email || employee.phone || employee.name,
+          role,
+          status: normalizeRecordStatus(employee.status),
+          email: employee.email || "",
+          phone: employee.phone || "",
+          address: employee.address || "",
+          access: getDefaultAccessForRole(role)
+        });
 
-    const nextUser = normalizeUserRecord({
-      ...user,
-      status: normalizeRecordStatus(employee.status)
-    });
+    if (!user) {
+      nextUser.password = employee.phone || "123456";
+    }
+
     const result = await postToApi({
       action: "saveLoginUser",
       user: nextUser,
-      originalUsername: user.username || "",
-      originalEmail: user.email || ""
+      originalUsername: user?.username || "",
+      originalEmail: user?.email || ""
     });
 
     if (!result || (result.success !== true && result.ok !== true)) {
       throw new Error(result?.message || "Status login user belum tersinkron.");
     }
 
-    return upsertUserRecord(result.user || nextUser, user);
+    return upsertUserRecord(result.user || nextUser, user || {});
   }
 
   function deleteLocalRecord(type, index) {

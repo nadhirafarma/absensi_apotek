@@ -2111,27 +2111,56 @@ function saveEmployeeFaceIdIfNeeded_(record, previousRecord) {
 
 function saveEmployeeFaceIdPhoto_(photo, label, previousFileId) {
   var parsed = parseImageDataUrl_(photo);
-  var folder = getOrCreateFaceIdFolder_();
   var fileName = label + '.jpg';
 
-  if (previousFileId) {
-    try {
-      DriveApp.getFileById(previousFileId).setTrashed(true);
-    } catch (error) {
-      // File lama mungkin sudah dihapus manual dari Drive.
+  try {
+    var folder = getOrCreateFaceIdFolder_();
+
+    if (previousFileId) {
+      try {
+        DriveApp.getFileById(previousFileId).setTrashed(true);
+      } catch (error) {
+        // File lama mungkin sudah dihapus manual dari Drive.
+      }
     }
+
+    var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    return {
+      fileId: file.getId(),
+      fileUrl: file.getUrl(),
+      imageUrl: buildDriveImageUrl_(file.getId()),
+      registeredAt: new Date().toISOString()
+    };
+  } catch (error) {
+    // Fallback untuk deployment yang belum mendapat scope DriveApp.
+    // Foto sudah diperkecil di frontend agar aman disimpan sebagai data URL di sheet.
+    return {
+      fileId: '',
+      fileUrl: '',
+      imageUrl: String(photo || '').length <= 48000 ? photo : '',
+      registeredAt: new Date().toISOString(),
+      warning: String(error || '')
+    };
   }
+}
 
-  var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
-  var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+function isImageDataUrl_(value) {
+  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(String(value || '').trim());
+}
 
-  return {
-    fileId: file.getId(),
-    fileUrl: file.getUrl(),
-    imageUrl: buildDriveImageUrl_(file.getId()),
-    registeredAt: new Date().toISOString()
-  };
+function pushInlineFaceRecord_(faces, employee, imageDataUrl) {
+  faces.push({
+    label: employee.faceIdLabel || buildFaceIdLabel_(employee.name),
+    name: employee.name,
+    fileId: employee.faceIdFileId || '',
+    fileUrl: employee.faceIdUrl || '',
+    imageUrl: imageDataUrl,
+    imageDataUrl: imageDataUrl,
+    registeredAt: employee.faceIdRegisteredAt || ''
+  });
 }
 
 function parseImageDataUrl_(value) {
@@ -2188,6 +2217,17 @@ function handleListFaceDatabase_(data) {
   employees.forEach(function(employee) {
     if (!employee.name || isInactiveStatus_(employee.status)) return;
 
+    var inlineImage = isImageDataUrl_(employee.faceIdImageUrl)
+      ? employee.faceIdImageUrl
+      : isImageDataUrl_(employee.faceIdUrl)
+        ? employee.faceIdUrl
+        : '';
+
+    if (inlineImage) {
+      pushInlineFaceRecord_(faces, employee, inlineImage);
+      return;
+    }
+
     var fileId = employee.faceIdFileId || parseDriveFileId_(employee.faceIdUrl || employee.faceIdImageUrl);
     if (!fileId) return;
 
@@ -2208,6 +2248,9 @@ function handleListFaceDatabase_(data) {
         registeredAt: employee.faceIdRegisteredAt || ''
       });
     } catch (error) {
+      if (inlineImage) {
+        pushInlineFaceRecord_(faces, employee, inlineImage);
+      }
       // Lewati file wajah yang sudah tidak tersedia tanpa menghentikan absensi.
     }
   });
