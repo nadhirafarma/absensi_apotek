@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-19 06:06 WIB: memadatkan lagi tampilan mobile Restok Obat; ikon dashboard dipusatkan di atas kartu, ukuran judul/kartu/daftar/detail/tabel diperkecil agar lebih banyak konten terlihat di layar Android/iPhone, tabel mobile dibuat lebih ringkas dengan horizontal-scroll yang lebih pendek, serta nomor permintaan restok diubah ke format `PRO-YYMMDD-XXX` berdasarkan urutan permintaan.
 - 2026-06-19 02:10 WIB: merapikan ulang mobile Restok Obat menjadi kartu permintaan dan detail mobile-first tanpa mengubah header/footer aplikasi, memperbaiki tombol/toolbar agar pas di Android/iPhone, membuat karyawan baru otomatis tersinkron menjadi user login sesuai jabatan, serta menambahkan fallback Face ID saat Apps Script belum memiliki izin DriveApp.
 - 2026-06-19 03:48 WIB: Apps Script Search API dideploy ulang ke deployment `AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu @110`.
 - 2026-06-19 00:25 WIB: merapikan ulang landing page; membuat fitur utama 2x2 dan center di hero, memodernkan desain card Kebijakan & Privasi Pengguna dengan teks lebih lengkap, menyelaraskan tombol paket berlangganan di bawah kartu, serta membuat footer legal/copyright/bantuan tampil jelas di landing.

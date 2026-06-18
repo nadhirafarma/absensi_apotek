@@ -6856,7 +6856,16 @@
       if (!group.updatedAt || new Date(item.updatedAt) > new Date(group.updatedAt)) group.updatedAt = item.updatedAt;
     });
 
-    return Array.from(map.values()).map((group, index) => {
+    const rawGroups = Array.from(map.values());
+    const sequenceById = {};
+    rawGroups
+      .slice()
+      .sort((a, b) => String(a.createdAt || a.updatedAt || "").localeCompare(String(b.createdAt || b.updatedAt || "")))
+      .forEach((group, index) => {
+        sequenceById[group.id] = index + 1;
+      });
+
+    return rawGroups.map((group, index) => {
       const items = group.items
         .sort((a, b) => (Number(a.requestItemIndex) || 0) - (Number(b.requestItemIndex) || 0) || String(a.createdAt).localeCompare(String(b.createdAt)));
       const suppliers = unique(items.map((item) => item.supplier).filter(Boolean));
@@ -6878,7 +6887,7 @@
         code: items[0]?.code || "",
         supplier: suppliers.length > 1 ? `${suppliers[0]} +${suppliers.length - 1}` : suppliers[0] || "",
         note: items.map((item) => item.note).filter(Boolean).join("; "),
-        requestNumber: normalizeRestockRequestNumber(group.requestNumber || buildRestockRequestNumber(group.createdAt, group.id, index))
+        requestNumber: formatRestockRequestNumber(group.requestNumber, group.createdAt || group.updatedAt, sequenceById[group.id] || index + 1)
       };
     }).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
   }
@@ -6904,22 +6913,37 @@
     return "normal";
   }
 
-  function buildRestockRequestNumber(value, seed, index = 0) {
+  function getRestockRequestPeriod(value) {
     const date = parseDateValue(value) || new Date();
-    const parts = new Intl.DateTimeFormat("en", { year: "2-digit", month: "2-digit", timeZone: "Asia/Jakarta" })
+    const parts = new Intl.DateTimeFormat("en", { year: "2-digit", month: "2-digit", day: "2-digit", timeZone: "Asia/Jakarta" })
       .formatToParts(date)
       .reduce((map, part) => {
         map[part.type] = part.value;
         return map;
       }, {});
-    const period = `${parts.year || "00"}${parts.month || "00"}`;
-    const digitSource = String(seed || index + 1).replace(/\D/g, "");
-    const serial = String(Number(digitSource.slice(-5)) || index + 1).padStart(5, "0");
+    return `${parts.year || "00"}${parts.month || "00"}${parts.day || "00"}`;
+  }
+
+  function buildRestockRequestNumber(value, seed, index = 0) {
+    const period = getRestockRequestPeriod(value);
+    const digitSource = String(seed || "").replace(/\D/g, "");
+    const serialNumber = Number(index) || Number(digitSource.slice(-3)) || 1;
+    const serial = String(Math.max(1, serialNumber)).padStart(3, "0");
     return `PRO-${period}-${serial}`;
   }
 
   function normalizeRestockRequestNumber(value) {
     return String(value || "").trim().replace(/^RR-/i, "PRO-");
+  }
+
+  function formatRestockRequestNumber(value, dateValue, sequence = 1) {
+    const raw = normalizeRestockRequestNumber(value);
+    if (/^PRO-\d{6}-\d{3,}$/i.test(raw)) return raw;
+    return buildRestockRequestNumber(dateValue, "", sequence);
+  }
+
+  function getNextRestockRequestSequence() {
+    return getRestockRequestGroups().length + 1;
   }
 
   function populateRestockMedicineOptions() {
@@ -7456,7 +7480,9 @@
       const now = new Date().toISOString();
       const existingGroup = isEditingGroup ? getRestockGroupById(state.restockEditingGroupId) : null;
       const groupId = existingGroup?.id || `RRG-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
-      const requestNumber = existingGroup?.requestNumber || buildRestockRequestNumber(now, groupId, getRestockRequestGroups().length + 1);
+      const requestNumber = existingGroup
+        ? formatRestockRequestNumber(existingGroup.requestNumber, existingGroup.createdAt || now, existingGroup.index + 1)
+        : buildRestockRequestNumber(now, "", getNextRestockRequestSequence());
       const user = getCurrentUserRecord();
       const items = state.restockDraftItems.map((item, index) => normalizeRestockRequest({
         ...item,
@@ -7783,8 +7809,7 @@
   }
 
   function getRestockRequestNumber(item, index = 0) {
-    if (item?.requestNumber) return normalizeRestockRequestNumber(item.requestNumber);
-    return normalizeRestockRequestNumber(buildRestockRequestNumber(item?.createdAt || item?.updatedAt, item?.requestGroupId || item?.id, index));
+    return formatRestockRequestNumber(item?.requestNumber, item?.createdAt || item?.updatedAt, index + 1);
   }
 
   function renderRestockCard(item, index) {
