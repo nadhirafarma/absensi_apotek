@@ -290,6 +290,7 @@
     restockDetailId: "",
     restockEditingId: "",
     restockEditingGroupId: "",
+    restockLoading: false,
     restockDraftItems: [],
     restockDraftEditingIndex: -1,
     restockSelectionMode: false,
@@ -5712,7 +5713,10 @@
       return;
     }
     if (editButton) {
-      openRestockRequestModal(id);
+      switchView("restok-obat", { previousView: "surat-pesanan" });
+      window.setTimeout(function() {
+        openRestockRequestModal(id);
+      }, 80);
       return;
     }
     if (deleteButton) {
@@ -6721,7 +6725,7 @@
     return {
       id,
       requestGroupId,
-      requestNumber: String(item.requestNumber || item.requestNo || item.noPermintaan || item.no_permintaan || "").trim(),
+      requestNumber: normalizeRestockRequestNumber(item.requestNumber || item.requestNo || item.noPermintaan || item.no_permintaan || ""),
       requestItemIndex: Math.max(1, Number(item.requestItemIndex || item.itemIndex || item.noItem || 1) || 1),
       code: String(item.code || item.kode || medicine?.kode || "").trim(),
       medicineName: String(item.medicineName || item.nama || item.name || medicine?.nama || "").trim(),
@@ -6762,6 +6766,8 @@
   }
 
   async function fetchRestockRequests(options = {}) {
+    state.restockLoading = true;
+    if (state.activeView === "restok-obat") renderRestockPage();
     try {
       const payload = await postToApi({ action: "listRestockRequests" });
       if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.requests)) {
@@ -6769,8 +6775,11 @@
       }
       state.restockRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
       persistRestockRequests({ remote: false });
+      state.restockLoading = false;
       renderRestockPage();
     } catch (error) {
+      state.restockLoading = false;
+      if (state.activeView === "restok-obat") renderRestockPage();
       if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
     }
   }
@@ -6812,7 +6821,7 @@
         map.set(groupId, {
           id: groupId,
           requestGroupId: groupId,
-          requestNumber: item.requestNumber || "",
+          requestNumber: normalizeRestockRequestNumber(item.requestNumber || ""),
           items: [],
           reporter: item.reporter || "",
           reporterKey: item.reporterKey || "",
@@ -6822,7 +6831,7 @@
       }
       const group = map.get(groupId);
       group.items.push({ ...item, requestGroupId: groupId });
-      if (!group.requestNumber && item.requestNumber) group.requestNumber = item.requestNumber;
+      if (!group.requestNumber && item.requestNumber) group.requestNumber = normalizeRestockRequestNumber(item.requestNumber);
       if (!group.reporter && item.reporter) group.reporter = item.reporter;
       if (!group.reporterKey && item.reporterKey) group.reporterKey = item.reporterKey;
       if (!group.createdAt || new Date(item.createdAt) < new Date(group.createdAt)) group.createdAt = item.createdAt;
@@ -6851,7 +6860,7 @@
         code: items[0]?.code || "",
         supplier: suppliers.length > 1 ? `${suppliers[0]} +${suppliers.length - 1}` : suppliers[0] || "",
         note: items.map((item) => item.note).filter(Boolean).join("; "),
-        requestNumber: group.requestNumber || buildRestockRequestNumber(group.createdAt, group.id, index)
+        requestNumber: normalizeRestockRequestNumber(group.requestNumber || buildRestockRequestNumber(group.createdAt, group.id, index))
       };
     }).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
   }
@@ -6888,7 +6897,11 @@
     const period = `${parts.year || "00"}${parts.month || "00"}`;
     const digitSource = String(seed || index + 1).replace(/\D/g, "");
     const serial = String(Number(digitSource.slice(-5)) || index + 1).padStart(5, "0");
-    return `RR-${period}-${serial}`;
+    return `PRO-${period}-${serial}`;
+  }
+
+  function normalizeRestockRequestNumber(value) {
+    return String(value || "").trim().replace(/^RR-/i, "PRO-");
   }
 
   function populateRestockMedicineOptions() {
@@ -7493,6 +7506,21 @@
       els.restockDeleteButton.setAttribute("aria-label", selectedCount ? `Hapus ${formatNumber(selectedCount)} data restok terpilih` : "Hapus data restok");
     }
 
+    if (state.restockLoading) {
+      els.restockList.innerHTML = `
+        <tr class="restock-empty-row">
+          <td colspan="8">
+            <span class="restock-empty-state">
+              <strong>Memuat permintaan restok...</strong>
+              <small>Data online sedang disinkronkan.</small>
+            </span>
+          </td>
+        </tr>
+      `;
+      if (els.restockStatusText) els.restockStatusText.textContent = "Memuat permintaan restok online...";
+      return;
+    }
+
     if (!rows.length) {
       els.restockList.innerHTML = `
         <tr class="restock-empty-row">
@@ -7752,8 +7780,8 @@
   }
 
   function getRestockRequestNumber(item, index = 0) {
-    if (item?.requestNumber) return item.requestNumber;
-    return buildRestockRequestNumber(item?.createdAt || item?.updatedAt, item?.requestGroupId || item?.id, index);
+    if (item?.requestNumber) return normalizeRestockRequestNumber(item.requestNumber);
+    return normalizeRestockRequestNumber(buildRestockRequestNumber(item?.createdAt || item?.updatedAt, item?.requestGroupId || item?.id, index));
   }
 
   function renderRestockCard(item, index) {
@@ -7774,7 +7802,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>
           </button>
         </td>
-        <td><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml(item.medicineSummary || item.medicineName || item.code || "Obat")}</small></td>
+        <td><strong>${escapeHtml(requestNumber)}</strong></td>
         <td>${dateText}</td>
         <td>${escapeHtml(item.reporter || "-")}</td>
         <td><button class="restock-status-chip is-${status.key}" type="button" data-restock-action="detail" data-restock-id="${escapeHtml(item.id)}">${status.icon}${escapeHtml(status.label)}</button></td>
@@ -11085,6 +11113,7 @@
     }
     if (viewName !== "surat-pesanan") closePurchaseDetailModal();
     state.activeView = viewName;
+    document.body.dataset.activeView = viewName;
     document.body.classList.toggle("home-view-active", viewName === "home");
     els.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
     els.viewButtons.forEach((button) => {

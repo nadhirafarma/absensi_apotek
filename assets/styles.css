@@ -21386,7 +21386,25 @@ body.sidebar-collapsed .global-sidebar-toggle {
 
 .restock-detail-actions .secondary-action,
 .restock-detail-actions .secondary-action:visited {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #2e67ff, #3156ee) !important;
   color: #fff !important;
+}
+
+@media (min-width: 821px) {
+  body[data-active-view="surat-pesanan"] .dashboard-content {
+    zoom: 1.1;
+  }
+
+  #restockDetailModal:not([hidden]) {
+    padding: 10px;
+  }
+
+  #restockDetailModal:not([hidden]) > .restock-detail-card {
+    transform: scale(0.8);
+    transform-origin: center center;
+    max-height: calc((100vh - 28px) / 0.8);
+  }
 }
 
 .activity-toolbar {
