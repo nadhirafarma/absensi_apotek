@@ -145,6 +145,9 @@
     if (button) button.addEventListener("click", hidePopup);
   });
 
+  setupPricingToggle();
+  setupScrollReveal();
+
   if (popup) {
     popup.addEventListener("click", (event) => {
       if (event.target === popup) hidePopup();
@@ -204,6 +207,65 @@
     const title = document.getElementById("landingTitle");
     if (title) title.innerHTML = dictionary.headline;
     updateThemeButton();
+  }
+
+  function setupPricingToggle() {
+    const buttons = Array.from(document.querySelectorAll("[data-plan-period]"));
+    const panels = Array.from(document.querySelectorAll("[data-pricing-panel]"));
+    if (!buttons.length || !panels.length) return;
+
+    function setPeriod(period) {
+      const selectedPeriod = period === "yearly" ? "yearly" : "monthly";
+      buttons.forEach((button) => {
+        const isActive = button.dataset.planPeriod === selectedPeriod;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+      panels.forEach((panel) => {
+        panel.classList.toggle("is-active", panel.dataset.pricingPanel === selectedPeriod);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setPeriod(button.dataset.planPeriod));
+    });
+    setPeriod(buttons.find((button) => button.classList.contains("is-active"))?.dataset.planPeriod || "monthly");
+  }
+
+  function setupScrollReveal() {
+    const selectors = [
+      ".feature-grid article",
+      ".information-band",
+      ".product-showcase-section",
+      ".privacy-section",
+      ".pricing-section",
+      ".legal-card",
+      ".landing-footer"
+    ];
+    const elements = Array.from(document.querySelectorAll(selectors.join(",")));
+
+    elements.forEach((element, index) => {
+      element.classList.add("reveal-slide");
+      element.style.setProperty("--reveal-delay", `${Math.min(index % 4, 3) * 80}ms`);
+    });
+
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, {
+      threshold: 0.14,
+      rootMargin: "0px 0px -8% 0px"
+    });
+
+    elements.forEach((element) => observer.observe(element));
   }
 
   function showPopup(title, message, okText) {

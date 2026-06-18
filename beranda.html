@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/landing.css?v=20260610-ui-v2">
-  <script defer src="assets/landing.js?v=20260610-ui-v2"></script>
+  <link rel="stylesheet" href="assets/landing.css?v=20260618-landing-v5">
+  <script defer src="assets/landing.js?v=20260618-landing-v5"></script>
 </head>
 <body>
   <main class="landing-page" data-lang="id">
@@ -162,6 +162,43 @@
 
       </section>
 
+      <section class="product-showcase-section" aria-labelledby="productShowcaseTitle">
+        <div class="product-copy">
+          <span class="section-eyebrow">Digitalisasi Bisnis Anda</span>
+          <h2 id="productShowcaseTitle">Dashboard web dan mobile untuk operasional apotek yang lebih rapi.</h2>
+          <p>Kelola data obat, restok, surat pesanan, presensi, dan laporan dalam satu tampilan yang bisa dibuka dari komputer, tablet, maupun ponsel.</p>
+          <div class="product-points">
+            <span>Live antar perangkat</span>
+            <span>Siap untuk owner dan admin</span>
+            <span>Terhubung ke draft Surat Pesanan</span>
+          </div>
+        </div>
+        <div class="product-device-cluster" aria-label="Pratinjau dashboard Indo Apotek">
+          <div class="product-monitor">
+            <div class="device-bar"><i></i><i></i><i></i></div>
+            <div class="monitor-screen">
+              <aside></aside>
+              <main>
+                <span>Dashboard Penjualan</span>
+                <strong>Rp 18,7 jt</strong>
+                <div class="monitor-chart"><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="monitor-cards"><b>Obat</b><b>Restok</b><b>SP</b></div>
+              </main>
+            </div>
+          </div>
+          <div class="product-tablet">
+            <strong>Stok Kritis</strong>
+            <span>12 item butuh restok</span>
+            <i></i><i></i><i></i>
+          </div>
+          <div class="product-phone">
+            <b>Presensi</b>
+            <strong>08.02 WIB</strong>
+            <span>Face ID aktif</span>
+          </div>
+        </div>
+      </section>
+
       <section class="privacy-section" aria-labelledby="privacyTitle">
         <header>
           <span class="privacy-main-icon">
@@ -207,11 +244,149 @@
         </div>
       </section>
 
+      <section class="pricing-section" id="pricingPlans" aria-labelledby="pricingTitle">
+        <div class="pricing-head">
+          <span class="section-eyebrow">Paket Berlangganan</span>
+          <h2 id="pricingTitle">Pilih paket yang sesuai dengan tahap bisnis apotek Anda.</h2>
+          <p>Hak akses disusun bertingkat seperti paket SaaS agar pemilik apotek bisa memilih sesuai kebutuhan operasional.</p>
+          <div class="pricing-toggle" role="tablist" aria-label="Periode paket">
+            <button class="is-active" type="button" data-plan-period="monthly" aria-pressed="true">Bulanan</button>
+            <button type="button" data-plan-period="yearly" aria-pressed="false">Tahunan</button>
+          </div>
+        </div>
+
+        <div class="pricing-grid is-active" data-pricing-panel="monthly">
+          <article class="pricing-card">
+            <span>Free Trial</span>
+            <h3>14 Hari</h3>
+            <p>Akses awal dengan menu dan fungsi terbatas.</p>
+            <ul>
+              <li>Aplikasi web dashboard</li>
+              <li>1 akun pengguna</li>
+              <li>Data obat terbatas</li>
+              <li>Cari data obat</li>
+              <li>Input restok dasar</li>
+              <li>Support awal via WhatsApp</li>
+            </ul>
+            <a href="login.html">Coba Gratis</a>
+          </article>
+          <article class="pricing-card is-featured">
+            <em>Rekomendasi</em>
+            <span>Standard</span>
+            <h3>Rp. 2.700,-<small>/hari</small></h3>
+            <p>Rp. 79.000,-/bulan</p>
+            <ul>
+              <li>Aplikasi Web, Android, dan iOS</li>
+              <li>Unlimited device</li>
+              <li>Maksimal 2 akun pengguna</li>
+              <li>Maksimal 1 gudang penyimpanan</li>
+              <li>Maksimal 2.000 master produk</li>
+              <li>Maksimal 2.000 kontak supplier/pelanggan</li>
+              <li>Data obat, supplier, dan karyawan</li>
+              <li>Restok obat dan Surat Pesanan</li>
+              <li>Laporan operasional dasar</li>
+              <li>Support WhatsApp</li>
+            </ul>
+            <a href="https://wa.me/6281221403723" target="_blank" rel="noopener">Pilih Standard</a>
+          </article>
+          <article class="pricing-card">
+            <span>Bisnis</span>
+            <h3>Rp. 5.000,-<small>/hari</small></h3>
+            <p>Rp. 149.000,-/bulan</p>
+            <ul>
+              <li>Semua benefit paket Standard</li>
+              <li>Unlimited akun pengguna</li>
+              <li>Unlimited gudang penyimpanan</li>
+              <li>Unlimited master produk</li>
+              <li>Unlimited kontak supplier/pelanggan</li>
+              <li>Manajemen pengguna dan hak akses</li>
+              <li>Log aktivitas lengkap</li>
+              <li>Rekomendasi pembelian/restok</li>
+              <li>Presensi dan jadwal shift karyawan</li>
+              <li>Prioritas pengembangan fitur</li>
+            </ul>
+            <a href="https://wa.me/6281221403723" target="_blank" rel="noopener">Pilih Bisnis</a>
+          </article>
+        </div>
+
+        <div class="pricing-grid" data-pricing-panel="yearly">
+          <article class="pricing-card is-featured">
+            <em>Diskon 15%</em>
+            <span>Standard 1 Tahun</span>
+            <h3>Rp. 2.200,-<small>/hari</small></h3>
+            <p>Rp. 799.000,-/tahun</p>
+            <ul>
+              <li>Aplikasi Web, Android, dan iOS</li>
+              <li>Unlimited device</li>
+              <li>Maksimal 2 akun pengguna</li>
+              <li>Maksimal 1 gudang penyimpanan</li>
+              <li>Maksimal 2.000 master produk</li>
+              <li>Maksimal 2.000 kontak supplier/pelanggan</li>
+              <li>Data obat, supplier, dan karyawan</li>
+              <li>Restok obat dan Surat Pesanan</li>
+              <li>Laporan operasional dasar</li>
+              <li>Support WhatsApp</li>
+            </ul>
+            <a href="https://wa.me/6281221403723" target="_blank" rel="noopener">Pilih Tahunan</a>
+          </article>
+          <article class="pricing-card">
+            <em>Premium</em>
+            <span>Bisnis 1 Tahun</span>
+            <h3>Rp. 4.100,-<small>/hari</small></h3>
+            <p>Rp. 1.499.000,-/tahun</p>
+            <small class="price-note">Harga normal 1.799 ribu/tahun.</small>
+            <ul>
+              <li>Semua benefit paket Standard</li>
+              <li>Unlimited akun pengguna</li>
+              <li>Unlimited gudang penyimpanan</li>
+              <li>Unlimited master produk</li>
+              <li>Unlimited kontak supplier/pelanggan</li>
+              <li>Manajemen pengguna dan hak akses</li>
+              <li>Log aktivitas lengkap</li>
+              <li>Rekomendasi pembelian/restok</li>
+              <li>Presensi dan jadwal shift karyawan</li>
+              <li>Prioritas pengembangan fitur</li>
+            </ul>
+            <a href="https://wa.me/6281221403723" target="_blank" rel="noopener">Pilih Bisnis</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="legal-section" aria-label="Kebijakan dan syarat Indo Apotek">
+        <article class="legal-card" id="privacyPolicy" aria-labelledby="privacyPolicyTitle">
+          <span class="section-eyebrow">Kebijakan</span>
+          <h2 id="privacyPolicyTitle">Kebijakan Privasi</h2>
+          <p>Indo Apotek menjaga data pengguna dan data operasional apotek agar hanya digunakan untuk kebutuhan layanan sistem.</p>
+          <ol>
+            <li>Data akun seperti nama, email, nomor telepon, role, dan akses menu digunakan untuk autentikasi, pengaturan hak akses, dan keamanan akun.</li>
+            <li>Data operasional seperti data obat, supplier, karyawan, restok, surat pesanan, presensi, dan log aktivitas digunakan untuk menjalankan fitur aplikasi.</li>
+            <li>Data tidak dijual kepada pihak lain. Pembagian data hanya dilakukan bila diperlukan untuk menjalankan layanan, memenuhi kewajiban hukum, atau atas persetujuan pengguna.</li>
+            <li>Pengguna bertanggung jawab menjaga kerahasiaan username, password, perangkat, dan akses akun masing-masing.</li>
+            <li>Admin atau owner dapat meminta pembaruan, koreksi, pembatasan akses, atau penghapusan data sesuai kewenangan dan kebutuhan operasional.</li>
+            <li>Sistem dapat menyimpan cache lokal di perangkat agar aplikasi lebih cepat dibuka dan tetap bisa membaca data terakhir sebelum sinkron terbaru tersedia.</li>
+          </ol>
+        </article>
+
+        <article class="legal-card" id="termsPolicy" aria-labelledby="termsPolicyTitle">
+          <span class="section-eyebrow">Aturan Layanan</span>
+          <h2 id="termsPolicyTitle">Syarat & Ketentuan</h2>
+          <p>Dengan menggunakan Indo Apotek, pengguna dianggap memahami dan menyetujui aturan penggunaan layanan berikut.</p>
+          <ol>
+            <li>Layanan digunakan untuk membantu operasional apotek, termasuk pengelolaan data obat, restok, pembelian, presensi, dan laporan.</li>
+            <li>Setiap pengguna wajib memakai akun sesuai identitas dan hak akses yang diberikan oleh owner atau administrator.</li>
+            <li>Pengguna dilarang menyalahgunakan sistem, memanipulasi data tanpa kewenangan, atau membagikan akses kepada pihak yang tidak berhak.</li>
+            <li>Owner atau administrator bertanggung jawab memeriksa kebenaran data yang dimasukkan, termasuk stok, harga, supplier, surat pesanan, dan data karyawan.</li>
+            <li>Gangguan koneksi, perubahan layanan pihak ketiga, atau perawatan sistem dapat memengaruhi sinkronisasi data. Sistem akan memakai data terakhir yang tersedia bila koneksi belum stabil.</li>
+            <li>Harga paket, fitur, dan ketentuan berlangganan dapat diperbarui. Perubahan penting akan diinformasikan melalui kanal resmi Indo Apotek.</li>
+          </ol>
+        </article>
+      </section>
+
       <footer class="landing-footer">
         <span>&copy; 2026 Indo Apotek. <span data-i18n="copyright">Semua hak dilindungi.</span></span>
         <nav aria-label="Tautan kebijakan">
-          <a href="#privacyTitle" data-i18n="privacyLink">Kebijakan Privasi</a>
-          <a href="#privacyTitle" data-i18n="termsLink">Syarat & Ketentuan</a>
+          <a href="#privacyPolicy" data-i18n="privacyLink">Kebijakan Privasi</a>
+          <a href="#termsPolicy" data-i18n="termsLink">Syarat & Ketentuan</a>
           <a href="https://wa.me/6281221403723" target="_blank" rel="noopener" data-i18n="helpLink">Bantuan</a>
         </nav>
       </footer>
