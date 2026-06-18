@@ -236,10 +236,8 @@
     const selectors = [
       ".feature-grid article",
       ".information-band",
-      ".product-showcase-section",
       ".privacy-section",
       ".pricing-section",
-      ".legal-card",
       ".landing-footer"
     ];
     const elements = Array.from(document.querySelectorAll(selectors.join(",")));
