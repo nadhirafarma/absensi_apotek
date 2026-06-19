@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-19 16:45 WIB: mengecilkan skala Surat Pesanan Pembelian desktop ke 70%, merapikan halaman Draft Restok Obat dengan toolbar/filter supplier modern, daftar PRO gradasi dan aksi yang hanya tampil saat detail dibuka, serta menambahkan tombol tambah/edit/hapus pada menu Data Role.
 - 2026-06-19 15:05 WIB: memperbaiki Log Aktivitas agar owner/admin dapat melihat aktivitas semua pengguna dan semua modul, menambahkan menu Data Role, mengubah badge notifikasi mobile menjadi angka merah, memperbesar Surat Pesanan desktop ke 110%, serta memindahkan Draft Restok Obat dari form pesanan ke halaman terpisah dengan pilihan item per obat.
 - 2026-06-19 06:55 WIB: memadatkan halaman mobile Daftar Permintaan Restok agar mengikuti referensi kartu daftar, mengecilkan judul Tambah Item Restok dan Edit Permintaan PRO, serta memperbaiki tampilan mobile Surat Pesanan supaya dashboard pesanan dan halaman Pesanan Baru benar-benar terpisah.
 - 2026-06-19 06:06 WIB: memadatkan lagi tampilan mobile Restok Obat; ikon dashboard dipusatkan di atas kartu, ukuran judul/kartu/daftar/detail/tabel diperkecil agar lebih banyak konten terlihat di layar Android/iPhone, tabel mobile dibuat lebih ringkas dengan horizontal-scroll yang lebih pendek, serta nomor permintaan restok diubah ke format `PRO-YYMMDD-XXX` berdasarkan urutan permintaan.

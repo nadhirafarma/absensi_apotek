@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v33">
+  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v34">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
-  <script defer src="assets/app.js?v=20260619-ui-v33"></script>
+  <script defer src="assets/app.js?v=20260619-ui-v34"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260619-ui-v33"></script>
+  <script defer src="assets/home-dashboard.js?v=20260619-ui-v34"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -1229,7 +1229,7 @@
               <button class="purchase-back-button" id="poDraftBackButton" type="button" aria-label="Kembali ke pesanan">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
               </button>
-              <div>
+              <div class="purchase-draft-title">
                 <h2>Draft Restok Obat</h2>
                 <p>Pilih item restok untuk dimasukkan ke Surat Pesanan Pembelian.</p>
               </div>
@@ -1550,12 +1550,13 @@
               <div class="module-head">
                 <div>
                   <h2>Data Role</h2>
-                  <p>Ringkasan role dan hak akses menu pengguna.</p>
+                  <p>Kelola role, hak akses menu, dan integrasi role pengguna.</p>
                 </div>
+                <button class="action-button" id="addRoleButton" type="button">+ Tambah Role</button>
               </div>
               <div class="simple-table-wrap role-access-wrap">
                 <table class="simple-table role-access-table">
-                  <thead><tr><th>Role</th><th>Total Akses</th><th>Hak Akses Menu</th></tr></thead>
+                  <thead><tr><th>Role</th><th>Total Akses</th><th>Pengguna</th><th>Hak Akses Menu</th><th>Aksi</th></tr></thead>
                   <tbody id="roleTableBody"></tbody>
                 </table>
               </div>

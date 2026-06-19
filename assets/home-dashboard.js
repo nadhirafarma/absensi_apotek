@@ -11,6 +11,7 @@
   const EMPLOYEE_KEY = "nadhira.employeeRecords";
   const SUPPLIER_KEY = "nadhira.supplierRecords";
   const USER_KEY = "nadhira.userRecords";
+  const ROLE_KEY = "nadhira.roleRecords";
   const PO_KEY = "nadhira.purchaseOrders";
   const RESTOCK_KEY = "nadhira.restockRequests";
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
@@ -275,6 +276,7 @@
     applyingGlobalFilter: false,
     filterSaveTimer: null,
     users: [],
+    roles: [],
     employees: [],
     suppliers: [],
     localRecordBootstrapRunning: false,
@@ -821,6 +823,7 @@
       salarySlipHistoryList: document.getElementById("salarySlipHistoryList"),
       userTableBody: document.getElementById("userTableBody"),
       roleTableBody: document.getElementById("roleTableBody"),
+      addRoleButton: document.getElementById("addRoleButton"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
       userRoleFilter: document.getElementById("userRoleFilter"),
@@ -969,8 +972,9 @@
     if (els.addEmployeeButton) els.addEmployeeButton.addEventListener("click", () => openRecordModal("employee", -1));
     if (els.addSupplierButton) els.addSupplierButton.addEventListener("click", () => openRecordModal("supplier", -1));
     if (els.addUserButton) els.addUserButton.addEventListener("click", () => openRecordModal("user", -1));
+    if (els.addRoleButton) els.addRoleButton.addEventListener("click", () => openRoleEditor("")); 
 
-    [els.employeeTableBody, els.supplierTableBody, els.userTableBody].forEach((tbody) => {
+    [els.employeeTableBody, els.supplierTableBody, els.userTableBody, els.roleTableBody].forEach((tbody) => {
       if (tbody) tbody.addEventListener("click", handleLocalTableAction);
     });
 
@@ -4115,11 +4119,13 @@
     state.employees = readStoredArray(EMPLOYEE_KEY).map(normalizeEmployeeRecord);
     state.suppliers = readStoredArray(SUPPLIER_KEY).map(normalizeSupplierRecord);
     state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
+    state.roles = readStoredArray(ROLE_KEY).map(normalizeRoleRecord).filter((item) => item.name);
     state.purchaseOrders = readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
     state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
     renderEmployees();
     renderSuppliers();
     renderUsers();
+    renderRoleDataPage();
     renderPurchaseOrders();
     renderRestockPage();
     renderReportsFromCache();
@@ -4330,7 +4336,33 @@
 
   function getDefaultAccessForRole(role) {
     const key = normalizeSearch(role || "operator");
+    const custom = state.roles.find((item) => normalizeSearch(item.name) === key);
+    if (custom && Array.isArray(custom.access) && custom.access.length) return normalizeAccessList(custom.access, custom.name);
     return (ROLE_ACCESS[key] || ROLE_ACCESS.operator).slice();
+  }
+
+  function getManagedRoleNames() {
+    return unique(["Owner", "Administrator", "Admin", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"]
+      .concat(state.roles.map((role) => role.name))
+      .concat(state.users.map((user) => user.role).filter(Boolean)))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
+  }
+
+  function normalizeRoleRecord(record = {}) {
+    const name = String(record.name || record.role || "").trim();
+    const access = normalizeAccessList(record.access || record.menu || "", name || "Operator");
+    return {
+      id: String(record.id || normalizeSearch(name) || Date.now()).trim(),
+      name,
+      access,
+      updatedAt: record.updatedAt || new Date().toISOString()
+    };
+  }
+
+  function persistRoles() {
+    state.roles = state.roles.map(normalizeRoleRecord).filter((item) => item.name);
+    writeStoredArray(ROLE_KEY, state.roles);
   }
 
   function getCurrentUserRecord() {
@@ -4550,18 +4582,63 @@
 
   function renderRoleDataPage() {
     if (!els.roleTableBody) return;
-    const roleNames = unique(["Owner", "Administrator", "Admin", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"].concat(state.users.map((user) => user.role).filter(Boolean)))
-      .filter(Boolean);
+    const roleNames = getManagedRoleNames();
     els.roleTableBody.innerHTML = roleNames.map((roleName) => {
-      const access = getDefaultAccessForRole(roleName).filter((key) => key !== "akses_semua_data");
+      const key = normalizeSearch(roleName);
+      const access = getDefaultAccessForRole(roleName).filter((item) => item !== "akses_semua_data");
+      const users = state.users.filter((user) => normalizeSearch(user.role) === key).length;
+      const customIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === key);
       return `
         <tr>
           <td><span class="pill-tag">${escapeHtml(formatRoleLabel(roleName))}</span></td>
           <td>${escapeHtml(formatNumber(access.length))} akses</td>
-          <td><span class="access-summary">${escapeHtml(access.map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ") || "Tanpa akses")}</span></td>
+          <td>${escapeHtml(formatNumber(users))} pengguna</td>
+          <td><span class="access-summary">${escapeHtml(access.map((item) => ACCESS_MENUS.find((menu) => menu.key === item)?.label || item).join(", ") || "Tanpa akses")}</span></td>
+          <td>
+            <div class="role-row-actions">
+              <button type="button" data-local-action="edit-role" data-role-name="${escapeHtml(roleName)}">Edit</button>
+              <button class="is-danger" type="button" data-local-action="delete-role" data-role-name="${escapeHtml(roleName)}" ${customIndex < 0 ? "data-default-role='1'" : ""}>Hapus</button>
+            </div>
+          </td>
         </tr>
       `;
     }).join("");
+  }
+
+  function openRoleEditor(roleName = "") {
+    const current = state.roles.find((item) => normalizeSearch(item.name) === normalizeSearch(roleName));
+    const defaultAccess = getDefaultAccessForRole(roleName || "Operator").filter((item) => item !== "akses_semua_data");
+    const name = window.prompt("Nama role", current?.name || roleName || "");
+    if (name === null) return;
+    const cleanName = String(name || "").trim();
+    if (!cleanName) {
+      showActionToast("Nama role wajib diisi.", "error");
+      return;
+    }
+    const accessValue = window.prompt("Hak akses menu, pisahkan dengan koma. Contoh: dashboard,data_obat,restok_obat", (current?.access || defaultAccess).join(","));
+    if (accessValue === null) return;
+    const access = normalizeAccessList(accessValue, cleanName).filter((item) => item !== "akses_semua_data");
+    const existingIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === normalizeSearch(cleanName) || normalizeSearch(item.name) === normalizeSearch(roleName));
+    const record = normalizeRoleRecord({ name: cleanName, access, updatedAt: new Date().toISOString() });
+    if (existingIndex >= 0) state.roles[existingIndex] = record;
+    else state.roles.push(record);
+    persistRoles();
+    renderRoleDataPage();
+    renderUserRoleOptions();
+    showActionToast("Data role berhasil disimpan.");
+  }
+
+  function deleteRoleRecord(roleName, isDefaultRole) {
+    if (isDefaultRole) {
+      showActionToast("Role bawaan tidak bisa dihapus. Gunakan Edit untuk menyesuaikan aksesnya.", "error");
+      return;
+    }
+    if (!window.confirm(`Hapus role ${roleName}?`)) return;
+    state.roles = state.roles.filter((item) => normalizeSearch(item.name) !== normalizeSearch(roleName));
+    persistRoles();
+    renderRoleDataPage();
+    renderUserRoleOptions();
+    showActionToast("Data role berhasil dihapus.");
   }
 
   function renderUsers() {
@@ -4611,7 +4688,7 @@
 
   function renderUserRoleOptions() {
     if (!els.userRoleFilter) return;
-    const roles = unique(state.users.map((user) => user.role).filter(Boolean)).sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
+    const roles = getManagedRoleNames();
     const current = els.userRoleFilter.value;
     els.userRoleFilter.innerHTML = `<option value="">Semua role</option>${roles.map((role) => `<option value="${escapeHtml(role)}">${escapeHtml(role)}</option>`).join("")}`;
     if (roles.includes(current)) els.userRoleFilter.value = current;
@@ -4623,6 +4700,14 @@
 
     const type = button.dataset.type;
     const index = Number(button.dataset.index);
+    if (button.dataset.localAction === "edit-role") {
+      openRoleEditor(button.dataset.roleName || "");
+      return;
+    }
+    if (button.dataset.localAction === "delete-role") {
+      deleteRoleRecord(button.dataset.roleName || "", button.dataset.defaultRole === "1");
+      return;
+    }
     if (button.dataset.localAction === "edit") openRecordModal(type, index);
     if (button.dataset.localAction === "delete") openDeleteModal(type, index, getLocalRecordLabel(type, index));
     if (button.dataset.localAction === "toggle-status") toggleEmployeeStatus(index);
@@ -4711,9 +4796,10 @@
     }
 
     if (field.type === "select") {
+      const options = field.key === "role" ? getManagedRoleNames() : field.options;
       return `
         <select name="${escapeHtml(field.key)}" ${field.required ? "required" : ""}>
-          ${field.options.map((option) => `<option value="${escapeHtml(option)}" ${String(option) === String(value) ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+          ${options.map((option) => `<option value="${escapeHtml(option)}" ${String(option) === String(value) ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
         </select>
       `;
     }
@@ -5764,7 +5850,7 @@
       els.poDraftList.innerHTML = '<article class="purchase-draft-card"><small>Tidak ada draft restok yang tersedia.</small></article>';
       return;
     }
-    els.poDraftList.innerHTML = drafts.slice(0, 40).map((item) => {
+    els.poDraftList.innerHTML = drafts.slice(0, 40).map((item, draftIndex) => {
       const requestNumber = item.requestNumber || getRestockRequestNumber(item);
       const itemRows = (item.items || []).map((medicine) => {
         const key = medicine.id || medicine.code || medicine.medicineName || "";
@@ -5776,10 +5862,9 @@
         </label>`;
       }).join("");
       return `
-        <article class="purchase-draft-card purchase-draft-card-full" data-po-draft="${escapeHtml(item.id)}">
+        <article class="purchase-draft-card purchase-draft-card-full is-tone-${draftIndex % 6}" data-po-draft="${escapeHtml(item.id)}">
           <button class="purchase-draft-card-toggle" type="button" data-po-draft-toggle="${escapeHtml(item.id)}">
-            <span><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
-            <b>Lihat Item</b>
+            <span><strong>${escapeHtml(requestNumber)} <b>Lihat Item</b></strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
           </button>
           <div class="purchase-draft-item-list">
             ${itemRows || '<small>Tidak ada item obat.</small>'}
