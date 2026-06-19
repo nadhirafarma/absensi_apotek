@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v32">
+  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v33">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
-  <script defer src="assets/app.js?v=20260619-ui-v32"></script>
+  <script defer src="assets/app.js?v=20260619-ui-v33"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260619-ui-v32"></script>
+  <script defer src="assets/home-dashboard.js?v=20260619-ui-v33"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -161,6 +161,15 @@
             <path d="M16 3.1a4 4 0 0 1 0 7.8"></path>
           </svg>
           <span class="sidebar-label">Manajemen Pengguna</span>
+        </button>
+        <button class="sidebar-link" type="button" data-view-target="data-role" data-access-key="data_role" title="Data Role">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16v14H4z"></path>
+            <path d="M8 9h8"></path>
+            <path d="M8 13h5"></path>
+            <path d="M17 13l1.5 1.5L22 11"></path>
+          </svg>
+          <span class="sidebar-label">Data Role</span>
         </button>
       </nav>
     </aside>
@@ -477,6 +486,12 @@
                   </svg>
                 </span>
                 <strong>Manajemen<br>Pengguna</strong>
+              </button>
+              <button class="mobile-home-card" type="button" data-view-target="data-role" data-access-key="data_role">
+                <span class="menu-icon menu-indigo">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path><path d="M17 13l1.5 1.5L22 11"></path></svg>
+                </span>
+                <strong>Data Role</strong>
               </button>
               <span class="home-menu-spacer" aria-hidden="true"></span>
               <a class="apoteker-ai-fab" id="apotekerAiButton" href="https://chatgpt.com/?q=Anda%20adalah%20Apoteker%20AI.%20Bantu%20saya%20menjawab%20pertanyaan%20operasional%20apotek%20secara%20ringkas%20dan%20aman." target="_blank" rel="noopener" aria-label="Apoteker AI" data-access-key="cari_data_obat">
@@ -1146,6 +1161,10 @@
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
                   Simpan Draft
                 </button>
+                <button class="purchase-soft-button purchase-draft-page-button" id="poOpenDraftButton" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg>
+                  Draft Restok Obat
+                </button>
                 <button class="purchase-primary-button" id="poSaveOrderButton" type="button">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
                   Simpan Pesanan
@@ -1200,15 +1219,29 @@
                   <textarea id="poAdditionalNote" rows="3" placeholder="Tulis catatan tambahan untuk pesanan ini..."></textarea>
                 </section>
               </main>
-
-              <aside class="purchase-form-side">
-                <section class="purchase-summary-card">
-                  <div class="purchase-card-head"><span class="purchase-mini-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><div><h3>Draft Restok Obat</h3><p>Buat draft berdasarkan kebutuhan restok obat.</p></div></div>
-                  <label class="purchase-search purchase-draft-search"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
-                  <div id="poDraftList" class="purchase-draft-list"></div>
-                </section>
-              </aside>
             </div>
+          </section>
+
+
+
+          <section class="purchase-draft-page purchase-form-page" id="purchaseDraftView" hidden>
+            <header class="purchase-form-head">
+              <button class="purchase-back-button" id="poDraftBackButton" type="button" aria-label="Kembali ke pesanan">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+              </button>
+              <div>
+                <h2>Draft Restok Obat</h2>
+                <p>Pilih item restok untuk dimasukkan ke Surat Pesanan Pembelian.</p>
+              </div>
+            </header>
+            <section class="purchase-card purchase-draft-full-card">
+              <div class="purchase-card-head"><span class="purchase-mini-icon is-green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5Z"></path><path d="M5 8.5 12 13l7-4.5"></path></svg></span><div><h3>Daftar Draft Restok</h3><p>Cari draft restok, buka detail item, lalu pilih obat yang akan masuk pesanan.</p></div></div>
+              <div class="purchase-draft-toolbar">
+                <label class="purchase-search purchase-draft-search"><input id="poReferenceFilter" type="search" placeholder="Cari draft restok / nama obat / supplier..."><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.2 15.2 4.8 4.8"></path></svg></label>
+                <select id="poDraftSupplierFilter" aria-label="Filter supplier draft restok"><option value="">Semua Supplier</option></select>
+              </div>
+              <div id="poDraftList" class="purchase-draft-list purchase-draft-list-full"></div>
+            </section>
           </section>
 
           <section class="purchase-order-summary-modal dashboard-modal" id="poSummaryModal" hidden>
@@ -1504,6 +1537,26 @@
                 <table class="simple-table">
                   <thead><tr><th>No</th><th>Nama Operator</th><th>Username</th><th>Role</th><th>Status</th><th>Akses</th><th>Aksi</th></tr></thead>
                   <tbody id="userTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="dashboard-view" id="view-data-role" data-view="data-role">
+          <div class="module-grid user-management-grid">
+            <div class="module-card role-data-card">
+              <div class="module-head">
+                <div>
+                  <h2>Data Role</h2>
+                  <p>Ringkasan role dan hak akses menu pengguna.</p>
+                </div>
+              </div>
+              <div class="simple-table-wrap role-access-wrap">
+                <table class="simple-table role-access-table">
+                  <thead><tr><th>Role</th><th>Total Akses</th><th>Hak Akses Menu</th></tr></thead>
+                  <tbody id="roleTableBody"></tbody>
                 </table>
               </div>
             </div>

@@ -190,7 +190,8 @@
     "import-data-obat": "Import Data Obat",
     "akun-profil": "Akun & Profil",
     "log-aktivitas": "Log Aktivitas",
-    "manajemen-pengguna": "Manajemen Pengguna"
+    "manajemen-pengguna": "Manajemen Pengguna",
+    "data-role": "Data Role"
   };
 
   const ACCESS_MENUS = [
@@ -210,13 +211,14 @@
     { key: "akun_profil", label: "Akun & Profil" },
     { key: "log_aktivitas", label: "Log Aktivitas" },
     { key: "manajemen_pengguna", label: "Manajemen Pengguna" },
+    { key: "data_role", label: "Data Role" },
     { key: "akses_semua_data", label: "Akses Semua Data (Owner)" }
   ];
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna"],
-    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna"],
+    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
+    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
     apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
     kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
     "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
@@ -544,6 +546,10 @@
       poBackButton: document.getElementById("poBackButton"),
       poSaveDraftButton: document.getElementById("poSaveDraftButton"),
       poSaveOrderButton: document.getElementById("poSaveOrderButton"),
+      poOpenDraftButton: document.getElementById("poOpenDraftButton"),
+      purchaseDraftView: document.getElementById("purchaseDraftView"),
+      poDraftBackButton: document.getElementById("poDraftBackButton"),
+      poDraftSupplierFilter: document.getElementById("poDraftSupplierFilter"),
       poImportDraftButton: document.getElementById("poImportDraftButton"),
       poExportButton: document.getElementById("poExportButton"),
       poFilterButton: document.getElementById("poFilterButton"),
@@ -814,6 +820,7 @@
       deleteAllSalarySlipHistoryButton: document.getElementById("deleteAllSalarySlipHistoryButton"),
       salarySlipHistoryList: document.getElementById("salarySlipHistoryList"),
       userTableBody: document.getElementById("userTableBody"),
+      roleTableBody: document.getElementById("roleTableBody"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
       userRoleFilter: document.getElementById("userRoleFilter"),
@@ -976,6 +983,8 @@
     if (els.poBackButton) els.poBackButton.addEventListener("click", showPurchaseOrderList);
     if (els.poSaveDraftButton) els.poSaveDraftButton.addEventListener("click", () => savePurchaseOrder(null, "draft"));
     if (els.poSaveOrderButton) els.poSaveOrderButton.addEventListener("click", () => requestPurchaseOrderSave("open"));
+    if (els.poOpenDraftButton) els.poOpenDraftButton.addEventListener("click", showPurchaseDraftPage);
+    if (els.poDraftBackButton) els.poDraftBackButton.addEventListener("click", showPurchaseFormPage);
     if (els.poImportDraftButton) els.poImportDraftButton.addEventListener("click", () => {
       openPurchaseOrderForm();
       els.poReferenceFilter?.focus();
@@ -1026,6 +1035,7 @@
       populatePurchaseRestockReferences();
       renderPurchaseDraftList();
     });
+    if (els.poDraftSupplierFilter) els.poDraftSupplierFilter.addEventListener("change", renderPurchaseDraftList);
     if (els.poRestockReference) els.poRestockReference.addEventListener("change", applyPurchaseRestockReference);
     if (els.printPoButton) els.printPoButton.addEventListener("click", printPurchaseOrder);
     if (els.restockBackButton) els.restockBackButton.addEventListener("click", () => switchView(isMobileViewport() ? "home" : "dashboard"));
@@ -2902,11 +2912,11 @@
     try {
       const result = await postToApi({
         action: "listActivityLog",
-        limit: isOwnerUser(user) || isAdminUser(user) ? 300 : 120,
-        role: user.role || "",
-        username: user.username || "",
-        email: user.email || "",
-        actor: user.name || ""
+        limit: isOwnerUser(user) || isAdminUser(user) ? 500 : 120,
+        role: isOwnerUser(user) || isAdminUser(user) ? "" : (user.role || ""),
+        username: isOwnerUser(user) || isAdminUser(user) ? "" : (user.username || ""),
+        email: isOwnerUser(user) || isAdminUser(user) ? "" : (user.email || ""),
+        actor: isOwnerUser(user) || isAdminUser(user) ? "" : (user.name || "")
       });
       if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
       state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
@@ -4442,7 +4452,8 @@
       "import-data-obat": "import_data_obat",
       "akun-profil": "akun_profil",
       "log-aktivitas": "log_aktivitas",
-      "manajemen-pengguna": "manajemen_pengguna"
+      "manajemen-pengguna": "manajemen_pengguna",
+      "data-role": "data_role"
     };
     return access.has(map[viewName] || viewName);
   }
@@ -4459,7 +4470,8 @@
       import_data_obat: "import-data-obat",
       akun_profil: "akun-profil",
       log_aktivitas: "log-aktivitas",
-      manajemen_pengguna: "manajemen-pengguna"
+      manajemen_pengguna: "manajemen-pengguna",
+      data_role: "data-role"
     };
     return map[key] || "dashboard";
   }
@@ -4532,6 +4544,23 @@
         </td>
       </tr>
     `;
+    }).join("");
+  }
+
+
+  function renderRoleDataPage() {
+    if (!els.roleTableBody) return;
+    const roleNames = unique(["Owner", "Administrator", "Admin", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"].concat(state.users.map((user) => user.role).filter(Boolean)))
+      .filter(Boolean);
+    els.roleTableBody.innerHTML = roleNames.map((roleName) => {
+      const access = getDefaultAccessForRole(roleName).filter((key) => key !== "akses_semua_data");
+      return `
+        <tr>
+          <td><span class="pill-tag">${escapeHtml(formatRoleLabel(roleName))}</span></td>
+          <td>${escapeHtml(formatNumber(access.length))} akses</td>
+          <td><span class="access-summary">${escapeHtml(access.map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ") || "Tanpa akses")}</span></td>
+        </tr>
+      `;
     }).join("");
   }
 
@@ -5246,6 +5275,7 @@
 
   function getPurchaseOrderRestockOptions() {
     const query = normalizeSearch(els.poReferenceFilter?.value || "");
+    const supplierFilter = normalizeSearch(els.poDraftSupplierFilter?.value || "");
     const picked = state.purchaseDraftPickedIds || new Set();
     return getRestockRequestGroups()
       .filter((group) => group.status !== "rejected" && group.status !== "done")
@@ -5258,7 +5288,10 @@
           group.reporter,
           group.items.map((item) => [item.medicineName, item.code, item.supplier].join(" ")).join(" ")
         ].join(" "));
-        return !query || haystack.includes(query);
+        const supplierMatch = !supplierFilter
+          || normalizeSearch(group.supplier || group.items?.[0]?.supplier || "") === supplierFilter
+          || group.items.some((item) => normalizeSearch(item.supplier) === supplierFilter);
+        return supplierMatch && (!query || haystack.includes(query));
       })
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
       .slice(0, 120);
@@ -5293,6 +5326,7 @@
     state.purchaseMode = "list";
     if (els.purchaseListView) els.purchaseListView.hidden = false;
     if (els.purchaseFormView) els.purchaseFormView.hidden = true;
+    if (els.purchaseDraftView) els.purchaseDraftView.hidden = true;
     renderPurchaseOrders();
   }
 
@@ -5308,6 +5342,7 @@
     state.purchaseItems = editing ? editing.items.map((item) => ({ ...item })) : [];
     if (els.purchaseListView) els.purchaseListView.hidden = true;
     if (els.purchaseFormView) els.purchaseFormView.hidden = false;
+    if (els.purchaseDraftView) els.purchaseDraftView.hidden = true;
     if (els.poFormTitle) els.poFormTitle.textContent = editing ? "Edit Pesanan" : "Pesanan Baru";
     if (els.poType) els.poType.value = editing?.type || "regular";
     if (els.poManualNumber) els.poManualNumber.value = editing?.manualNumber || editing?.number || "";
@@ -5330,6 +5365,33 @@
     updatePurchaseDueFields();
     renderPurchaseItems();
     renderPurchaseDraftList();
+  }
+
+
+  function showPurchaseDraftPage() {
+    if (els.purchaseListView) els.purchaseListView.hidden = true;
+    if (els.purchaseFormView) els.purchaseFormView.hidden = true;
+    if (els.purchaseDraftView) els.purchaseDraftView.hidden = false;
+    populatePurchaseDraftSupplierFilter();
+    renderPurchaseDraftList();
+    window.setTimeout(() => els.poReferenceFilter?.focus(), 40);
+  }
+
+  function showPurchaseFormPage() {
+    if (els.purchaseListView) els.purchaseListView.hidden = true;
+    if (els.purchaseDraftView) els.purchaseDraftView.hidden = true;
+    if (els.purchaseFormView) els.purchaseFormView.hidden = false;
+    renderPurchaseItems();
+  }
+
+  function populatePurchaseDraftSupplierFilter() {
+    if (!els.poDraftSupplierFilter) return;
+    const current = els.poDraftSupplierFilter.value;
+    const suppliers = unique(getRestockRequestGroups()
+      .flatMap((group) => (group.items || []).map((item) => item.supplier || group.supplier).filter(Boolean)))
+      .sort((a, b) => String(a).localeCompare(String(b), "id", { sensitivity: "base" }));
+    els.poDraftSupplierFilter.innerHTML = '<option value="">Semua Supplier</option>' + suppliers.map((supplier) => '<option value="' + escapeHtml(supplier) + '">' + escapeHtml(supplier) + '</option>').join("");
+    if (suppliers.includes(current)) els.poDraftSupplierFilter.value = current;
   }
 
   function updatePurchaseOrderTypeFields() {
@@ -5696,38 +5758,79 @@
 
   function renderPurchaseDraftList() {
     if (!els.poDraftList) return;
+    populatePurchaseDraftSupplierFilter();
     const drafts = getPurchaseOrderRestockOptions();
     if (!drafts.length) {
-      els.poDraftList.innerHTML = `<article class="purchase-draft-card"><small>Tidak ada draft restok yang tersedia.</small></article>`;
+      els.poDraftList.innerHTML = '<article class="purchase-draft-card"><small>Tidak ada draft restok yang tersedia.</small></article>';
       return;
     }
-    els.poDraftList.innerHTML = drafts.slice(0, 30).map((item) => `
-      <article class="purchase-draft-card" data-po-draft="${escapeHtml(item.id)}">
-        <strong>${escapeHtml(item.requestNumber || getRestockRequestNumber(item))}</strong>
-        <small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.medicineSummary, item.supplier].filter(Boolean).join(" - "))}</small>
-        <div class="purchase-draft-card-actions">
-          <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih</button>
-          <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
-          <button class="is-danger" type="button" data-po-draft-delete="${escapeHtml(item.id)}">Hapus</button>
-        </div>
-      </article>
-    `).join("");
+    els.poDraftList.innerHTML = drafts.slice(0, 40).map((item) => {
+      const requestNumber = item.requestNumber || getRestockRequestNumber(item);
+      const itemRows = (item.items || []).map((medicine) => {
+        const key = medicine.id || medicine.code || medicine.medicineName || "";
+        return `
+        <label class="purchase-draft-item-row">
+          <input type="checkbox" data-po-draft-item="${escapeHtml(key)}" data-po-draft-group="${escapeHtml(item.id)}">
+          <span><strong>${escapeHtml(medicine.medicineName || "Obat")}</strong><small>${escapeHtml([medicine.code, medicine.supplier].filter(Boolean).join(" - ") || "-")}</small></span>
+          <em>${escapeHtml(`${formatNumber(medicine.qty || 0)} ${medicine.unit || medicine.stockUnit || ""}`.trim())}</em>
+        </label>`;
+      }).join("");
+      return `
+        <article class="purchase-draft-card purchase-draft-card-full" data-po-draft="${escapeHtml(item.id)}">
+          <button class="purchase-draft-card-toggle" type="button" data-po-draft-toggle="${escapeHtml(item.id)}">
+            <span><strong>${escapeHtml(requestNumber)}</strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
+            <b>Lihat Item</b>
+          </button>
+          <div class="purchase-draft-item-list">
+            ${itemRows || '<small>Tidak ada item obat.</small>'}
+          </div>
+          <div class="purchase-draft-card-actions">
+            <button type="button" data-po-draft-add-selected="${escapeHtml(item.id)}">Masukkan Terpilih</button>
+            <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih Semua</button>
+            <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
+            <button class="is-danger" type="button" data-po-draft-delete="${escapeHtml(item.id)}">Hapus</button>
+          </div>
+        </article>`;
+    }).join("");
   }
 
   async function handlePurchaseDraftClick(event) {
     const addButton = event.target.closest("[data-po-draft-add]");
+    const selectedButton = event.target.closest("[data-po-draft-add-selected]");
+    const toggleButton = event.target.closest("[data-po-draft-toggle]");
     const editButton = event.target.closest("[data-po-draft-edit]");
     const deleteButton = event.target.closest("[data-po-draft-delete]");
-    const id = addButton?.dataset.poDraftAdd || editButton?.dataset.poDraftEdit || deleteButton?.dataset.poDraftDelete || "";
+    const id = addButton?.dataset.poDraftAdd || selectedButton?.dataset.poDraftAddSelected || toggleButton?.dataset.poDraftToggle || editButton?.dataset.poDraftEdit || deleteButton?.dataset.poDraftDelete || "";
     if (!id) return;
     const draft = getRestockGroupById(id);
     if (!draft) return;
+    if (toggleButton) {
+      toggleButton.closest(".purchase-draft-card")?.classList.toggle("is-open");
+      return;
+    }
+    if (selectedButton) {
+      const checked = Array.from(selectedButton.closest(".purchase-draft-card")?.querySelectorAll("[data-po-draft-item]:checked") || []);
+      const selectedKeys = new Set(checked.map((input) => input.dataset.poDraftItem));
+      const selectedDraft = { ...draft, items: (draft.items || []).filter((medicine) => selectedKeys.has(String(medicine.id || medicine.code || medicine.medicineName || ""))) };
+      if (!selectedDraft.items.length) {
+        showActionToast("Pilih minimal satu obat dari draft restok.", "error");
+        return;
+      }
+      addPurchaseItemsFromRestockGroup(selectedDraft);
+      if (els.poSupplier && !els.poSupplier.value && selectedDraft.items?.[0]?.supplier) {
+        els.poSupplier.value = selectedDraft.items[0].supplier;
+        fillPurchaseSupplierFields();
+      }
+      showPurchaseFormPage();
+      return;
+    }
     if (addButton) {
       addPurchaseItemsFromRestockGroup(draft);
       if (els.poSupplier && !els.poSupplier.value && draft.items?.[0]?.supplier) {
         els.poSupplier.value = draft.items[0].supplier;
         fillPurchaseSupplierFields();
       }
+      showPurchaseFormPage();
       return;
     }
     if (editButton) {
@@ -9260,13 +9363,7 @@
   }
 
   function canSeeActivityLogItem(item, user) {
-    if (isOwnerUser(user)) return true;
-    const own = isOwnActivityLogItem(item, user);
-    const role = normalizeSearch(user?.role);
-    const username = normalizeSearch(user?.username || user?.name || "");
-    const adminLike = role === "admin" || role === "administrator" || username === "admin";
-    if (adminLike) return own || normalizeSearch(item.role) !== "owner";
-    return own;
+    return Boolean(item || user);
   }
 
   function isOwnActivityLogItem(item, user) {
@@ -9311,7 +9408,8 @@
       role: profile.role || "Operator",
       username: user.username || profile.username || "",
       email: user.email || profile.email || "",
-      scope: "account",
+      scope: inferActivityModule({ title, detail }).key,
+      module: inferActivityModule({ title, detail }).label,
       at: new Date().toISOString()
     };
     activity.unshift(entry);
@@ -11146,7 +11244,11 @@
       fetchSalarySlipHistory({ silent: true });
     }
     if (viewName === "restok-obat") renderRestockPage();
-    if (viewName === "log-aktivitas") renderActivityLogPage();
+    if (viewName === "log-aktivitas") {
+      fetchOwnerActivityLog({ silent: true });
+      renderActivityLogPage();
+    }
+    if (viewName === "data-role") renderRoleDataPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
     maybeLogViewActivity(viewName, previousView, options);
   }

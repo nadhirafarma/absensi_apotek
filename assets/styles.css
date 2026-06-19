@@ -4915,7 +4915,7 @@ td.col-actions {
 }
 
 #view-surat-pesanan .purchase-page {
-  width: 142.857%;
+  width: 157.14%;
   transform: scale(0.7);
   transform-origin: top left;
 }
@@ -23101,5 +23101,145 @@ body.sidebar-collapsed .global-sidebar-toggle {
   #view-restok-obat .restock-form-head h2,
   #view-restok-obat #restockRequestTitle {
     font-size: 0.98rem !important;
+  }
+}
+
+
+/* 20260619 targeted activity, role, notification, and purchase draft updates */
+.notification-dot,
+.mobile-hero-dot {
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 5px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: #ef2f76 !important;
+  color: #fff !important;
+  border: 2px solid #fff !important;
+  font-size: 0.62rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+.mobile-hero-dot {
+  top: -5px !important;
+  right: -5px !important;
+}
+#view-surat-pesanan {
+  overflow-x: visible !important;
+}
+@media (min-width: 821px) {
+  #view-surat-pesanan .purchase-page,
+  #view-surat-pesanan .purchase-form-page,
+  #view-surat-pesanan .purchase-draft-page {
+    width: 90.91% !important;
+    transform: scale(1.1) !important;
+    transform-origin: top left !important;
+  }
+  #view-surat-pesanan .purchase-form-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+#view-surat-pesanan .purchase-form-side {
+  display: none !important;
+}
+.purchase-draft-page .purchase-draft-full-card {
+  display: grid;
+  gap: 14px;
+}
+.purchase-draft-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  gap: 10px;
+}
+.purchase-draft-card-full {
+  gap: 10px;
+}
+.purchase-draft-card-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.purchase-draft-card-toggle b {
+  color: #315dff;
+  font-size: 0.78rem;
+}
+.purchase-draft-item-list {
+  display: none;
+  border: 1px solid #e2ebfb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.purchase-draft-card.is-open .purchase-draft-item-list,
+.purchase-draft-card-full:first-child .purchase-draft-item-list {
+  display: grid;
+}
+.purchase-draft-item-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border-bottom: 1px solid #edf3fd;
+  font-size: 0.76rem;
+}
+.purchase-draft-item-row:last-child {
+  border-bottom: 0;
+}
+.purchase-draft-item-row strong,
+.purchase-draft-item-row small {
+  display: block;
+}
+.purchase-draft-item-row small {
+  color: #64729a;
+  font-size: 0.68rem;
+}
+.purchase-draft-item-row em {
+  font-style: normal;
+  font-weight: 800;
+  color: #071955;
+}
+.role-access-table td:last-child {
+  white-space: normal;
+  line-height: 1.45;
+}
+@media (max-width: 820px) {
+  #view-surat-pesanan .purchase-draft-page[hidden] {
+    display: none !important;
+  }
+  .purchase-draft-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .purchase-draft-page .purchase-card,
+  .purchase-draft-page .purchase-draft-card {
+    padding: 10px !important;
+  }
+  .purchase-draft-page h2 {
+    font-size: 1rem !important;
+  }
+  .purchase-draft-item-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 7px 6px;
+    font-size: 0.58rem;
+  }
+  .purchase-draft-item-row small {
+    font-size: 0.52rem;
+  }
+  .purchase-draft-card-actions button,
+  .purchase-draft-card-toggle b {
+    font-size: 0.56rem !important;
+    min-height: 28px !important;
+    padding: 5px 7px !important;
+  }
+  .role-access-table {
+    min-width: 520px;
   }
 }

@@ -965,8 +965,10 @@ function handleGetDataObatFilter_() {
 }
 
 function handleSaveDataObatFilter_(data) {
+  data = data || {};
   var role = normalizeLoginKey_(data.role || '');
-  var isAllowed = role == 'owner' || role == 'admin' || role == 'administrator';
+  var username = normalizeLoginKey_(data.username || data.actor || '');
+  var isAllowed = role == 'owner' || role == 'admin' || role == 'administrator' || username == 'owner' || username == 'admin';
 
   if (!isAllowed) {
     return jsonOutput_({
@@ -1009,32 +1011,8 @@ function handleSaveActivityLog_(data) {
 
 function handleListActivityLog_(data) {
   data = data || {};
-  var limit = Number(data.limit || 30);
-  if (!limit || limit < 1) limit = 30;
-  if (limit > 300) limit = 300;
-  var role = normalizeLoginKey_(data.role || '');
-  var isOwner = role == 'owner' || normalizeLoginKey_(data.username || data.actor || '') == 'owner';
-  var isAdmin = role == 'admin' || role == 'administrator' || normalizeLoginKey_(data.username || data.actor || '') == 'admin';
+  var limit = Math.max(1, Math.min(Number(data.limit || 300) || 300, 500));
   var list = readActivityLog_();
-
-  if (!isOwner) {
-    var keys = [
-      data.username,
-      data.email,
-      data.actor
-    ].map(normalizeLoginKey_).filter(Boolean);
-
-    list = list.filter(function(item) {
-      var identityText = normalizeLoginKey_([item.username, item.email, item.actor].join(' '));
-      var itemRole = normalizeLoginKey_(item.role || '');
-      var isOwn = keys.some(function(key) {
-        return key && identityText.indexOf(key) >= 0;
-      });
-
-      if (isAdmin) return isOwn || itemRole != 'owner';
-      return isOwn;
-    });
-  }
 
   return jsonOutput_({
     success: true,
