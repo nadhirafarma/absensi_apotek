@@ -6,6 +6,9 @@
   const GITHUB_FACE_DB_RAW_BASE = "https://raw.githubusercontent.com/nadhirafarma/absensi_apotek/main/database_wajah";
   const SESSION_KEY = "nadhira.authSession";
   const META_KEY = "nadhira.obatCacheMeta";
+  const DATA_OBAT_ROWS_CACHE_KEY = "nadhira.dataObatRowsCache";
+  const DATA_OBAT_SYNC_AT_KEY = "nadhira.dataObatRowsCacheSyncedAt";
+  const DATA_OBAT_CACHE_TTL_MS = 15 * 60 * 1000;
   const HOME_UPLOAD_ACK_KEY = "nadhira.homeUploadNotificationSeenAt";
   const OWNER_ACTIVITY_ACK_KEY = "nadhira.ownerActivityNotificationSeenAt";
   const COLUMN_KEY = "nadhira.dashboardVisibleColumns";
@@ -1273,8 +1276,21 @@
   }
 
   async function fetchDataObat(options = {}) {
+    const hasCachedRows = hydrateDataObatCache();
+    const lastSyncAt = Number(localStorage.getItem(DATA_OBAT_SYNC_AT_KEY) || 0);
+    const cacheFresh = hasCachedRows && !options.manual && Date.now() - lastSyncAt < DATA_OBAT_CACHE_TTL_MS;
+
+    if (cacheFresh) {
+      setLoading(false, `${state.rows.length} data obat ditampilkan dari cache.`);
+      return;
+    }
+
     const loadingToken = options.manual ? startAppLoading("Menyinkronkan data obat...") : 0;
-    setLoading(true, options.manual ? "Memperbarui data obat..." : "Memuat data obat dari Google Sheet...");
+    if (options.manual || !hasCachedRows) {
+      setLoading(true, options.manual ? "Memperbarui data obat..." : "Memuat data obat dari Google Sheet...");
+    } else {
+      setLoading(false, `${state.rows.length} data obat ditampilkan dari cache. Sinkronisasi berjalan di latar.`);
+    }
 
     try {
       const response = await fetch(API_URL, { cache: "no-store" });
@@ -1292,6 +1308,12 @@
         ""
       );
 
+      try {
+        localStorage.setItem(DATA_OBAT_ROWS_CACHE_KEY, JSON.stringify(state.rows));
+        localStorage.setItem(DATA_OBAT_SYNC_AT_KEY, String(Date.now()));
+      } catch (cacheError) {
+        console.warn("Cache data obat tidak bisa disimpan:", cacheError);
+      }
       persistMeta();
       syncSupplierSeed();
       populateFilterOptions();
@@ -1308,7 +1330,7 @@
     } catch (error) {
       setLoading(false, `Gagal memuat data obat: ${error.message}`);
       if (els.statusText) els.statusText.dataset.type = "error";
-      state.rows = [];
+      if (!state.rows.length) state.rows = [];
       applyFilters();
       renderQuickSearchResults();
       renderUploadInfo();
@@ -1318,6 +1340,37 @@
     } finally {
       endAppLoading(loadingToken);
     }
+  }
+
+  function hydrateDataObatCache() {
+    if (state.rows.length) return true;
+
+    const cachedRows = readStoredArray(DATA_OBAT_ROWS_CACHE_KEY)
+      .map(normalizeSheetRow)
+      .filter((row) => hasRowValue(row));
+
+    if (!cachedRows.length) return false;
+
+    state.rows = cachedRows;
+    const meta = readObject(META_KEY);
+    state.uploadedAt = normalizeTimestamp(
+      meta.uploadedAt ||
+      meta.lastUploadAt ||
+      meta.uploadUpdatedAt ||
+      meta.dataUpdatedAt ||
+      meta.updatedAt ||
+      ""
+    );
+    syncSupplierSeed();
+    populateFilterOptions();
+    populateMedicineOptions();
+    populateRestockMedicineOptions();
+    applyFilters();
+    renderUploadInfo();
+    renderReports();
+    renderRestockPage();
+    renderQuickSearchResults();
+    return true;
   }
 
   function bindUserAccessSync() {

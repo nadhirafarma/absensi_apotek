@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-19 23:40 WIB: finalisasi normalisasi skala desktop; semua menu kembali 100%, pengecilan hanya berlaku di Surat Pesanan Pembelian, popup aksi tabel tidak lagi terpotong wrapper, Draft Restok Obat tidak menumpuk saat item PRO dibuka, dan Cari Data Obat memakai cache + toolbar sticky.
 - 2026-06-19 19:05 WIB: mengubah notifikasi desktop/mobile menjadi badge angka tanpa titik merah, mengembalikan skala Surat Pesanan ke 110%, memperbaiki dropdown Draft Restok PRO dan tombol aksi minimalis, membuat Data Role memakai menu titik tiga dan modal tambah/edit role custom, merapikan akses multi-baris, serta memperluas deteksi Face ID karyawan dari field Drive/data wajah lama.
 - 2026-06-19 16:45 WIB: mengecilkan skala Surat Pesanan Pembelian desktop ke 70%, merapikan halaman Draft Restok Obat dengan toolbar/filter supplier modern, daftar PRO gradasi dan aksi yang hanya tampil saat detail dibuka, serta menambahkan tombol tambah/edit/hapus pada menu Data Role.
 - 2026-06-19 15:05 WIB: memperbaiki Log Aktivitas agar owner/admin dapat melihat aktivitas semua pengguna dan semua modul, menambahkan menu Data Role, mengubah badge notifikasi mobile menjadi angka merah, memperbesar Surat Pesanan desktop ke 110%, serta memindahkan Draft Restok Obat dari form pesanan ke halaman terpisah dengan pilihan item per obat.
