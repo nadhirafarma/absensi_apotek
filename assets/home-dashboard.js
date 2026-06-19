@@ -901,7 +901,11 @@
       if (!event.target.closest(".purchase-row-menu")) closePurchaseRowMenus();
       if (!event.target.closest(".purchase-product-search, .purchase-product-floating-results")) hidePurchaseProductResults();
       if (event.target.closest(".table-row-menu-trigger")) {
-        window.setTimeout(() => closeTableActionMenus(event.target.closest(".table-row-menu")), 0);
+        const activeMenu = event.target.closest(".table-row-menu");
+        window.setTimeout(() => {
+          closeTableActionMenus(activeMenu);
+          positionTableActionMenu(activeMenu);
+        }, 0);
       } else if (!event.target.closest(".table-row-menu")) {
         closeTableActionMenus();
       }
@@ -11326,8 +11330,49 @@
 
   function closeTableActionMenus(except = null) {
     document.querySelectorAll(".table-row-menu[open]").forEach((menu) => {
-      if (menu !== except) menu.removeAttribute("open");
+      if (menu !== except) {
+        resetTableActionMenuPosition(menu);
+        menu.removeAttribute("open");
+      }
     });
+  }
+
+  function resetTableActionMenuPosition(menu) {
+    const panel = menu?.querySelector(".table-row-menu-list");
+    if (!panel) return;
+    ["position", "left", "top", "right", "bottom", "zIndex"].forEach((key) => {
+      panel.style[key] = "";
+    });
+  }
+
+  function positionTableActionMenu(menu) {
+    if (!menu || !menu.open) {
+      resetTableActionMenuPosition(menu);
+      return;
+    }
+    const trigger = menu.querySelector(".table-row-menu-trigger");
+    const panel = menu.querySelector(".table-row-menu-list");
+    if (!trigger || !panel) return;
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelWidth = Math.max(panel.offsetWidth || 120, 116);
+    const panelHeight = Math.max(panel.offsetHeight || 92, 72);
+    const viewportGap = 10;
+    let left = triggerRect.right + 8;
+    if (left + panelWidth > window.innerWidth - viewportGap) {
+      left = triggerRect.left - panelWidth - 8;
+    }
+    left = Math.max(viewportGap, Math.min(left, window.innerWidth - panelWidth - viewportGap));
+    let top = triggerRect.top - Math.min(48, Math.max(0, panelHeight - triggerRect.height));
+    if (top + panelHeight > window.innerHeight - viewportGap) {
+      top = window.innerHeight - panelHeight - viewportGap;
+    }
+    top = Math.max(viewportGap, top);
+    panel.style.setProperty("position", "fixed", "important");
+    panel.style.setProperty("left", `${left}px`, "important");
+    panel.style.setProperty("top", `${top}px`, "important");
+    panel.style.setProperty("right", "auto", "important");
+    panel.style.setProperty("bottom", "auto", "important");
+    panel.style.setProperty("z-index", "99999", "important");
   }
 
   function showConfirmDialog(message, options = {}) {
