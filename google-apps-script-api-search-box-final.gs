@@ -11,6 +11,7 @@ var USER_SHEET_NAME = 'user';
 var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
 var FACE_ID_FOLDER_NAME = 'DATABASE_WAJAH';
+var GITHUB_FACE_DB_API_URL = 'https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main';
 var RESTOCK_PHOTO_FOLDER_NAME = 'foto_restock_obat';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
 var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
@@ -2071,19 +2072,18 @@ function saveEmployeeFaceIdIfNeeded_(record, previousRecord) {
 
   var displayName = String(pickRequestValueAllowEmpty_(record, ['name', 'nama', 'namaLengkap', 'nama_lengkap', 'namaKaryawan']) || previousRecord.name || 'karyawan').trim();
   var label = buildFaceIdLabel_(displayName);
-  var previousFileId = String(pickRequestValueAllowEmpty_(record, ['faceIdFileId', 'face_id_file_id', 'faceFileId']) || previousRecord.faceIdFileId || '').trim();
-  var saved = saveEmployeeFaceIdPhoto_(photo, label, previousFileId);
+  var githubFace = findFaceIdFileByEmployeeName_(displayName);
 
-  record.faceIdFileId = saved.fileId;
-  record.face_id_file_id = saved.fileId;
-  record.faceIdUrl = saved.fileUrl;
-  record.face_id_url = saved.fileUrl;
-  record.faceIdImageUrl = saved.imageUrl;
-  record.face_id_image_url = saved.imageUrl;
+  record.faceIdFileId = '';
+  record.face_id_file_id = '';
+  record.faceIdUrl = githubFace ? githubFace.fileUrl : '';
+  record.face_id_url = githubFace ? githubFace.fileUrl : '';
+  record.faceIdImageUrl = githubFace ? githubFace.imageUrl : '';
+  record.face_id_image_url = githubFace ? githubFace.imageUrl : '';
   record.faceIdLabel = label;
   record.face_id_label = label;
-  record.faceIdRegisteredAt = saved.registeredAt;
-  record.face_id_registered_at = saved.registeredAt;
+  record.faceIdRegisteredAt = githubFace ? new Date().toISOString() : '';
+  record.face_id_registered_at = githubFace ? new Date().toISOString() : '';
   record.faceIdPhoto = '';
   record.face_id_photo = '';
 
@@ -2192,53 +2192,23 @@ function parseDriveFileId_(value) {
 }
 
 function handleListFaceDatabase_(data) {
-  var employees = readLocalRecordsByConfig_(getLocalRecordConfig_('employee'));
-  var faces = [];
-
-  employees.forEach(function(employee) {
-    if (!employee.name || isInactiveStatus_(employee.status)) return;
-
-    var inlineImage = isImageDataUrl_(employee.faceIdImageUrl)
-      ? employee.faceIdImageUrl
-      : isImageDataUrl_(employee.faceIdUrl)
-        ? employee.faceIdUrl
-        : '';
-
-    if (inlineImage) {
-      pushInlineFaceRecord_(faces, employee, inlineImage);
-      return;
-    }
-
-    var fileId = employee.faceIdFileId || parseDriveFileId_(employee.faceIdUrl || employee.faceIdImageUrl);
-    if (!fileId) return;
-
-    try {
-      var file = DriveApp.getFileById(fileId);
-      var blob = file.getBlob();
-      var mimeType = blob.getContentType() || 'image/jpeg';
-
-      if (String(mimeType).indexOf('image/') !== 0) return;
-
-      faces.push({
-        label: employee.faceIdLabel || buildFaceIdLabel_(employee.name),
-        name: employee.name,
-        fileId: fileId,
-        fileUrl: file.getUrl(),
-        imageUrl: buildDriveImageUrl_(fileId),
-        imageDataUrl: 'data:' + mimeType + ';base64,' + Utilities.base64Encode(blob.getBytes()),
-        registeredAt: employee.faceIdRegisteredAt || ''
-      });
-    } catch (error) {
-      if (inlineImage) {
-        pushInlineFaceRecord_(faces, employee, inlineImage);
-      }
-      // Lewati file wajah yang sudah tidak tersedia tanpa menghentikan absensi.
-    }
+  var faces = getGithubFaceIdDatabaseIndex_().map(function(face) {
+    return {
+      label: face.label,
+      name: face.label,
+      fileId: '',
+      fileUrl: face.fileUrl,
+      imageUrl: face.imageUrl,
+      imageDataUrl: '',
+      registeredAt: ''
+    };
   });
 
   return jsonOutput_({
     success: true,
     ok: true,
+    source: 'github',
+    folder: 'database_wajah',
     faces: faces,
     total: faces.length
   });
@@ -2447,37 +2417,45 @@ function findFaceIdFileByEmployeeName_(name) {
 }
 
 function getFaceIdDatabaseIndex_() {
+  return getGithubFaceIdDatabaseIndex_();
+}
+
+function getGithubFaceIdDatabaseIndex_() {
   if (FACE_ID_DATABASE_INDEX_CACHE) return FACE_ID_DATABASE_INDEX_CACHE;
 
   var list = [];
 
   try {
-    var folder = getOrCreateFaceIdFolder_();
-    var files = folder.getFiles();
-
-    while (files.hasNext()) {
-      var file = files.next();
-      var name = String(file.getName() || '').replace(/\.[^.]+$/, '');
-      var key = normalizeFaceIdName_(name);
-      if (!key) continue;
-
-      try {
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      } catch (shareError) {
-        // Abaikan jika file tidak bisa diubah permission-nya.
+    var response = UrlFetchApp.fetch(GITHUB_FACE_DB_API_URL, {
+      muteHttpExceptions: true,
+      headers: {
+        Accept: 'application/vnd.github+json'
       }
+    });
 
-      list.push({
-        key: key,
-        label: name,
-        fileId: file.getId(),
-        fileUrl: file.getUrl(),
-        imageUrl: buildDriveImageUrl_(file.getId()),
-        registeredAt: file.getLastUpdated ? file.getLastUpdated().toISOString() : ''
+    if (response.getResponseCode() >= 200 && response.getResponseCode() < 300) {
+      var files = JSON.parse(response.getContentText() || '[]');
+
+      files.forEach(function(file) {
+        var name = String(file.name || '').trim();
+        if (!/\.(jpe?g|png|webp)$/i.test(name)) return;
+
+        var label = name.replace(/\.[^.]+$/, '');
+        var key = normalizeFaceIdName_(label);
+        if (!key) return;
+
+        list.push({
+          key: key,
+          label: label,
+          fileId: '',
+          fileUrl: String(file.html_url || ''),
+          imageUrl: String(file.download_url || ''),
+          registeredAt: ''
+        });
       });
     }
   } catch (error) {
-    // Jika Drive belum memberi izin, daftar wajah tetap dibaca dari kolom sheet.
+    // Database wajah absensi bersumber dari folder GitHub database_wajah.
   }
 
   FACE_ID_DATABASE_INDEX_CACHE = list;

@@ -2,6 +2,8 @@
   const API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const API_URL = `${API_BASE}?sheet=data_obat`;
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
+  const GITHUB_FACE_DB_API_URL = "https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main";
+  const GITHUB_FACE_DB_RAW_BASE = "https://raw.githubusercontent.com/nadhirafarma/absensi_apotek/main/database_wajah";
   const SESSION_KEY = "nadhira.authSession";
   const META_KEY = "nadhira.obatCacheMeta";
   const HOME_UPLOAD_ACK_KEY = "nadhira.homeUploadNotificationSeenAt";
@@ -18,6 +20,8 @@
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
   const RESTOCK_PHOTO_MAX_LENGTH = 220000;
   const EMPLOYEE_FACE_ID_MAX_LENGTH = 42000;
+  const GITHUB_FACE_DB_CACHE_KEY = "nadhira.githubFaceDatabaseFiles";
+  const DEFAULT_GITHUB_FACE_LABELS = ["Al_Hafiz", "Ayu_Novalia", "Delpi_Vira", "Meisyi_Amalia", "Putri_Sinta", "Tia_Ivanka", "Yolan_Alfarel"];
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
@@ -280,6 +284,9 @@
     roles: [],
     employees: [],
     suppliers: [],
+    githubFaceFiles: getInitialGithubFaceFiles(),
+    githubFaceKeys: new Set(getInitialGithubFaceFiles().map((item) => item.key)),
+    githubFaceLoadPromise: null,
     localRecordBootstrapRunning: false,
     purchaseItems: [],
     purchaseOrders: [],
@@ -416,6 +423,7 @@
     loadStoredModules();
     fetchRestockRequests({ silent: true });
     fetchPurchaseOrders({ silent: true });
+    loadGithubFaceDatabase({ silent: true });
     fetchDataObat();
     fetchUsers();
     fetchPharmacyProfile({ silent: true });
@@ -4602,8 +4610,71 @@
 
 
   function hasEmployeeFaceId(record) {
-    return Boolean(record && [record.faceIdFileId, record.faceIdUrl, record.faceIdImageUrl, record.faceIdPhoto, record.face_id_photo, record.fotoWajah, record.foto_wajah, record.wajah]
-      .some((value) => String(value || "").trim()));
+    return getEmployeeGithubFaceFile(record) !== null;
+  }
+
+  function getEmployeeGithubFaceFile(record) {
+    if (!record) return null;
+    const keys = [record.name, record.username, record.faceIdLabel]
+      .map(normalizeGithubFaceKey)
+      .filter(Boolean);
+    return state.githubFaceFiles.find((file) => keys.includes(file.key)) || null;
+  }
+
+  function getInitialGithubFaceFiles() {
+    const cached = readStoredArray(GITHUB_FACE_DB_CACHE_KEY)
+      .map(normalizeGithubFaceFile)
+      .filter(Boolean);
+    if (cached.length) return cached;
+    return DEFAULT_GITHUB_FACE_LABELS.map((label) => normalizeGithubFaceFile({
+      name: `${label}.jpg`,
+      label,
+      download_url: `${GITHUB_FACE_DB_RAW_BASE}/${encodeURIComponent(label)}.jpg`
+    })).filter(Boolean);
+  }
+
+  async function loadGithubFaceDatabase(options = {}) {
+    if (state.githubFaceLoadPromise) return state.githubFaceLoadPromise;
+    state.githubFaceLoadPromise = (async () => {
+      try {
+        const response = await fetch(GITHUB_FACE_DB_API_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error("Database wajah GitHub belum terbaca.");
+        const files = (await response.json())
+          .map(normalizeGithubFaceFile)
+          .filter(Boolean);
+        if (!files.length) throw new Error("Folder database_wajah GitHub kosong.");
+        state.githubFaceFiles = files;
+        state.githubFaceKeys = new Set(files.map((item) => item.key));
+        writeStoredArray(GITHUB_FACE_DB_CACHE_KEY, files);
+        renderEmployees();
+      } catch (error) {
+        if (!options.silent) console.warn(error);
+      } finally {
+        state.githubFaceLoadPromise = null;
+      }
+    })();
+    return state.githubFaceLoadPromise;
+  }
+
+  function normalizeGithubFaceFile(file) {
+    const name = String(file?.name || file?.label || "").trim();
+    if (!/\.(jpe?g|png|webp)$/i.test(name)) return null;
+    const label = name.replace(/\.[^.]+$/, "");
+    const key = normalizeGithubFaceKey(label);
+    if (!key) return null;
+    return {
+      name,
+      label,
+      key,
+      imageUrl: String(file.download_url || file.imageUrl || `${GITHUB_FACE_DB_RAW_BASE}/${encodeURIComponent(name)}`).trim()
+    };
+  }
+
+  function normalizeGithubFaceKey(value) {
+    return normalizeSearch(String(value || "")
+      .replace(/\.[^.]+$/, "")
+      .replace(/_/g, " "))
+      .replace(/[^a-z0-9]+/g, "");
   }
 
   function renderRoleDataPage() {
@@ -4855,7 +4926,8 @@
     if (field.type === "face-id") {
       const record = state.recordType === "employee" ? getLocalArray("employee")[state.recordIndex] || {} : {};
       const hasFaceId = hasEmployeeFaceId(record);
-      const previewUrl = record.faceIdImageUrl || record.faceIdUrl || "";
+      const githubFace = getEmployeeGithubFaceFile(record);
+      const previewUrl = githubFace?.imageUrl || "";
       const preview = previewUrl
         ? `<span class="employee-face-id-preview has-image"><img src="${escapeHtml(previewUrl)}" alt=""></span>`
         : `<span class="employee-face-id-preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"></path><path d="M4 20c1.4-3.2 4.2-5 8-5s6.6 1.8 8 5"></path><path d="M4 8V5a1 1 0 0 1 1-1h3"></path><path d="M16 4h3a1 1 0 0 1 1 1v3"></path><path d="M20 16v3a1 1 0 0 1-1 1h-3"></path><path d="M8 20H5a1 1 0 0 1-1-1v-3"></path></svg></span>`;
@@ -4864,7 +4936,7 @@
           ${preview}
           <div class="employee-face-id-copy">
             <strong>${hasFaceId ? "Face ID sudah terdaftar" : "Belum ada Face ID"}</strong>
-            <small id="employeeFaceIdFileName">${hasFaceId ? "Pilih foto baru jika ingin mengganti database wajah." : "Pilih foto wajah yang jelas dari kamera depan."}</small>
+            <small id="employeeFaceIdFileName">${hasFaceId ? "Terdeteksi dari folder GitHub database_wajah." : "Nama file di GitHub database_wajah harus sesuai nama karyawan."}</small>
             <input name="${escapeHtml(field.key)}" type="file" accept="image/*" capture="user">
           </div>
         </div>
@@ -4920,7 +4992,7 @@
         preview.innerHTML = `<img src="${escapeHtml(photo)}" alt="">`;
       }
       if (status) {
-        status.textContent = "Foto Face ID siap disimpan ke DATABASE_WAJAH.";
+        status.textContent = "Foto siap. Database absensi membaca folder GitHub database_wajah.";
         status.dataset.type = "info";
       }
     } catch (error) {

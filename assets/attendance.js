@@ -1,6 +1,7 @@
 (function () {
   const MODEL_BASE = "https://nadhirafarma.github.io/absensi_apotek/weights";
   const STATIC_FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
+  const GITHUB_FACE_DB_API_URL = "https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main";
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const DASHBOARD_API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
@@ -403,10 +404,34 @@
   }
 
   async function loadStaticFaceDescriptors(descriptorOptions, skippedLabels) {
-    return (await Promise.all(LABELS.map((label) => {
+    const files = await listGithubFaceDatabaseFiles();
+    const sources = files.length
+      ? files
+      : LABELS.map((label) => ({ label, imageUrl: `${STATIC_FACE_DB_BASE}/${label}.jpg` }));
+
+    return (await Promise.all(sources.map((file) => {
+      const label = sanitizeFaceLabel(file.label);
       if (skippedLabels && skippedLabels.has(normalizeKey(label))) return null;
-      return loadFaceDescriptor(label, `${STATIC_FACE_DB_BASE}/${label}.jpg`, descriptorOptions);
+      return loadFaceDescriptor(label, file.imageUrl, descriptorOptions);
     }))).filter(Boolean);
+  }
+
+  async function listGithubFaceDatabaseFiles() {
+    try {
+      const response = await fetchWithTimeout(GITHUB_FACE_DB_API_URL, { cache: "no-store" }, 12000);
+      if (!response.ok) return [];
+      const payload = await response.json();
+      if (!Array.isArray(payload)) return [];
+
+      return payload
+        .filter((file) => /\.(jpe?g|png|webp)$/i.test(String(file.name || "")))
+        .map((file) => ({
+          label: String(file.name || "").replace(/\.[^.]+$/, ""),
+          imageUrl: file.download_url || `${STATIC_FACE_DB_BASE}/${encodeURIComponent(file.name)}`
+        }));
+    } catch (error) {
+      return [];
+    }
   }
 
   async function loadFaceDescriptor(label, source, descriptorOptions) {

@@ -35074,3 +35074,8 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 - Data Role dirapikan agar nama role panjang tidak menumpuk ke kolom Total Akses saat sidebar terbuka.
 - Draft Restok Obat membuka detail item PRO secara langsung, dengan tombol aksi kecil dan daftar item yang dapat discroll.
 - Data Karyawan menambahkan field Username Login dan validasi Face ID ke folder DATABASE_WAJAH berdasarkan nama karyawan.
+
+### 2026-06-19 v37
+- Database Face ID absensi dikembalikan ke folder GitHub Pages `database_wajah`.
+- Badge Face ID di Data Karyawan dan endpoint `listFaceDatabase` membaca file wajah dari GitHub, bukan Google Drive.
+- Google Drive tidak dipakai sebagai sumber validasi database wajah absensi; Drive tetap untuk penyimpanan bukti foto absensi bila digunakan endpoint absensi.
