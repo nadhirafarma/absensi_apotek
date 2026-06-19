@@ -12,6 +12,8 @@ var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
 var FACE_ID_FOLDER_NAME = 'DATABASE_WAJAH';
 var GITHUB_FACE_DB_API_URL = 'https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main';
+var GITHUB_FACE_DB_RAW_BASE = 'https://raw.githubusercontent.com/nadhirafarma/absensi_apotek/main/database_wajah';
+var DEFAULT_GITHUB_FACE_LABELS = ['Al_Hafiz', 'Ayu_Novalia', 'Delpi_Vira', 'Meisyi_Amalia', 'Putri_Sinta', 'Tia_Ivanka', 'Yolan_Alfarel'];
 var RESTOCK_PHOTO_FOLDER_NAME = 'foto_restock_obat';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
 var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
@@ -2429,7 +2431,8 @@ function getGithubFaceIdDatabaseIndex_() {
     var response = UrlFetchApp.fetch(GITHUB_FACE_DB_API_URL, {
       muteHttpExceptions: true,
       headers: {
-        Accept: 'application/vnd.github+json'
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'Nadhira-Farma-Apps-Script'
       }
     });
 
@@ -2456,6 +2459,22 @@ function getGithubFaceIdDatabaseIndex_() {
     }
   } catch (error) {
     // Database wajah absensi bersumber dari folder GitHub database_wajah.
+  }
+
+  if (!list.length) {
+    DEFAULT_GITHUB_FACE_LABELS.forEach(function(label) {
+      var key = normalizeFaceIdName_(label);
+      if (!key) return;
+
+      list.push({
+        key: key,
+        label: label,
+        fileId: '',
+        fileUrl: 'https://github.com/nadhirafarma/absensi_apotek/blob/main/database_wajah/' + encodeURIComponent(label) + '.jpg',
+        imageUrl: GITHUB_FACE_DB_RAW_BASE + '/' + encodeURIComponent(label) + '.jpg',
+        registeredAt: ''
+      });
+    });
   }
 
   FACE_ID_DATABASE_INDEX_CACHE = list;
