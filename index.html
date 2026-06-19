@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v34">
+  <link rel="stylesheet" href="assets/styles.css?v=20260619-ui-v35">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
-  <script defer src="assets/app.js?v=20260619-ui-v34"></script>
+  <script defer src="assets/app.js?v=20260619-ui-v35"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260619-ui-v34"></script>
+  <script defer src="assets/home-dashboard.js?v=20260619-ui-v35"></script>
 </head>
 <body data-page="home" class="dashboard-page">
   <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
@@ -1567,6 +1567,30 @@
       </main>
     </div>
   </div>
+
+  <section class="dashboard-modal role-editor-modal" id="roleEditorModal" hidden>
+    <form class="role-editor-card" id="roleEditorForm" role="dialog" aria-modal="true" aria-labelledby="roleEditorTitle">
+      <button class="role-editor-close" id="roleEditorCloseButton" type="button" aria-label="Tutup role">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+      <div class="role-editor-head">
+        <span class="role-editor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7Z"></path><path d="M4 7l8 4 8-4"></path><path d="M12 11v10"></path></svg></span>
+        <div>
+          <h2 id="roleEditorTitle">Tambah Role</h2>
+          <p>Atur nama role dan akses menu yang boleh digunakan.</p>
+        </div>
+      </div>
+      <label class="role-editor-field">Nama Role
+        <input id="roleEditorName" type="text" placeholder="Contoh: Supervisor Gudang" required>
+      </label>
+      <div class="role-editor-access" id="roleEditorAccess"></div>
+      <div class="role-editor-actions">
+        <button class="role-editor-cancel" id="roleEditorCancelButton" type="button">Batal</button>
+        <button class="role-editor-save" type="submit">Simpan</button>
+      </div>
+    </form>
+  </section>
+
 
   <section class="dashboard-modal restock-modal" id="restockDetailModal" hidden>
     <div class="modal-card restock-detail-card" role="dialog" aria-modal="true" aria-labelledby="restockDetailTitle">

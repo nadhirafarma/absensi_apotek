@@ -290,6 +290,8 @@
     purchaseProductResults: {},
     purchaseActiveProductSearchIndex: null,
     restockRequests: [],
+    pendingSeenNotificationItems: [],
+    roleEditingName: "",
     restockMineOnly: false,
     restockDetailId: "",
     restockEditingId: "",
@@ -824,6 +826,13 @@
       userTableBody: document.getElementById("userTableBody"),
       roleTableBody: document.getElementById("roleTableBody"),
       addRoleButton: document.getElementById("addRoleButton"),
+      roleEditorModal: document.getElementById("roleEditorModal"),
+      roleEditorForm: document.getElementById("roleEditorForm"),
+      roleEditorTitle: document.getElementById("roleEditorTitle"),
+      roleEditorName: document.getElementById("roleEditorName"),
+      roleEditorAccess: document.getElementById("roleEditorAccess"),
+      roleEditorCloseButton: document.getElementById("roleEditorCloseButton"),
+      roleEditorCancelButton: document.getElementById("roleEditorCancelButton"),
       addUserButton: document.getElementById("addUserButton"),
       userSearchInput: document.getElementById("userSearchInput"),
       userRoleFilter: document.getElementById("userRoleFilter"),
@@ -972,7 +981,11 @@
     if (els.addEmployeeButton) els.addEmployeeButton.addEventListener("click", () => openRecordModal("employee", -1));
     if (els.addSupplierButton) els.addSupplierButton.addEventListener("click", () => openRecordModal("supplier", -1));
     if (els.addUserButton) els.addUserButton.addEventListener("click", () => openRecordModal("user", -1));
-    if (els.addRoleButton) els.addRoleButton.addEventListener("click", () => openRoleEditor("")); 
+    if (els.addRoleButton) els.addRoleButton.addEventListener("click", () => openRoleEditor(""));
+    if (els.roleEditorForm) els.roleEditorForm.addEventListener("submit", saveRoleFromModal);
+    [els.roleEditorCloseButton, els.roleEditorCancelButton].forEach((button) => {
+      if (button) button.addEventListener("click", closeRoleEditor);
+    });
 
     [els.employeeTableBody, els.supplierTableBody, els.userTableBody, els.roleTableBody].forEach((tbody) => {
       if (tbody) tbody.addEventListener("click", handleLocalTableAction);
@@ -2995,17 +3008,22 @@
       els.notificationMessage.innerHTML = buildNotificationHtml(items);
       bindNotificationSwipeActions();
     }
+    state.pendingSeenNotificationItems = items;
     if (els.notificationPopover) {
       positionNotificationPopover();
       els.notificationPopover.hidden = false;
       document.body.classList.add("notification-open");
     }
-    markNotificationItemsSeen(items);
   }
 
   function closeNotification() {
+    if (Array.isArray(state.pendingSeenNotificationItems) && state.pendingSeenNotificationItems.length) {
+      markNotificationItemsSeen(state.pendingSeenNotificationItems);
+      state.pendingSeenNotificationItems = [];
+    }
     if (els.notificationPopover) els.notificationPopover.hidden = true;
     document.body.classList.remove("notification-open");
+    updateNotificationState();
   }
 
   function getOwnerActivityNotificationItems() {
@@ -4256,9 +4274,9 @@
       job: String(record?.job || record?.jabatan || record?.role || "").trim(),
       email: String(record?.email || record?.gmail || "").trim(),
       status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan),
-      faceIdFileId: String(record?.faceIdFileId || record?.face_id_file_id || record?.faceFileId || record?.fileIdWajah || "").trim(),
-      faceIdUrl: String(record?.faceIdUrl || record?.face_id_url || record?.faceUrl || record?.urlWajah || "").trim(),
-      faceIdImageUrl: String(record?.faceIdImageUrl || record?.face_id_image_url || record?.faceImageUrl || "").trim(),
+      faceIdFileId: String(record?.faceIdFileId || record?.face_id_file_id || record?.faceFileId || record?.fileIdWajah || record?.database_wajah_file_id || "").trim(),
+      faceIdUrl: String(record?.faceIdUrl || record?.face_id_url || record?.faceUrl || record?.urlWajah || record?.database_wajah_url || "").trim(),
+      faceIdImageUrl: String(record?.faceIdImageUrl || record?.face_id_image_url || record?.faceImageUrl || record?.faceIdPhoto || record?.face_id_photo || record?.fotoWajah || record?.foto_wajah || record?.wajah || record?.database_wajah || "").trim(),
       faceIdLabel: String(record?.faceIdLabel || record?.face_id_label || record?.faceLabel || "").trim(),
       faceIdRegisteredAt: String(record?.faceIdRegisteredAt || record?.face_id_registered_at || record?.faceRegisteredAt || "").trim()
     };
@@ -4547,7 +4565,8 @@
       const nameKey = keys[0] || "name";
       const label = formatCell(row[nameKey]);
       const inactive = isInactiveStatus(row.status);
-      const faceBadge = isEmployeeTable && (row.faceIdFileId || row.faceIdUrl || row.faceIdImageUrl)
+      const hasFaceId = isEmployeeTable && hasEmployeeFaceId(row);
+      const faceBadge = hasFaceId
         ? '<small class="employee-face-id-note is-ready">Face ID terdaftar</small>'
         : isEmployeeTable
           ? '<small class="employee-face-id-note">Belum ada Face ID</small>'
@@ -4580,6 +4599,11 @@
   }
 
 
+  function hasEmployeeFaceId(record) {
+    return Boolean(record && [record.faceIdFileId, record.faceIdUrl, record.faceIdImageUrl, record.faceIdPhoto, record.face_id_photo, record.fotoWajah, record.foto_wajah, record.wajah]
+      .some((value) => String(value || "").trim()));
+  }
+
   function renderRoleDataPage() {
     if (!els.roleTableBody) return;
     const roleNames = getManagedRoleNames();
@@ -4593,12 +4617,12 @@
           <td><span class="pill-tag">${escapeHtml(formatRoleLabel(roleName))}</span></td>
           <td>${escapeHtml(formatNumber(access.length))} akses</td>
           <td>${escapeHtml(formatNumber(users))} pengguna</td>
-          <td><span class="access-summary">${escapeHtml(access.map((item) => ACCESS_MENUS.find((menu) => menu.key === item)?.label || item).join(", ") || "Tanpa akses")}</span></td>
+          <td><span class="access-summary role-access-summary">${escapeHtml(access.map((item) => ACCESS_MENUS.find((menu) => menu.key === item)?.label || item).join(", ") || "Tanpa akses")}</span></td>
           <td>
-            <div class="role-row-actions">
-              <button type="button" data-local-action="edit-role" data-role-name="${escapeHtml(roleName)}">Edit</button>
-              <button class="is-danger" type="button" data-local-action="delete-role" data-role-name="${escapeHtml(roleName)}" ${customIndex < 0 ? "data-default-role='1'" : ""}>Hapus</button>
-            </div>
+            ${renderTableActionMenu([
+              `<button class="table-row-menu-action" type="button" data-local-action="edit-role" data-role-name="${escapeHtml(roleName)}">Edit</button>`,
+              `<button class="table-row-menu-action is-danger" type="button" data-local-action="delete-role" data-role-name="${escapeHtml(roleName)}" ${customIndex < 0 ? "data-default-role='1'" : ""}>Hapus</button>`
+            ], `Aksi role ${roleName}`)}
           </td>
         </tr>
       `;
@@ -4607,22 +4631,44 @@
 
   function openRoleEditor(roleName = "") {
     const current = state.roles.find((item) => normalizeSearch(item.name) === normalizeSearch(roleName));
-    const defaultAccess = getDefaultAccessForRole(roleName || "Operator").filter((item) => item !== "akses_semua_data");
-    const name = window.prompt("Nama role", current?.name || roleName || "");
-    if (name === null) return;
-    const cleanName = String(name || "").trim();
+    const access = (current?.access || getDefaultAccessForRole(roleName || "Operator")).filter((item) => item !== "akses_semua_data");
+    state.roleEditingName = roleName || "";
+    if (!els.roleEditorModal || !els.roleEditorName || !els.roleEditorAccess) return;
+    if (els.roleEditorTitle) els.roleEditorTitle.textContent = roleName ? "Edit Role" : "Tambah Role";
+    els.roleEditorName.value = current?.name || roleName || "";
+    const selected = new Set(access);
+    els.roleEditorAccess.innerHTML = ACCESS_MENUS
+      .filter((item) => item.key !== "akses_semua_data")
+      .map((item) => `
+        <label>
+          <input type="checkbox" value="${escapeHtml(item.key)}" ${selected.has(item.key) ? "checked" : ""}>
+          <span>${escapeHtml(item.label)}</span>
+        </label>
+      `).join("");
+    els.roleEditorModal.hidden = false;
+    setTimeout(() => els.roleEditorName?.focus(), 30);
+  }
+
+  function closeRoleEditor() {
+    if (els.roleEditorModal) els.roleEditorModal.hidden = true;
+    state.roleEditingName = "";
+  }
+
+  function saveRoleFromModal(event) {
+    event.preventDefault();
+    const cleanName = String(els.roleEditorName?.value || "").trim();
     if (!cleanName) {
       showActionToast("Nama role wajib diisi.", "error");
       return;
     }
-    const accessValue = window.prompt("Hak akses menu, pisahkan dengan koma. Contoh: dashboard,data_obat,restok_obat", (current?.access || defaultAccess).join(","));
-    if (accessValue === null) return;
-    const access = normalizeAccessList(accessValue, cleanName).filter((item) => item !== "akses_semua_data");
-    const existingIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === normalizeSearch(cleanName) || normalizeSearch(item.name) === normalizeSearch(roleName));
-    const record = normalizeRoleRecord({ name: cleanName, access, updatedAt: new Date().toISOString() });
+    const access = Array.from(els.roleEditorAccess?.querySelectorAll("input:checked") || []).map((input) => input.value);
+    const finalAccess = normalizeAccessList(access, cleanName).filter((item) => item !== "akses_semua_data");
+    const existingIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === normalizeSearch(cleanName) || normalizeSearch(item.name) === normalizeSearch(state.roleEditingName));
+    const record = normalizeRoleRecord({ name: cleanName, access: finalAccess, updatedAt: new Date().toISOString() });
     if (existingIndex >= 0) state.roles[existingIndex] = record;
     else state.roles.push(record);
     persistRoles();
+    closeRoleEditor();
     renderRoleDataPage();
     renderUserRoleOptions();
     showActionToast("Data role berhasil disimpan.");
@@ -4683,7 +4729,7 @@
     if (isOwnerUser(user)) return "Semua akses";
     const list = normalizeAccessList(user?.access, user?.role || "Operator");
     if (!list.length) return "Tanpa akses";
-    return `${list.length} akses: ${list.slice(0, 3).map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ")}${list.length > 3 ? "..." : ""}`;
+    return `${list.length} akses: ${list.map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ")}`;
   }
 
   function renderUserRoleOptions() {
@@ -5865,6 +5911,7 @@
         <article class="purchase-draft-card purchase-draft-card-full is-tone-${draftIndex % 6}" data-po-draft="${escapeHtml(item.id)}">
           <button class="purchase-draft-card-toggle" type="button" data-po-draft-toggle="${escapeHtml(item.id)}">
             <span><strong>${escapeHtml(requestNumber)} <b>Lihat Item</b></strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
+            <svg class="purchase-draft-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
           </button>
           <div class="purchase-draft-item-list">
             ${itemRows || '<small>Tidak ada item obat.</small>'}

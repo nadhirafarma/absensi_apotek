@@ -23369,3 +23369,261 @@ body.sidebar-collapsed .global-sidebar-toggle {
     min-width: 720px;
   }
 }
+
+
+/* 20260619 v35 notification, draft, role, and face-id refinements */
+.notification-dot,
+.mobile-hero-dot {
+  min-width: 18px !important;
+  width: auto !important;
+  height: 18px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: #ef2f76 !important;
+  color: #fff !important;
+  font-size: .62rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+.notification-dot:empty,
+.mobile-hero-dot:empty,
+.notification-dot[hidden],
+.mobile-hero-dot[hidden] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+.notification-action.has-unread::after,
+.mobile-hero-notification.has-unread::after {
+  display: none !important;
+  content: none !important;
+}
+@media (min-width: 821px) {
+  #view-surat-pesanan .purchase-page,
+  #view-surat-pesanan .purchase-form-page,
+  #view-surat-pesanan .purchase-draft-page {
+    width: 90.91% !important;
+    transform: scale(1.1) !important;
+    transform-origin: top left !important;
+  }
+}
+.purchase-form-head {
+  justify-content: flex-start !important;
+}
+.purchase-form-head > div:first-of-type {
+  margin-left: 8px;
+}
+.purchase-form-actions {
+  margin-left: auto;
+}
+.purchase-draft-card-toggle {
+  align-items: center;
+  min-height: 58px;
+}
+.purchase-draft-card-toggle strong {
+  gap: clamp(26px, 7vw, 96px) !important;
+}
+.purchase-draft-caret {
+  width: 18px;
+  height: 18px;
+  color: #315dff;
+  flex: 0 0 auto;
+}
+.purchase-draft-card.is-open .purchase-draft-caret {
+  transform: rotate(180deg);
+}
+.purchase-draft-item-list {
+  margin: 0 12px 8px;
+}
+.purchase-draft-card-actions {
+  margin: 0 12px 10px;
+  padding: 0 !important;
+}
+.purchase-draft-card-actions button {
+  min-height: 24px !important;
+  border-radius: 7px !important;
+  font-size: .62rem !important;
+  line-height: 1 !important;
+  padding: 4px 7px !important;
+  box-shadow: none !important;
+}
+.role-data-card .action-button,
+#addRoleButton {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #315dff, #8a3ffc, #e018a9) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 14px 30px rgba(79, 74, 255, .22) !important;
+  padding: 10px 16px !important;
+}
+.role-access-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.role-access-table th:nth-child(4),
+.role-access-table td:nth-child(4) {
+  width: 42%;
+  white-space: normal !important;
+}
+.role-access-table th:last-child,
+.role-access-table td:last-child {
+  width: 72px;
+  overflow: visible !important;
+}
+.role-access-summary,
+#view-manajemen-pengguna .access-summary {
+  display: block;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: 1.45;
+  word-break: normal;
+}
+#view-manajemen-pengguna .simple-table th:nth-child(6),
+#view-manajemen-pengguna .simple-table td:nth-child(6) {
+  min-width: 320px;
+  white-space: normal !important;
+}
+#view-data-karyawan .simple-table td:last-child,
+#view-manajemen-pengguna .simple-table td:last-child {
+  position: relative;
+  overflow: visible !important;
+}
+.table-row-menu[open] .table-row-menu-list,
+.table-row-menu[open] > div {
+  z-index: 1200 !important;
+}
+.role-editor-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 16, 52, .45);
+  padding: 20px;
+}
+.role-editor-modal[hidden] {
+  display: none !important;
+}
+.role-editor-card {
+  width: min(520px, calc(100vw - 28px));
+  border: 1px solid rgba(190, 211, 245, .95);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(6, 16, 52, .24);
+  padding: 22px;
+  position: relative;
+}
+.role-editor-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d7e6f8;
+  border-radius: 10px;
+  background: #fff;
+}
+.role-editor-close svg,
+.role-editor-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.role-editor-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.role-editor-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eef5ff, #fff0fb);
+  color: #315dff;
+}
+.role-editor-head h2,
+.role-editor-head p {
+  margin: 0;
+}
+.role-editor-head p {
+  color: #64729a;
+  font-size: .85rem;
+}
+.role-editor-field {
+  display: grid;
+  gap: 8px;
+  color: #071955;
+  font-weight: 800;
+}
+.role-editor-field input {
+  min-height: 44px;
+  border: 1px solid #c9dbf7;
+  border-radius: 12px;
+  padding: 0 13px;
+  font: inherit;
+}
+.role-editor-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  margin: 16px 0;
+}
+.role-editor-access label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #e2ebfb;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.role-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.role-editor-actions button {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 900;
+}
+.role-editor-cancel {
+  border: 1px solid #d7e6f8;
+  background: #fff;
+  color: #071955;
+}
+.role-editor-save {
+  border: 0;
+  background: linear-gradient(135deg, #315dff, #8a3ffc);
+  color: #fff;
+}
+@media (max-width: 820px) {
+  .role-editor-access {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 20260619 v35b ensure every opened PRO reveals restock items */
+.purchase-draft-card-full.is-open .purchase-draft-item-list {
+  display: grid !important;
+}
+.purchase-draft-card-full.is-open .purchase-draft-card-actions {
+  display: grid !important;
+}
+#view-data-karyawan .simple-table-wrap,
+#view-manajemen-pengguna .simple-table-wrap,
+#view-data-role .simple-table-wrap {
+  overflow: visible !important;
+}
