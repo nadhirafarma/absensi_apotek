@@ -35067,3 +35067,10 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 </body>
 </html>
 ````
+
+
+### 2026-06-19 v36
+- Tampilan dashboard internal diperkecil ke skala 80% di desktop, dengan pengecualian mobile tetap 100%.
+- Data Role dirapikan agar nama role panjang tidak menumpuk ke kolom Total Akses saat sidebar terbuka.
+- Draft Restok Obat membuka detail item PRO secara langsung, dengan tombol aksi kecil dan daftar item yang dapat discroll.
+- Data Karyawan menambahkan field Username Login dan validasi Face ID ke folder DATABASE_WAJAH berdasarkan nama karyawan.

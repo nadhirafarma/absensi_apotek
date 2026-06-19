@@ -19,8 +19,9 @@ var DATA_OBAT_FILTER_PROPERTY = 'DATA_OBAT_GLOBAL_FILTER';
 var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
 var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
 var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
+var FACE_ID_DATABASE_INDEX_CACHE = null;
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
-var EMPLOYEE_DEFAULT_HEADERS = ['name', 'phone', 'address', 'job', 'email', 'status', 'face_id_file_id', 'face_id_url', 'face_id_image_url', 'face_id_label', 'face_id_registered_at', 'updated_at'];
+var EMPLOYEE_DEFAULT_HEADERS = ['name', 'username', 'phone', 'address', 'job', 'email', 'status', 'face_id_file_id', 'face_id_url', 'face_id_image_url', 'face_id_label', 'face_id_registered_at', 'updated_at'];
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'city', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
@@ -2010,9 +2011,11 @@ function handleSaveLocalRecord_(data) {
     originalName: data.originalName,
     originalEmail: data.originalEmail,
     originalPhone: data.originalPhone,
+    originalUsername: data.originalUsername,
     name: pickRequestValueAllowEmpty_(record, config.aliases.name),
     email: pickRequestValueAllowEmpty_(record, config.aliases.email || []),
     phone: pickRequestValueAllowEmpty_(record, config.aliases.phone || []),
+    username: pickRequestValueAllowEmpty_(record, config.aliases.username || []),
     pic: pickRequestValueAllowEmpty_(record, config.aliases.pic || [])
   });
   var rowNumber = rowIndex >= 1 ? rowIndex + 1 : sheet.getLastRow() + 1;
@@ -2291,6 +2294,7 @@ function getLocalRecordConfig_(type) {
       fields: EMPLOYEE_DEFAULT_HEADERS.slice(),
       aliases: {
         name: ['name', 'nama', 'namalengkap', 'namakaryawan', 'karyawan'],
+        username: ['username', 'user', 'namauser', 'login'],
         phone: ['phone', 'nohp', 'no_hp', 'telepon', 'hp'],
         address: ['address', 'alamat'],
         job: ['job', 'jabatan', 'role', 'posisi'],
@@ -2380,8 +2384,9 @@ function readLocalRecordFromRow_(headers, row, config) {
   });
 
   if (config.type == 'employee') {
-    return {
+    return attachEmployeeFaceIdFromDatabase_({
       name: pickDataValue_(raw, config.aliases.name),
+      username: pickDataValue_(raw, config.aliases.username),
       phone: normalizePhoneValue_(pickDataValue_(raw, config.aliases.phone)),
       address: pickDataValue_(raw, config.aliases.address),
       job: pickDataValue_(raw, config.aliases.job),
@@ -2393,7 +2398,7 @@ function readLocalRecordFromRow_(headers, row, config) {
       faceIdLabel: pickDataValue_(raw, config.aliases.face_id_label),
       faceIdRegisteredAt: pickDataValue_(raw, config.aliases.face_id_registered_at),
       updatedAt: pickDataValue_(raw, config.aliases.updated_at)
-    };
+    });
   }
 
   return {
@@ -2405,6 +2410,89 @@ function readLocalRecordFromRow_(headers, row, config) {
   };
 }
 
+
+
+function attachEmployeeFaceIdFromDatabase_(employee) {
+  employee = employee || {};
+
+  if (employee.faceIdFileId || employee.faceIdUrl || employee.faceIdImageUrl) {
+    return employee;
+  }
+
+  var found = findFaceIdFileByEmployeeName_(employee.name);
+  if (!found) return employee;
+
+  employee.faceIdFileId = found.fileId;
+  employee.faceIdUrl = found.fileUrl;
+  employee.faceIdImageUrl = found.imageUrl;
+  employee.faceIdLabel = found.label;
+  employee.faceIdRegisteredAt = found.registeredAt;
+  return employee;
+}
+
+function findFaceIdFileByEmployeeName_(name) {
+  var wanted = normalizeFaceIdName_(name);
+  if (!wanted) return null;
+
+  var index = getFaceIdDatabaseIndex_();
+
+  for (var i = 0; i < index.length; i += 1) {
+    var item = index[i];
+    if (item.key == wanted || item.key.indexOf(wanted) >= 0 || wanted.indexOf(item.key) >= 0) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
+function getFaceIdDatabaseIndex_() {
+  if (FACE_ID_DATABASE_INDEX_CACHE) return FACE_ID_DATABASE_INDEX_CACHE;
+
+  var list = [];
+
+  try {
+    var folder = getOrCreateFaceIdFolder_();
+    var files = folder.getFiles();
+
+    while (files.hasNext()) {
+      var file = files.next();
+      var name = String(file.getName() || '').replace(/\.[^.]+$/, '');
+      var key = normalizeFaceIdName_(name);
+      if (!key) continue;
+
+      try {
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      } catch (shareError) {
+        // Abaikan jika file tidak bisa diubah permission-nya.
+      }
+
+      list.push({
+        key: key,
+        label: name,
+        fileId: file.getId(),
+        fileUrl: file.getUrl(),
+        imageUrl: buildDriveImageUrl_(file.getId()),
+        registeredAt: file.getLastUpdated ? file.getLastUpdated().toISOString() : ''
+      });
+    }
+  } catch (error) {
+    // Jika Drive belum memberi izin, daftar wajah tetap dibaca dari kolom sheet.
+  }
+
+  FACE_ID_DATABASE_INDEX_CACHE = list;
+  return list;
+}
+
+function normalizeFaceIdName_(value) {
+  return normalizeLoginKey_(String(value || '')
+    .replace(/\.[^.]+$/, '')
+    .replace(/_/g, ' ')
+    .replace(/[-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()).replace(/\s+/g, '');
+}
+
 function findLocalRecordRowIndex_(values, headers, config, criteria) {
   criteria = criteria || {};
   if (values.length < 2) return -1;
@@ -2414,15 +2502,18 @@ function findLocalRecordRowIndex_(values, headers, config, criteria) {
     name: findHeaderColumn_(normalizedHeaders, config.aliases.name || ['name']),
     email: findHeaderColumn_(normalizedHeaders, config.aliases.email || ['email']),
     phone: findHeaderColumn_(normalizedHeaders, config.aliases.phone || ['phone']),
+    username: findHeaderColumn_(normalizedHeaders, config.aliases.username || ['username']),
     pic: findHeaderColumn_(normalizedHeaders, config.aliases.pic || ['pic'])
   };
   var wanted = [
     criteria.originalName,
     criteria.originalEmail,
     criteria.originalPhone,
+    criteria.originalUsername,
     criteria.name,
     criteria.email,
     criteria.phone,
+    criteria.username,
     criteria.pic
   ].map(normalizeLoginKey_).filter(Boolean);
 

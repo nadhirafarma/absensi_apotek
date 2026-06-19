@@ -233,6 +233,7 @@
       storageKey: EMPLOYEE_KEY,
       fields: [
         { key: "name", label: "Nama Lengkap", required: true },
+        { key: "username", label: "Username Login" },
         { key: "phone", label: "No. HP" },
         { key: "address", label: "Alamat", wide: true },
         { key: "job", label: "Jabatan" },
@@ -4269,6 +4270,7 @@
   function normalizeEmployeeRecord(record) {
     return {
       name: String(record?.name || record?.nama || record?.nama_lengkap || "").trim(),
+      username: String(record?.username || record?.user || record?.namauser || record?.login || "").trim(),
       phone: normalizePhoneNumber(record?.phone || record?.noHp || record?.no_hp || record?.telepon || ""),
       address: String(record?.address || record?.alamat || "").trim(),
       job: String(record?.job || record?.jabatan || record?.role || "").trim(),
@@ -4852,7 +4854,7 @@
 
     if (field.type === "face-id") {
       const record = state.recordType === "employee" ? getLocalArray("employee")[state.recordIndex] || {} : {};
-      const hasFaceId = Boolean(record.faceIdFileId || record.faceIdUrl || record.faceIdImageUrl);
+      const hasFaceId = hasEmployeeFaceId(record);
       const previewUrl = record.faceIdImageUrl || record.faceIdUrl || "";
       const preview = previewUrl
         ? `<span class="employee-face-id-preview has-image"><img src="${escapeHtml(previewUrl)}" alt=""></span>`
@@ -5110,7 +5112,8 @@
       record,
       originalName: previousRecord.name || "",
       originalEmail: previousRecord.email || "",
-      originalPhone: previousRecord.phone || ""
+      originalPhone: previousRecord.phone || "",
+      originalUsername: previousRecord.username || ""
     });
 
     if (!result || (result.success !== true && result.ok !== true)) {
@@ -5152,9 +5155,11 @@
 
   async function syncEmployeeStatusToUser(employee, previousEmployee = {}) {
     const keys = [
+      employee.username,
       employee.email,
       employee.name,
       employee.phone,
+      previousEmployee.username,
       previousEmployee.email,
       previousEmployee.name,
       previousEmployee.phone
@@ -5173,6 +5178,7 @@
       ? {
           ...user,
           name: user.name || employee.name,
+          username: employee.username || user.username || employee.email || employee.phone || employee.name,
           email: user.email || employee.email,
           phone: user.phone || employee.phone,
           address: user.address || employee.address,
@@ -5180,7 +5186,7 @@
         }
       : {
           name: employee.name,
-          username: employee.email || employee.phone || employee.name,
+          username: employee.username || employee.email || employee.phone || employee.name,
           role,
           status: normalizeRecordStatus(employee.status),
           email: employee.email || "",
@@ -5196,8 +5202,8 @@
     const result = await postToApi({
       action: "saveLoginUser",
       user: nextUser,
-      originalUsername: user?.username || "",
-      originalEmail: user?.email || ""
+      originalUsername: user?.username || previousEmployee.username || "",
+      originalEmail: user?.email || previousEmployee.email || ""
     });
 
     if (!result || (result.success !== true && result.ok !== true)) {
