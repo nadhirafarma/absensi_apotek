@@ -1,0 +1,13 @@
+{
+  "name": "nadhira-website-visual-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "visual": "playwright test",
+    "visual:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
