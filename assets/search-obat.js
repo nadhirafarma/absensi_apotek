@@ -128,6 +128,8 @@
     els.medicineCount = document.getElementById("medicineCount");
     els.resultsArea = document.getElementById("resultsArea");
     els.closeResultsButton = document.getElementById("closeResultsButton");
+    els.backButton = document.getElementById("backButton");
+    els.resultsCountLabel = document.getElementById("resultsCountLabel");
     els.emptyState = document.getElementById("emptyState");
     els.resultsList = document.getElementById("resultsList");
     els.columnToggles = Array.from(document.querySelectorAll("[data-column]"));
@@ -146,6 +148,15 @@
     els.closeResultsButton.addEventListener("click", () => {
       setResultsVisible(false);
     });
+    if (els.backButton) {
+      els.backButton.addEventListener("click", () => {
+        els.searchInput.value = "";
+        resetRowFilters();
+        renderResults();
+        setResultsVisible(false);
+        els.searchInput.focus();
+      });
+    }
     els.resultsArea.addEventListener("click", (event) => {
       if (event.target === els.resultsArea) {
         setResultsVisible(false);
@@ -996,8 +1007,22 @@
       els.emptyState.hidden = true;
     }
 
-    els.medicineCount.textContent = `${filtered.length} dari ${state.medicines.length} data`;
+    const countText = `${filtered.length} dari ${state.medicines.length} data`;
+    els.medicineCount.textContent = countText;
+    if (els.resultsCountLabel) {
+      els.resultsCountLabel.textContent = query
+        ? `${filtered.length} hasil untuk "${rawQuery}"`
+        : `${countText} ditampilkan`;
+    }
     updateFilterButtonState();
+  }
+
+  function resetRowFilters() {
+    els.filterStock.value = "";
+    els.filterStatus.value = "";
+    els.filterSupplier.value = "";
+    els.filterSatuanBeli.value = "";
+    els.filterExpired.value = "";
   }
 
   function setResultsVisible(isVisible) {
