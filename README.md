@@ -35085,3 +35085,8 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 - Badge Face ID di Data Karyawan dan endpoint `listFaceDatabase` membaca file wajah dari GitHub, bukan Google Drive.
 - Google Drive tidak dipakai sebagai sumber validasi database wajah absensi; Drive tetap untuk penyimpanan bukti foto absensi bila digunakan endpoint absensi.
 
+
+## Update 2026-06-20 v43
+- Sidebar desktop dikembalikan ke pola panel kiri dan konten kanan, sehingga konten tidak masuk ke bawah menu saat sidebar dibuka.
+- Halaman Cari Data Obat dibuat kembali kecil, sticky, dan terpusat dengan tombol kembali sejajar kolom pencarian.
+- Detail item Draft Restok Obat kini muncul sebagai popup ringkas di atas daftar agar item PRO tidak tenggelam di bawah kolom.
