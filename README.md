@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-20 06:55 WIB: merapikan Cari Data Obat agar toolbar pencarian sejajar tombol kembali dan tetap sticky di atas status hasil, mengecilkan halaman Restok Obat ke 80%, memperbaiki dropdown Draft Restok PRO beserta tombol aksi sejajar header, menaikkan font Surat Pesanan, merapikan aksi Data Supplier, dan menyamakan hitungan shift Pagi/Sore dengan tabel rekap bulanan.
 - 2026-06-20 02:50 WIB: membersihkan repo deploy GitHub Pages dari `.gas-deploy/`, `.github-deploy/`, `.clasp.json`, `.clinerules`, dan `visual-tests/` yang sempat ikut ter-commit dan menyebabkan build Pages gagal; file aplikasi utama tetap dipertahankan.
 - 2026-06-20 02:20 WIB: memperbaiki posisi sticky pencarian Cari Data Obat agar tidak menumpuk dengan status hasil/kembali, menambahkan horizontal-scroll saat sidebar desktop membuka halaman yang terpotong, memosisikan popup aksi tabel secara fixed di sisi kanan tombol, merapatkan kolom Data Karyawan/Data Supplier, memperbesar Draft Restok 10%, serta mengecilkan halaman Restok Obat dan Log Aktivitas 10%.
 - 2026-06-19 23:40 WIB: finalisasi normalisasi skala desktop; semua menu kembali 100%, pengecilan hanya berlaku di Surat Pesanan Pembelian, popup aksi tabel tidak lagi terpotong wrapper, Draft Restok Obat tidak menumpuk saat item PRO dibuka, dan Cari Data Obat memakai cache + toolbar sticky.

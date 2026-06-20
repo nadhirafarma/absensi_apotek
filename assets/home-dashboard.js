@@ -6044,18 +6044,20 @@
       }).join("");
       return `
         <article class="purchase-draft-card purchase-draft-card-full is-tone-${draftIndex % 6}" data-po-draft="${escapeHtml(item.id)}">
-          <button class="purchase-draft-card-toggle" type="button" data-po-draft-toggle="${escapeHtml(item.id)}">
-            <span><strong>${escapeHtml(requestNumber)} <b>Lihat Item</b></strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
+          <div class="purchase-draft-card-head" data-po-draft-toggle="${escapeHtml(item.id)}">
+            <button class="purchase-draft-card-toggle" type="button">
+              <span><strong>${escapeHtml(requestNumber)} <b>Lihat Item</b></strong><small>${escapeHtml([`${formatNumber(item.itemCount)} item`, `Total ${formatNumber(item.totalQty)}`, item.supplier].filter(Boolean).join(" - "))}</small></span>
+            </button>
+            <div class="purchase-draft-card-actions">
+              <button type="button" data-po-draft-add-selected="${escapeHtml(item.id)}">Masukkan Terpilih</button>
+              <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih Semua</button>
+              <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
+              <button class="is-danger" type="button" data-po-draft-delete="${escapeHtml(item.id)}">Hapus</button>
+            </div>
             <svg class="purchase-draft-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
-          </button>
+          </div>
           <div class="purchase-draft-item-list">
             ${itemRows || '<small>Tidak ada item obat.</small>'}
-          </div>
-          <div class="purchase-draft-card-actions">
-            <button type="button" data-po-draft-add-selected="${escapeHtml(item.id)}">Masukkan Terpilih</button>
-            <button type="button" data-po-draft-add="${escapeHtml(item.id)}">Pilih Semua</button>
-            <button type="button" data-po-draft-edit="${escapeHtml(item.id)}">Edit</button>
-            <button class="is-danger" type="button" data-po-draft-delete="${escapeHtml(item.id)}">Hapus</button>
           </div>
         </article>`;
     }).join("");
@@ -6071,10 +6073,6 @@
     if (!id) return;
     const draft = getRestockGroupById(id);
     if (!draft) return;
-    if (toggleButton) {
-      toggleButton.closest(".purchase-draft-card")?.classList.toggle("is-open");
-      return;
-    }
     if (selectedButton) {
       const checked = Array.from(selectedButton.closest(".purchase-draft-card")?.querySelectorAll("[data-po-draft-item]:checked") || []);
       const selectedKeys = new Set(checked.map((input) => input.dataset.poDraftItem));
@@ -6122,6 +6120,11 @@
       } finally {
         endAppLoading(token, { force: true });
       }
+      return;
+    }
+    if (toggleButton) {
+      toggleButton.closest(".purchase-draft-card")?.classList.toggle("is-open");
+      return;
     }
   }
 
@@ -10227,6 +10230,26 @@
       .sort((a, b) => (`${b.date} ${getAttendanceGroupSortTime(b)}`).localeCompare(`${a.date} ${getAttendanceGroupSortTime(a)}`));
   }
 
+  function buildAttendanceMonthlyRows(monthGroups, employees, workDays) {
+    const employeeNames = employees.map((employee) => employee.name).filter(Boolean);
+    const names = employeeNames.length
+      ? employeeNames
+      : Array.from(new Set(monthGroups.map((group) => group.name))).sort((a, b) => a.localeCompare(b));
+
+    return names.map((name) => {
+      const groups = monthGroups.filter((group) => normalizeSearch(group.name) === normalizeSearch(name));
+      const regularGroups = groups.filter((group) => !group.isOvertime);
+      const hadir = regularGroups.filter((group) => group.datang).length;
+      const terlambat = regularGroups.filter(isLateAttendance).length;
+      const tidakHadir = Math.max(0, workDays - hadir);
+      const pagi = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
+      const sore = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
+      const lembur = groups.filter((group) => group.lembur).length;
+      const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
+      return { name, workDays, hadir, terlambat, tidakHadir, pagi, sore, lembur, percent };
+    });
+  }
+
   function renderAttendanceDashboard() {
     if (!els.attendanceTableBody) return;
     ensureAttendanceFilterDefaults();
@@ -10239,13 +10262,13 @@
     const employees = getVisibleAttendanceEmployees();
     const employeeCount = employees.length || countUniqueNames(visibleGroups);
     const regularTodayGroups = todayGroups.filter((group) => !group.isOvertime);
-    const regularMonthGroups = monthGroups.filter((group) => !group.isOvertime);
     const presentToday = regularTodayGroups.filter((group) => group.datang).length;
     const lateToday = todayGroups.filter((group) => isLateAttendance(group)).length;
     const absentToday = Math.max(0, employeeCount - presentToday);
     const workDays = countWorkDaysInMonth(Number(state.attendanceYear), Number(state.attendanceMonth));
-    const pagi = regularMonthGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
-    const sore = regularMonthGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
+    const monthlyRows = buildAttendanceMonthlyRows(monthGroups, employees, workDays);
+    const pagi = monthlyRows.reduce((sum, row) => sum + row.pagi, 0);
+    const sore = monthlyRows.reduce((sum, row) => sum + row.sore, 0);
     const shiftTotal = Math.max(1, pagi + sore);
 
     document.body.classList.toggle("attendance-can-edit", canEdit);
@@ -10263,7 +10286,7 @@
     if (els.attendanceShiftSore?.nextElementSibling) els.attendanceShiftSore.nextElementSibling.style.setProperty("--bar", `${Math.round((sore / shiftTotal) * 100)}%`);
 
     renderAttendanceTable(todayGroups, canEdit);
-    renderAttendanceMonthlyTable(monthGroups, employees, workDays);
+    renderAttendanceMonthlyTable(monthGroups, employees, workDays, monthlyRows);
     renderSalarySlipSummary();
   }
 
@@ -10299,32 +10322,20 @@
     setText(els.attendanceTableInfo, `Menampilkan ${formatNumber(groups.length)} catatan pada ${formatAttendanceDate(state.attendanceDate)}.`);
   }
 
-  function renderAttendanceMonthlyTable(monthGroups, employees, workDays) {
+  function renderAttendanceMonthlyTable(monthGroups, employees, workDays, monthlyRows) {
     if (!els.attendanceMonthlyTableBody) return;
-    const employeeNames = employees.map((employee) => employee.name).filter(Boolean);
-    const names = employeeNames.length
-      ? employeeNames
-      : Array.from(new Set(monthGroups.map((group) => group.name))).sort((a, b) => a.localeCompare(b));
+    const rows = monthlyRows || buildAttendanceMonthlyRows(monthGroups, employees, workDays);
 
-    if (!names.length) {
+    if (!rows.length) {
       els.attendanceMonthlyTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="9">Belum ada data rekap bulanan.</td></tr>`;
       setText(els.attendanceMonthlyInfo, "Menampilkan 0 karyawan.");
       return;
     }
 
-    els.attendanceMonthlyTableBody.innerHTML = names.map((name) => {
-      const groups = monthGroups.filter((group) => normalizeSearch(group.name) === normalizeSearch(name));
-      const regularGroups = groups.filter((group) => !group.isOvertime);
-      const hadir = regularGroups.filter((group) => group.datang).length;
-      const terlambat = regularGroups.filter(isLateAttendance).length;
-      const tidakHadir = Math.max(0, workDays - hadir);
-      const pagi = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("pagi")).length;
-      const sore = regularGroups.filter((group) => group.datang && normalizeSearch(group.shift).includes("sore")).length;
-      const lembur = groups.filter((group) => group.lembur).length;
-      const percent = workDays > 0 ? Math.round((hadir / workDays) * 1000) / 10 : 0;
-      return `<tr><td>${escapeHtml(name)}</td><td>${formatNumber(workDays)}</td><td>${formatNumber(hadir)}</td><td>${formatNumber(terlambat)}</td><td>${formatNumber(tidakHadir)}</td><td>${formatNumber(pagi)}</td><td>${formatNumber(sore)}</td><td>${formatNumber(lembur)}</td><td>${percent}%</td></tr>`;
+    els.attendanceMonthlyTableBody.innerHTML = rows.map((row) => {
+      return `<tr><td>${escapeHtml(row.name)}</td><td>${formatNumber(row.workDays)}</td><td>${formatNumber(row.hadir)}</td><td>${formatNumber(row.terlambat)}</td><td>${formatNumber(row.tidakHadir)}</td><td>${formatNumber(row.pagi)}</td><td>${formatNumber(row.sore)}</td><td>${formatNumber(row.lembur)}</td><td>${row.percent}%</td></tr>`;
     }).join("");
-    setText(els.attendanceMonthlyInfo, `Menampilkan ${formatNumber(names.length)} karyawan untuk ${getMonthName(state.attendanceMonth)} ${state.attendanceYear}.`);
+    setText(els.attendanceMonthlyInfo, `Menampilkan ${formatNumber(rows.length)} karyawan untuk ${getMonthName(state.attendanceMonth)} ${state.attendanceYear}.`);
   }
 
   function getVisibleAttendanceGroups() {
