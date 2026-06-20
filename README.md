@@ -35090,3 +35090,6 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 - Sidebar desktop dikembalikan ke pola panel kiri dan konten kanan, sehingga konten tidak masuk ke bawah menu saat sidebar dibuka.
 - Halaman Cari Data Obat dibuat kembali kecil, sticky, dan terpusat dengan tombol kembali sejajar kolom pencarian.
 - Detail item Draft Restok Obat kini muncul sebagai popup ringkas di atas daftar agar item PRO tidak tenggelam di bawah kolom.
+
+## Update 2026-06-20 v44
+- Layout Cari Data Obat/quick search dikunci ulang: kolom pencarian dan tombol kembali sejajar, status total data pindah ke bawah kolom pencarian, dan kartu obat tidak lagi tertimpa sticky search.
