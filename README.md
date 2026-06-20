@@ -11,6 +11,7 @@ PENTING UNTUK AGEN BERIKUTNYA:
 - Jangan commit file sementara: `.codex_git_tmp/`, `git_index_tmp`, `git_objects_tmp/`, `codex_deploy_index_tmp`, `*.zip`, `DEPLOY-SEKARANG.bat`, `run-deploy.ps1`.
 
 PERUBAHAN YANG SUDAH DILAKUKAN:
+- 2026-06-20 10:50 WIB: memperbaiki sidebar Presensi agar konten kanan tetap rata, memaksa dropdown item Draft Restok PRO terlihat di desktop/mobile, memadatkan tombol aksi draft desktop, mengubah kartu Cari Data Obat mengikuti referensi, dan menyeragamkan bottom menu mobile dengan Beranda.
 - 2026-06-20 06:55 WIB: merapikan Cari Data Obat agar toolbar pencarian sejajar tombol kembali dan tetap sticky di atas status hasil, mengecilkan halaman Restok Obat ke 80%, memperbaiki dropdown Draft Restok PRO beserta tombol aksi sejajar header, menaikkan font Surat Pesanan, merapikan aksi Data Supplier, dan menyamakan hitungan shift Pagi/Sore dengan tabel rekap bulanan.
 - 2026-06-20 02:50 WIB: membersihkan repo deploy GitHub Pages dari `.gas-deploy/`, `.github-deploy/`, `.clasp.json`, `.clinerules`, dan `visual-tests/` yang sempat ikut ter-commit dan menyebabkan build Pages gagal; file aplikasi utama tetap dipertahankan.
 - 2026-06-20 02:20 WIB: memperbaiki posisi sticky pencarian Cari Data Obat agar tidak menumpuk dengan status hasil/kembali, menambahkan horizontal-scroll saat sidebar desktop membuka halaman yang terpotong, memosisikan popup aksi tabel secara fixed di sisi kanan tombol, merapatkan kolom Data Karyawan/Data Supplier, memperbesar Draft Restok 10%, serta mengecilkan halaman Restok Obat dan Log Aktivitas 10%.
@@ -35083,3 +35084,4 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 - Database Face ID absensi dikembalikan ke folder GitHub Pages `database_wajah`.
 - Badge Face ID di Data Karyawan dan endpoint `listFaceDatabase` membaca file wajah dari GitHub, bukan Google Drive.
 - Google Drive tidak dipakai sebagai sumber validasi database wajah absensi; Drive tetap untuk penyimpanan bukti foto absensi bila digunakan endpoint absensi.
+
