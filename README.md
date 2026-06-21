@@ -35093,3 +35093,9 @@ Per 01/06/2026 halaman login internal disiapkan untuk GitHub Pages.
 
 ## Update 2026-06-20 v44
 - Layout Cari Data Obat/quick search dikunci ulang: kolom pencarian dan tombol kembali sejajar, status total data pindah ke bawah kolom pencarian, dan kartu obat tidak lagi tertimpa sticky search.
+
+## Update 2026-06-21 v45
+- Quick search Cari Data Obat dibungkus menjadi area sticky tunggal: search bar, tombol kembali, dan info hasil berada dalam satu blok sehingga kartu obat tidak tertimpa saat scroll.
+
+## Update 2026-06-21 v46
+- Daftar kartu Cari Data Obat dijadikan scroll area terpisah di bawah blok search/status sehingga card pertama tidak bisa lagi tertutup search bar.
