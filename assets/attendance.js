@@ -145,6 +145,21 @@
     if (els.attendanceOvertimeButton) els.attendanceOvertimeButton.addEventListener("click", () => selectAttendanceType("LEMBUR"));
     window.addEventListener("beforeunload", stopAll);
     window.addEventListener("resize", resizeFaceCanvas);
+    document.addEventListener("visibilitychange", async () => {
+      if (document.hidden) return;
+      if (!state.started || state.finished || state.processing) return;
+      if (!state.stream || !state.stream.active) {
+        try {
+          state.stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }
+          });
+          els.video.srcObject = state.stream;
+        } catch (_) {}
+      }
+      try { await els.video.play(); } catch (_) {}
+      resizeFaceCanvas();
+    });
   }
 
   function showIntegrityGate() {
@@ -490,6 +505,10 @@
 
   async function detectFace() {
     if (state.detecting || state.processing || state.finished) return;
+    if (els.video.readyState < 2 || els.video.paused) {
+      try { await els.video.play(); } catch (_) {}
+      if (els.video.readyState < 2) return;
+    }
 
     state.detecting = true;
 
@@ -536,6 +555,7 @@
         await processAttendance(bestMatch.label);
       }
     } catch (error) {
+      if (state.finished) return;
       setStatus(`Deteksi wajah terganggu: ${error.message}`);
     } finally {
       state.detecting = false;
