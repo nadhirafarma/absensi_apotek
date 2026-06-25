@@ -150,12 +150,14 @@
       if (!state.started || state.finished || state.processing) return;
       if (!state.stream || !state.stream.active) {
         try {
-          state.stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }
-          });
-          els.video.srcObject = state.stream;
+          if (state.stream) state.stream.getTracks().forEach(track => track.stop());
         } catch (_) {}
+        try {
+          await startCamera();
+          resizeFaceCanvas();
+          scheduleDetection(200);
+        } catch (_) {}
+        return;
       }
       try { await els.video.play(); } catch (_) {}
       resizeFaceCanvas();
@@ -353,12 +355,13 @@
   }
 
   async function loadModels() {
-    setModelStatus("Memuat Face ID", "warning");
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_BASE),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_BASE)
-    ]);
+    if (faceapi.nets.tinyFaceDetector.isLoaded && faceapi.nets.faceLandmark68Net.isLoaded && faceapi.nets.faceRecognitionNet.isLoaded) {
+      return;
+    }
+    const basePath = location.protocol === "file:" ? MODEL_BASE : "weights";
+    await faceapi.nets.tinyFaceDetector.loadFromUri(basePath);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(basePath);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(basePath);
   }
 
   async function startCamera() {
@@ -376,6 +379,19 @@
     });
 
     els.video.srcObject = state.stream;
+
+    await new Promise((resolve) => {
+      function onLoadedMetadata() {
+        els.video.removeEventListener("loadedmetadata", onLoadedMetadata);
+        resolve();
+      }
+      if (els.video.readyState >= 1) {
+        onLoadedMetadata();
+      } else {
+        els.video.addEventListener("loadedmetadata", onLoadedMetadata);
+      }
+    });
+
     await els.video.play();
   }
 
@@ -506,7 +522,15 @@
   async function detectFace() {
     if (state.detecting || state.processing || state.finished) return;
     if (els.video.readyState < 2 || els.video.paused) {
-      try { await els.video.play(); } catch (_) {}
+      if (!state.stream || !state.stream.active) {
+        try { if (state.stream) state.stream.getTracks().forEach(track => track.stop()); } catch (_) {}
+        try {
+          await startCamera();
+          resizeFaceCanvas();
+        } catch (_) {}
+      } else {
+        try { await els.video.play(); } catch (_) {}
+      }
       if (els.video.readyState < 2) return;
     }
 
