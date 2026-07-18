@@ -2,8 +2,6 @@
   const API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const API_URL = `${API_BASE}?sheet=data_obat`;
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
-  const GITHUB_FACE_DB_API_URL = "https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main";
-  const GITHUB_FACE_DB_RAW_BASE = "https://raw.githubusercontent.com/nadhirafarma/absensi_apotek/main/database_wajah";
   const SESSION_KEY = "nadhira.authSession";
   const META_KEY = "nadhira.obatCacheMeta";
   const DATA_OBAT_ROWS_CACHE_KEY = "nadhira.dataObatRowsCache";
@@ -22,9 +20,6 @@
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
   const RESTOCK_PHOTO_MAX_LENGTH = 220000;
-  const EMPLOYEE_FACE_ID_MAX_LENGTH = 42000;
-  const GITHUB_FACE_DB_CACHE_KEY = "nadhira.githubFaceDatabaseFiles";
-  const DEFAULT_GITHUB_FACE_LABELS = ["Al_Hafiz", "Ayu_Novalia", "Delpi_Vira", "Meisyi_Amalia", "Putri_Sinta", "Tia_Ivanka", "Yolan_Alfarel"];
   const SIDEBAR_KEY = "nadhira.sidebarCollapsed";
   const PROFILE_KEY = "nadhira.localProfile";
   const PROFILE_SECURITY_KEY = "nadhira.profileSecurity";
@@ -74,6 +69,8 @@
     latitude: "",
     longitude: "",
     gpsAccuracy: "",
+    attendanceGpsEnabled: true,
+    attendanceGpsRadius: 45,
     licenseNumber: "",
     licenseExpiry: "",
     responsiblePharmacist: "",
@@ -204,7 +201,7 @@
 
   const ACCESS_MENUS = [
     { key: "dashboard", label: "Dashboard" },
-    { key: "absensi_face_id", label: "Absensi Face ID" },
+    { key: "absensi", label: "Absensi" },
     { key: "presensi", label: "Presensi / Catatan Kehadiran" },
     { key: "cari_data_obat", label: "Cari Data Obat" },
     { key: "data_obat", label: "Data Obat" },
@@ -225,13 +222,13 @@
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
-    admin: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
-    apoteker: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
-    kasir: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
-    "asisten apoteker": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
-    "staf gudang": ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
-    operator: ["dashboard", "absensi_face_id", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
+    administrator: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
+    admin: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
+    apoteker: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    kasir: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "asisten apoteker": ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "staf gudang": ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    operator: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
   };
 
   const LOCAL_SCHEMAS = {
@@ -245,8 +242,7 @@
         { key: "address", label: "Alamat", wide: true },
         { key: "job", label: "Jabatan" },
         { key: "email", label: "Email", type: "email" },
-        { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
-        { key: "faceIdPhoto", label: "Pendaftaran Face ID", type: "face-id", wide: true }
+        { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] }
       ]
     },
     supplier: {
@@ -287,9 +283,6 @@
     roles: [],
     employees: [],
     suppliers: [],
-    githubFaceFiles: getInitialGithubFaceFiles(),
-    githubFaceKeys: new Set(getInitialGithubFaceFiles().map((item) => item.key)),
-    githubFaceLoadPromise: null,
     localRecordBootstrapRunning: false,
     purchaseItems: [],
     purchaseOrders: [],
@@ -320,8 +313,6 @@
     pendingRestockPhoto: "",
     pendingRestockPhotoName: "",
     pendingRestockPhotoPromise: null,
-    pendingEmployeeFaceIdPhoto: null,
-    pendingEmployeeFaceIdFileName: "",
     importHeaders: [],
     importRows: [],
     scannerStream: null,
@@ -426,7 +417,6 @@
     loadStoredModules();
     fetchRestockRequests({ silent: true });
     fetchPurchaseOrders({ silent: true });
-    loadGithubFaceDatabase({ silent: true });
     fetchDataObat();
     fetchUsers();
     fetchPharmacyProfile({ silent: true });
@@ -455,10 +445,9 @@
       appLoadingLogo: document.getElementById("appLoadingLogo"),
       actionToast: document.getElementById("actionToast"),
       actionToastMessage: document.getElementById("actionToastMessage"),
-      sidebarPharmacyBrand: document.getElementById("sidebarPharmacyBrand"),
-      sidebarPharmacyLogo: document.getElementById("sidebarPharmacyLogo"),
-      sidebarPharmacyName: document.getElementById("sidebarPharmacyName"),
-      sidebarPharmacySubtitle: document.getElementById("sidebarPharmacySubtitle"),
+      headerToggleLogo: document.getElementById("headerToggleLogo"),
+      headerToggleName: document.getElementById("headerToggleName"),
+      headerToggleSubtitle: document.getElementById("headerToggleSubtitle"),
       homeHeaderPharmacyLogo: document.getElementById("homeHeaderPharmacyLogo"),
       homeHeaderPharmacyName: document.getElementById("homeHeaderPharmacyName"),
       homeHeaderPharmacySubtitle: document.getElementById("homeHeaderPharmacySubtitle"),
@@ -757,6 +746,8 @@
       pharmacyGpsButton: document.getElementById("pharmacyGpsButton"),
       pharmacyLatitudeInput: document.getElementById("pharmacyLatitudeInput"),
       pharmacyLongitudeInput: document.getElementById("pharmacyLongitudeInput"),
+      pharmacyAttendanceGpsSelect: document.getElementById("pharmacyAttendanceGpsSelect"),
+      pharmacyGpsRadiusInput: document.getElementById("pharmacyGpsRadiusInput"),
       pharmacyLicenseInput: document.getElementById("pharmacyLicenseInput"),
       pharmacyLicenseExpiryInput: document.getElementById("pharmacyLicenseExpiryInput"),
       pharmacyResponsibleInput: document.getElementById("pharmacyResponsibleInput"),
@@ -876,7 +867,9 @@
     if (els.sidebarScrim) els.sidebarScrim.addEventListener("click", () => setSidebarCollapsed(true));
     window.addEventListener("resize", handleViewportRoute);
     window.addEventListener("resize", positionPurchaseProductResults);
+    window.addEventListener("resize", handleTableActionMenuViewportChange);
     window.addEventListener("scroll", positionPurchaseProductResults, true);
+    window.addEventListener("scroll", handleTableActionMenuViewportChange, true);
 
     els.viewButtons.forEach((button) => {
       button.addEventListener("click", () => {
@@ -898,7 +891,15 @@
     }, true);
 
     document.addEventListener("click", (event) => {
-      if (!event.target.closest(".purchase-row-menu")) closePurchaseRowMenus();
+      if (event.target.closest(".purchase-row-menu-trigger")) {
+        const activePurchaseMenu = event.target.closest(".purchase-row-menu");
+        window.setTimeout(() => {
+          closePurchaseRowMenus(activePurchaseMenu);
+          positionPurchaseRowMenu(activePurchaseMenu);
+        }, 0);
+      } else if (!event.target.closest(".purchase-row-menu")) {
+        closePurchaseRowMenus();
+      }
       if (!event.target.closest(".purchase-product-search, .purchase-product-floating-results")) hidePurchaseProductResults();
       if (event.target.closest(".table-row-menu-trigger")) {
         const activeMenu = event.target.closest(".table-row-menu");
@@ -1150,6 +1151,7 @@
     if (els.pharmacyLogoInput) els.pharmacyLogoInput.addEventListener("change", handlePharmacyLogoChange);
     if (els.pharmacyRemoveLogoButton) els.pharmacyRemoveLogoButton.addEventListener("click", removePharmacyLogo);
     if (els.pharmacyGpsButton) els.pharmacyGpsButton.addEventListener("click", detectPharmacyGps);
+    if (els.pharmacyAttendanceGpsSelect) els.pharmacyAttendanceGpsSelect.addEventListener("change", updatePharmacyGpsFields);
     if (els.shiftRulesForm) els.shiftRulesForm.addEventListener("submit", saveAttendanceShiftSettings);
     if (els.resetShiftRulesButton) els.resetShiftRulesButton.addEventListener("click", resetAttendanceShiftSettings);
     if (els.attendanceRefreshButton) els.attendanceRefreshButton.addEventListener("click", () => fetchAttendanceRecords({ manual: true }));
@@ -4340,12 +4342,7 @@
       address: String(record?.address || record?.alamat || "").trim(),
       job: String(record?.job || record?.jabatan || record?.role || "").trim(),
       email: String(record?.email || record?.gmail || "").trim(),
-      status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan),
-      faceIdFileId: String(record?.faceIdFileId || record?.face_id_file_id || record?.faceFileId || record?.fileIdWajah || record?.database_wajah_file_id || "").trim(),
-      faceIdUrl: String(record?.faceIdUrl || record?.face_id_url || record?.faceUrl || record?.urlWajah || record?.database_wajah_url || "").trim(),
-      faceIdImageUrl: String(record?.faceIdImageUrl || record?.face_id_image_url || record?.faceImageUrl || record?.faceIdPhoto || record?.face_id_photo || record?.fotoWajah || record?.foto_wajah || record?.wajah || record?.database_wajah || "").trim(),
-      faceIdLabel: String(record?.faceIdLabel || record?.face_id_label || record?.faceLabel || "").trim(),
-      faceIdRegisteredAt: String(record?.faceIdRegisteredAt || record?.face_id_registered_at || record?.faceRegisteredAt || "").trim()
+      status: normalizeRecordStatus(record?.status || record?.aktif || record?.keterangan)
     };
   }
 
@@ -4407,6 +4404,8 @@
       alias.set(normalizeSearch(item.key), item.key);
       alias.set(normalizeSearch(item.label), item.key);
     });
+    alias.set(normalizeSearch("absensi_face_id"), "absensi");
+    alias.set(normalizeSearch("Absensi Face ID"), "absensi");
     const values = Array.isArray(access)
       ? access
       : String(access || "").split(/[,;|]/);
@@ -4420,18 +4419,27 @@
   }
 
   function getDefaultAccessForRole(role) {
-    const key = normalizeSearch(role || "operator");
-    const custom = state.roles.find((item) => normalizeSearch(item.name) === key);
+    const key = getRoleIdentityKey(role || "operator");
+    const custom = state.roles.find((item) => getRoleIdentityKey(item.name) === key);
     if (custom && Array.isArray(custom.access) && custom.access.length) return normalizeAccessList(custom.access, custom.name);
     return (ROLE_ACCESS[key] || ROLE_ACCESS.operator).slice();
   }
 
   function getManagedRoleNames() {
-    return unique(["Owner", "Administrator", "Admin", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"]
-      .concat(state.roles.map((role) => role.name))
-      .concat(state.users.map((user) => user.role).filter(Boolean)))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
+    const names = state.users.map((user) => user.role).filter(Boolean)
+      .concat(state.roles.map((role) => role.name).filter(Boolean));
+    const roles = new Map();
+    names.forEach((name) => {
+      const key = getRoleIdentityKey(name);
+      if (!key || roles.has(key)) return;
+      roles.set(key, formatRoleLabel(name));
+    });
+    return Array.from(roles.values()).sort((a, b) => a.localeCompare(b, "id", { sensitivity: "base" }));
+  }
+
+  function getRoleIdentityKey(value) {
+    const key = normalizeSearch(value || "").replace(/\s+/g, " ");
+    return key === "admin" ? "administrator" : key;
   }
 
   function normalizeRoleRecord(record = {}) {
@@ -4632,12 +4640,6 @@
       const nameKey = keys[0] || "name";
       const label = formatCell(row[nameKey]);
       const inactive = isInactiveStatus(row.status);
-      const hasFaceId = isEmployeeTable && hasEmployeeFaceId(row);
-      const faceBadge = hasFaceId
-        ? '<small class="employee-face-id-note is-ready">Face ID terdaftar</small>'
-        : isEmployeeTable
-          ? '<small class="employee-face-id-note">Belum ada Face ID</small>'
-          : "";
       const statusCell = isEmployeeTable
         ? `<td><span class="status-badge ${inactive ? "is-inactive" : ""}">${escapeHtml(normalizeRecordStatus(row.status))}</span></td>`
         : "";
@@ -4649,7 +4651,6 @@
         <td>
           <button class="simple-name-button" type="button" data-local-action="edit" data-type="${type}" data-index="${index}">
             ${escapeHtml(label)}
-            ${faceBadge}
           </button>
         </td>
         ${statusCell}
@@ -4666,82 +4667,18 @@
   }
 
 
-  function hasEmployeeFaceId(record) {
-    return getEmployeeGithubFaceFile(record) !== null;
-  }
-
-  function getEmployeeGithubFaceFile(record) {
-    if (!record) return null;
-    const keys = [record.name, record.username, record.faceIdLabel]
-      .map(normalizeGithubFaceKey)
-      .filter(Boolean);
-    return state.githubFaceFiles.find((file) => keys.includes(file.key)) || null;
-  }
-
-  function getInitialGithubFaceFiles() {
-    const cached = readStoredArray(GITHUB_FACE_DB_CACHE_KEY)
-      .map(normalizeGithubFaceFile)
-      .filter(Boolean);
-    if (cached.length) return cached;
-    return DEFAULT_GITHUB_FACE_LABELS.map((label) => normalizeGithubFaceFile({
-      name: `${label}.jpg`,
-      label,
-      download_url: `${GITHUB_FACE_DB_RAW_BASE}/${encodeURIComponent(label)}.jpg`
-    })).filter(Boolean);
-  }
-
-  async function loadGithubFaceDatabase(options = {}) {
-    if (state.githubFaceLoadPromise) return state.githubFaceLoadPromise;
-    state.githubFaceLoadPromise = (async () => {
-      try {
-        const response = await fetch(GITHUB_FACE_DB_API_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("Database wajah GitHub belum terbaca.");
-        const files = (await response.json())
-          .map(normalizeGithubFaceFile)
-          .filter(Boolean);
-        if (!files.length) throw new Error("Folder database_wajah GitHub kosong.");
-        state.githubFaceFiles = files;
-        state.githubFaceKeys = new Set(files.map((item) => item.key));
-        writeStoredArray(GITHUB_FACE_DB_CACHE_KEY, files);
-        renderEmployees();
-      } catch (error) {
-        if (!options.silent) console.warn(error);
-      } finally {
-        state.githubFaceLoadPromise = null;
-      }
-    })();
-    return state.githubFaceLoadPromise;
-  }
-
-  function normalizeGithubFaceFile(file) {
-    const name = String(file?.name || file?.label || "").trim();
-    if (!/\.(jpe?g|png|webp)$/i.test(name)) return null;
-    const label = name.replace(/\.[^.]+$/, "");
-    const key = normalizeGithubFaceKey(label);
-    if (!key) return null;
-    return {
-      name,
-      label,
-      key,
-      imageUrl: String(file.download_url || file.imageUrl || `${GITHUB_FACE_DB_RAW_BASE}/${encodeURIComponent(name)}`).trim()
-    };
-  }
-
-  function normalizeGithubFaceKey(value) {
-    return normalizeSearch(String(value || "")
-      .replace(/\.[^.]+$/, "")
-      .replace(/_/g, " "))
-      .replace(/[^a-z0-9]+/g, "");
-  }
-
   function renderRoleDataPage() {
     if (!els.roleTableBody) return;
     const roleNames = getManagedRoleNames();
+    if (!roleNames.length) {
+      els.roleTableBody.innerHTML = '<tr><td class="empty-table-cell" colspan="5">Belum ada role pada Manajemen Pengguna. Gunakan Tambah Role untuk membuat role baru.</td></tr>';
+      return;
+    }
     els.roleTableBody.innerHTML = roleNames.map((roleName) => {
-      const key = normalizeSearch(roleName);
+      const key = getRoleIdentityKey(roleName);
       const access = getDefaultAccessForRole(roleName).filter((item) => item !== "akses_semua_data");
-      const users = state.users.filter((user) => normalizeSearch(user.role) === key).length;
-      const customIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === key);
+      const users = state.users.filter((user) => getRoleIdentityKey(user.role) === key).length;
+      const customIndex = state.roles.findIndex((item) => getRoleIdentityKey(item.name) === key);
       return `
         <tr>
           <td><span class="pill-tag">${escapeHtml(formatRoleLabel(roleName))}</span></td>
@@ -4760,7 +4697,7 @@
   }
 
   function openRoleEditor(roleName = "") {
-    const current = state.roles.find((item) => normalizeSearch(item.name) === normalizeSearch(roleName));
+    const current = state.roles.find((item) => getRoleIdentityKey(item.name) === getRoleIdentityKey(roleName));
     const access = (current?.access || getDefaultAccessForRole(roleName || "Operator")).filter((item) => item !== "akses_semua_data");
     state.roleEditingName = roleName || "";
     if (!els.roleEditorModal || !els.roleEditorName || !els.roleEditorAccess) return;
@@ -4793,7 +4730,7 @@
     }
     const access = Array.from(els.roleEditorAccess?.querySelectorAll("input:checked") || []).map((input) => input.value);
     const finalAccess = normalizeAccessList(access, cleanName).filter((item) => item !== "akses_semua_data");
-    const existingIndex = state.roles.findIndex((item) => normalizeSearch(item.name) === normalizeSearch(cleanName) || normalizeSearch(item.name) === normalizeSearch(state.roleEditingName));
+    const existingIndex = state.roles.findIndex((item) => getRoleIdentityKey(item.name) === getRoleIdentityKey(cleanName) || getRoleIdentityKey(item.name) === getRoleIdentityKey(state.roleEditingName));
     const record = normalizeRoleRecord({ name: cleanName, access: finalAccess, updatedAt: new Date().toISOString() });
     if (existingIndex >= 0) state.roles[existingIndex] = record;
     else state.roles.push(record);
@@ -4810,7 +4747,7 @@
       return;
     }
     if (!window.confirm(`Hapus role ${roleName}?`)) return;
-    state.roles = state.roles.filter((item) => normalizeSearch(item.name) !== normalizeSearch(roleName));
+    state.roles = state.roles.filter((item) => getRoleIdentityKey(item.name) !== getRoleIdentityKey(roleName));
     persistRoles();
     renderRoleDataPage();
     renderUserRoleOptions();
@@ -4897,8 +4834,6 @@
     state.recordIndex = index;
     const record = getLocalArray(type)[index] || {};
     const userRole = type === "user" ? String(record.role || "Operator").trim() || "Operator" : "";
-    state.pendingEmployeeFaceIdPhoto = null;
-    state.pendingEmployeeFaceIdFileName = "";
 
     els.recordModalTitle.textContent = `${index >= 0 ? "Edit" : "Tambah"} ${schema.title}`;
     els.recordModalStatus.textContent = "Lengkapi field yang tersedia.";
@@ -4928,13 +4863,6 @@
       const roleSelect = els.recordFormFields.querySelector('select[name="role"]');
       if (roleSelect) {
         roleSelect.addEventListener("change", () => setAccessCheckboxes(getDefaultAccessForRole(roleSelect.value)));
-      }
-    }
-
-    if (type === "employee") {
-      const faceIdInput = els.recordFormFields.querySelector('input[name="faceIdPhoto"]');
-      if (faceIdInput) {
-        faceIdInput.addEventListener("change", handleEmployeeFaceIdChange);
       }
     }
 
@@ -4980,26 +4908,6 @@
       `;
     }
 
-    if (field.type === "face-id") {
-      const record = state.recordType === "employee" ? getLocalArray("employee")[state.recordIndex] || {} : {};
-      const hasFaceId = hasEmployeeFaceId(record);
-      const githubFace = getEmployeeGithubFaceFile(record);
-      const previewUrl = githubFace?.imageUrl || "";
-      const preview = previewUrl
-        ? `<span class="employee-face-id-preview has-image"><img src="${escapeHtml(previewUrl)}" alt=""></span>`
-        : `<span class="employee-face-id-preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"></path><path d="M4 20c1.4-3.2 4.2-5 8-5s6.6 1.8 8 5"></path><path d="M4 8V5a1 1 0 0 1 1-1h3"></path><path d="M16 4h3a1 1 0 0 1 1 1v3"></path><path d="M20 16v3a1 1 0 0 1-1 1h-3"></path><path d="M8 20H5a1 1 0 0 1-1-1v-3"></path></svg></span>`;
-      return `
-        <div class="employee-face-id-field">
-          ${preview}
-          <div class="employee-face-id-copy">
-            <strong>${hasFaceId ? "Face ID sudah terdaftar" : "Belum ada Face ID"}</strong>
-            <small id="employeeFaceIdFileName">${hasFaceId ? "Terdeteksi dari folder GitHub database_wajah." : "Nama file di GitHub database_wajah harus sesuai nama karyawan."}</small>
-            <input name="${escapeHtml(field.key)}" type="file" accept="image/*" capture="user">
-          </div>
-        </div>
-      `;
-    }
-
     const inputType = field.key === "phone" ? "tel" : (field.type || "text");
     const inputMode = field.key === "phone" ? ' inputmode="tel" autocomplete="tel"' : "";
     return `<input name="${escapeHtml(field.key)}" type="${escapeHtml(inputType)}" value="${escapeHtml(value)}"${inputMode} ${field.required ? "required" : ""}>`;
@@ -5016,95 +4924,6 @@
     hideModal(els.recordModal);
   }
 
-  async function handleEmployeeFaceIdChange(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-
-    const status = els.recordModalStatus;
-    if (!/^image\//.test(file.type || "")) {
-      if (status) {
-        status.textContent = "File Face ID harus berupa gambar.";
-        status.dataset.type = "error";
-      }
-      event.target.value = "";
-      return;
-    }
-
-    const loadingToken = startAppLoading("Menyiapkan foto Face ID...", 0);
-    try {
-      const raw = await readFileAsDataUrl(file);
-      const photo = await resizeEmployeeFaceIdPhoto(raw);
-
-      if (!photo) {
-        throw new Error("Foto terlalu besar atau tidak dapat diproses. Coba foto wajah yang lebih jelas.");
-      }
-
-      state.pendingEmployeeFaceIdPhoto = photo;
-      state.pendingEmployeeFaceIdFileName = file.name || "face-id.jpg";
-      const fileNameLabel = els.recordFormFields.querySelector("#employeeFaceIdFileName");
-      const preview = els.recordFormFields.querySelector(".employee-face-id-preview");
-      if (fileNameLabel) fileNameLabel.textContent = `${state.pendingEmployeeFaceIdFileName} siap didaftarkan.`;
-      if (preview) {
-        preview.classList.add("has-image");
-        preview.innerHTML = `<img src="${escapeHtml(photo)}" alt="">`;
-      }
-      if (status) {
-        status.textContent = "Foto siap. Database absensi membaca folder GitHub database_wajah.";
-        status.dataset.type = "info";
-      }
-    } catch (error) {
-      state.pendingEmployeeFaceIdPhoto = null;
-      state.pendingEmployeeFaceIdFileName = "";
-      if (status) {
-        status.textContent = `Face ID gagal disiapkan: ${error.message}`;
-        status.dataset.type = "error";
-      }
-    } finally {
-      endAppLoading(loadingToken);
-      event.target.value = "";
-    }
-  }
-
-  function resizeEmployeeFaceIdPhoto(dataUrl) {
-    return new Promise((resolve) => {
-      const image = new Image();
-      image.onerror = () => resolve(dataUrl.length <= EMPLOYEE_FACE_ID_MAX_LENGTH ? dataUrl : "");
-      image.onload = () => {
-        const sizes = [720, 640, 560, 480, 420, 360, 320];
-        const qualities = [0.82, 0.76, 0.68, 0.60, 0.52, 0.44, 0.36];
-        let best = "";
-
-        sizes.some((maxSide) => {
-          const sourceWidth = image.naturalWidth || image.width || 1;
-          const sourceHeight = image.naturalHeight || image.height || 1;
-          const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-          const width = Math.max(1, Math.round(sourceWidth * scale));
-          const height = Math.max(1, Math.round(sourceHeight * scale));
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const context = canvas.getContext("2d", { alpha: false });
-          context.fillStyle = "#fff";
-          context.fillRect(0, 0, width, height);
-          context.drawImage(image, 0, 0, width, height);
-
-          return qualities.some((quality) => {
-            const value = canvas.toDataURL("image/jpeg", quality);
-            if (!best || value.length < best.length) best = value;
-            if (value.length <= EMPLOYEE_FACE_ID_MAX_LENGTH) {
-              best = value;
-              return true;
-            }
-            return false;
-          });
-        });
-
-        resolve(best && best.length <= EMPLOYEE_FACE_ID_MAX_LENGTH ? best : "");
-      };
-      image.src = dataUrl;
-    });
-  }
-
   async function saveRecord(event) {
     event.preventDefault();
     const schema = LOCAL_SCHEMAS[state.recordType];
@@ -5113,7 +4932,6 @@
     const formData = new FormData(els.recordForm);
     let record = {};
     schema.fields.forEach((field) => {
-      if (field.type === "face-id") return;
       if (field.type === "access") {
         record[field.key] = formData.getAll(field.key).map((value) => String(value || "").trim()).filter(Boolean);
         return;
@@ -5137,10 +4955,6 @@
 
     if (state.recordType === "employee") {
       record = normalizeEmployeeRecord({ ...previousRecord, ...record });
-      if (state.pendingEmployeeFaceIdPhoto) {
-        record.faceIdPhoto = state.pendingEmployeeFaceIdPhoto;
-        record.faceIdFileName = state.pendingEmployeeFaceIdFileName;
-      }
     }
 
     if (state.recordType === "user") {
@@ -6368,7 +6182,11 @@
     const menuToggle = event.target.closest(".purchase-row-menu-trigger");
     if (menuToggle) {
       event.stopPropagation();
-      window.setTimeout(() => closePurchaseRowMenus(menuToggle.closest(".purchase-row-menu")), 0);
+      const activeMenu = menuToggle.closest(".purchase-row-menu");
+      window.setTimeout(() => {
+        closePurchaseRowMenus(activeMenu);
+        positionPurchaseRowMenu(activeMenu);
+      }, 0);
       return;
     }
 
@@ -6407,8 +6225,54 @@
 
   function closePurchaseRowMenus(except = null) {
     document.querySelectorAll(".purchase-row-menu[open]").forEach((menu) => {
-      if (menu !== except) menu.removeAttribute("open");
+      if (menu !== except) {
+        resetPurchaseRowMenuPosition(menu);
+        menu.removeAttribute("open");
+      }
     });
+  }
+
+  function resetPurchaseRowMenuPosition(menu) {
+    const panel = menu?.querySelector(".purchase-row-actions");
+    if (!panel) return;
+    ["position", "left", "top", "right", "bottom", "zIndex", "minWidth"].forEach((key) => {
+      panel.style[key] = "";
+    });
+    panel.style.removeProperty("--purchase-menu-left");
+    panel.style.removeProperty("--purchase-menu-top");
+  }
+
+  function positionPurchaseRowMenu(menu) {
+    if (!menu || !menu.open) {
+      resetPurchaseRowMenuPosition(menu);
+      return;
+    }
+    const trigger = menu.querySelector(".purchase-row-menu-trigger");
+    const panel = menu.querySelector(".purchase-row-actions");
+    if (!trigger || !panel) return;
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelWidth = Math.max(panel.offsetWidth || 128, 112);
+    const panelHeight = Math.max(panel.offsetHeight || 108, 84);
+    const viewportGap = 10;
+    let left = triggerRect.right + 8;
+    if (left + panelWidth > window.innerWidth - viewportGap) {
+      left = triggerRect.left - panelWidth - 8;
+    }
+    left = Math.max(viewportGap, Math.min(left, window.innerWidth - panelWidth - viewportGap));
+    let top = triggerRect.top - Math.min(42, Math.max(0, panelHeight - triggerRect.height));
+    if (top + panelHeight > window.innerHeight - viewportGap) {
+      top = window.innerHeight - panelHeight - viewportGap;
+    }
+    top = Math.max(viewportGap, top);
+    panel.style.setProperty("--purchase-menu-left", `${left}px`);
+    panel.style.setProperty("--purchase-menu-top", `${top}px`);
+    panel.style.setProperty("position", "fixed", "important");
+    panel.style.setProperty("left", `${left}px`, "important");
+    panel.style.setProperty("top", `${top}px`, "important");
+    panel.style.setProperty("right", "auto", "important");
+    panel.style.setProperty("bottom", "auto", "important");
+    panel.style.setProperty("z-index", "99999", "important");
+    panel.style.setProperty("min-width", `${panelWidth}px`, "important");
   }
 
   function getSelectedPurchaseOrder() {
@@ -6624,10 +6488,32 @@
               <option value="A4">A4</option>
               <option value="A5">A5</option>
               <option value="A6">A6</option>
+              <option value="B5">B5</option>
+              <option value="B6">B6</option>
+              <option value="F4">F4 / Folio</option>
+              <option value="Quarto">Quarto</option>
+              <option value="Executive">Executive</option>
+              <option value="Letter">Letter</option>
+              <option value="Legal">Legal</option>
+              <option value="Tabloid">Tabloid</option>
+            </select>
+          </label>
+          <label>Baris per Halaman
+            <select name="rowsPerPage">
+              <option value="25">25 baris</option>
+              <option value="35">35 baris</option>
             </select>
           </label>
           <label>Ukuran Huruf
-            <input name="fontSize" type="number" min="7" max="13" step="0.5" value="${escapeHtml(defaults.fontSize || "10")}">
+            <select name="fontSize">
+              <option value="7">7 px</option>
+              <option value="8">8 px</option>
+              <option value="9">9 px</option>
+              <option value="10">10 px</option>
+              <option value="11">11 px</option>
+              <option value="12">12 px</option>
+              <option value="13">13 px</option>
+            </select>
           </label>
           <div class="purchase-print-settings-actions">
             <button class="is-secondary" type="button" data-print-cancel>Batal</button>
@@ -6641,8 +6527,16 @@
       const form = overlay.querySelector("form");
       const orientation = form?.elements.orientation;
       const paperSize = form?.elements.paperSize;
+      const rowsPerPage = form?.elements.rowsPerPage;
+      const fontSizeField = form?.elements.fontSize;
       if (orientation) orientation.value = defaults.orientation || "portrait";
       if (paperSize) paperSize.value = defaults.paperSize || "A4";
+      if (rowsPerPage) rowsPerPage.value = Number(defaults.rowsPerPage) === 35 ? "35" : "25";
+      if (fontSizeField) {
+        const defaultFontSize = String(Math.min(13, Math.max(7, Number(defaults.fontSize || 10) || 10)));
+        fontSizeField.value = defaultFontSize;
+        if (fontSizeField.value !== defaultFontSize) fontSizeField.value = "10";
+      }
 
       const finish = (value) => {
         overlay.remove();
@@ -6659,6 +6553,7 @@
         finish({
           orientation: String(form.elements.orientation.value || "portrait"),
           paperSize: String(form.elements.paperSize.value || "A4"),
+          rowsPerPage: Number(form.elements.rowsPerPage.value) === 35 ? 35 : 25,
           fontSize: Math.min(13, Math.max(7, Number(form.elements.fontSize.value || 10) || 10))
         });
       });
@@ -6704,27 +6599,48 @@
   function buildPurchaseOrderPrintHtml(order, settings = {}) {
     const context = getPurchasePrintProfileContext(order);
     const type = getPurchaseOrderTypeMeta(order.type);
-    const rows = buildPurchaseOrderPrintRows(order);
     const printNumber = getPurchasePrintNumber(order);
     const orientation = settings.orientation === "landscape" ? "landscape" : "portrait";
-    const paperSize = ["A4", "A5", "A6"].includes(settings.paperSize) ? settings.paperSize : "A4";
+    const paperMap = {
+      A4: [210, 297],
+      A5: [148, 210],
+      A6: [105, 148],
+      B5: [176, 250],
+      B6: [125, 176],
+      F4: [210, 330],
+      Quarto: [215, 275],
+      Executive: [184.15, 266.7],
+      Letter: [215.9, 279.4],
+      Legal: [215.9, 355.6],
+      Tabloid: [279.4, 431.8]
+    };
+    const paperSize = Object.prototype.hasOwnProperty.call(paperMap, settings.paperSize) ? settings.paperSize : "A4";
+    const rowsPerPage = Number(settings.rowsPerPage) === 35 ? 35 : 25;
     const fontSize = Math.min(13, Math.max(7, Number(settings.fontSize || 10) || 10));
-    const paperMap = { A4: [210, 297], A5: [148, 210], A6: [105, 148] };
     const paper = paperMap[paperSize] || paperMap.A4;
     const pageWidth = orientation === "landscape" ? paper[1] : paper[0];
     const pageHeight = orientation === "landscape" ? paper[0] : paper[1];
     const sheetWidth = pageWidth;
     const sheetMinHeight = pageHeight;
-    const sideMargin = paperSize === "A6" ? 10 : paperSize === "A5" ? 16 : 22;
-    const verticalMargin = paperSize === "A6" ? 8 : 11;
+    const sideMargin = pageWidth <= 110 ? 7 : pageWidth <= 155 ? 10 : 16;
+    const verticalMargin = pageHeight <= 155 ? 6 : pageHeight <= 215 ? 8 : 10;
     const footerTime = formatPurchasePrintFooterTime(new Date());
     const printNotes = buildPurchasePrintNotes(order);
+    const printPages = buildPurchasePrintPages(order, {
+      rowsPerPage,
+      fontSize,
+      pageHeight,
+      verticalMargin
+    });
     const whatsappText = buildPurchaseWhatsAppText(order, type, printNumber, context);
     const pdfFilename = `surat-pesanan-${String(printNumber || order.number || "pesanan").replace(/[^a-z0-9-]+/gi, "-")}.pdf`;
     const pdfConfig = {
       filename: pdfFilename,
       orientation,
-      paperSize: paperSize.toLowerCase(),
+      paperSize,
+      paperDimensions: paper,
+      pageWidth,
+      pageHeight,
       title: `${type.printTitle} No. SP. ${printNumber}`,
       whatsappText,
       whatsappUrl: `https://wa.me/?text=${encodeURIComponent(whatsappText)}`
@@ -6736,7 +6652,7 @@
   <title> </title>
   ${settings.preview ? '<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>' : ""}
   <style>
-    @page { size: ${paperSize} ${orientation}; margin: 0; }
+    @page { size: ${pageWidth}mm ${pageHeight}mm; margin: 0; }
     * { box-sizing: border-box; }
     html, body, .sheet, .sheet * { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body { margin: 0; color: #111827; background: ${settings.preview ? "#3d3d3d" : "#fff"}; font-family: Arial, Helvetica, sans-serif; font-size: ${fontSize}px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -6748,8 +6664,9 @@
     .print-preview-toolbar button.is-primary { border-color: transparent; background: linear-gradient(135deg, #315dff, #d615b8); }
     .print-preview-toolbar button.is-busy { opacity: .72; pointer-events: none; }
     .print-preview-status { min-height: 16px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
-    .preview-shell { padding: ${settings.preview ? "18px 0 42px" : "0"}; }
-    .sheet { position: relative; width: ${sheetWidth}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; background: #fff; box-sizing: border-box; page-break-after: avoid; break-after: avoid; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
+    .preview-shell { display: grid; gap: 18px; padding: ${settings.preview ? "18px 0 42px" : "0"}; }
+    .sheet { position: relative; width: ${sheetWidth}mm; height: ${sheetMinHeight}mm; min-height: ${sheetMinHeight}mm; margin: 0 auto; padding: ${verticalMargin}mm ${sideMargin}mm ${verticalMargin + 10}mm; overflow: hidden; background: #fff; box-sizing: border-box; page-break-after: always; break-after: page; ${settings.preview ? "box-shadow: 0 18px 48px rgba(0,0,0,.28);" : ""} }
+    .sheet:last-child { page-break-after: auto; break-after: auto; }
     .header { display: grid; grid-template-columns: 18mm 1fr 18mm; align-items: center; min-height: 24mm; padding-bottom: 4mm; border-bottom: 1.4px solid #1f2937; text-align: center; }
     .brand-logo { width: 14mm; height: 14mm; display: grid; place-items: center; align-self: start; margin-top: 2mm; }
     .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -6765,7 +6682,7 @@
     .line .blank:empty::after { content: "-"; }
     .supplier-block { margin-top: 5mm; }
     .table-lead { margin: 4mm 0 2mm !important; }
-    table { width: 100%; border: 1.2px solid #1f2937; border-collapse: separate; border-spacing: 0; border-radius: 2mm; overflow: hidden; table-layout: auto; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px !important; }
+    table { width: 100%; border: 1.2px solid #1f2937; border-collapse: separate; border-spacing: 0; border-radius: 2mm; overflow: hidden; table-layout: fixed; margin: 0; font-size: ${Math.max(7, fontSize - 1)}px !important; }
     col.no-col { width: 9mm; }
     col.name-col { width: auto; }
     col.qty-col { width: 16mm; }
@@ -6773,10 +6690,11 @@
     col.active-col { width: 20%; }
     col.form-col { width: 15%; }
     th { background: #eef3ff; color: #111827; font-size: ${Math.max(7, fontSize - 1)}px; font-weight: 700; text-align: left; }
-    th, td { border: 0; border-top: 1px solid #c7d2e5; border-left: 1px solid #c7d2e5; padding: 3px 5px; height: 16px; line-height: 1.12; vertical-align: middle; }
+    th, td { border: 0; border-top: 1px solid #c7d2e5; border-left: 1px solid #c7d2e5; padding: 3px 5px; height: ${Math.max(14, fontSize + 6)}px; line-height: 1.12; vertical-align: middle; }
     thead th { border-top: 0; }
     th:first-child, td:first-child { border-left: 0; }
     tbody tr:nth-child(even) td { background: #fbfdff; }
+    tbody tr { break-inside: avoid; page-break-inside: avoid; }
     td.no, th.no, td.qty, th.qty, td.unit, th.unit { text-align: center; white-space: nowrap; }
     td.name { color: #071955; font-weight: 700; }
     tr.empty-row td { height: 14px; }
@@ -6788,12 +6706,17 @@
     .sign { width: 58mm; margin: 8mm 18mm 0 auto; text-align: center; font-size: ${fontSize}px !important; }
     .sign-space { height: 22mm; }
     .sign p { margin: 0 0 2px; line-height: 1.15; }
+    .continuation-head { display: flex; justify-content: space-between; gap: 8mm; align-items: end; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 1px solid #c7d2e5; }
+    .continuation-head strong { font-size: ${fontSize + 2}px; }
+    .continuation-head span { font-size: ${fontSize}px; }
+    .page-count { position: absolute; right: ${sideMargin}mm; bottom: 5.5mm; }
     .print-footer { position: absolute; left: ${sideMargin}mm; right: ${sideMargin}mm; bottom: 5.5mm; display: flex; justify-content: space-between; gap: 10mm; border-top: 1px solid #d7deeb; padding-top: 2mm; color: #64748b; font-size: ${Math.max(7, fontSize - 2)}px; }
     @media print {
       body { background: #fff; }
       .print-preview-toolbar { display: none; }
       .preview-shell { padding: 0; }
-      .sheet { height: ${sheetMinHeight}mm; min-height: 0; overflow: hidden; box-shadow: none; page-break-after: avoid; break-after: avoid; }
+      .sheet { height: ${sheetMinHeight}mm; min-height: ${sheetMinHeight}mm; margin: 0; overflow: hidden; box-shadow: none; page-break-after: always; break-after: page; }
+      .sheet:last-child { page-break-after: auto; break-after: auto; }
     }
     @media (max-width: 760px) {
       .print-preview-toolbar { display: grid; grid-template-columns: 1fr; align-items: stretch; gap: 9px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
@@ -6808,53 +6731,16 @@
 <body>
   ${settings.preview ? `<nav class="print-preview-toolbar"><span><strong>${escapeHtml(type.printTitle)}</strong><small> No. SP. ${escapeHtml(printNumber)}</small><em class="print-preview-status" id="printPreviewStatus"></em></span><div><button type="button" id="previewBackButton">Kembali</button><button type="button" id="sendWhatsappButton">Kirim WA PDF</button><button type="button" id="downloadPdfButton">Download PDF</button><button class="is-primary" type="button" id="printNowButton">Print</button></div></nav>` : ""}
   <div class="preview-shell">
-  <main class="sheet">
-    <header class="header">
-      <section class="brand-logo">
-        <img src="${escapeHtml(context.logo)}" alt="">
-      </section>
-      <section class="brand-text">
-        <h1>${escapeHtml(context.brandName)}</h1>
-        <p>${escapeHtml(context.address)}</p>
-        <p>${escapeHtml(context.phone || "")}</p>
-      </section>
-      <span></span>
-    </header>
-    <section class="title">
-      <h2>${escapeHtml(type.printTitle)}</h2>
-      <p>No. SP. ${escapeHtml(printNumber)}</p>
-    </section>
-    <section class="lines">
-      <p>Yang bertanda tangan di bawah ini,</p>
-      ${printLine("nama", context.pharmacist)}
-      ${printLine("jabatan", "Apoteker")}
-      ${printLine("telepon", context.phone)}
-      <div class="supplier-block">
-        <p>${escapeHtml(getPurchasePrintIntro(order.type))}</p>
-        ${printLine("nama distributor", order.supplier || order.recipient)}
-        ${printLine("alamat", order.supplierAddress)}
-        ${printLine("", "")}
-        ${printLine("telepon", order.supplierPhone)}
-      </div>
-      <p class="table-lead">${escapeHtml(getPurchasePrintTableLead(order.type))}</p>
-    </section>
-    ${buildPurchasePrintTable(order, rows)}
-    <section class="usage">
-      <p>${escapeHtml(getPurchasePrintUsageLead(order.type))}</p>
-      ${printLine("nama sarana", context.brandName)}
-      ${printLine("alamat sarana", context.address)}
-      ${printLine("nomor SIA", context.sia)}
-      ${printLine("nomor SIPA", context.sipa)}
-    </section>
-    ${printNotes ? `<section class="print-notes">${printNotes}</section>` : ""}
-    <section class="sign">
-      <p>${escapeHtml(context.city)}, ${escapeHtml(formatPurchasePrintDate(order.date))}</p>
-      <div class="sign-space"></div>
-      <p>${escapeHtml(context.pharmacist)}</p>
-      <p>${escapeHtml(context.sipa || "")}</p>
-    </section>
-    <footer class="print-footer"><span>${escapeHtml(footerTime)}</span><span>${escapeHtml(type.printTitle)}</span></footer>
-  </main>
+  ${printPages.map((page, pageIndex) => {
+    const firstPage = pageIndex === 0;
+    const lastPage = pageIndex === printPages.length - 1;
+    return `<main class="sheet" data-print-page="${pageIndex + 1}">
+      ${firstPage ? `<header class="header"><section class="brand-logo"><img src="${escapeHtml(context.logo)}" alt=""></section><section class="brand-text"><h1>${escapeHtml(context.brandName)}</h1><p>${escapeHtml(context.address)}</p><p>${escapeHtml(context.phone || "")}</p></section><span></span></header><section class="title"><h2>${escapeHtml(type.printTitle)}</h2><p>No. SP. ${escapeHtml(printNumber)}</p></section><section class="lines"><p>Yang bertanda tangan di bawah ini,</p>${printLine("nama", context.pharmacist)}${printLine("jabatan", "Apoteker")}${printLine("telepon", context.phone)}<div class="supplier-block"><p>${escapeHtml(getPurchasePrintIntro(order.type))}</p>${printLine("nama distributor", order.supplier || order.recipient)}${printLine("alamat", order.supplierAddress)}${printLine("", "")}${printLine("telepon", order.supplierPhone)}</div><p class="table-lead">${escapeHtml(getPurchasePrintTableLead(order.type))}</p></section>` : `<header class="continuation-head"><strong>${escapeHtml(type.printTitle)}</strong><span>No. SP. ${escapeHtml(printNumber)}</span></header>`}
+      ${buildPurchasePrintTable(order, buildPurchaseOrderPrintRows({ ...order, items: page.items }, page.startIndex, page.fillRows))}
+      ${lastPage ? `<section class="usage"><p>${escapeHtml(getPurchasePrintUsageLead(order.type))}</p>${printLine("nama sarana", context.brandName)}${printLine("alamat sarana", context.address)}${printLine("nomor SIA", context.sia)}${printLine("nomor SIPA", context.sipa)}</section>${printNotes ? `<section class="print-notes">${printNotes}</section>` : ""}<section class="sign"><p>${escapeHtml(context.city)}, ${escapeHtml(formatPurchasePrintDate(order.date))}</p><div class="sign-space"></div><p>${escapeHtml(context.pharmacist)}</p><p>${escapeHtml(context.sipa || "")}</p></section>` : ""}
+      <footer class="print-footer"><span>${escapeHtml(footerTime)}</span><span>${escapeHtml(type.printTitle)}</span><span>Hal. ${pageIndex + 1}/${printPages.length}</span></footer>
+    </main>`;
+  }).join("")}
   </div>
   ${settings.preview ? `<script>
     const pdfConfig = ${JSON.stringify(pdfConfig)};
@@ -6891,42 +6777,28 @@
     const createPdfBlob = async () => {
       await waitForPdfLibraries();
       if (document.fonts?.ready) await document.fonts.ready;
-      const sheet = document.querySelector(".sheet");
-      if (!sheet) throw new Error("Halaman surat belum siap dibuat PDF.");
-      const canvas = await window.html2canvas(sheet, {
-        backgroundColor: "#ffffff",
-        scale: Math.min(2.4, Math.max(1.4, window.devicePixelRatio || 1.6)),
-        useCORS: true,
-        allowTaint: true,
-        logging: false
-      });
+      const sheets = Array.from(document.querySelectorAll(".sheet"));
+      if (!sheets.length) throw new Error("Halaman surat belum siap dibuat PDF.");
+      const pdfWidth = Math.max(1, Number(pdfConfig.pageWidth || 0) || 210);
+      const pdfHeight = Math.max(1, Number(pdfConfig.pageHeight || 0) || 297);
+      const pageOrientation = pdfWidth > pdfHeight ? "landscape" : "portrait";
       const pdf = new window.jspdf.jsPDF({
-        orientation: pdfConfig.orientation,
+        orientation: pageOrientation,
         unit: "mm",
-        format: pdfConfig.paperSize
+        format: [pdfWidth, pdfHeight]
       });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const sliceHeight = Math.max(1, Math.floor(canvas.width * pageHeight / pageWidth));
-      const pageRemainder = canvas.height - sliceHeight;
-      const blankPageTolerance = Math.max(12, Math.ceil(sliceHeight * 0.018));
-      const canvasHeightForPdf = pageRemainder > 0 && pageRemainder <= blankPageTolerance ? sliceHeight : canvas.height;
-      const sliceCanvas = document.createElement("canvas");
-      const sliceContext = sliceCanvas.getContext("2d");
-      sliceCanvas.width = canvas.width;
-      let offsetY = 0;
-      while (offsetY < canvasHeightForPdf) {
-        const currentHeight = Math.min(sliceHeight, canvasHeightForPdf - offsetY);
-        const sourceHeight = Math.min(currentHeight, canvas.height - offsetY);
-        sliceCanvas.height = currentHeight;
-        sliceContext.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-        sliceContext.fillStyle = "#ffffff";
-        sliceContext.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-        sliceContext.drawImage(canvas, 0, offsetY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
-        if (offsetY > 0) pdf.addPage();
-        const imageHeight = currentHeight * pageWidth / canvas.width;
-        pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, pageWidth, imageHeight);
-        offsetY += currentHeight;
+      for (let index = 0; index < sheets.length; index += 1) {
+        const canvas = await window.html2canvas(sheets[index], {
+          backgroundColor: "#ffffff",
+          scale: Math.min(2.4, Math.max(1.4, window.devicePixelRatio || 1.6)),
+          useCORS: true,
+          allowTaint: true,
+          logging: false
+        });
+        if (index > 0) pdf.addPage([pageWidth, pageHeight], pageOrientation);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, pageWidth, pageHeight);
       }
       return pdf.output("blob");
     };
@@ -7017,6 +6889,24 @@
     }).format(date);
   }
 
+  function buildPurchasePrintPages(order = {}, options = {}) {
+    const rowsPerPage = Number(options.rowsPerPage) === 35 ? 35 : 25;
+    const items = Array.isArray(order.items) ? order.items.slice() : [];
+    if (!items.length) {
+      return [{ items: [], startIndex: 0, fillRows: Math.min(2, rowsPerPage) }];
+    }
+    const pages = [];
+    for (let startIndex = 0; startIndex < items.length; startIndex += rowsPerPage) {
+      const pageItems = items.slice(startIndex, startIndex + rowsPerPage);
+      pages.push({
+        items: pageItems,
+        startIndex,
+        fillRows: Math.max(0, Math.min(2, rowsPerPage - pageItems.length))
+      });
+    }
+    return pages;
+  }
+
   function buildPurchasePrintTable(order, rows) {
     if (isControlledPurchaseOrderType(order.type)) {
       return `<table class="purchase-print-table is-controlled"><colgroup><col class="no-col"><col class="name-col"><col class="active-col"><col class="form-col"><col class="unit-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th>Zat Aktif</th><th>Bentuk Sediaan</th><th class="unit">Satuan</th><th class="qty">Qty</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -7027,20 +6917,22 @@
     return `<table class="purchase-print-table is-regular"><colgroup><col class="no-col"><col class="name-col"><col class="qty-col"><col></colgroup><thead><tr><th class="no">No.</th><th>Nama Obat</th><th class="qty">Jumlah</th><th>Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  function buildPurchaseOrderPrintRows(order) {
+  function buildPurchaseOrderPrintRows(order, startIndex = 0, fillRows = null) {
     const type = normalizePurchaseOrderType(order.type);
     const columns = isControlledPurchaseOrderType(type) ? 7 : type === "alkes" ? 6 : 4;
+    const rowOffset = Math.max(0, Number(startIndex) || 0);
     const filled = (order.items || []).map((item, index) => {
       const note = getPurchasePrintItemNote(item);
       if (isControlledPurchaseOrderType(type)) {
-        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
+        return `<tr><td class="no">${rowOffset + index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.activeSubstance)}</td><td>${escapeHtml(item.dosageForm)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
       }
       if (type === "alkes") {
-        return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
+        return `<tr><td class="no">${rowOffset + index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td>${escapeHtml(item.strength || note)}</td><td class="unit">${escapeHtml(item.unit)}</td><td class="qty">${escapeHtml(item.qty)}</td><td>${escapeHtml(note)}</td></tr>`;
       }
-      return `<tr><td class="no">${index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(note)}</td></tr>`;
+      return `<tr><td class="no">${rowOffset + index + 1}</td><td class="name">${escapeHtml(item.nama)}</td><td class="qty">${escapeHtml(item.qty)} ${escapeHtml(item.unit)}</td><td>${escapeHtml(note)}</td></tr>`;
     });
-    const empty = Array.from({ length: Math.max(0, 2 - filled.length) }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
+    const emptyCount = fillRows === null || fillRows === undefined ? Math.max(0, 2 - filled.length) : Math.max(0, Number(fillRows) || 0);
+    const empty = Array.from({ length: emptyCount }, () => `<tr class="empty-row">${Array.from({ length: columns }, (_, index) => `<td${index === 0 ? ' class="no"' : ""}>&nbsp;</td>`).join("")}</tr>`);
     return filled.concat(empty).join("");
   }
 
@@ -8773,6 +8665,8 @@
       latitude: String(value.latitude || value.lat || "").trim(),
       longitude: String(value.longitude || value.lng || value.lon || "").trim(),
       gpsAccuracy: String(value.gpsAccuracy || value.accuracy || "").trim(),
+      attendanceGpsEnabled: value.attendanceGpsEnabled !== false,
+      attendanceGpsRadius: Math.max(1, Number(value.attendanceGpsRadius || DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius) || DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius),
       licenseNumber: String(value.licenseNumber || value.sia || value.suratIzinApotek || "").trim(),
       licenseExpiry: String(value.licenseExpiry || value.siaExpiry || "").trim(),
       responsiblePharmacist: String(value.responsiblePharmacist || value.apotekerPenanggungJawab || "").trim(),
@@ -8794,19 +8688,18 @@
     const name = pharmacy.name || DEFAULT_PHARMACY_PROFILE.name;
     const subtitle = pharmacy.address || "Sistem Informasi Apotek Digital";
 
-    setImageSource(els.sidebarPharmacyLogo, logo);
+    setImageSource(els.headerToggleLogo, logo);
     setImageSource(els.homeHeaderPharmacyLogo, logo);
     setImageSource(els.mobileHomePharmacyLogo, logo);
     setImageSource(els.mobileHeroPharmacyLogo, logo);
     setImageSource(els.appLoadingLogo, LOADING_LOGO);
-    if (els.sidebarPharmacyName) els.sidebarPharmacyName.textContent = name;
+    if (els.headerToggleName) els.headerToggleName.textContent = name;
+    if (els.headerToggleSubtitle) els.headerToggleSubtitle.textContent = subtitle;
     if (els.homeHeaderPharmacyName) els.homeHeaderPharmacyName.textContent = name;
     if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
     if (els.mobileHeroPharmacyName) els.mobileHeroPharmacyName.textContent = formatMobileHeroPharmacyName(name);
-    if (els.sidebarPharmacySubtitle) els.sidebarPharmacySubtitle.textContent = subtitle;
     if (els.homeHeaderPharmacySubtitle) els.homeHeaderPharmacySubtitle.textContent = "Sistem Informasi Apotek Digital";
     if (els.mobileHomePharmacySubtitle) els.mobileHomePharmacySubtitle.textContent = subtitle;
-    if (els.sidebarPharmacyBrand) els.sidebarPharmacyBrand.setAttribute("aria-label", name);
     document.title = `${name} - Dashboard`;
   }
 
@@ -8837,6 +8730,8 @@
     if (els.pharmacyAddressInput) els.pharmacyAddressInput.value = current.address || "";
     if (els.pharmacyLatitudeInput) els.pharmacyLatitudeInput.value = current.latitude || "";
     if (els.pharmacyLongitudeInput) els.pharmacyLongitudeInput.value = current.longitude || "";
+    if (els.pharmacyAttendanceGpsSelect) els.pharmacyAttendanceGpsSelect.value = current.attendanceGpsEnabled === false ? "disabled" : "enabled";
+    if (els.pharmacyGpsRadiusInput) els.pharmacyGpsRadiusInput.value = String(current.attendanceGpsRadius || DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius);
     if (els.pharmacyLicenseInput) els.pharmacyLicenseInput.value = current.licenseNumber || "";
     if (els.pharmacyLicenseExpiryInput) els.pharmacyLicenseExpiryInput.value = current.licenseExpiry || "";
     if (els.pharmacyResponsibleInput) els.pharmacyResponsibleInput.value = current.responsiblePharmacist || "";
@@ -8845,12 +8740,29 @@
     if (els.pharmacyWebsiteInput) els.pharmacyWebsiteInput.value = current.website || "";
 
     if (els.pharmacyIdentityForm) {
-      els.pharmacyIdentityForm.querySelectorAll("input, button").forEach((control) => {
+      els.pharmacyIdentityForm.querySelectorAll("input, button, select, textarea").forEach((control) => {
         if (control.hasAttribute("data-profile-panel-close")) return;
         control.disabled = !isOwner;
       });
     }
+    updatePharmacyGpsFields();
     syncProfileActivityAccess();
+  }
+
+  function updatePharmacyGpsFields() {
+    const isOwner = isOwnerUser(getCurrentUserRecord());
+    const gpsEnabled = els.pharmacyAttendanceGpsSelect
+      ? els.pharmacyAttendanceGpsSelect.value !== "disabled"
+      : getPharmacyProfile().attendanceGpsEnabled !== false;
+    const fallbackRadius = DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius;
+    const currentRadius = Math.max(1, Math.round(Number(els.pharmacyGpsRadiusInput?.value || fallbackRadius) || fallbackRadius));
+
+    if (els.pharmacyGpsRadiusInput) {
+      els.pharmacyGpsRadiusInput.value = String(currentRadius);
+      els.pharmacyGpsRadiusInput.disabled = !isOwner || !gpsEnabled;
+      els.pharmacyGpsRadiusInput.required = gpsEnabled;
+      els.pharmacyGpsRadiusInput.setAttribute("aria-disabled", String(!isOwner || !gpsEnabled));
+    }
   }
 
   async function savePharmacyIdentity(event) {
@@ -8862,6 +8774,11 @@
     }
 
     const current = getPharmacyProfile();
+    const attendanceGpsEnabled = els.pharmacyAttendanceGpsSelect?.value !== "disabled";
+    const attendanceGpsRadius = Math.max(
+      1,
+      Math.round(Number(els.pharmacyGpsRadiusInput?.value || DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius) || DEFAULT_PHARMACY_PROFILE.attendanceGpsRadius)
+    );
     const profile = normalizePharmacyProfile({
       logo: state.pendingPharmacyLogo !== null ? state.pendingPharmacyLogo : current.logo,
       name: els.pharmacyNameInput?.value || current.name,
@@ -8870,6 +8787,8 @@
       latitude: els.pharmacyLatitudeInput?.value || "",
       longitude: els.pharmacyLongitudeInput?.value || "",
       gpsAccuracy: current.gpsAccuracy || "",
+      attendanceGpsEnabled,
+      attendanceGpsRadius,
       licenseNumber: els.pharmacyLicenseInput?.value || "",
       licenseExpiry: els.pharmacyLicenseExpiryInput?.value || "",
       responsiblePharmacist: els.pharmacyResponsibleInput?.value || "",
@@ -8883,6 +8802,15 @@
     if (!profile.name || profile.name === DEFAULT_PHARMACY_PROFILE.name) {
       setProfileStatus("Nama apotek wajib diisi.", "error");
       return;
+    }
+
+    if (profile.attendanceGpsEnabled) {
+      const latitude = Number(profile.latitude);
+      const longitude = Number(profile.longitude);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        setProfileStatus("Titik GPS apotek belum valid. Klik Deteksi Lokasi Saya sebelum menyimpan.", "error");
+        return;
+      }
     }
 
     const loadingToken = startAppLoading("Menyimpan identitas apotek...", 0);
@@ -9541,7 +9469,7 @@
   function getActivityModuleOptions(logs = []) {
     const baseModules = [
       ["dashboard", "Dashboard"],
-      ["absensi-face-id", "Absensi Face ID"],
+      ["absensi", "Absensi"],
       ["presensi", "Presensi"],
       ["cari-data-obat", "Cari Data Obat"],
       ["data-obat", "Data Obat"],
@@ -9615,9 +9543,9 @@
     if (/surat|pesanan|purchase|po\b/.test(source)) return { key: "surat-pesanan", label: "Surat Pesanan Pembelian" };
     if (/restok|permintaan/.test(source)) return { key: "restok-obat", label: "Restok Obat" };
     if (/login|logout|autentikasi/.test(source)) return { key: "autentikasi", label: "Autentikasi" };
-    if (/absensi face|face id/.test(source)) return { key: "absensi-face-id", label: "Absensi Face ID" };
+    if (/absen|absensi/.test(source)) return { key: "absensi", label: "Absensi" };
     if (/import|upload|data obat|obat/.test(source)) return { key: "data-obat", label: "Data Obat" };
-    if (/absen|presensi|kehadiran|gaji|slip/.test(source)) return { key: "presensi", label: "Presensi" };
+    if (/presensi|kehadiran|gaji|slip/.test(source)) return { key: "presensi", label: "Presensi" };
     if (/supplier|pbf/.test(source)) return { key: "data-supplier", label: "Data Supplier" };
     if (/karyawan/.test(source)) return { key: "data-karyawan", label: "Data Karyawan" };
     if (/operator|pengguna|user/.test(source)) return { key: "manajemen-pengguna", label: "Manajemen Pengguna" };
@@ -9856,7 +9784,7 @@
       localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(savedRules));
       renderAttendanceShiftSettings();
       setProfileStatus("Pengaturan shift absensi berhasil disimpan online dan siap dipakai lintas perangkat.", "success");
-      addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang Face ID tersimpan di backend.");
+      addProfileActivity("Pengaturan shift absensi diperbarui", "Aturan jam datang dan pulang tersimpan di backend.");
       closeProfilePanel();
       showActionToast("Pengaturan shift berhasil disimpan.");
     } catch (error) {
@@ -9891,7 +9819,7 @@
       localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(savedRules));
       renderAttendanceShiftSettings();
       setProfileStatus("Pengaturan shift absensi dikembalikan ke default dan tersimpan online.", "success");
-      addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi Face ID kembali ke jadwal default di backend.");
+      addProfileActivity("Pengaturan shift absensi direset", "Aturan absensi kembali ke jadwal default di backend.");
       closeProfilePanel();
       showActionToast("Pengaturan shift berhasil direset.");
     } catch (error) {
@@ -10099,10 +10027,14 @@
   }
 
   async function postToAbsensiApi(payload) {
+    const session = readSession() || {};
     const response = await fetch(ABSENSI_API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ...payload,
+        sessionToken: session.sessionToken || ""
+      })
     });
     const text = await response.text();
     return text ? JSON.parse(text) : {};
@@ -10110,9 +10042,11 @@
 
   async function getAbsensiRecords(params) {
     const url = new URL(ABSENSI_API_URL);
+    const session = readSession() || {};
     Object.entries(params || {}).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
     });
+    if (session.sessionToken) url.searchParams.set("sessionToken", session.sessionToken);
     const response = await fetch(url.toString(), { cache: "no-store" });
     const text = await response.text();
     return text ? JSON.parse(text) : {};
@@ -11348,12 +11282,18 @@
     });
   }
 
+  function handleTableActionMenuViewportChange() {
+    closeTableActionMenus();
+  }
+
   function resetTableActionMenuPosition(menu) {
     const panel = menu?.querySelector(".table-row-menu-list");
     if (!panel) return;
     ["position", "left", "top", "right", "bottom", "zIndex"].forEach((key) => {
       panel.style[key] = "";
     });
+    panel.style.removeProperty("--table-menu-left");
+    panel.style.removeProperty("--table-menu-top");
   }
 
   function positionTableActionMenu(menu) {
@@ -11378,6 +11318,8 @@
       top = window.innerHeight - panelHeight - viewportGap;
     }
     top = Math.max(viewportGap, top);
+    panel.style.setProperty("--table-menu-left", `${left}px`);
+    panel.style.setProperty("--table-menu-top", `${top}px`);
     panel.style.setProperty("position", "fixed", "important");
     panel.style.setProperty("left", `${left}px`, "important");
     panel.style.setProperty("top", `${top}px`, "important");
@@ -11534,6 +11476,7 @@
       showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
       return;
     }
+    closeTableActionMenus();
     const previousView = state.activeView;
     if (!options.fromHistory && !options.skipHistory && previousView && previousView !== viewName) {
       state.viewHistory.push(previousView);
@@ -11781,6 +11724,7 @@
   }
 
   function handleViewportRoute() {
+    handleTableActionMenuViewportChange();
     const viewportIsMobile = isHomeMobileViewport();
 
     if (viewportIsMobile === state.viewportIsMobile) return;
@@ -11806,12 +11750,17 @@
   }
 
   function setSidebarCollapsed(collapsed, options = {}) {
+    closeTableActionMenus();
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     document.body.classList.toggle("sidebar-open", !collapsed);
     if (collapsed) closeSidebarProfileDropdown();
     if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
     if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
-    if (els.sidebarToggle) els.sidebarToggle.setAttribute("aria-label", collapsed ? "Buka sidebar" : "Tutup sidebar");
+    if (els.sidebarToggle) {
+      const label = collapsed ? "Buka sidebar" : "Tutup sidebar";
+      els.sidebarToggle.setAttribute("aria-label", label);
+      els.sidebarToggle.setAttribute("title", label);
+    }
     updateSidebarToggleIcon(collapsed);
   }
 

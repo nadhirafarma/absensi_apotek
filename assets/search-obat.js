@@ -6,6 +6,7 @@
   const META_KEY = "nadhira.obatCacheMeta";
   const COLUMN_VISIBILITY_KEY = "nadhira.obatVisibleColumns";
   const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec?sheet=data_obat";
+  const QUICK_PAGE_SIZE = 10;
   const DEFAULT_VISIBLE_COLUMNS = {
     barcode: true,
     stock: true,
@@ -38,7 +39,8 @@
     importHeaders: [],
     importRows: [],
     importMedicines: [],
-    torchOn: false
+    torchOn: false,
+    quickPage: 1
   };
 
   const els = {};
@@ -56,7 +58,7 @@
 
     try {
       state.db = await openDatabase();
-      state.medicines = sortMedicinesByName(await readAllMedicines());
+      state.medicines = sortMedicinesByName(dedupeMedicines(await readAllMedicines()));
       populateFilterOptions();
       renderResults();
       updateCacheSummary();
@@ -132,12 +134,22 @@
     els.resultsCountLabel = document.getElementById("resultsCountLabel");
     els.emptyState = document.getElementById("emptyState");
     els.resultsList = document.getElementById("resultsList");
+    els.quickReportTitle = document.getElementById("quickReportTitle");
+    els.quickFilterChips = document.getElementById("quickFilterChips");
+    els.quickResultsList = document.getElementById("quickResultsList");
+    els.quickPagination = document.getElementById("quickPagination");
+    els.quickPageInfo = document.getElementById("quickPageInfo");
+    els.quickPageControls = document.getElementById("quickPageControls");
+    els.quickSearchStatus = document.getElementById("quickSearchStatus");
     els.columnToggles = Array.from(document.querySelectorAll("[data-column]"));
   }
 
   function bindEvents() {
     els.searchForm.addEventListener("submit", (event) => event.preventDefault());
-    els.searchInput.addEventListener("input", renderResults);
+    els.searchInput.addEventListener("input", () => {
+      state.quickPage = 1;
+      renderResults();
+    });
     els.scanButton.addEventListener("click", startScanner);
     els.filterButton.addEventListener("click", () => {
       els.filtersPanel.hidden = !els.filtersPanel.hidden;
@@ -152,10 +164,17 @@
       els.backButton.addEventListener("click", () => {
         els.searchInput.value = "";
         resetRowFilters();
+        state.quickPage = 1;
         renderResults();
         setResultsVisible(false);
         els.searchInput.focus();
       });
+    }
+    if (els.quickPageControls) {
+      els.quickPageControls.addEventListener("click", handleQuickPaginationClick);
+    }
+    if (els.quickFilterChips) {
+      els.quickFilterChips.addEventListener("click", handleQuickFilterChipClick);
     }
     els.resultsArea.addEventListener("click", (event) => {
       if (event.target === els.resultsArea) {
@@ -200,13 +219,20 @@
       els.filterSatuanBeli,
       els.filterExpired
     ].forEach((control) => {
-      control.addEventListener("input", renderResults);
-      control.addEventListener("change", renderResults);
+      control.addEventListener("input", () => {
+        state.quickPage = 1;
+        renderResults();
+      });
+      control.addEventListener("change", () => {
+        state.quickPage = 1;
+        renderResults();
+      });
     });
 
     els.columnToggles.forEach((toggle) => {
       toggle.addEventListener("change", () => {
         state.visibleColumns[toggle.dataset.column] = toggle.checked;
+        state.quickPage = 1;
         localStorage.setItem(COLUMN_VISIBILITY_KEY, JSON.stringify(state.visibleColumns));
         renderResults();
         updateFilterButtonState();
@@ -220,6 +246,7 @@
       els.filterSatuanBeli.value = "";
       els.filterExpired.value = "";
       state.visibleColumns = { ...DEFAULT_VISIBLE_COLUMNS };
+      state.quickPage = 1;
       localStorage.removeItem(COLUMN_VISIBILITY_KEY);
       hydrateColumnControls();
       renderResults();
@@ -299,10 +326,14 @@
   }
 
   async function replaceMedicines(medicines) {
+    const uniqueMedicines = dedupeMedicines(medicines);
+
     await withStore("readwrite", (store) => {
       store.clear();
-      medicines.forEach((medicine) => store.put(medicine));
+      uniqueMedicines.forEach((medicine) => store.put(medicine));
     });
+
+    return uniqueMedicines;
   }
 
   async function clearStore() {
@@ -354,9 +385,9 @@
         throw new Error("Endpoint ini berisi data akun, bukan data obat.");
       }
 
-      const medicines = sortMedicinesByName(rows
+      const medicines = sortMedicinesByName(dedupeMedicines(rows
         .map(normalizeMedicine)
-        .filter(Boolean));
+        .filter(Boolean)));
 
       if (!medicines.length) {
         throw new Error("Data obat kosong atau format kolom belum sesuai.");
@@ -371,9 +402,9 @@
       const uploadedAt = sourceUploadedAt || previousUploadedAt || "";
       const now = new Date().toISOString();
 
-      await replaceMedicines(medicines);
+      const savedMedicines = await replaceMedicines(medicines);
 
-      state.medicines = medicines;
+      state.medicines = sortMedicinesByName(savedMedicines);
       populateFilterOptions();
       localStorage.setItem(META_KEY, JSON.stringify({
         ...previousMeta,
@@ -383,7 +414,7 @@
         hasUploadNotification: Boolean(previousMeta.hasUploadNotification || dataChanged || uploadChanged || options.forceUploadNotification),
         dataSignature,
         source: apiUrl,
-        total: medicines.length
+        total: state.medicines.length
       }));
 
       renderResults();
@@ -391,7 +422,7 @@
       updateFilterButtonState();
 
       if (!options.silent && dataChanged) {
-        setStatus(`Data obat berhasil disinkronkan. ${medicines.length} data terbaru tersimpan.`, "success");
+        setStatus(`Data obat berhasil disinkronkan. ${state.medicines.length} data terbaru tersimpan.`, "success");
       }
 
       if (!options.silent && !dataChanged) {
@@ -401,7 +432,7 @@
       return {
         ok: true,
         dataChanged,
-        total: medicines.length,
+        total: state.medicines.length,
         uploadedAt
       };
     } catch (error) {
@@ -435,9 +466,9 @@
 
     try {
       const parsed = await parseImportFile(file);
-      const medicines = sortMedicinesByName(parsed.rows
+      const medicines = sortMedicinesByName(dedupeMedicines(parsed.rows
         .map(normalizeMedicine)
-        .filter(Boolean));
+        .filter(Boolean)));
 
       if (!medicines.length) {
         throw new Error("File tidak memiliki kolom nama obat atau barcode.");
@@ -893,6 +924,28 @@
     });
   }
 
+  function dedupeMedicines(medicines) {
+    const uniqueByIdentity = new Map();
+
+    medicines.forEach((medicine) => {
+      const identity = getMedicineIdentity(medicine);
+      if (!identity) return;
+      uniqueByIdentity.set(identity, medicine);
+    });
+
+    return Array.from(uniqueByIdentity.values());
+  }
+
+  function getMedicineIdentity(medicine) {
+    const barcode = normalizeSearchText(medicine?.barcode);
+    if (barcode) return `barcode:${barcode}`;
+
+    const name = normalizeSearchText(medicine?.nama);
+    if (name) return `name:${name}`;
+
+    return "";
+  }
+
   function readVisibleColumns() {
     try {
       return {
@@ -981,7 +1034,20 @@
       ? state.medicines.filter((medicine) => medicine.searchable.includes(query))
       : state.medicines;
     const filtered = applyRowFilters(searchFiltered);
-    const limited = sortMedicinesByName(filtered).slice(0, 60);
+    const sorted = sortMedicinesByName(filtered);
+    const limited = sorted.slice(0, 60);
+
+    renderQuickResults(sorted, rawQuery, shouldShowPopup);
+
+    if (els.quickResultsList) {
+      setResultsVisible(false);
+      els.resultsList.hidden = true;
+      els.resultsList.innerHTML = "";
+      els.emptyState.hidden = true;
+      els.medicineCount.textContent = `${filtered.length} dari ${state.medicines.length} data`;
+      updateFilterButtonState();
+      return;
+    }
 
     if (!shouldShowPopup) {
       setResultsVisible(false);
@@ -1015,6 +1081,236 @@
         : `${countText} ditampilkan`;
     }
     updateFilterButtonState();
+  }
+
+  function renderQuickResults(filtered, rawQuery, shouldShowResults) {
+    if (!els.quickResultsList) return;
+
+    const total = filtered.length;
+    const hasMedicines = Boolean(state.medicines.length);
+    const pageCount = Math.max(1, Math.ceil(total / QUICK_PAGE_SIZE));
+    state.quickPage = clampNumber(state.quickPage, 1, pageCount);
+
+    renderQuickFilterChips();
+
+    if (!hasMedicines) {
+      setQuickSearchStatus("Cache lokal kosong. Sinkronkan data obat terlebih dahulu.");
+      setQuickReport("Belum ada data obat", "Tekan Sinkronkan untuk mengambil data terbaru.");
+      renderQuickEmpty("Belum ada data obat", "Tekan tombol Sinkronkan untuk mengambil data obat dari Google Sheet.");
+      renderQuickPagination(0, 1, 1, 0, 0, false);
+      return;
+    }
+
+    if (!shouldShowResults) {
+      setQuickSearchStatus(`${state.medicines.length} data siap dicari.`);
+      els.quickReportTitle.innerHTML = "";
+      els.quickReportTitle.hidden = true;
+      renderQuickEmpty("Mulai cari data obat", "Ketik nama obat, barcode, lokasi, supplier, atau gunakan scan barcode.");
+      renderQuickPagination(0, 1, 1, 0, 0, false);
+      return;
+    }
+
+    if (!total) {
+      setQuickSearchStatus("Data tidak ditemukan. Coba ubah kata pencarian atau filter.");
+      setQuickReport("Data tidak ditemukan", rawQuery ? `Tidak ada hasil untuk “${rawQuery}”.` : "Filter aktif tidak memiliki hasil.");
+      renderQuickEmpty("Data tidak ditemukan", "Coba kata kunci lain atau reset filter yang aktif.");
+      renderQuickPagination(0, 1, 1, 0, 0, false);
+      return;
+    }
+
+    const startIndex = (state.quickPage - 1) * QUICK_PAGE_SIZE;
+    const pageItems = filtered.slice(startIndex, startIndex + QUICK_PAGE_SIZE);
+    const endIndex = startIndex + pageItems.length;
+    const queryLabel = rawQuery ? ` untuk “${rawQuery}”` : "";
+
+    setQuickSearchStatus(`${total} data ditemukan${queryLabel}.`);
+    setQuickReport(`${total} hasil${queryLabel}`, `Menampilkan ${startIndex + 1}-${endIndex} dari ${total} data.`);
+    els.quickResultsList.hidden = false;
+    els.quickResultsList.innerHTML = pageItems
+      .map((medicine, index) => renderQuickMedicineCard(medicine, startIndex + index, rawQuery))
+      .join("");
+    renderQuickPagination(total, state.quickPage, pageCount, startIndex + 1, endIndex, true);
+  }
+
+  function renderQuickMedicineCard(medicine, index, query) {
+    const tone = getMedicineTone(medicine, index);
+    const rows = getQuickMedicineRows(medicine);
+
+    return `
+      <article class="quick-medicine-card quick-tone-${tone}">
+        <div class="quick-medicine-name">
+          <span class="quick-name-accent" aria-hidden="true"></span>
+          <strong>${highlightMedicineName(medicine.nama, query)}</strong>
+          ${state.visibleColumns.barcode !== false && medicine.barcode ? `<small>${escapeHtml(medicine.barcode)}</small>` : ""}
+        </div>
+        <dl class="quick-medicine-list">
+          ${rows.map(([label, value]) => `
+            <div>
+              <dt>${escapeHtml(label)}</dt>
+              <dd>${escapeHtml(value)}</dd>
+            </div>
+          `).join("")}
+        </dl>
+      </article>
+    `;
+  }
+
+  function getQuickMedicineRows(medicine) {
+    const rows = [
+      ["stock", "Stok", formatStockValue(medicine)],
+      ["purchaseUnit", "Satuan Beli", formatDisplayText(medicine.satuanBeli)],
+      ["expired", "Expired", formatDateValue(medicine.expired)],
+      ["supplier", "Supplier", formatDisplayText(medicine.suplier)],
+      ["location", "Lokasi", medicine.lokasi],
+      ["status", "Status", formatDisplayText(medicine.status)],
+      ["update", "Update", formatDateValue(medicine.updated)]
+    ].filter(([key, , value]) => state.visibleColumns[key] !== false && value);
+    const priceRows = [
+      ["price1", "Harga 1", medicine.satuan1, medicine.harga1],
+      ["price2", "Harga 2", medicine.satuan2, medicine.harga2],
+      ["price3", "Harga 3", medicine.satuan3, medicine.harga3]
+    ]
+      .filter(([key, , unit, price]) => state.visibleColumns[key] !== false && (String(unit || "").trim() || String(price || "").trim()))
+      .map(([, label, unit, price]) => [label, formatQuickPrice(unit, price)]);
+
+    return [...rows.map(([, label, value]) => [label, value]), ...priceRows].filter(([, value]) => value);
+  }
+
+  function formatQuickPrice(unit, price) {
+    const unitText = formatDisplayText(unit);
+    const priceText = formatPrice(price);
+
+    if (unitText && priceText) return `${unitText} · ${priceText}`;
+    return unitText || priceText || "";
+  }
+
+  function renderQuickFilterChips() {
+    if (!els.quickFilterChips) return;
+
+    const chips = [];
+    const stockLabels = {
+      success: "Tersedia",
+      warning: "Menipis",
+      danger: "Habis",
+      neutral: "Stok kosong"
+    };
+
+    if (els.filterStock.value) chips.push(["filterStock", `Stok: ${stockLabels[els.filterStock.value] || els.filterStock.value}`]);
+    if (els.filterStatus.value.trim()) chips.push(["filterStatus", `Status: ${els.filterStatus.value.trim()}`]);
+    if (els.filterSupplier.value.trim()) chips.push(["filterSupplier", `Supplier: ${els.filterSupplier.value.trim()}`]);
+    if (els.filterSatuanBeli.value.trim()) chips.push(["filterSatuanBeli", `Satuan: ${els.filterSatuanBeli.value.trim()}`]);
+    if (els.filterExpired.value) chips.push(["filterExpired", `Expired: ${els.filterExpired.value === "with" ? "Ada tanggal" : "Tanpa tanggal"}`]);
+    if (hasColumnVisibilityChanged()) chips.push(["columns", "Kolom disesuaikan"]);
+
+    els.quickFilterChips.hidden = !chips.length;
+    els.quickFilterChips.innerHTML = chips.length
+      ? [
+        `<span>Filter aktif</span>`,
+        ...chips.map(([key, label]) => `<button type="button" data-quick-clear="${escapeHtml(key)}">${escapeHtml(label)} ×</button>`),
+        chips.length > 1 ? `<button type="button" data-quick-clear="all">Reset semua</button>` : ""
+      ].join("")
+      : "";
+  }
+
+  function handleQuickFilterChipClick(event) {
+    const button = event.target.closest("[data-quick-clear]");
+    if (!button) return;
+
+    const target = button.dataset.quickClear;
+
+    if (target === "all") {
+      resetRowFilters();
+      state.visibleColumns = { ...DEFAULT_VISIBLE_COLUMNS };
+      localStorage.removeItem(COLUMN_VISIBILITY_KEY);
+      hydrateColumnControls();
+    } else if (target === "columns") {
+      state.visibleColumns = { ...DEFAULT_VISIBLE_COLUMNS };
+      localStorage.removeItem(COLUMN_VISIBILITY_KEY);
+      hydrateColumnControls();
+    } else if (els[target]) {
+      els[target].value = "";
+    }
+
+    state.quickPage = 1;
+    renderResults();
+    updateFilterButtonState();
+  }
+
+  function renderQuickPagination(total, page, pageCount, start, end, isVisible) {
+    if (!els.quickPagination || !els.quickPageControls || !els.quickPageInfo) return;
+
+    els.quickPageInfo.className = "quick-page-info";
+    els.quickPagination.hidden = !isVisible || !total;
+    if (!isVisible || !total) {
+      els.quickPageInfo.textContent = "";
+      els.quickPageControls.innerHTML = "";
+      return;
+    }
+
+    els.quickPageInfo.textContent = `${start}-${end} / ${total}`;
+    els.quickPageControls.innerHTML = [
+      `<button type="button" data-quick-page="${page - 1}" ${page <= 1 ? "disabled" : ""} aria-label="Halaman sebelumnya">‹</button>`,
+      ...getQuickPaginationItems(page, pageCount).map((item) => item === "…"
+        ? `<span class="quick-page-ellipsis">…</span>`
+        : `<button type="button" data-quick-page="${item}" class="${item === page ? "is-active" : ""}" ${item === page ? `aria-current="page"` : ""}>${item}</button>`),
+      `<button type="button" data-quick-page="${page + 1}" ${page >= pageCount ? "disabled" : ""} aria-label="Halaman berikutnya">›</button>`
+    ].join("");
+  }
+
+  function getQuickPaginationItems(page, pageCount) {
+    if (pageCount <= 7) {
+      return Array.from({ length: pageCount }, (_, index) => index + 1);
+    }
+
+    const items = [1];
+    const start = Math.max(2, page - 1);
+    const end = Math.min(pageCount - 1, page + 1);
+
+    if (start > 2) items.push("…");
+    for (let item = start; item <= end; item += 1) items.push(item);
+    if (end < pageCount - 1) items.push("…");
+    items.push(pageCount);
+
+    return items;
+  }
+
+  function handleQuickPaginationClick(event) {
+    const button = event.target.closest("button[data-quick-page]");
+    if (!button || button.disabled) return;
+
+    state.quickPage = Number(button.dataset.quickPage) || 1;
+    renderResults();
+    if (els.quickResultsList) els.quickResultsList.scrollTop = 0;
+  }
+
+  function setQuickSearchStatus(message) {
+    if (els.quickSearchStatus) els.quickSearchStatus.textContent = message;
+  }
+
+  function setQuickReport(title, subtitle) {
+    if (!els.quickReportTitle) return;
+
+    els.quickReportTitle.hidden = false;
+    els.quickReportTitle.innerHTML = `
+      <span>${escapeHtml(title)}</span>
+      ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ""}
+    `;
+  }
+
+  function renderQuickEmpty(title, message) {
+    els.quickResultsList.hidden = false;
+    els.quickResultsList.innerHTML = `
+      <div class="quick-empty-state">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(message)}</span>
+      </div>
+    `;
+  }
+
+  function clampNumber(value, min, max) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return min;
+    return Math.min(max, Math.max(min, Math.trunc(numeric)));
   }
 
   function resetRowFilters() {
@@ -1067,7 +1363,12 @@
       ["price1", "1", medicine.satuan1, medicine.harga1],
       ["price2", "2", medicine.satuan2, medicine.harga2],
       ["price3", "3", medicine.satuan3, medicine.harga3]
-    ].filter(([key, , unit, price]) => state.visibleColumns[key] !== false && (unit || price));
+    ].filter(([key, , unit, price]) => {
+      if (state.visibleColumns[key] === false) return false;
+      const hasUnit = Boolean(String(unit || "").trim());
+      const hasPrice = Boolean(String(price || "").trim());
+      return hasUnit || hasPrice;
+    });
     const priceTable = priceRows.length ? `
           <div class="price-table" aria-label="Satuan dan harga">
             <div class="price-table-head">
@@ -1828,7 +2129,9 @@
   }
 
   function formatStockValue(medicine) {
-    const stock = normalizeStockValue(medicine.stok) || "-";
+    const stock = normalizeStockValue(medicine.stok);
+
+    if (!stock) return "0";
 
     return stock;
   }

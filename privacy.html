@@ -47,7 +47,9 @@
         <a href="#pendahuluan">Pendahuluan</a>
         <a href="#pengumpulan">Pengumpulan Data</a>
         <a href="#penggunaan">Penggunaan Data</a>
+        <a href="#presensi">Data Absensi Foto & GPS</a>
         <a href="#pembagian">Pembagian Data</a>
+        <a href="#penyimpanan">Penyimpanan & Retensi</a>
         <a href="#cookies">Cookie & Cache</a>
         <a href="#keamanan">Keamanan Data</a>
         <a href="#hak">Hak Pengguna</a>
@@ -67,6 +69,7 @@
           <ul>
             <li>Data identitas seperti nama, email, nomor telepon, jabatan, role, dan hak akses.</li>
             <li>Data operasional seperti data obat, stok, supplier, karyawan, restok, surat pesanan, presensi, dan log aktivitas.</li>
+            <li>Data presensi seperti foto saat absensi, koordinat GPS, akurasi lokasi, jarak dari titik apotek, waktu absensi, identitas akun atau karyawan, shift, serta jenis absensi Datang, Pulang, atau Lembur.</li>
             <li>Data teknis seperti perangkat, waktu akses, status sinkronisasi, cache lokal, dan informasi yang diperlukan untuk menjaga stabilitas layanan.</li>
           </ul>
         </section>
@@ -77,10 +80,26 @@
           <p>Indo Apotek juga dapat memakai data teknis untuk membaca error, mempercepat pemuatan halaman, menyimpan data terakhir sebelum sinkron terbaru tersedia, dan membantu proses dukungan pengguna.</p>
         </section>
 
+        <section id="presensi">
+          <h2>Data Absensi Foto Dan GPS</h2>
+          <p>Fitur presensi dapat meminta izin kamera dan lokasi perangkat. Foto yang diambil digunakan sebagai bukti kehadiran operasional, bukan sebagai Face ID, pengenalan wajah otomatis, atau rekognisi biometrik.</p>
+          <p>Saat pengguna mencatat Datang, Pulang, atau Lembur, sistem dapat menyimpan foto absensi, koordinat GPS, akurasi lokasi, estimasi jarak dari titik apotek, tanggal dan waktu, identitas akun atau karyawan, shift, jenis absensi, serta informasi teknis yang diperlukan untuk memvalidasi catatan presensi.</p>
+          <p>Data tersebut dipakai untuk verifikasi kehadiran, kontrol kedisiplinan, penyusunan rekap operasional, pemeriksaan duplikasi absensi, audit internal, dukungan teknis, dan pemenuhan kewajiban administrasi atau hukum bila diperlukan.</p>
+          <p>Jika izin kamera atau lokasi ditolak, dinonaktifkan, atau perangkat tidak dapat memberikan data yang memadai, fitur presensi dapat dibatasi sesuai konfigurasi owner atau administrator.</p>
+        </section>
+
         <section id="pembagian">
           <h2>Pembagian Data Ke Pihak Terkait</h2>
           <p>Indo Apotek tidak menjual data pengguna. Data hanya dapat dibagikan bila diperlukan untuk menjalankan layanan, memenuhi kewajiban hukum, memproses dukungan teknis, atau berdasarkan persetujuan pengguna yang berwenang.</p>
+          <p>Data presensi dapat diakses oleh owner, administrator, atau pihak internal yang diberi kewenangan untuk mengelola karyawan, payroll, laporan, audit, atau penanganan kendala layanan.</p>
           <p>Pihak yang membantu layanan wajib menjaga kerahasiaan data dan hanya boleh memakai data sesuai kebutuhan layanan yang diberikan.</p>
+        </section>
+
+        <section id="penyimpanan">
+          <h2>Penyimpanan Dan Retensi Data</h2>
+          <p>Data layanan dapat disimpan pada media penyimpanan aplikasi, spreadsheet, penyimpanan file, cache perangkat, atau layanan pendukung lain yang dipakai untuk menjalankan sistem Indo Apotek.</p>
+          <p>Foto absensi dan data GPS disimpan selama masih diperlukan untuk kebutuhan operasional, administrasi, audit, penyelesaian sengketa, dukungan teknis, keamanan, atau pemenuhan kewajiban hukum. Retensi dapat berbeda sesuai pengaturan owner, kebutuhan apotek, dan ketentuan yang berlaku.</p>
+          <p>Karena kebijakan penghapusan otomatis dapat bergantung pada konfigurasi layanan dan kebutuhan operasional, Indo Apotek tidak menjanjikan masa simpan tetap untuk foto absensi atau data presensi lain kecuali ditentukan secara tertulis oleh pihak berwenang.</p>
         </section>
 
         <section id="cookies">
@@ -98,6 +117,7 @@
         <section id="hak">
           <h2>Hak Pengguna</h2>
           <p>Owner atau administrator yang berwenang dapat meminta koreksi, pembaruan, pembatasan akses, atau penghapusan data sesuai kebutuhan operasional dan ketentuan yang berlaku.</p>
+          <p>Permintaan koreksi atau penghapusan data presensi, termasuk foto absensi atau detail GPS yang tidak akurat, dapat diajukan melalui owner, administrator, atau kanal resmi Indo Apotek. Permintaan akan ditinjau dengan mempertimbangkan kebutuhan operasional, pencatatan payroll, audit, keamanan, dan kewajiban hukum.</p>
           <p>Pengguna internal harus mengikuti kebijakan akses yang ditentukan oleh pemilik apotek atau administrator yang mengelola akun.</p>
         </section>
 

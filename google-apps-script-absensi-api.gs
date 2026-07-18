@@ -10,14 +10,21 @@
   - GET ?nama=Yolan_Alfarel mengecek status absen datang/pulang hari ini.
   - POST menyimpan absensi datang dan pulang sebagai status terpisah.
   - Jika baris absensi pada tanggal itu dihapus dari Google Sheet, karyawan bisa absen lagi.
-  - Foto base64 disimpan ke folder Drive "foto_absensi" jika dikirim.
+  - Foto base64 disimpan ke folder Drive "Foto_Absensi" jika dikirim.
 */
 
 var ABSENSI_SPREADSHEET_ID = '1L_MfAj7UOa9Ngb6VEY6G4PiMBbwOIAu3De_puVYvNw4';
 var ABSENSI_SHEET_NAME = 'Form_Responses';
-var ABSENSI_PHOTO_FOLDER_NAME = 'foto_absensi';
+var ABSENSI_PHOTO_FOLDER_NAME = 'Foto_Absensi';
 var ABSENSI_TIMEZONE = 'Asia/Jakarta';
 var PAYROLL_SHEET_NAME = 'data_karyawan';
+var AUTH_SPREADSHEET_ID = '1jdtxpAZ-G545QfvbktjAihy2xXJeD8GbUFUx7W1TPdk';
+var AUTH_SESSION_SHEET_NAME = 'auth_sessions';
+var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
+var ABSENSI_MAX_PHOTO_BYTES = 3 * 1024 * 1024;
+var ABSENSI_MAX_TIMESTAMP_DRIFT_MS = 10 * 60 * 1000;
+var ABSENSI_MAX_GPS_ACCURACY_METER = 200;
+var ABSENSI_GPS_TOLERANCE_METER = 160;
 var PAYROLL_TEMPLATE_SHEET_NAME = 'Slip_Gaji';
 var PAYROLL_LOG_SHEET_NAME = 'log_slip_gaji';
 var PAYROLL_PDF_FOLDER_NAME = 'slip_gaji_pdf';
@@ -81,6 +88,9 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = String(params.action || '').trim();
+    var session = validateAbsensiSession_(params);
+    if (!session.ok) return jsonAbsensi_({ ok: false, success: false, message: session.message });
+    applyAbsensiSession_(params, session);
     var spreadsheet = SpreadsheetApp.openById(ABSENSI_SPREADSHEET_ID);
     var sheet = getAbsensiSheet_(spreadsheet);
 
@@ -100,7 +110,7 @@ function doGet(e) {
       return handleListSalarySlipHistory_(params, spreadsheet);
     }
 
-    var nama = params.nama || params.nama_karyawan || params.namaKaryawan || '';
+    var nama = session.name;
     var check = checkAbsensiHariIni_(sheet, nama);
 
     return jsonAbsensi_({
@@ -134,7 +144,10 @@ function doPost(e) {
   try {
     var payload = parseAbsensiPayload_(e);
     var action = String(payload.action || '').trim();
-    var nama = payload.nama_karyawan || payload.namaKaryawan || payload.nama || '';
+    var session = validateAbsensiSession_(payload);
+    if (!session.ok) return jsonAbsensi_({ ok: false, success: false, message: session.message });
+    applyAbsensiSession_(payload, session);
+    var nama = session.name;
     var spreadsheet = SpreadsheetApp.openById(ABSENSI_SPREADSHEET_ID);
     var sheet = getAbsensiSheet_(spreadsheet);
 
@@ -186,8 +199,14 @@ function doPost(e) {
     var timestamp = new Date();
     var displayName = normalizeDisplayName_(nama);
     var status = normalizeAbsensiStatus_(payload.jenis_absen || payload.jenisAbsen || payload.status_kehadiran || payload.statusKehadiran || payload.status || 'DATANG');
+    var validation = validateAbsensiSubmission_(payload, timestamp);
+    if (!validation.ok) return jsonAbsensi_({ ok: false, success: false, message: validation.message });
+    payload.latitude = validation.latitude;
+    payload.longitude = validation.longitude;
+    payload.gps_accuracy = validation.accuracy;
+    payload.gps_distance = validation.distance;
 
-    if (!isAttendanceEmployeeActive_(spreadsheet, displayName)) {
+    if (!isAttendanceEmployeeActive_(spreadsheet, session.name) || isInactiveEmployeeStatus_(session.status)) {
       return jsonAbsensi_({
         ok: false,
         success: false,
@@ -254,6 +273,118 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function validateAbsensiSession_(payload) {
+  var token = String(payload.sessionToken || payload.token || '').trim();
+  if (!token) return { ok: false, message: 'Sesi login tidak tersedia. Silakan masuk ulang.' };
+
+  var sheet = SpreadsheetApp.openById(AUTH_SPREADSHEET_ID).getSheetByName(AUTH_SESSION_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (String(values[i][0] || '').trim() != token) continue;
+    if (Number(values[i][6] || 0) <= Date.now()) return { ok: false, message: 'Sesi login sudah berakhir. Silakan masuk ulang.' };
+
+    var session = {
+      ok: true,
+      username: values[i][1],
+      email: values[i][2],
+      name: values[i][3] || values[i][1],
+      role: values[i][4],
+      status: values[i][5] || 'Aktif'
+    };
+    var submitted = [payload.username, payload.email, payload.nama_karyawan, payload.namaKaryawan, payload.nama]
+      .map(normalizeAbsensiKey_).filter(Boolean);
+    var allowed = [session.username, session.email, session.name].map(normalizeAbsensiKey_).filter(Boolean);
+
+    if (submitted.some(function(key) { return allowed.indexOf(key) < 0; })) {
+      return { ok: false, message: 'Identitas absensi tidak sesuai dengan sesi login.' };
+    }
+    return session;
+  }
+
+  return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+}
+
+function applyAbsensiSession_(payload, session) {
+  payload.username = session.username || '';
+  payload.email = session.email || '';
+  payload.role = session.role || '';
+  payload.actor = session.username || session.email || session.name || '';
+}
+
+function validateAbsensiSubmission_(payload, now) {
+  var photo = String(payload.foto_absensi || payload.fotoAbsensi || payload.foto || payload.photo || payload.image || payload.imageBase64 || '').trim();
+  var mimeType = String(payload.mimeType || 'image/jpeg').toLowerCase();
+
+  if (!photo) return { ok: false, message: 'Foto absensi wajib dikirim.' };
+  if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].indexOf(mimeType) < 0) {
+    return { ok: false, message: 'Format foto absensi tidak didukung.' };
+  }
+
+  photo = photo.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(photo)) return { ok: false, message: 'Data foto absensi tidak valid.' };
+  var estimatedBytes = Math.floor(photo.length * 3 / 4) - (photo.slice(-2) == '==' ? 2 : photo.slice(-1) == '=' ? 1 : 0);
+  if (estimatedBytes < 1024 || estimatedBytes > ABSENSI_MAX_PHOTO_BYTES) {
+    return { ok: false, message: 'Ukuran foto absensi tidak valid atau melebihi 3 MB.' };
+  }
+
+  var clientTime = new Date(String(payload.timestamp || ''));
+  if (isNaN(clientTime.getTime()) || Math.abs(now.getTime() - clientTime.getTime()) > ABSENSI_MAX_TIMESTAMP_DRIFT_MS) {
+    return { ok: false, message: 'Waktu perangkat tidak wajar. Sinkronkan waktu lalu coba lagi.' };
+  }
+
+  var profile = getAbsensiPharmacyProfile_();
+  var enabled = profile.attendanceGpsEnabled !== false && String(profile.attendanceGpsEnabled).toLowerCase() != 'false';
+  if (!enabled) return { ok: true, latitude: '', longitude: '', accuracy: '', distance: 0 };
+
+  var latitude = Number(payload.latitude);
+  var longitude = Number(payload.longitude);
+  var accuracy = Number(payload.gps_accuracy || payload.gpsAccuracy);
+  var pharmacyLat = Number(profile.latitude);
+  var pharmacyLon = Number(profile.longitude);
+  var radius = Number(profile.attendanceGpsRadius || 45);
+
+  if (!isFinite(pharmacyLat) || !isFinite(pharmacyLon) || !isFinite(radius) || radius < 1) {
+    return { ok: false, message: 'Konfigurasi GPS apotek belum valid.' };
+  }
+  if (!isFinite(latitude) || !isFinite(longitude) || !isFinite(accuracy) || accuracy < 0 || accuracy > ABSENSI_MAX_GPS_ACCURACY_METER) {
+    return { ok: false, message: 'Koordinat atau akurasi GPS tidak valid.' };
+  }
+
+  var distance = calculateAbsensiDistance_(latitude, longitude, pharmacyLat, pharmacyLon);
+  if (distance > radius + Math.min(accuracy, ABSENSI_GPS_TOLERANCE_METER)) {
+    return { ok: false, message: 'Lokasi berada di luar radius absensi apotek.' };
+  }
+
+  return {
+    ok: true,
+    latitude: latitude,
+    longitude: longitude,
+    accuracy: Math.round(accuracy),
+    distance: Math.round(distance)
+  };
+}
+
+function getAbsensiPharmacyProfile_() {
+  var sheet = SpreadsheetApp.openById(AUTH_SPREADSHEET_ID).getSheetByName(PHARMACY_PROFILE_SHEET_NAME);
+  if (!sheet) return {};
+  try {
+    return JSON.parse(String(sheet.getRange('A2').getDisplayValue() || '{}')) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function calculateAbsensiDistance_(lat1, lon1, lat2, lon2) {
+  var toRad = function(value) { return value * Math.PI / 180; };
+  var dLat = toRad(lat2 - lat1);
+  var dLon = toRad(lon2 - lon1);
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function parseAbsensiPayload_(e) {

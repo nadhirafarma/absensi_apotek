@@ -1,1 +1,0 @@
-Database wajah karyawan

@@ -1,0 +1,10 @@
+# Local review screenshots and temporary artifacts
+/layout-check.png
+/presensi-*.png
+/payroll-*.png
+/1)
+
+# Keep generated review folders out of the repository.
+/review-artifacts/
+/local-review/
+/tmp-review/

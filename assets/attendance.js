@@ -1,7 +1,4 @@
 (function () {
-  const MODEL_BASE = "https://nadhirafarma.github.io/absensi_apotek/weights";
-  const STATIC_FACE_DB_BASE = "https://nadhirafarma.github.io/absensi_apotek/database_wajah";
-  const GITHUB_FACE_DB_API_URL = "https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main";
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const DASHBOARD_API_BASE = "https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec";
   const SESSION_KEY = "nadhira.authSession";
@@ -9,46 +6,28 @@
   const PHARMACY_PROFILE_KEY = "nadhira.pharmacyIdentity";
   const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
 
-  const APOTEK_LAT = -3.2733637;
-  const APOTEK_LON = 104.8819249;
-  const MAX_RADIUS_METER = 45;
   const MAX_GPS_ACCURACY_METER = 200;
   const GPS_DISTANCE_TOLERANCE_METER = 160;
   const GPS_CACHE_MS = 60000;
   const GPS_WAIT_TIMEOUT_MS = 12000;
   const REQUEST_TIMEOUT_MS = 18000;
-  const DETECTION_DELAY_MS = 450;
-  const REQUIRED_MATCH_STREAK = 2;
   const ATTENDANCE_DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const ATTENDANCE_SHIFT_KEYS = ["pagi", "sore"];
 
-  const LABELS = [
-    "Al_Hafiz",
-    "Meisyi_Amalia",
-    "Putri_Sinta",
-    "Delpi_Vira",
-    "Ayu_Novalia",
-    "Tia_Ivanka",
-    "Yolan_Alfarel"
-  ];
   const els = {};
   const state = {
-    faceMatcher: null,
     stream: null,
     locationWatchId: null,
     lastLocation: null,
-    detectTimer: null,
-    detecting: false,
     processing: false,
     finished: false,
     paused: false,
     started: false,
+    cameraReady: false,
     integrityRead: false,
     selectedShift: "",
     selectedAttendanceType: "",
-    attendancePlan: null,
-    lastLabel: "",
-    matchStreak: 0
+    attendancePlan: null
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -56,6 +35,7 @@
   async function init() {
     bindElements();
     bindEvents();
+    await loadPharmacyProfileFromBackend({ silent: true });
     hydrateAttendanceBrand();
     startClock();
 
@@ -79,18 +59,17 @@
     state.started = true;
     if (els.attendanceChoiceModal) els.attendanceChoiceModal.hidden = true;
     if (els.integrityGateModal) els.integrityGateModal.hidden = true;
-    setStatus("Menyiapkan kamera dan Face ID...");
+    setStatus(getAttendancePharmacyProfile().attendanceGpsEnabled ? "Menyiapkan kamera dan GPS..." : "Menyiapkan kamera...");
     warmUpLocation();
 
     try {
-      await Promise.all([loadModels(), startCamera()]);
-      await prepareFaceMatcher();
-      resizeFaceCanvas();
-      setModelStatus("Face ID siap", "ready");
-      setStatus("Posisikan wajah di dalam bingkai.");
-      scheduleDetection(100);
+      await startCamera();
+      setModelStatus("Kamera siap", "ready");
+      setStatus("Pastikan foto terlihat jelas, lalu tekan Absen Sekarang.");
+      els.attendanceButton.hidden = false;
+      els.attendanceButton.disabled = false;
     } catch (error) {
-      setModelStatus("Face ID gagal", "error");
+      setModelStatus("Kamera gagal", "error");
       setStatus(`Gagal menyiapkan absensi: ${error.message}`);
       els.retryButton.hidden = false;
     }
@@ -98,13 +77,13 @@
 
   function bindElements() {
     els.video = document.getElementById("video");
-    els.faceCanvas = document.getElementById("faceCanvas");
     els.captureCanvas = document.getElementById("captureCanvas");
     els.statusText = document.getElementById("statusText");
     els.clockLabel = document.getElementById("clockLabel");
     els.modelStatus = document.getElementById("modelStatus");
     els.gpsStatus = document.getElementById("gpsStatus");
     els.cancelButton = document.getElementById("cancelButton");
+    els.attendanceButton = document.getElementById("attendanceButton");
     els.retryButton = document.getElementById("retryButton");
     els.profileRequiredModal = document.getElementById("profileRequiredModal");
     els.profileRequiredMissing = document.getElementById("profileRequiredMissing");
@@ -124,6 +103,7 @@
 
   function bindEvents() {
     els.cancelButton.addEventListener("click", cancelAttendance);
+    els.attendanceButton.addEventListener("click", processAttendance);
     els.retryButton.addEventListener("click", () => window.location.reload());
     if (els.integrityStartButton) {
       els.integrityStartButton.addEventListener("click", () => {
@@ -144,7 +124,6 @@
     if (els.attendanceReturnButton) els.attendanceReturnButton.addEventListener("click", () => selectAttendanceType("PULANG"));
     if (els.attendanceOvertimeButton) els.attendanceOvertimeButton.addEventListener("click", () => selectAttendanceType("LEMBUR"));
     window.addEventListener("beforeunload", stopAll);
-    window.addEventListener("resize", resizeFaceCanvas);
     document.addEventListener("visibilitychange", async () => {
       if (document.hidden) return;
       if (!state.started || state.finished || state.processing) return;
@@ -154,18 +133,15 @@
         } catch (_) {}
         try {
           await startCamera();
-          resizeFaceCanvas();
-          scheduleDetection(200);
         } catch (_) {}
         return;
       }
       try { await els.video.play(); } catch (_) {}
-      resizeFaceCanvas();
     });
   }
 
   function showIntegrityGate() {
-    setStatus("Baca pengingat integritas sebelum memulai Absensi Face ID.");
+    setStatus("Baca pengingat integritas sebelum memulai absensi.");
     setModelStatus("Menunggu mulai", "warning");
     setGpsStatus("Belum dimulai", "warning");
     state.integrityRead = false;
@@ -198,7 +174,7 @@
     if (els.attendanceShiftSelect) els.attendanceShiftSelect.value = normalizeShiftLabel(state.selectedShift || getShiftLabel());
     state.attendancePlan = null;
     setAttendanceChoiceStatus("Pilih shift dan jenis absensi terlebih dahulu.");
-    setStatus("Pilih shift dan jenis absensi sebelum kamera Face ID dimulai.");
+    setStatus("Pilih shift dan jenis absensi sebelum kamera dimulai.");
   }
 
   function selectAttendanceType(type) {
@@ -226,7 +202,7 @@
       warningMessage: windowResult.message || ""
     };
     setAttendanceChoiceStatus(
-      windowResult.warning ? `${windowResult.message} Absensi tetap dapat dilanjutkan.` : "Valid. Menyiapkan kamera Face ID...",
+      windowResult.warning ? `${windowResult.message} Absensi tetap dapat dilanjutkan.` : "Valid. Menyiapkan kamera...",
       windowResult.warning ? "warning" : "success"
     );
     startAttendanceFlow();
@@ -280,7 +256,8 @@
       phone: normalizePhoneNumber(stored.phone || session.phone || ""),
       address: String(stored.address || session.address || "").trim(),
       role: String(stored.role || stored.job || session.role || "").trim(),
-      username: String(stored.username || session.username || "").trim()
+      username: String(stored.username || session.username || "").trim(),
+      sessionToken: String(session.sessionToken || session.token || "").trim()
     };
   }
 
@@ -320,10 +297,44 @@
     const stored = readObject(PHARMACY_PROFILE_KEY);
     const logo = String(stored.logo || stored.logoUrl || "assets/indo-apotek-mark.png").trim();
     const name = String(stored.name || stored.namaApotek || stored.pharmacyName || "Apotek Anda").trim();
+    const enabledValue = stored.attendanceGpsEnabled;
+    const attendanceGpsEnabled = enabledValue === undefined || enabledValue === null || enabledValue === ""
+      ? true
+      : ![false, 0, "false", "0", "disabled", "off", "nonaktif"].includes(
+        typeof enabledValue === "string" ? enabledValue.toLowerCase().trim() : enabledValue
+      );
     return {
       logo: /^(data:image\/|https?:\/\/|assets\/)/i.test(logo) ? logo : "assets/indo-apotek-mark.png",
-      name: name || "Apotek Anda"
+      name: name || "Apotek Anda",
+      latitude: parseConfiguredNumber(stored.latitude ?? stored.lat),
+      longitude: parseConfiguredNumber(stored.longitude ?? stored.lng ?? stored.lon),
+      attendanceGpsEnabled,
+      attendanceGpsRadius: parseConfiguredNumber(stored.attendanceGpsRadius ?? stored.gpsRadius)
     };
+  }
+
+  function parseConfiguredNumber(value) {
+    if (value === undefined || value === null || String(value).trim() === "") return NaN;
+    return Number(value);
+  }
+
+  async function loadPharmacyProfileFromBackend(options = {}) {
+    try {
+      const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "getPharmacyProfile" }),
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error(`Profil apotek gagal dimuat (${response.status}).`);
+      const result = await response.json();
+      if (!result || (result.ok !== true && result.success !== true) || !result.profile) {
+        throw new Error(result?.message || "Profil apotek online belum tersedia.");
+      }
+      localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify(result.profile));
+    } catch (error) {
+      if (!options.silent) throw error;
+    }
   }
 
   function hydrateAttendanceBrand() {
@@ -334,7 +345,7 @@
     });
     const brandName = document.querySelector(".attendance-header .brand-link small");
     if (brandName) brandName.textContent = pharmacy.name;
-    document.title = `Absensi Face ID - ${pharmacy.name}`;
+    document.title = `Absensi - ${pharmacy.name}`;
   }
 
   function startClock() {
@@ -354,21 +365,13 @@
     setInterval(updateClock, 1000);
   }
 
-  async function loadModels() {
-    if (faceapi.nets.tinyFaceDetector.isLoaded && faceapi.nets.faceLandmark68Net.isLoaded && faceapi.nets.faceRecognitionNet.isLoaded) {
-      return;
-    }
-    const basePath = location.protocol === "file:" ? MODEL_BASE : "weights";
-    await faceapi.nets.tinyFaceDetector.loadFromUri(basePath);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(basePath);
-    await faceapi.nets.faceRecognitionNet.loadFromUri(basePath);
-  }
-
   async function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error("Kamera tidak didukung browser.");
     }
 
+    state.cameraReady = false;
+    els.attendanceButton.disabled = true;
     state.stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
@@ -393,96 +396,14 @@
     });
 
     await els.video.play();
-  }
-
-  async function prepareFaceMatcher() {
-    const descriptorOptions = new faceapi.TinyFaceDetectorOptions({
-      inputSize: 320,
-      scoreThreshold: 0.35
-    });
-    const remoteDescriptors = await loadRemoteFaceDescriptors(descriptorOptions);
-    const remoteLabels = new Set(remoteDescriptors.map((item) => normalizeKey(item.label)));
-    const staticDescriptors = await loadStaticFaceDescriptors(descriptorOptions, remoteLabels);
-    const descriptors = remoteDescriptors.concat(staticDescriptors);
-
-    if (!descriptors.length) {
-      throw new Error("Database wajah tidak terbaca.");
-    }
-
-    state.faceMatcher = new faceapi.FaceMatcher(descriptors, 0.5);
-  }
-
-  async function loadRemoteFaceDescriptors(descriptorOptions) {
-    try {
-      const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
-        method: "POST",
-        body: JSON.stringify({ action: "listFaceDatabase" }),
-        cache: "no-store"
-      }, 15000);
-      if (!response.ok) return [];
-
-      const payload = await response.json();
-      const faces = Array.isArray(payload?.faces) ? payload.faces : [];
-
-      return (await Promise.all(faces.map((face) => {
-        const label = sanitizeFaceLabel(face.label || face.name);
-        const source = String(face.imageDataUrl || face.imageUrl || "").trim();
-        return loadFaceDescriptor(label, source, descriptorOptions);
-      }))).filter(Boolean);
-    } catch (error) {
-      return [];
-    }
-  }
-
-  async function loadStaticFaceDescriptors(descriptorOptions, skippedLabels) {
-    const files = await listGithubFaceDatabaseFiles();
-    const sources = files.length
-      ? files
-      : LABELS.map((label) => ({ label, imageUrl: `${STATIC_FACE_DB_BASE}/${label}.jpg` }));
-
-    return (await Promise.all(sources.map((file) => {
-      const label = sanitizeFaceLabel(file.label);
-      if (skippedLabels && skippedLabels.has(normalizeKey(label))) return null;
-      return loadFaceDescriptor(label, file.imageUrl, descriptorOptions);
-    }))).filter(Boolean);
-  }
-
-  async function listGithubFaceDatabaseFiles() {
-    try {
-      const response = await fetchWithTimeout(GITHUB_FACE_DB_API_URL, { cache: "no-store" }, 12000);
-      if (!response.ok) return [];
-      const payload = await response.json();
-      if (!Array.isArray(payload)) return [];
-
-      return payload
-        .filter((file) => /\.(jpe?g|png|webp)$/i.test(String(file.name || "")))
-        .map((file) => ({
-          label: String(file.name || "").replace(/\.[^.]+$/, ""),
-          imageUrl: file.download_url || `${STATIC_FACE_DB_BASE}/${encodeURIComponent(file.name)}`
-        }));
-    } catch (error) {
-      return [];
-    }
-  }
-
-  async function loadFaceDescriptor(label, source, descriptorOptions) {
-    if (!label || !source) return null;
-
-    try {
-      const image = await faceapi.fetchImage(source);
-      const detection = await faceapi
-        .detectSingleFace(image, descriptorOptions)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) return null;
-      return new faceapi.LabeledFaceDescriptors(label, [detection.descriptor]);
-    } catch (error) {
-      return null;
-    }
+    state.cameraReady = true;
   }
 
   function warmUpLocation() {
+    if (!getAttendancePharmacyProfile().attendanceGpsEnabled) {
+      setGpsStatus("GPS dinonaktifkan", "ready");
+      return;
+    }
     if (!navigator.geolocation) {
       setGpsStatus("GPS tidak tersedia", "error");
       return;
@@ -507,122 +428,50 @@
     );
   }
 
-  function resizeFaceCanvas() {
-    const rect = els.video.getBoundingClientRect();
-    els.faceCanvas.width = Math.round(rect.width || 1);
-    els.faceCanvas.height = Math.round(rect.height || 1);
-  }
-
-  function scheduleDetection(delay = DETECTION_DELAY_MS) {
-    window.clearTimeout(state.detectTimer);
-    if (state.finished || state.processing || state.paused) return;
-    state.detectTimer = window.setTimeout(detectFace, delay);
-  }
-
-  async function detectFace() {
-    if (state.detecting || state.processing || state.finished) return;
-    if (els.video.readyState < 2 || els.video.paused) {
-      if (!state.stream || !state.stream.active) {
-        try { if (state.stream) state.stream.getTracks().forEach(track => track.stop()); } catch (_) {}
-        try {
-          await startCamera();
-          resizeFaceCanvas();
-        } catch (_) {}
-      } else {
-        try { await els.video.play(); } catch (_) {}
-      }
-      if (els.video.readyState < 2) return;
-    }
-
-    state.detecting = true;
-
-    try {
-      const options = new faceapi.TinyFaceDetectorOptions({
-        inputSize: window.innerWidth <= 520 ? 224 : 320,
-        scoreThreshold: 0.45
-      });
-      const detection = await faceapi
-        .detectSingleFace(els.video, options)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      clearFaceCanvas();
-
-      if (!detection) {
-        state.lastLabel = "";
-        state.matchStreak = 0;
-        setStatus("Posisikan wajah di dalam bingkai.");
-        return;
-      }
-
-      drawFaceBox(detection.detection.box);
-      const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
-
-      if (bestMatch.label === "unknown") {
-        state.lastLabel = "";
-        state.matchStreak = 0;
-        setStatus("Wajah belum dikenali. Dekatkan wajah ke kamera.");
-        return;
-      }
-
-      if (bestMatch.label === state.lastLabel) {
-        state.matchStreak += 1;
-      } else {
-        state.lastLabel = bestMatch.label;
-        state.matchStreak = 1;
-      }
-
-      const name = formatName(bestMatch.label);
-      setStatus(`Wajah dikenali: ${name}. Validasi cepat sedang disiapkan.`);
-
-      if (state.matchStreak >= REQUIRED_MATCH_STREAK) {
-        await processAttendance(bestMatch.label);
-      }
-    } catch (error) {
-      if (state.finished) return;
-      setStatus(`Deteksi wajah terganggu: ${error.message}`);
-    } finally {
-      state.detecting = false;
-      scheduleDetection();
-    }
-  }
-
-  async function processAttendance(label) {
+  async function processAttendance() {
     if (state.processing || state.finished) return;
+    if (!state.cameraReady || !state.stream || !state.stream.active || els.video.readyState < 2) {
+      setStatus("Kamera belum siap. Tunggu pratinjau tampil lalu coba lagi.");
+      return;
+    }
+
+    const profile = getAttendanceProfileData();
+    const identity = buildAttendanceIdentity(profile);
+    if (!identity.label || !identity.displayName) {
+      setStatus("Identitas akun tidak tersedia. Silakan masuk ulang atau lengkapi profil.");
+      return;
+    }
 
     state.processing = true;
-    window.clearTimeout(state.detectTimer);
-    setStatus(`Wajah ${formatName(label)} cocok. Mengecek GPS dan absensi...`);
+    els.attendanceButton.disabled = true;
+    setStatus(`Memvalidasi GPS ${identity.displayName}...`);
 
     try {
-      const locationResult = await validateLocation(label);
+      const locationResult = await validateLocation();
 
       if (!locationResult.ok) {
         setStatus(locationResult.message);
-        els.retryButton.hidden = false;
-        state.paused = true;
         state.processing = false;
-        state.lastLabel = "";
-        state.matchStreak = 0;
+        els.attendanceButton.disabled = false;
         return;
       }
 
-      const attendanceResult = await safeCheckAttendanceToday(label);
+      setStatus("GPS valid. Memeriksa waktu dan duplikasi absensi...");
+      const attendanceResult = await safeCheckAttendanceToday(identity);
 
       if (attendanceResult.checkFailed) {
         setStatus("Tidak bisa mengecek data absensi di Google Sheet. Absensi dibatalkan agar tidak tercatat dobel.");
         els.retryButton.hidden = false;
         state.paused = true;
         state.processing = false;
-        state.lastLabel = "";
-        state.matchStreak = 0;
+        els.attendanceButton.disabled = false;
         return;
       }
 
       const attendancePlan = buildRequestedAttendancePlan(attendanceResult);
 
       if (attendancePlan.done) {
-        showResult(attendancePlan.title || "Absen sudah ada", formatName(label), {
+        showResult(attendancePlan.title || "Absen sudah ada", identity.displayName, {
           primary: attendancePlan.message || "Absensi hari ini sudah tercatat.",
           secondary: attendancePlan.secondary || "Bekerjalah dengan jujur dan tanggung jawab."
         }, "warning");
@@ -630,7 +479,7 @@
       }
 
       if (attendancePlan.blocked) {
-        showResult(attendancePlan.title, formatName(label), {
+        showResult(attendancePlan.title, identity.displayName, {
           primary: attendancePlan.message,
           secondary: attendancePlan.secondary || "Silakan pilih jenis absensi yang sesuai."
         }, "warning");
@@ -639,7 +488,7 @@
 
       const windowResult = validateAttendanceWindow(attendancePlan, getAttendanceProfileData());
       if (!windowResult.ok) {
-        showResult(windowResult.title, formatName(label), {
+        showResult(windowResult.title, identity.displayName, {
           primary: windowResult.message,
           secondary: windowResult.secondary || "Hubungi owner jika membutuhkan pembukaan akses absensi."
         }, "warning");
@@ -654,24 +503,44 @@
         setStatus(`${windowResult.message} Absensi tetap diproses.`);
       }
 
-      await sendAttendance(label, locationResult, attendancePlan);
+      await sendAttendance(identity, locationResult, attendancePlan);
     } catch (error) {
       setStatus(`Absensi gagal: ${error.message}`);
       els.retryButton.hidden = false;
       state.paused = true;
       state.processing = false;
+      els.attendanceButton.disabled = false;
     }
   }
 
-  async function validateLocation(label) {
-    const profile = getAttendanceProfileData();
+  function buildAttendanceIdentity(profile) {
+    const displayName = String(profile?.name || profile?.username || "").trim();
+    return {
+      label: sanitizeAttendanceLabel(displayName),
+      displayName,
+      username: String(profile?.username || "").trim(),
+      email: String(profile?.email || "").trim(),
+      sessionToken: String(profile?.sessionToken || "").trim()
+    };
+  }
 
-    if (canBypassAttendanceRules(profile)) {
+  async function validateLocation() {
+    const pharmacy = getAttendancePharmacyProfile();
+    if (!pharmacy.attendanceGpsEnabled) {
       return {
         ok: true,
-        message: "GPS dilewati untuk owner.",
+        message: "GPS absensi dinonaktifkan oleh owner.",
         location: null,
         distance: 0
+      };
+    }
+
+    if (!Number.isFinite(pharmacy.latitude) || pharmacy.latitude < -90 || pharmacy.latitude > 90 ||
+        !Number.isFinite(pharmacy.longitude) || pharmacy.longitude < -180 || pharmacy.longitude > 180 ||
+        !Number.isFinite(pharmacy.attendanceGpsRadius) || pharmacy.attendanceGpsRadius < 1) {
+      return {
+        ok: false,
+        message: "Konfigurasi GPS apotek belum valid. Hubungi owner sebelum melakukan absensi."
       };
     }
 
@@ -685,10 +554,10 @@
       };
     }
 
-    const distance = calculateDistance(location.latitude, location.longitude, APOTEK_LAT, APOTEK_LON);
-    const allowedDistance = MAX_RADIUS_METER + Math.min(location.accuracy || 0, GPS_DISTANCE_TOLERANCE_METER);
+    const distance = calculateDistance(location.latitude, location.longitude, pharmacy.latitude, pharmacy.longitude);
+    const allowedDistance = pharmacy.attendanceGpsRadius + Math.min(location.accuracy || 0, GPS_DISTANCE_TOLERANCE_METER);
 
-    if (location.accuracy > MAX_GPS_ACCURACY_METER && distance > MAX_RADIUS_METER) {
+    if (location.accuracy > MAX_GPS_ACCURACY_METER && distance > pharmacy.attendanceGpsRadius) {
       return {
         ok: false,
         message: `GPS belum stabil. Akurasi ${Math.round(location.accuracy)} meter, jarak ${Math.round(distance)} meter. Aktifkan lokasi akurasi tinggi lalu coba lagi.`
@@ -783,8 +652,15 @@
     };
   }
 
-  async function checkAttendanceToday(label) {
-    const response = await fetchWithTimeout(`${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}`, {
+  async function checkAttendanceToday(identity) {
+    const params = new URLSearchParams({
+      nama: identity.displayName,
+      nama_karyawan: identity.displayName,
+      username: identity.username,
+      email: identity.email,
+      sessionToken: identity.sessionToken
+    });
+    const response = await fetchWithTimeout(`${ABSENSI_API_URL}?${params.toString()}`, {
       cache: "no-store"
     });
 
@@ -795,9 +671,9 @@
     return response.json();
   }
 
-  async function safeCheckAttendanceToday(label) {
+  async function safeCheckAttendanceToday(identity) {
     try {
-      return await checkAttendanceToday(label);
+      return await checkAttendanceToday(identity);
     } catch (error) {
       return {
         sudahAbsen: false,
@@ -972,23 +848,26 @@
     const username = normalizeSearch(profile?.username || profile?.name || "");
     return role === "owner" || username === "owner";
   }
-
-  async function sendAttendance(label, locationResult, attendancePlan) {
-    setStatus("Mengirim absensi...");
+  async function sendAttendance(identity, locationResult, attendancePlan) {
+    setStatus("GPS dan data absensi valid. Mengambil foto...");
 
     const photo = capturePhoto();
     const photoBase64 = extractBase64(photo);
-    const displayName = formatName(label);
+    const label = identity.label;
+    const displayName = identity.displayName;
     const shift = normalizeShiftLabel(attendancePlan?.shift || getShiftLabel());
     const attendanceType = attendancePlan?.type || "DATANG";
     const jakartaTime = getJakartaNowParts();
     const submitUrl = `${ABSENSI_API_URL}?nama=${encodeURIComponent(label)}&nama_karyawan=${encodeURIComponent(displayName)}&status=${encodeURIComponent(attendanceType)}`;
     const timestamp = new Date().toISOString();
-    const fileName = `absensi_${label}_${timestamp.replace(/[:.]/g, "-")}.jpg`;
+    const fileName = buildAttendanceFileName(displayName, shift, attendanceType, jakartaTime);
     const payload = {
       nama: label,
       nama_karyawan: displayName,
       namaKaryawan: displayName,
+      username: identity.username,
+      email: identity.email,
+      sessionToken: identity.sessionToken,
       status: attendanceType,
       status_kehadiran: attendanceType,
       statusKehadiran: attendanceType,
@@ -1013,7 +892,7 @@
       imageBase64: photoBase64,
       mimeType: "image/jpeg",
       fileName,
-      folder: "foto_absensi",
+      folder: "Foto_Absensi",
       latitude: locationResult.location ? locationResult.location.latitude : "",
       longitude: locationResult.location ? locationResult.location.longitude : "",
       gps_accuracy: locationResult.location ? Math.round(locationResult.location.accuracy) : "",
@@ -1028,6 +907,7 @@
     let result = {};
 
     try {
+      setStatus("Mengunggah foto dan menyimpan absensi...");
       const response = await fetchWithTimeout(submitUrl, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -1052,8 +932,8 @@
       }
     }
 
-    if (result && result.error) {
-      throw new Error(result.error);
+    if (result && (result.error || result.ok === false || result.success === false)) {
+      throw new Error(result.error || result.message || "Server gagal menyimpan absensi.");
     }
 
     if (result && result.sudahAbsen) {
@@ -1127,32 +1007,23 @@
     return els.captureCanvas.toDataURL("image/jpeg", 0.68);
   }
 
+  function buildAttendanceFileName(displayName, shift, attendanceType, jakartaTime) {
+    const name = String(displayName || "Karyawan")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "Karyawan";
+    const safeShift = normalizeShiftLabel(shift).replace(/\s+/g, "_");
+    const date = String(jakartaTime?.dateKey || "").replace(/-/g, "");
+    const time = String(jakartaTime?.timeText || "").replace(/:/g, "");
+    return `${name}_${safeShift}_${normalizeAttendanceType(attendanceType)}_${date}_${time}.jpg`;
+  }
+
   function extractBase64(dataUrl) {
     const value = String(dataUrl || "");
     const commaIndex = value.indexOf(",");
 
     return commaIndex >= 0 ? value.slice(commaIndex + 1) : value;
-  }
-
-  function drawFaceBox(box) {
-    const context = els.faceCanvas.getContext("2d");
-    const scaleX = els.faceCanvas.width / (els.video.videoWidth || els.faceCanvas.width);
-    const scaleY = els.faceCanvas.height / (els.video.videoHeight || els.faceCanvas.height);
-    const x = els.faceCanvas.width - (box.x + box.width) * scaleX;
-    const y = box.y * scaleY;
-    const width = box.width * scaleX;
-    const height = box.height * scaleY;
-
-    context.strokeStyle = "#8aff8a";
-    context.lineWidth = 3;
-    context.shadowColor = "#8aff8a";
-    context.shadowBlur = 10;
-    context.strokeRect(x, y, width, height);
-  }
-
-  function clearFaceCanvas() {
-    const context = els.faceCanvas.getContext("2d");
-    context.clearRect(0, 0, els.faceCanvas.width, els.faceCanvas.height);
   }
 
   function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1382,7 +1253,7 @@
               <img src="${escapeHtml(pharmacy.logo)}" alt="${escapeHtml(pharmacy.name)}">
               <span>
                 <strong>${escapeHtml(pharmacy.name)}</strong>
-                <small>Absensi Face ID</small>
+                <small>Absensi Foto & GPS</small>
               </span>
             </a>
           </header>
@@ -1408,8 +1279,7 @@
   }
 
   function stopAll() {
-    window.clearTimeout(state.detectTimer);
-
+    state.cameraReady = false;
     if (state.stream) {
       state.stream.getTracks().forEach((track) => track.stop());
       state.stream = null;
@@ -1444,7 +1314,7 @@
     return String(label || "").replace(/_/g, " ");
   }
 
-  function sanitizeFaceLabel(value) {
+  function sanitizeAttendanceLabel(value) {
     return String(value || "")
       .trim()
       .replace(/_/g, " ")

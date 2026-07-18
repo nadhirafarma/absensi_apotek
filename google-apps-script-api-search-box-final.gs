@@ -10,10 +10,6 @@ var DATA_OBAT_SHEET_NAME = 'data_obat';
 var USER_SHEET_NAME = 'user';
 var EMPLOYEE_SHEET_NAME = 'data_karyawan';
 var SUPPLIER_SHEET_NAME = 'data_supplier';
-var FACE_ID_FOLDER_NAME = 'DATABASE_WAJAH';
-var GITHUB_FACE_DB_API_URL = 'https://api.github.com/repos/nadhirafarma/absensi_apotek/contents/database_wajah?ref=main';
-var GITHUB_FACE_DB_RAW_BASE = 'https://raw.githubusercontent.com/nadhirafarma/absensi_apotek/main/database_wajah';
-var DEFAULT_GITHUB_FACE_LABELS = ['Al_Hafiz', 'Ayu_Novalia', 'Delpi_Vira', 'Meisyi_Amalia', 'Putri_Sinta', 'Tia_Ivanka', 'Yolan_Alfarel'];
 var RESTOCK_PHOTO_FOLDER_NAME = 'foto_restock_obat';
 var RESTOCK_REQUESTS_SHEET_NAME = 'restock_requests';
 var PURCHASE_ORDERS_SHEET_NAME = 'purchase_orders';
@@ -22,9 +18,9 @@ var DATA_OBAT_FILTER_PROPERTY = 'DATA_OBAT_GLOBAL_FILTER';
 var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
 var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
 var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
-var FACE_ID_DATABASE_INDEX_CACHE = null;
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
-var EMPLOYEE_DEFAULT_HEADERS = ['name', 'username', 'phone', 'address', 'job', 'email', 'status', 'face_id_file_id', 'face_id_url', 'face_id_image_url', 'face_id_label', 'face_id_registered_at', 'updated_at'];
+var AUTH_SESSION_SHEET_NAME = 'auth_sessions';
+var EMPLOYEE_DEFAULT_HEADERS = ['name', 'username', 'phone', 'address', 'job', 'email', 'status', 'updated_at'];
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'city', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
   'id',
@@ -178,10 +174,6 @@ function doGet(e) {
       return handleListLoginUsers_(readUserRows_(loginSheet));
     }
 
-    if (String(e.parameter.action || '').trim() == 'listFaceDatabase') {
-      return handleListFaceDatabase_(e.parameter);
-    }
-
     var sheetName = String(e.parameter.sheet || 'user').trim();
 
     if (sheetName == USER_SHEET_NAME) {
@@ -226,6 +218,65 @@ function doGet(e) {
       error: error.toString()
     });
   }
+}
+
+function syncAuthSession_(payload, activity) {
+  var token = String(payload.sessionToken || '').trim();
+  if (!token) return;
+
+  var eventName = String(payload.sessionEvent || '').trim().toLowerCase();
+  if (eventName == 'logout') {
+    deleteAuthSession_(token);
+    return;
+  }
+  if (eventName != 'login') return;
+
+  var expiresAt = Number(payload.sessionExpiresAt || 0);
+  saveAuthSession_({
+    token: token,
+    username: String(activity.username || payload.username || '').trim(),
+    email: String(activity.email || payload.email || '').trim(),
+    name: String(payload.name || activity.actor || '').split(' - ')[0].trim(),
+    role: String(activity.role || payload.role || '').trim(),
+    status: String(payload.status || 'Aktif').trim(),
+    expiresAt: expiresAt || Date.now() + 12 * 60 * 60 * 1000
+  });
+}
+
+function createAuthSession_(user) {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  saveAuthSession_({
+    token: token,
+    username: user.username,
+    email: user.email,
+    name: user.name || user.username,
+    role: user.role,
+    status: user.status || 'Aktif',
+    expiresAt: Date.now() + 12 * 60 * 60 * 1000
+  });
+  return token;
+}
+
+function saveAuthSession_(session) {
+  var sheet = getAuthSessionSheet_();
+  deleteAuthSession_(session.token, sheet);
+  sheet.appendRow([session.token, session.username || '', session.email || '', session.name || '', session.role || '', session.status || 'Aktif', Number(session.expiresAt || 0), new Date().toISOString()]);
+}
+
+function deleteAuthSession_(token, existingSheet) {
+  var sheet = existingSheet || getAuthSessionSheet_();
+  if (sheet.getLastRow() < 2) return;
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (String(values[i][0] || '').trim() == token) sheet.deleteRow(i + 2);
+  }
+}
+
+function getAuthSessionSheet_() {
+  var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(AUTH_SESSION_SHEET_NAME) || ss.insertSheet(AUTH_SESSION_SHEET_NAME);
+  if (sheet.getLastRow() < 1) sheet.getRange(1, 1, 1, 8).setValues([['token', 'username', 'email', 'name', 'role', 'status', 'expiresAt', 'updatedAt']]);
+  return sheet;
 }
 
 function doPost(e) {
@@ -336,10 +387,6 @@ function doPost(e) {
       return handleListLocalRecords_(data);
     }
 
-    if (action == 'listFaceDatabase') {
-      return handleListFaceDatabase_(data);
-    }
-
     if (action == 'saveLocalRecord') {
       return handleSaveLocalRecord_(data);
     }
@@ -430,10 +477,6 @@ function handleUnlockedPostAction_(action, data) {
     return handleListLocalRecords_(data);
   }
 
-  if (action == 'listFaceDatabase') {
-    return handleListFaceDatabase_(data);
-  }
-
   if (action == 'listLoginUsers') {
     var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
     return handleListLoginUsers_(readUserRows_(ss.getSheetByName(USER_SHEET_NAME) || ss.insertSheet(USER_SHEET_NAME)));
@@ -469,6 +512,7 @@ function handleLogin_(data, users) {
         });
       }
 
+      var sessionToken = createAuthSession_(user);
       return jsonOutput_({
         success: true,
         ok: true,
@@ -483,7 +527,8 @@ function handleLogin_(data, users) {
         preferences: user.preferences || '',
         profilePreferences: user.preferences || '',
         profilePhoto: user.profilePhoto || '',
-        photo: user.profilePhoto || ''
+        photo: user.profilePhoto || '',
+        sessionToken: sessionToken
       });
     }
   }
@@ -998,6 +1043,7 @@ function handleSaveDataObatFilter_(data) {
 
 function handleSaveActivityLog_(data) {
   data = data || {};
+  syncAuthSession_(data, data.activity || data);
   var item = sanitizeActivityLogItem_(data.activity || data);
   var list = readActivityLog_();
 
@@ -1237,6 +1283,16 @@ function getPharmacyProfileSheet_() {
 
 function sanitizePharmacyProfile_(value) {
   value = value && typeof value == 'object' ? value : {};
+  var attendanceGpsEnabled = value.attendanceGpsEnabled;
+  if (attendanceGpsEnabled === undefined || attendanceGpsEnabled === null || attendanceGpsEnabled === '') {
+    attendanceGpsEnabled = true;
+  } else if (typeof attendanceGpsEnabled == 'string') {
+    attendanceGpsEnabled = ['false', '0', 'disabled', 'off', 'nonaktif'].indexOf(attendanceGpsEnabled.toLowerCase().trim()) < 0;
+  } else {
+    attendanceGpsEnabled = attendanceGpsEnabled !== false && attendanceGpsEnabled !== 0;
+  }
+  var attendanceGpsRadius = Math.round(Number(value.attendanceGpsRadius || value.gpsRadius || 45));
+  if (!isFinite(attendanceGpsRadius) || attendanceGpsRadius < 1) attendanceGpsRadius = 45;
 
   var profile = {
     logo: normalizePharmacyLogo_(value.logo || value.logoUrl || value.logoData || ''),
@@ -1248,6 +1304,8 @@ function sanitizePharmacyProfile_(value) {
     latitude: String(value.latitude || value.lat || '').trim(),
     longitude: String(value.longitude || value.lng || value.lon || '').trim(),
     gpsAccuracy: String(value.gpsAccuracy || value.accuracy || '').trim(),
+    attendanceGpsEnabled: attendanceGpsEnabled,
+    attendanceGpsRadius: attendanceGpsRadius,
     licenseNumber: String(value.licenseNumber || value.sia || value.suratIzinApotek || '').trim(),
     licenseExpiry: String(value.licenseExpiry || value.siaExpiry || '').trim(),
     responsiblePharmacist: String(value.responsiblePharmacist || value.apotekerPenanggungJawab || '').trim(),
@@ -1777,7 +1835,7 @@ function saveRestockPhotoIfNeeded_(photo, item) {
 
   var parsed = parseImageDataUrl_(photo);
   var folder = getOrCreateRestockPhotoFolder_();
-  var fileName = 'restock_' + buildFaceIdLabel_(item.medicineName || item.nama || item.name || item.code || 'obat') + '_' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') + '.jpg';
+  var fileName = 'restock_' + buildFileLabel_(item.medicineName || item.nama || item.name || item.code || 'obat') + '_' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd_HHmmss') + '.jpg';
   var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
   var file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -2024,11 +2082,6 @@ function handleSaveLocalRecord_(data) {
   var rowNumber = rowIndex >= 1 ? rowIndex + 1 : sheet.getLastRow() + 1;
   var now = new Date().toISOString();
   var normalizedHeaders = headers.map(normalizeHeaderKey_);
-  var previousRecord = rowIndex >= 1 ? readLocalRecordFromRow_(headers, values[rowIndex], config) : {};
-
-  if (config.type == 'employee') {
-    record = saveEmployeeFaceIdIfNeeded_(record, previousRecord);
-  }
 
   config.fields.forEach(function(field) {
     var column = findHeaderColumn_(normalizedHeaders, config.aliases[field] || [field]);
@@ -2062,90 +2115,6 @@ function handleSaveLocalRecord_(data) {
   });
 }
 
-function saveEmployeeFaceIdIfNeeded_(record, previousRecord) {
-  record = record || {};
-  previousRecord = previousRecord || {};
-
-  var photo = String(pickRequestValueAllowEmpty_(record, ['faceIdPhoto', 'face_id_photo', 'facePhoto', 'fotoWajah', 'foto_wajah', 'wajah']) || '').trim();
-
-  if (!photo) {
-    return record;
-  }
-
-  var displayName = String(pickRequestValueAllowEmpty_(record, ['name', 'nama', 'namaLengkap', 'nama_lengkap', 'namaKaryawan']) || previousRecord.name || 'karyawan').trim();
-  var label = buildFaceIdLabel_(displayName);
-  var githubFace = findFaceIdFileByEmployeeName_(displayName);
-
-  record.faceIdFileId = '';
-  record.face_id_file_id = '';
-  record.faceIdUrl = githubFace ? githubFace.fileUrl : '';
-  record.face_id_url = githubFace ? githubFace.fileUrl : '';
-  record.faceIdImageUrl = githubFace ? githubFace.imageUrl : '';
-  record.face_id_image_url = githubFace ? githubFace.imageUrl : '';
-  record.faceIdLabel = label;
-  record.face_id_label = label;
-  record.faceIdRegisteredAt = githubFace ? new Date().toISOString() : '';
-  record.face_id_registered_at = githubFace ? new Date().toISOString() : '';
-  record.faceIdPhoto = '';
-  record.face_id_photo = '';
-
-  return record;
-}
-
-function saveEmployeeFaceIdPhoto_(photo, label, previousFileId) {
-  var parsed = parseImageDataUrl_(photo);
-  var fileName = label + '.jpg';
-
-  try {
-    var folder = getOrCreateFaceIdFolder_();
-
-    if (previousFileId) {
-      try {
-        DriveApp.getFileById(previousFileId).setTrashed(true);
-      } catch (error) {
-        // File lama mungkin sudah dihapus manual dari Drive.
-      }
-    }
-
-    var blob = Utilities.newBlob(Utilities.base64Decode(parsed.base64), parsed.mimeType, fileName);
-    var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-    return {
-      fileId: file.getId(),
-      fileUrl: file.getUrl(),
-      imageUrl: buildDriveImageUrl_(file.getId()),
-      registeredAt: new Date().toISOString()
-    };
-  } catch (error) {
-    // Fallback untuk deployment yang belum mendapat scope DriveApp.
-    // Foto sudah diperkecil di frontend agar aman disimpan sebagai data URL di sheet.
-    return {
-      fileId: '',
-      fileUrl: '',
-      imageUrl: String(photo || '').length <= 48000 ? photo : '',
-      registeredAt: new Date().toISOString(),
-      warning: String(error || '')
-    };
-  }
-}
-
-function isImageDataUrl_(value) {
-  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(String(value || '').trim());
-}
-
-function pushInlineFaceRecord_(faces, employee, imageDataUrl) {
-  faces.push({
-    label: employee.faceIdLabel || buildFaceIdLabel_(employee.name),
-    name: employee.name,
-    fileId: employee.faceIdFileId || '',
-    fileUrl: employee.faceIdUrl || '',
-    imageUrl: imageDataUrl,
-    imageDataUrl: imageDataUrl,
-    registeredAt: employee.faceIdRegisteredAt || ''
-  });
-}
-
 function parseImageDataUrl_(value) {
   var text = String(value || '').trim();
   var match = text.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
@@ -2163,17 +2132,7 @@ function parseImageDataUrl_(value) {
   };
 }
 
-function getOrCreateFaceIdFolder_() {
-  var folders = DriveApp.getFoldersByName(FACE_ID_FOLDER_NAME);
-
-  if (folders.hasNext()) {
-    return folders.next();
-  }
-
-  return DriveApp.createFolder(FACE_ID_FOLDER_NAME);
-}
-
-function buildFaceIdLabel_(name) {
+function buildFileLabel_(name) {
   var text = String(name || 'karyawan')
     .trim()
     .replace(/_/g, ' ')
@@ -2185,35 +2144,6 @@ function buildFaceIdLabel_(name) {
 
 function buildDriveImageUrl_(fileId) {
   return fileId ? 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(fileId) : '';
-}
-
-function parseDriveFileId_(value) {
-  var text = String(value || '').trim();
-  var match = text.match(/[?&]id=([^&]+)/) || text.match(/\/d\/([^/]+)/);
-  return match ? decodeURIComponent(match[1]) : '';
-}
-
-function handleListFaceDatabase_(data) {
-  var faces = getGithubFaceIdDatabaseIndex_().map(function(face) {
-    return {
-      label: face.label,
-      name: face.label,
-      fileId: '',
-      fileUrl: face.fileUrl,
-      imageUrl: face.imageUrl,
-      imageDataUrl: '',
-      registeredAt: ''
-    };
-  });
-
-  return jsonOutput_({
-    success: true,
-    ok: true,
-    source: 'github',
-    folder: 'database_wajah',
-    faces: faces,
-    total: faces.length
-  });
 }
 
 function handleDeleteLocalRecord_(data) {
@@ -2272,11 +2202,6 @@ function getLocalRecordConfig_(type) {
         job: ['job', 'jabatan', 'role', 'posisi'],
         email: ['email', 'gmail', 'alamatemail'],
         status: ['status', 'aktif', 'keterangan'],
-        face_id_file_id: ['face_id_file_id', 'faceidfileid', 'facefileid', 'fileidwajah'],
-        face_id_url: ['face_id_url', 'faceidurl', 'faceurl', 'urlwajah'],
-        face_id_image_url: ['face_id_image_url', 'faceidimageurl', 'faceimageurl'],
-        face_id_label: ['face_id_label', 'faceidlabel', 'facelabel'],
-        face_id_registered_at: ['face_id_registered_at', 'faceidregisteredat', 'faceregisteredat'],
         updated_at: ['updated_at', 'updatedat', 'updated']
       }
     };
@@ -2356,7 +2281,7 @@ function readLocalRecordFromRow_(headers, row, config) {
   });
 
   if (config.type == 'employee') {
-    return attachEmployeeFaceIdFromDatabase_({
+    return {
       name: pickDataValue_(raw, config.aliases.name),
       username: pickDataValue_(raw, config.aliases.username),
       phone: normalizePhoneValue_(pickDataValue_(raw, config.aliases.phone)),
@@ -2364,13 +2289,8 @@ function readLocalRecordFromRow_(headers, row, config) {
       job: pickDataValue_(raw, config.aliases.job),
       email: pickDataValue_(raw, config.aliases.email),
       status: pickDataValue_(raw, config.aliases.status) || 'Aktif',
-      faceIdFileId: pickDataValue_(raw, config.aliases.face_id_file_id),
-      faceIdUrl: pickDataValue_(raw, config.aliases.face_id_url),
-      faceIdImageUrl: pickDataValue_(raw, config.aliases.face_id_image_url),
-      faceIdLabel: pickDataValue_(raw, config.aliases.face_id_label),
-      faceIdRegisteredAt: pickDataValue_(raw, config.aliases.face_id_registered_at),
       updatedAt: pickDataValue_(raw, config.aliases.updated_at)
-    });
+    };
   }
 
   return {
@@ -2383,112 +2303,6 @@ function readLocalRecordFromRow_(headers, row, config) {
 }
 
 
-
-function attachEmployeeFaceIdFromDatabase_(employee) {
-  employee = employee || {};
-
-  if (employee.faceIdFileId || employee.faceIdUrl || employee.faceIdImageUrl) {
-    return employee;
-  }
-
-  var found = findFaceIdFileByEmployeeName_(employee.name);
-  if (!found) return employee;
-
-  employee.faceIdFileId = found.fileId;
-  employee.faceIdUrl = found.fileUrl;
-  employee.faceIdImageUrl = found.imageUrl;
-  employee.faceIdLabel = found.label;
-  employee.faceIdRegisteredAt = found.registeredAt;
-  return employee;
-}
-
-function findFaceIdFileByEmployeeName_(name) {
-  var wanted = normalizeFaceIdName_(name);
-  if (!wanted) return null;
-
-  var index = getFaceIdDatabaseIndex_();
-
-  for (var i = 0; i < index.length; i += 1) {
-    var item = index[i];
-    if (item.key == wanted || item.key.indexOf(wanted) >= 0 || wanted.indexOf(item.key) >= 0) {
-      return item;
-    }
-  }
-
-  return null;
-}
-
-function getFaceIdDatabaseIndex_() {
-  return getGithubFaceIdDatabaseIndex_();
-}
-
-function getGithubFaceIdDatabaseIndex_() {
-  if (FACE_ID_DATABASE_INDEX_CACHE) return FACE_ID_DATABASE_INDEX_CACHE;
-
-  var list = [];
-
-  try {
-    var response = UrlFetchApp.fetch(GITHUB_FACE_DB_API_URL, {
-      muteHttpExceptions: true,
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'Nadhira-Farma-Apps-Script'
-      }
-    });
-
-    if (response.getResponseCode() >= 200 && response.getResponseCode() < 300) {
-      var files = JSON.parse(response.getContentText() || '[]');
-
-      files.forEach(function(file) {
-        var name = String(file.name || '').trim();
-        if (!/\.(jpe?g|png|webp)$/i.test(name)) return;
-
-        var label = name.replace(/\.[^.]+$/, '');
-        var key = normalizeFaceIdName_(label);
-        if (!key) return;
-
-        list.push({
-          key: key,
-          label: label,
-          fileId: '',
-          fileUrl: String(file.html_url || ''),
-          imageUrl: String(file.download_url || ''),
-          registeredAt: ''
-        });
-      });
-    }
-  } catch (error) {
-    // Database wajah absensi bersumber dari folder GitHub database_wajah.
-  }
-
-  if (!list.length) {
-    DEFAULT_GITHUB_FACE_LABELS.forEach(function(label) {
-      var key = normalizeFaceIdName_(label);
-      if (!key) return;
-
-      list.push({
-        key: key,
-        label: label,
-        fileId: '',
-        fileUrl: 'https://github.com/nadhirafarma/absensi_apotek/blob/main/database_wajah/' + encodeURIComponent(label) + '.jpg',
-        imageUrl: GITHUB_FACE_DB_RAW_BASE + '/' + encodeURIComponent(label) + '.jpg',
-        registeredAt: ''
-      });
-    });
-  }
-
-  FACE_ID_DATABASE_INDEX_CACHE = list;
-  return list;
-}
-
-function normalizeFaceIdName_(value) {
-  return normalizeLoginKey_(String(value || '')
-    .replace(/\.[^.]+$/, '')
-    .replace(/_/g, ' ')
-    .replace(/[-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()).replace(/\s+/g, '');
-}
 
 function findLocalRecordRowIndex_(values, headers, config, criteria) {
   criteria = criteria || {};
@@ -3254,13 +3068,20 @@ function hasRequestKey_(obj, keys) {
 }
 
 function normalizeUserMenuValue_(value) {
-  if (Object.prototype.toString.call(value) == '[object Array]') {
-    return value.map(function(item) {
-      return String(item || '').trim();
-    }).filter(Boolean).join(',');
-  }
+  var values = Object.prototype.toString.call(value) == '[object Array]'
+    ? value
+    : String(value || '').split(/[,;|]/);
+  var seen = {};
 
-  return String(value || '').trim();
+  return values.map(function(item) {
+    var menu = String(item || '').trim();
+    var legacyKey = menu.toLowerCase().replace(/[\s-]+/g, '_');
+    return legacyKey == 'absensi_face_id' ? 'absensi' : menu;
+  }).filter(function(menu) {
+    if (!menu || seen[menu]) return false;
+    seen[menu] = true;
+    return true;
+  }).join(',');
 }
 
 function normalizeUserPreferencesValue_(value) {

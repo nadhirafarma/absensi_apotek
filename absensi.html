@@ -3,15 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Absensi Face ID - Indo Apotek</title>
-  <meta name="description" content="Absensi Face ID Indo Apotek dengan deteksi wajah ringan dan validasi GPS cepat.">
+  <title>Absensi - Indo Apotek</title>
+  <meta name="description" content="Absensi Indo Apotek dengan bukti foto dan validasi GPS.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/attendance.css?v=20260619-face-github-v37">
-  <script defer src="assets/auth-guard.js?v=20260619-face-github-v37"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script defer src="assets/attendance.js?v=20260619-face-github-v37"></script>
+  <link rel="stylesheet" href="assets/attendance.css?v=20260718-absensi-cleanup-v1">
+  <script defer src="assets/auth-guard.js?v=20260716-photo-v1"></script>
+  <script defer src="assets/attendance.js?v=20260718-absensi-cleanup-v1"></script>
 </head>
 <body>
   <main class="attendance-shell">
@@ -20,7 +19,7 @@
         <a class="brand-link" href="index.html" aria-label="Kembali ke menu utama">
           <img src="assets/indo-apotek-mark.png" alt="">
           <span>
-            <strong>Absensi Face ID</strong>
+            <strong>Absensi</strong>
             <small>Indo Apotek</small>
           </span>
         </a>
@@ -28,21 +27,20 @@
       </header>
 
       <div class="status-row" aria-label="Status sistem" hidden>
-        <span class="status-pill" id="modelStatus">Model disiapkan</span>
+        <span class="status-pill" id="modelStatus">Kamera disiapkan</span>
         <span class="status-pill" id="gpsStatus">GPS disiapkan</span>
       </div>
 
       <div class="camera-box">
         <video id="video" autoplay muted playsinline></video>
-        <canvas id="faceCanvas"></canvas>
-        <div class="scan-guide" aria-hidden="true"></div>
       </div>
 
       <canvas id="captureCanvas" hidden></canvas>
 
-      <p class="main-status" id="statusText">Menyiapkan kamera dan Face ID...</p>
+      <p class="main-status" id="statusText">Menyiapkan kamera absensi...</p>
 
       <div class="actions">
+        <button class="primary-button" id="attendanceButton" type="button" hidden disabled>Absen Sekarang</button>
         <button class="secondary-button" id="retryButton" type="button" hidden>Coba lagi</button>
         <button class="danger-button" id="cancelButton" type="button">Batalkan absensi</button>
       </div>
@@ -59,7 +57,7 @@
         </svg>
       </div>
       <h2 id="profileRequiredTitle">Lengkapi Profil Terlebih Dahulu</h2>
-      <p>Absensi Face ID belum bisa dilanjutkan karena data akun profil masih belum lengkap.</p>
+      <p>Absensi belum bisa dilanjutkan karena data akun profil masih belum lengkap.</p>
       <p class="profile-required-missing" id="profileRequiredMissing"></p>
       <a class="primary-button profile-required-button" href="index.html?view=akun-profil">Lengkapi Profil</a>
     </div>
@@ -145,7 +143,7 @@
         </svg>
       </span>
       <h2 id="attendanceChoiceTitle">Pilih <span>Shift</span> dan Jenis Absensi</h2>
-      <p>Face ID akan dimulai setelah shift dan jenis absensi dipilih sesuai aturan waktu yang aktif.</p>
+      <p>Kamera akan dibuka setelah shift dan jenis absensi dipilih sesuai aturan waktu yang aktif.</p>
       <label class="attendance-choice-field">
         <span>Shift</span>
         <span class="attendance-select-shell">

@@ -203,7 +203,8 @@
     if (isLoggingOut) return;
 
     isLoggingOut = true;
-    logLogoutActivity(readSession());
+    const session = readSession();
+    logLogoutActivity(session);
     showRouteLoading("Keluar dari sistem...");
     window.setTimeout(function () {
       sessionStorage.removeItem(SESSION_KEY);
@@ -242,6 +243,8 @@
       },
       body: JSON.stringify({
         action: "saveActivityLog",
+        sessionEvent: "logout",
+        sessionToken: session.sessionToken || "",
         activity: {
           title: "Logout dari sistem",
           detail: "Akun keluar dari dashboard",

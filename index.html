@@ -8,37 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260621-ui-v46">
+  <link rel="stylesheet" href="assets/styles.css?v=20260718-absensi-cleanup-v1">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
   <script defer src="assets/app.js?v=20260621-ui-v46"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260621-ui-v46"></script>
+  <script defer src="assets/home-dashboard.js?v=20260718-absensi-cleanup-v1"></script>
 </head>
 <body data-page="home" class="dashboard-page">
-  <button class="global-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Menu">
-    <span>Menu</span>
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 7h16"></path>
-      <path d="M4 12h16"></path>
-      <path d="M4 17h16"></path>
-    </svg>
-  </button>
-
   <div class="app-layout">
     <aside class="app-sidebar" aria-label="Menu utama">
-      <div class="sidebar-brand-row">
-        <a class="sidebar-brand" href="index.html" aria-label="Identitas apotek" id="sidebarPharmacyBrand">
-          <img id="sidebarPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
-          <span class="sidebar-brand-text">
-            <strong id="sidebarPharmacyName">Apotek Anda</strong>
-            <small id="sidebarPharmacySubtitle">Sistem Informasi Apotek Digital</small>
-          </span>
-        </a>
-      </div>
-
       <nav class="sidebar-nav">
         <button class="sidebar-link is-active" type="button" data-view-target="dashboard" data-access-key="dashboard" title="Dashboard" aria-current="page">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -50,7 +31,7 @@
           </svg>
           <span class="sidebar-label">Dashboard</span>
         </button>
-        <a class="sidebar-link" href="absensi.html" data-access-key="absensi_face_id" title="Absensi Face ID">
+        <a class="sidebar-link" href="absensi.html" data-access-key="absensi" title="Absensi">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
             <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
@@ -58,7 +39,7 @@
             <path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>
-          <span class="sidebar-label">Absensi Face ID</span>
+          <span class="sidebar-label">Absensi</span>
         </a>
         <button class="sidebar-link" type="button" data-view-target="presensi" data-access-key="presensi" title="Presensi">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -250,13 +231,13 @@
           </div>
         </section>
         <div class="dashboard-title">
-          <a class="home-brand-link" href="index.html" aria-label="Indo Apotek">
-            <img id="homeHeaderPharmacyLogo" src="assets/indo-apotek-mark.png" alt="">
-            <span class="home-brand-copy">
-              <strong id="homeHeaderPharmacyName">Apotek Anda</strong>
-              <small id="homeHeaderPharmacySubtitle">Sistem Informasi Apotek Digital</small>
+          <button class="header-pharmacy-toggle" id="sidebarToggle" type="button" aria-label="Buka sidebar" title="Buka sidebar">
+            <img id="headerToggleLogo" src="assets/indo-apotek-mark.png" alt="Logo Apotek">
+            <span class="header-pharmacy-copy">
+              <strong id="headerToggleName">Apotek Anda</strong>
+              <small id="headerToggleSubtitle">Sistem Informasi Apotek Digital</small>
             </span>
-          </a>
+          </button>
           <h1 id="dashboardViewTitle">Dashboard</h1>
         </div>
 
@@ -376,8 +357,8 @@
                 </span>
                 <strong>Dashboard</strong>
               </button>
-              <a class="mobile-home-card" href="absensi.html" data-access-key="absensi_face_id">
-                <span class="mobile-home-icon icon-face">
+              <a class="mobile-home-card" href="absensi.html" data-access-key="absensi">
+                <span class="mobile-home-icon icon-attendance">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M4 7V5a1 1 0 0 1 1-1h2"></path>
                     <path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
@@ -386,7 +367,7 @@
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </span>
-                <strong>Absensi<br>Face ID</strong>
+                <strong>Absensi</strong>
               </a>
               <button class="mobile-home-card" type="button" data-view-target="presensi" data-access-key="presensi">
                 <span class="mobile-home-icon icon-presence">
@@ -488,8 +469,12 @@
                 <strong>Manajemen<br>Pengguna</strong>
               </button>
               <button class="mobile-home-card" type="button" data-view-target="data-role" data-access-key="data_role">
-                <span class="menu-icon menu-indigo">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path><path d="M17 13l1.5 1.5L22 11"></path></svg>
+                <span class="mobile-home-icon icon-role">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3 5 6v5.4c0 4.2 2.8 8 7 9.6 4.2-1.6 7-5.4 7-9.6V6l-7-3Z"></path>
+                    <path d="M8.2 7.4 12 5.8l3.8 1.6"></path>
+                    <path d="m9 12.2 2.1 2.1 4.1-4.5"></path>
+                  </svg>
                 </span>
                 <strong>Data Role</strong>
               </button>
@@ -505,14 +490,54 @@
 
         <section class="dashboard-view is-active" id="view-dashboard" data-view="dashboard">
           <section class="dashboard-stats report-stats" aria-label="Ringkasan dashboard">
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="all"><span class="stat-icon stat-blue">D</span><span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="active"><span class="stat-icon stat-purple">A</span><span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="inactive"><span class="stat-icon stat-pink">N</span><span><small>Obat Nonaktif</small><strong id="reportInactive">0</strong><em>Stok kosong</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="expiring"><span class="stat-icon stat-orange">!</span><span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="expired"><span class="stat-icon stat-pink">X</span><span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="empty"><span class="stat-icon stat-purple">0</span><span><small>Stok Habis</small><strong id="reportEmpty">0</strong><em>Stok tepat 0</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="low"><span class="stat-icon stat-orange">S</span><span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span></article>
-            <article class="stat-card" role="button" tabindex="0" data-report-filter="minus"><span class="stat-icon stat-pink">âˆ’</span><span><small>Stok Minus</small><strong id="reportMinus">0</strong><em>Stok kurang dari 0</em></span></article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="all">
+              <span class="stat-icon stat-total" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="3.5"></ellipse><path d="M5 5.5v6c0 1.9 3.1 3.5 7 3.5s7-1.6 7-3.5v-6"></path><path d="M5 11.5v6c0 1.9 3.1 3.5 7 3.5s7-1.6 7-3.5v-6"></path></svg>
+              </span>
+              <span><small>Total Data</small><strong id="reportTotal">0</strong><em>Semua obat</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="active">
+              <span class="stat-icon stat-active" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path class="stat-icon-fill" d="M7.5 12h9v4.5a4.5 4.5 0 0 1-9 0z"></path><rect x="7.5" y="2.5" width="9" height="19" rx="4.5"></rect><path class="stat-icon-divider" d="M7.5 12h9"></path></g></svg>
+              </span>
+              <span><small>Obat Aktif</small><strong id="reportActive">0</strong><em>Status aktif</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="inactive">
+              <span class="stat-icon stat-inactive" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle class="stat-icon-fill" cx="12" cy="12" r="8.25"></circle><path class="stat-icon-cut" d="M6.2 6.2 17.8 17.8"></path><path class="stat-icon-cut stat-icon-cut-short" d="M14.3 4.2c-1.1 2.1-1.5 4.1-1.1 6.1"></path></svg>
+              </span>
+              <span><small>Obat Nonaktif</small><strong id="reportInactive">0</strong><em>Stok kosong</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="expiring">
+              <span class="stat-icon stat-expiring" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M7 3.5h10M7 20.5h10M8.2 3.5v3.2c0 2.1 3.8 3.2 3.8 5.3s-3.8 3.2-3.8 5.3v3.2M15.8 3.5v3.2c0 2.1-3.8 3.2-3.8 5.3s3.8 3.2 3.8 5.3v3.2"></path><path class="stat-icon-fill" d="m9.4 17.7 2.6-2.4 2.6 2.4v1H9.4z"></path></svg>
+              </span>
+              <span><small>Akan Expired</small><strong id="reportExpiring">0</strong><em>90 hari ke depan</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="expired">
+              <span class="stat-icon stat-expired" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 7.5h14M8 3.5v3M16 3.5v3M6 5h12a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 18 19H6a1.5 1.5 0 0 1-1.5-1.5v-11A1.5 1.5 0 0 1 6 5Z"></path><circle class="stat-icon-fill" cx="17.5" cy="17.5" r="4"></circle><path class="stat-icon-white" d="M17.5 15.5v4M15.5 17.5h4"></path></svg>
+              </span>
+              <span><small>Obat Expired</small><strong id="reportExpired">0</strong><em>Lewat tanggal</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="empty">
+              <span class="stat-icon stat-empty" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path class="stat-icon-fill" d="M5.2 8.2h13.6v11.3a1.7 1.7 0 0 1-1.7 1.7H6.9a1.7 1.7 0 0 1-1.7-1.7z"></path><path class="stat-icon-fill" d="m3.2 6.3 5.1-3.5L12 6.1 7 9.2zM20.8 6.3l-5.1-3.5L12 6.1l5 3.1z"></path><path class="stat-icon-white" d="m9.5 13 5 5m0-5-5 5"></path></svg>
+              </span>
+              <span><small>Stok Habis</small><strong id="reportEmpty">0</strong><em>Stok tepat 0</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="low">
+              <span class="stat-icon stat-low" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect class="stat-icon-fill" x="4" y="9" width="4" height="11" rx=".8"></rect><rect class="stat-icon-fill" x="10" y="12" width="4" height="8" rx=".8"></rect><rect class="stat-icon-fill" x="16" y="15" width="4" height="5" rx=".8"></rect><path d="m5 4 6 5 7-3"></path><path d="m15.5 4.5 2.5 1.5-1.5 2.5"></path></svg>
+              </span>
+              <span><small>Stok Menipis</small><strong id="reportLow">0</strong><em>Di bawah stok min</em></span>
+            </article>
+            <article class="stat-card" role="button" tabindex="0" data-report-filter="minus">
+              <span class="stat-icon stat-minus" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle class="stat-icon-fill" cx="12" cy="12" r="8.25"></circle><path class="stat-icon-white" d="M8 12h8"></path></svg>
+              </span>
+              <span><small>Stok Minus</small><strong id="reportMinus">0</strong><em>Stok kurang dari 0</em></span>
+            </article>
           </section>
         </section>
 
@@ -1324,13 +1349,12 @@
               <div class="module-head">
                 <div>
                   <h2>Akun & Profil</h2>
-                  <p>Kelola identitas, keamanan, dan preferensi tampilan perangkat ini.</p>
+                  <p>Kelola identitas, keamanan, dan pengaturan operasional apotek.</p>
                 </div>
               </div>
               <div class="profile-tabs" role="tablist" aria-label="Pengaturan akun">
                 <button class="profile-tab is-active" type="button" data-profile-tab="profil">Profil</button>
                 <button class="profile-tab" type="button" data-profile-tab="keamanan">Keamanan</button>
-                <button class="profile-tab" type="button" data-profile-tab="preferensi">Preferensi</button>
                 <button class="profile-tab" type="button" data-profile-tab="identitas-apotek">Identitas Apotek</button>
                 <button class="profile-tab" type="button" data-profile-tab="shift-absensi">Shift Absensi</button>
               </div>
@@ -1384,24 +1408,6 @@
                 </form>
               </section>
 
-              <section class="profile-panel" data-profile-panel="preferensi">
-                <button class="profile-panel-close" type="button" data-profile-panel-close aria-label="Tutup preferensi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
-                <label class="setting-row">
-                  <span>
-                    <strong>Mode Ringkas</strong>
-                    <small>Padatkan jarak antar elemen agar lebih nyaman untuk layar kecil.</small>
-                  </span>
-                  <input id="profileCompactToggle" type="checkbox">
-                </label>
-                <label class="setting-row">
-                  <span>
-                    <strong>Mulai Dari Dashboard</strong>
-                    <small>Setiap login diarahkan ke ringkasan dashboard terlebih dahulu.</small>
-                  </span>
-                  <input id="profileStartDashboardToggle" type="checkbox">
-                </label>
-              </section>
-
               <form class="profile-panel pharmacy-identity-panel" id="pharmacyIdentityForm" data-profile-panel="identitas-apotek">
                 <button class="profile-panel-close" type="button" data-profile-panel-close aria-label="Tutup identitas apotek"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
                 <div class="pharmacy-identity-head">
@@ -1430,6 +1436,14 @@
                   </label>
                   <label>Latitude<input id="pharmacyLatitudeInput" type="text" readonly aria-readonly="true"></label>
                   <label>Longitude<input id="pharmacyLongitudeInput" type="text" readonly aria-readonly="true"></label>
+                  <label>GPS Absensi
+                    <select id="pharmacyAttendanceGpsSelect">
+                      <option value="enabled">Aktifkan GPS Absensi</option>
+                      <option value="disabled">Nonaktifkan GPS</option>
+                    </select>
+                  </label>
+                  <label>Jarak dari Titik GPS (Meter)<input id="pharmacyGpsRadiusInput" type="number" min="1" step="1" inputmode="numeric" placeholder="45"></label>
+                  <p class="gps-settings-note span-2">Jika GPS absensi aktif, karyawan hanya dapat absen dalam jarak meter yang ditentukan dari titik GPS apotek.</p>
                   <label>Surat Izin Apotek (SIA)<input id="pharmacyLicenseInput" type="text" placeholder="Nomor SIA"></label>
                   <label>Masa Berlaku SIA<input id="pharmacyLicenseExpiryInput" type="date"></label>
                   <label>Apoteker Penanggung Jawab<input id="pharmacyResponsibleInput" type="text" autocomplete="name"></label>

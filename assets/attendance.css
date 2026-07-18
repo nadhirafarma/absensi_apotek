@@ -149,8 +149,7 @@ button {
     linear-gradient(135deg, var(--blue), var(--pink)) border-box;
 }
 
-video,
-#faceCanvas {
+video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -160,18 +159,6 @@ video,
 video {
   object-fit: cover;
   transform: scaleX(-1);
-}
-
-#faceCanvas {
-  pointer-events: none;
-}
-
-.scan-guide {
-  position: absolute;
-  inset: 14%;
-  border: 2px solid rgba(255, 255, 255, 0.58);
-  border-radius: 8px;
-  pointer-events: none;
 }
 
 .main-status {

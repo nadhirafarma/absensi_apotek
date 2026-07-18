@@ -146,6 +146,7 @@
         address: result.address || result.alamat || "",
         preferences: result.preferences || result.profilePreferences || "",
         profilePhoto: result.profilePhoto || result.photo || "",
+        sessionToken: result.sessionToken || "",
         loginAt: Date.now(),
         expiresAt: Date.now() + SESSION_DURATION_MS
       };
@@ -208,6 +209,14 @@
       },
       body: JSON.stringify({
         action: "saveActivityLog",
+        sessionEvent: "login",
+        sessionToken: session.sessionToken || "",
+        sessionExpiresAt: session.expiresAt || 0,
+        name: session.name || "",
+        username: session.username || "",
+        email: session.email || "",
+        role: session.role || "",
+        status: session.status || "Aktif",
         activity: {
           title: "Login ke sistem",
           detail: "Akun berhasil masuk ke dashboard",
@@ -444,6 +453,7 @@
   }
 
   async function finishLogin(session, username, password) {
+    session.sessionToken = session.sessionToken || createSessionToken();
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
     logLoginActivity(session);
 
@@ -458,6 +468,15 @@
       localStorage.removeItem(REMEMBER_PASSWORD_KEY);
       localStorage.removeItem(CACHED_AUTH_KEY);
     }
+  }
+
+  function createSessionToken() {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const bytes = new Uint8Array(24);
+      window.crypto.getRandomValues(bytes);
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+    return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
   }
 
   async function cacheSuccessfulLogin(username, password, session) {
