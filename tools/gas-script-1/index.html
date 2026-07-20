@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <base target="_top">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+
+    body{
+      margin:0;
+      padding:0;
+      background:#eef2f7;
+      font-family:Arial,sans-serif;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+
+    .card{
+      width:380px;
+      background:white;
+      border-radius:25px;
+      padding:25px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.1);
+      text-align:center;
+    }
+
+    h1{
+      color:#1e3a5f;
+      margin-bottom:20px;
+      font-size:30px;
+    }
+
+    video{
+      width:100%;
+      height:260px;
+      background:black;
+      border-radius:20px;
+      object-fit:cover;
+    }
+
+    button{
+      width:100%;
+      padding:16px;
+      margin-top:20px;
+      border:none;
+      border-radius:15px;
+      background:#2563eb;
+      color:white;
+      font-size:18px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#1d4ed8;
+    }
+
+    #status{
+      margin-top:15px;
+      color:#555;
+      font-size:15px;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+  <h1>ABSENSI APOTEK NADHIRA FARMA</h1>
+
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline>
+  </video>
+
+  <button id="btnAbsen">
+    ABSEN SEKARANG
+  </button>
+
+  <div id="status">
+    Menunggu kamera...
+  </div>
+
+</div>
+
+<canvas
+  id="canvas"
+  width="640"
+  height="480"
+  style="display:none;">
+</canvas>
+
+<script>
+
+const video = document.getElementById("video");
+const statusText = document.getElementById("status");
+const btn = document.getElementById("btnAbsen");
+
+async function startCamera(){
+
+  statusText.innerHTML = "Mengaktifkan kamera...";
+
+  try {
+
+const stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: "user",
+    width: { ideal: 640 },
+    height: { ideal: 480 }
+  },
+  audio: false
+});
+video.setAttribute("autoplay", "");
+video.setAttribute("muted", "");
+video.setAttribute("playsinline", "");
+
+    video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+
+      video.play();
+
+      statusText.innerHTML = "✅ Kamera aktif";
+
+    };
+
+  } catch(err){
+
+    console.log(err);
+
+    statusText.innerHTML =
+      "❌ Kamera gagal dibuka";
+
+  }
+
+}
+
+startCamera();
+
+btn.addEventListener("click", function(){
+
+  statusText.innerHTML = "📸 Mengambil foto...";
+
+  const canvas = document.getElementById("canvas");
+
+  const context = canvas.getContext("2d");
+
+  context.drawImage(video,0,0,640,480);
+
+  const image = canvas.toDataURL("image/png");
+
+  google.script.run
+    .withSuccessHandler(function(){
+
+      document.body.innerHTML = `
+
+<div style="
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+background:#eef2f7;
+font-family:Arial;
+padding:20px;
+">
+
+  <div style="
+  background:white;
+  padding:40px;
+  border-radius:30px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+  max-width:400px;
+  width:100%;
+  ">
+
+    <div style="font-size:80px;">
+      ✅
+    </div>
+
+    <h1 style="
+    color:#1e3a8a;
+    margin-top:10px;
+    ">
+      ABSEN BERHASIL
+    </h1>
+
+    <p style="
+    font-size:22px;
+    font-weight:bold;
+    margin-top:20px;
+    ">
+      ${nama.replaceAll("_"," ")}
+    </p>
+
+    <p style="
+    margin-top:15px;
+    font-size:18px;
+    color:#444;
+    ">
+      Kamu sudah absen hari ini.
+    </p>
+
+    <p style="
+    margin-top:10px;
+    color:green;
+    font-weight:bold;
+    ">
+      🎉 Selamat bekerja
+    </p>
+
+  </div>
+
+</div>
+
+`;
+
+    })
+    .simpanFoto(image);
+
+});
+
+</script>
+
+</body>
+</html>

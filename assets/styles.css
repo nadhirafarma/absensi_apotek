@@ -2393,10 +2393,10 @@ body.has-search-popover .footer {
 body[data-page="home"] {
   background:
     linear-gradient(180deg, rgba(248, 252, 255, 0.96), rgba(237, 247, 255, 0.96)),
-    url("indo-apotek-mark.png") left 2vw top 150px / 170px auto no-repeat,
     var(--bg);
   overflow-x: hidden;
 }
+
 
 body[data-page="home"]::after {
   content: "";
@@ -7675,6 +7675,31 @@ body::before {
   display: none;
 }
 
+/* Hindari overlay/ikon proses menahan interaksi setelah status hidden berubah. */
+.app-loading-overlay[hidden],
+.route-loading-overlay[hidden] {
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Semua tabel tetap dapat digeser horizontal tanpa mengunci scroll halaman di mobile. */
+@media (max-width: 900px) {
+  .data-table-wrap,
+  .attendance-table-wrap,
+  .purchase-table-wrap,
+  .purchase-product-table-wrap,
+  .restock-table-wrap,
+  .table-scroll,
+  .table-wrapper {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y pinch-zoom !important;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+}
+
 .app-loading-card {
   display: grid;
   justify-items: center;
@@ -9002,7 +9027,7 @@ body.dashboard-modal-open #view-data-obat.is-active .data-workspace > .data-tool
 
 .quick-page-info {
   color: #58709b;
-  font-size: 0.73rem;
+  font-size: 0.76rem;
   font-weight: 800;
 }
 
@@ -9644,6 +9669,16 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
 
   .mobile-bottom-nav button.is-active {
     color: #1478ee;
+  }
+
+  .mobile-bottom-nav .is-featured.is-active,
+  .mobile-bottom-nav .is-featured.is-active span {
+    color: #fff !important;
+  }
+
+  .mobile-bottom-nav .is-featured.is-active svg {
+    color: #fbbf24 !important;
+    stroke: #fbbf24 !important;
   }
 
   .mobile-bottom-nav .is-featured {
@@ -25478,6 +25513,405 @@ body.profile-panel-modal-open {
   }
 }
 
+/* Task 1: samakan ukuran font footer "Menampilkan x - y dari z data" dengan status pencarian (.68rem). */
+#view-cari-data-obat #dashboardPageInfo,
+#view-cari-data-obat #quickPageInfo {
+  font-size: .68rem !important;
+  font-weight: 500 !important;
+  color: #536887 !important;
+}
+
+/* Task 3: lebarkan kolom "Hak Akses Menu" agar isi tidak memanjang & tidak menumpuk kolom Aksi. */
+#view-data-role .role-access-table th:nth-child(4),
+#view-data-role .role-access-table td:nth-child(4) {
+  min-width: 260px !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#view-data-role .role-access-table th:last-child,
+#view-data-role .role-access-table td:last-child {
+  width: 64px !important;
+  min-width: 64px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+
+/* 20260719i: absolute last guard — center medicine accent, remove stray mobile header logo. */
+#view-cari-data-obat.is-active .quick-medicine-name {
+  position: relative !important;
+  overflow: hidden !important;
+  align-items: center !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-name::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+#view-cari-data-obat.is-active .quick-name-accent {
+  position: absolute !important;
+  z-index: 1 !important;
+  left: 10px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  display: block !important;
+  width: 4px !important;
+  height: 18px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 16px) !important;
+  margin: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #2388ff, #2ad4ff) !important;
+  transform: translate3d(0, -50%, 0) !important;
+  pointer-events: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-tone-2 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-name-accent {
+  background: linear-gradient(180deg, #ff4770, #ff9d57) !important;
+}
+
+#view-cari-data-obat.is-active .quick-tone-3 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-name-accent {
+  background: linear-gradient(180deg, #17a7ef, #29d0bb) !important;
+}
+
+#view-cari-data-obat.is-active .quick-tone-4 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-name-accent {
+  background: linear-gradient(180deg, #7b49ff, #b64df4) !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-name strong {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active .quick-name-accent {
+    left: 10px !important;
+    width: 4px !important;
+    height: 16px !important;
+    max-height: calc(100% - 16px) !important;
+  }
+
+  html body.dashboard-page #sidebarToggle.header-pharmacy-toggle,
+  html body.dashboard-page .dashboard-topbar #sidebarToggle.header-pharmacy-toggle,
+  html body.dashboard-page .dashboard-title > #sidebarToggle.header-pharmacy-toggle,
+  html body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  html body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  html body.dashboard-page .header-pharmacy-toggle,
+  html body.dashboard-page #headerToggleLogo,
+  html body.dashboard-page .header-pharmacy-copy {
+    position: absolute !important;
+    left: -9999px !important;
+    top: auto !important;
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* 20260719g final guard: lock accent to the real span and remove ghost logo on mobile pages. */
+#view-cari-data-obat.is-active .quick-medicine-name::before {
+  content: none !important;
+  display: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-name-accent {
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 5px !important;
+  height: 20px !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 14px) !important;
+  border-radius: 999px !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page #sidebarToggle.header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  body.dashboard-page .dashboard-title,
+  body.home-view-active .dashboard-title {
+    padding-inline: 0 !important;
+  }
+}
+
+/* 20260719g final guard: center the medicine accent bar and hide stray header logo on mobile. */
+#view-cari-data-obat.is-active .quick-medicine-name {
+  position: relative !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  content: "" !important;
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 5px !important;
+  height: 18px !important;
+  border-radius: 999px !important;
+  transform: translateY(-50%) !important;
+  display: block !important;
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    left: 11px !important;
+    height: 16px !important;
+  }
+
+  body.dashboard-page #sidebarToggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* 20260719g mobile safety net: keep one centered accent and remove stray header logo on all mobile dashboard menus. */
+#view-cari-data-obat.is-active .quick-medicine-name::before {
+  content: none !important;
+  display: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-name-accent {
+  position: absolute !important;
+  left: 11px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 5px !important;
+  height: clamp(16px, calc(100% - 16px), 18px) !important;
+  min-height: 0 !important;
+  max-height: 18px !important;
+  border-radius: 999px !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-name-accent {
+    left: 10px !important;
+    height: clamp(14px, calc(100% - 14px), 16px) !important;
+    max-height: 16px !important;
+  }
+}
+
+/* 20260719 final mobile cleanup: center medicine accents and suppress stray header brand logo. */
+#view-cari-data-obat.is-active .quick-medicine-name {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-name::before {
+  content: none !important;
+  display: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-name-accent {
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 4px !important;
+  height: 20px !important;
+  min-height: 0 !important;
+  max-height: calc(100% - 14px) !important;
+  border-radius: 999px !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page #sidebarToggle.header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-name-accent {
+    left: 10px !important;
+    height: 16px !important;
+    max-height: calc(100% - 14px) !important;
+  }
+}
+
+/* 20260719 final guard: keep medicine color accents centered and remove stray logo on all mobile menus. */
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  top: 50% !important;
+  bottom: auto !important;
+  height: min(22px, calc(100% - 14px)) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    height: min(18px, calc(100% - 12px)) !important;
+  }
+}
+
+/* 20260719e absolute final guard: overrides the frozen quick-search block above. */
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  top: 50% !important;
+  bottom: auto !important;
+  height: min(22px, calc(100% - 14px)) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    height: min(18px, calc(100% - 12px)) !important;
+  }
+
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* 20260719d final cascade guard: keep medicine accents centered and hide stray header logo on every mobile dashboard menu. */
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  top: 50% !important;
+  bottom: auto !important;
+  height: min(22px, calc(100% - 14px)) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    height: min(18px, calc(100% - 12px)) !important;
+  }
+
+  body.dashboard-page .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* 20260719 final mobile fixes: must stay after all quick-search/header blocks. */
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  top: 50% !important;
+  bottom: auto !important;
+  height: min(22px, calc(100% - 14px)) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    height: min(18px, calc(100% - 12px)) !important;
+  }
+}
+
+/* 20260719 mobile/header cleanup: keep medicine accents centered and remove stray brand logo on mobile views. */
+#view-cari-data-obat.is-active .quick-medicine-name::before,
+#view-cari-data-obat.is-active .quick-name-accent {
+  top: 50% !important;
+  bottom: auto !important;
+  height: min(22px, calc(100% - 14px)) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+  body.dashboard-page .dashboard-topbar .header-pharmacy-toggle,
+  body.dashboard-page .dashboard-title .header-pharmacy-toggle,
+  body.dashboard-page #headerToggleLogo {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-name::before,
+  #view-cari-data-obat.is-active .quick-name-accent {
+    height: min(18px, calc(100% - 12px)) !important;
+  }
+}
+
 /* 20260621 ui-v45 quick search freeze block */
 #view-cari-data-obat.is-active {
   align-items: flex-start !important;
@@ -27396,5 +27830,385 @@ body.home-view-active .icon-role {
     top: calc(100% + 2px) !important;
     color: #60759d !important;
     white-space: nowrap !important;
+  }
+}
+
+/* 20260719c: cari-data-obat FINAL consolidated quick-search rules (single source).
+   ponytail: supersedes all earlier quick-search override blocks via cascade order + !important.
+   add when: dead earlier blocks (lines ~9185, ~25317-27426) should be pruned in a dedicated cleanup pass. */
+
+/* Layout shell: workspace owns height, results is the ONLY scroller. */
+#view-cari-data-obat.is-active {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow-x: hidden !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-workspace {
+  width: min(760px, calc(100% - 32px)) !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 14px 0 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 14px) !important;
+  max-height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 14px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Freeze row: search + scanner + Kembali always visible, never floats over cards. */
+#view-cari-data-obat.is-active .quick-search-freeze {
+  flex: 0 0 auto !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 0 4px !important;
+  background: transparent !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-sticky-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: static !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 46px !important;
+  height: 46px !important;
+  border-radius: 14px !important;
+  padding: 0 12px !important;
+  box-shadow: 0 12px 28px rgba(41, 92, 180, .10) !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search > svg {
+  flex: 0 0 21px !important;
+  width: 21px !important;
+  height: 21px !important;
+}
+
+#view-cari-data-obat.is-active #quickSearchInput {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  font-size: .94rem !important;
+  outline: none !important;
+}
+
+/* Focus indicator on search container, not inside input */
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search:focus-within {
+  outline: 2px solid rgba(24, 126, 240, 0.42) !important;
+  outline-offset: 2px !important;
+  border-radius: 14px !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search .barcode-scan-button,
+#view-cari-data-obat.is-active #quickBarcodeButton {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#view-cari-data-obat.is-active #quickBackButton {
+  height: 44px !important;
+  padding: 0 16px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Head/status: single column, sits below the search row, no overlap. */
+#view-cari-data-obat.is-active .quick-search-head {
+  flex: 0 0 auto !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-head h2,
+#view-cari-data-obat.is-active #quickSearchTitle {
+  display: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-search-head > div {
+  width: 100% !important;
+  display: block !important;
+}
+
+#view-cari-data-obat.is-active #quickSearchStatus {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  color: #4a6091 !important;
+}
+
+/* Results: the single scroll owner. */
+#view-cari-data-obat.is-active #quickResultsList,
+#view-cari-data-obat.is-active .quick-results-list {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 6px 12px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+#view-cari-data-obat.is-active .quick-results-list .quick-medicine-card:first-child {
+  margin-top: 0 !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-card {
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  gap: 8px !important;
+  border: 1px solid rgba(173, 204, 245, .85) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(237,246,255,.94)) !important;
+  box-shadow: 0 12px 28px rgba(55, 93, 145, .10) !important;
+  overflow: hidden !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-name {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 34px !important;
+  margin: 0 0 8px !important;
+  padding: 8px 12px 8px 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(131, 190, 255, .86) !important;
+  background: rgba(229, 242, 255, .86) !important;
+}
+
+#view-cari-data-obat.is-active .quick-tone-2 .quick-medicine-name,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-medicine-name {
+  border-color: rgba(255, 185, 143, .9) !important;
+  background: rgba(255, 243, 237, .92) !important;
+}
+#view-cari-data-obat.is-active .quick-tone-3 .quick-medicine-name,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-medicine-name {
+  border-color: rgba(130, 224, 229, .9) !important;
+  background: rgba(231, 254, 255, .9) !important;
+}
+#view-cari-data-obat.is-active .quick-tone-4 .quick-medicine-name,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-medicine-name {
+  border-color: rgba(183, 169, 255, .9) !important;
+  background: rgba(242, 240, 255, .92) !important;
+}
+
+/* 20260719j accent-center final: garis warna SELALU center; ::before dimatikan permanen. */
+#view-cari-data-obat.is-active .quick-medicine-name::before {
+  content: none !important;
+  display: none !important;
+}
+#view-cari-data-obat.is-active .quick-name-accent {
+  content: "" !important;
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 5px !important;
+  height: 18px !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #2388ff, #2ad4ff) !important;
+  transform: translateY(-50%) !important;
+}
+
+#view-cari-data-obat.is-active .quick-tone-2 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-name-accent { background: linear-gradient(180deg, #ff4770, #ff9d57) !important; }
+#view-cari-data-obat.is-active .quick-tone-3 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-name-accent { background: linear-gradient(180deg, #17a7ef, #29d0bb) !important; }
+#view-cari-data-obat.is-active .quick-tone-4 .quick-name-accent,
+#view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-name-accent { background: linear-gradient(180deg, #7b49ff, #b64df4) !important; }
+
+#view-cari-data-obat.is-active .quick-medicine-name strong {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  font-size: .82rem !important;
+  line-height: 1.24 !important;
+  color: #071d52 !important;
+}
+
+/* SINGLE-COLUMN detail list: every row (Stok, Harga 1..3, Expired) stacks vertically. */
+#view-cari-data-obat.is-active .quick-medicine-list {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 3px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-content: start !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-list div {
+  display: grid !important;
+  grid-template-columns: 128px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: baseline !important;
+  min-height: 0 !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-list dt,
+#view-cari-data-obat.is-active .quick-medicine-list dd {
+  margin: 0 !important;
+  min-width: 0 !important;
+  font-size: .74rem !important;
+  line-height: 1.25 !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-list dt {
+  color: #62718d !important;
+  font-weight: 800 !important;
+}
+
+#view-cari-data-obat.is-active .quick-medicine-list dd {
+  color: #061b4f !important;
+  font-weight: 900 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#view-cari-data-obat.is-active .quick-card-arrow,
+#view-cari-data-obat.is-active .quick-medicine-chevron {
+  display: none !important;
+}
+
+#view-cari-data-obat.is-active .quick-pagination {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  padding-top: 2px !important;
+}
+
+/* Preserved: Karyawan/Supplier action-menu overflow + stacking (unrelated to quick search). */
+#view-data-karyawan .simple-table-wrap,
+#view-data-supplier .simple-table-wrap {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+#view-data-karyawan .simple-table,
+#view-data-supplier .simple-table {
+  border-collapse: separate !important;
+}
+
+#view-data-karyawan .simple-table td:last-child,
+#view-data-supplier .simple-table td:last-child {
+  overflow: visible !important;
+}
+
+#view-data-karyawan .simple-table td:last-child:has(.table-row-menu[open]),
+#view-data-supplier .simple-table td:last-child:has(.table-row-menu[open]) {
+  z-index: 80 !important;
+}
+
+.table-row-menu-list {
+  will-change: left, top !important;
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active .quick-search-workspace {
+    width: calc(100% - 24px) !important;
+    max-width: 100% !important;
+    margin: 10px auto 0 !important;
+    padding: 10px 0 8px !important;
+    gap: 8px !important;
+    height: calc(100dvh - var(--mobile-header-height, 132px) - 24px) !important;
+    max-height: calc(100dvh - var(--mobile-header-height, 132px) - 24px) !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-sticky-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
+  #view-cari-data-obat.is-active #quickSearchInput {
+    font-size: .82rem !important;
+  }
+
+  #view-cari-data-obat.is-active #quickBackButton {
+    min-width: 42px !important;
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+  }
+
+  #view-cari-data-obat.is-active #quickBackButton span {
+    display: none !important;
+  }
+
+  #view-cari-data-obat.is-active #quickSearchStatus {
+    font-size: .68rem !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-card {
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-name {
+    min-height: 32px !important;
+    padding: 7px 10px 7px 22px !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-name strong {
+    font-size: .74rem !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-list div {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-list dt,
+  #view-cari-data-obat.is-active .quick-medicine-list dd {
+    font-size: .68rem !important;
   }
 }

@@ -1,0 +1,16 @@
+{
+  "attendanceAndPayroll": {
+    "scriptId": "1_WgOmzhpGLCNyx1Oucl_a8to1vUXgtdzh_bplbCP7ruFUdk9dNA6qkL_",
+    "rootDir": "tools/gas-script-1",
+    "activeWebAppDeploymentId": "AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3",
+    "activeWebAppUrl": "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec",
+    "files": {
+      "attendanceApi": "Kode.js",
+      "payrollAutomation": "slip_gaji_bulanan.js"
+    }
+  },
+  "dataObatAuth": {
+    "scriptId": "1oj9FfGGSv4FNiaK6kPqV_39kg2vESJ4RfUg_FH8mrpnzVhz2u42AiE5M",
+    "notes": "Project data obat/auth/reset password; bukan target deploy absensi/slip gaji."
+  }
+}

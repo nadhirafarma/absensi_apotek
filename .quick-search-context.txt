@@ -1,0 +1,2617 @@
+
+===== 6000-6260 =====
+6000 |     position: static;
+6001 |     flex: 0 0 auto;
+6002 |     width: 42px;
+6003 |     height: 42px;
+6004 |   }
+6005 | 
+6006 |   .dashboard-main {
+6007 |     padding: 16px;
+6008 |   }
+6009 | 
+6010 |   .dashboard-topbar {
+6011 |     gap: 12px;
+6012 |   }
+6013 | 
+6014 |   .dashboard-status {
+6015 |     display: grid;
+6016 |     grid-template-columns: repeat(2, minmax(0, 1fr));
+6017 |     width: 100%;
+6018 |   }
+6019 | 
+6020 |   .dashboard-status .profile-menu {
+6021 |     grid-column: 1 / -1;
+6022 |   }
+6023 | 
+6024 |   .dashboard-status .profile-chip {
+6025 |     width: 100%;
+6026 |   }
+6027 | 
+6028 |   .dashboard-stats,
+6029 |   .report-stats,
+6030 |   .data-toolbar,
+6031 |   .compact-toolbar,
+6032 |   .dashboard-filter-grid,
+6033 |   .profile-layout,
+6034 |   .module-grid,
+6035 |   .form-grid,
+6036 |   .medicine-form-grid {
+6037 |     grid-template-columns: 1fr;
+6038 |   }
+6039 | 
+6040 |   .profile-card dl div {
+6041 |     grid-template-columns: 1fr;
+6042 |     gap: 4px;
+6043 |   }
+6044 | 
+6045 |   .profile-card dd {
+6046 |     text-align: left;
+6047 |   }
+6048 | 
+6049 |   .profile-layout .form-grid .span-2,
+6050 |   .span-2 {
+6051 |     grid-column: auto;
+6052 |   }
+6053 | 
+6054 |   .dashboard-table th,
+6055 |   .dashboard-table td {
+6056 |     padding: 11px 12px;
+6057 |     font-size: 0.76rem;
+6058 |   }
+6059 | 
+6060 |   .dashboard-table th[data-column="nama"],
+6061 |   .dashboard-table td[data-column="nama"] {
+6062 |     min-width: 240px;
+6063 |     max-width: 280px;
+6064 |   }
+6065 | 
+6066 |   .modal-card,
+6067 |   .modal-card-wide {
+6068 |     width: 100%;
+6069 |     max-height: calc(100vh - 28px);
+6070 |     padding: 18px;
+6071 |   }
+6072 | }
+6073 | 
+6074 | @media (max-width: 560px) {
+6075 |   .dashboard-main {
+6076 |     padding: 12px;
+6077 |   }
+6078 | 
+6079 |   .dashboard-title h1 {
+6080 |     font-size: 1.55rem;
+6081 |   }
+6082 | 
+6083 |   .dashboard-status {
+6084 |     grid-template-columns: 1fr;
+6085 |   }
+6086 | 
+6087 |   .online-pill,
+6088 |   .status-item,
+6089 |   .notification-action,
+6090 |   .profile-chip {
+6091 |     min-height: 42px;
+6092 |   }
+6093 | 
+6094 |   .table-headline,
+6095 |   .dashboard-table-footer {
+6096 |     padding: 14px;
+6097 |   }
+6098 | }
+6099 | 
+6100 | .sidebar-scrim {
+6101 |   position: fixed;
+6102 |   inset: 0;
+6103 |   z-index: 900;
+6104 |   background: rgba(8, 30, 73, 0.28);
+6105 |   backdrop-filter: blur(4px);
+6106 | }
+6107 | 
+6108 | .sidebar-scrim[hidden] {
+6109 |   display: none;
+6110 | }
+6111 | 
+6112 | .import-page {
+6113 |   display: grid;
+6114 |   gap: 18px;
+6115 |   max-width: 920px;
+6116 | }
+6117 | 
+6118 | .import-page-grid {
+6119 |   display: grid;
+6120 |   grid-template-columns: minmax(220px, 1fr) minmax(240px, 1fr) auto;
+6121 |   gap: 14px;
+6122 |   align-items: end;
+6123 | }
+6124 | 
+6125 | .import-page-grid label:not(.file-picker) {
+6126 |   display: grid;
+6127 |   gap: 8px;
+6128 |   color: #14336d;
+6129 |   font-size: 0.78rem;
+6130 |   font-weight: 800;
+6131 | }
+6132 | 
+6133 | .import-page-grid select {
+6134 |   min-height: 46px;
+6135 |   width: 100%;
+6136 |   padding: 0 14px;
+6137 |   border: 1px solid rgba(187, 214, 247, 0.95);
+6138 |   border-radius: 8px;
+6139 |   outline: 0;
+6140 |   background: rgba(255, 255, 255, 0.95);
+6141 |   color: #092965;
+6142 |   font: inherit;
+6143 |   font-weight: 700;
+6144 | }
+6145 | 
+6146 | .import-file-picker {
+6147 |   min-height: 46px;
+6148 |   justify-content: center;
+6149 |   font-size: 0.86rem;
+6150 | }
+6151 | 
+6152 | .import-summary-card {
+6153 |   display: grid;
+6154 |   gap: 6px;
+6155 |   padding: 16px;
+6156 |   border: 1px solid rgba(187, 214, 247, 0.85);
+6157 |   border-radius: 8px;
+6158 |   background: rgba(248, 251, 255, 0.9);
+6159 | }
+6160 | 
+6161 | .import-summary-card strong {
+6162 |   color: #092965;
+6163 | }
+6164 | 
+6165 | .import-summary-card p {
+6166 |   margin: 0;
+6167 |   color: var(--muted);
+6168 |   line-height: 1.5;
+6169 | }
+6170 | 
+6171 | .import-summary-card p[data-type="success"] {
+6172 |   color: #079f60;
+6173 | }
+6174 | 
+6175 | .import-summary-card p[data-type="warning"],
+6176 | .import-summary-card p[data-type="info"] {
+6177 |   color: #705b08;
+6178 | }
+6179 | 
+6180 | .import-summary-card p[data-type="error"] {
+6181 |   color: #d92a55;
+6182 | }
+6183 | 
+6184 | .notification-popover {
+6185 |   position: fixed;
+6186 |   inset: auto;
+6187 |   z-index: 5200;
+6188 |   display: block;
+6189 |   padding: 0;
+6190 |   background: transparent;
+6191 |   backdrop-filter: none;
+6192 |   pointer-events: none;
+6193 | }
+6194 | 
+6195 | .notification-popover[hidden] {
+6196 |   display: none;
+6197 | }
+6198 | 
+6199 | .notification-card {
+6200 |   width: 100%;
+6201 |   pointer-events: auto;
+6202 | }
+6203 | 
+6204 | .notification-card::before {
+6205 |   content: "";
+6206 |   position: absolute;
+6207 |   top: -8px;
+6208 |   right: 34px;
+6209 |   width: 16px;
+6210 |   height: 16px;
+6211 |   border-top: 1px solid rgba(185, 207, 238, 0.92);
+6212 |   border-left: 1px solid rgba(185, 207, 238, 0.92);
+6213 |   background: rgba(255, 255, 255, 0.98);
+6214 |   transform: rotate(45deg);
+6215 | }
+6216 | 
+6217 | .profile-modern-layout {
+6218 |   display: grid;
+6219 |   grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.55fr);
+6220 |   gap: 18px;
+6221 |   align-items: start;
+6222 | }
+6223 | 
+6224 | .profile-overview-card {
+6225 |   position: sticky;
+6226 |   top: 20px;
+6227 | }
+6228 | 
+6229 | .profile-settings-card {
+6230 |   display: grid;
+6231 |   gap: 18px;
+6232 | }
+6233 | 
+6234 | .profile-tabs {
+6235 |   display: flex;
+6236 |   flex-wrap: wrap;
+6237 |   gap: 8px;
+6238 |   padding: 6px;
+6239 |   border: 1px solid rgba(187, 214, 247, 0.85);
+6240 |   border-radius: 8px;
+6241 |   background: rgba(248, 251, 255, 0.82);
+6242 | }
+6243 | 
+6244 | .profile-tab {
+6245 |   min-height: 40px;
+6246 |   padding: 0 16px;
+6247 |   border: 0;
+6248 |   border-radius: 8px;
+6249 |   background: transparent;
+6250 |   color: #516994;
+6251 |   font: inherit;
+6252 |   font-weight: 800;
+6253 |   cursor: pointer;
+6254 | }
+6255 | 
+6256 | .profile-tab.is-active {
+6257 |   color: #fff;
+6258 |   background: linear-gradient(100deg, #1f7bea, #e81798);
+6259 |   box-shadow: 0 12px 24px rgba(31, 123, 234, 0.22);
+6260 | }
+
+===== 13100-13450 =====
+13100 |   #medicineForm .medicine-form-grid {
+13101 |     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) !important;
+13102 |   }
+13103 | 
+13104 |   #medicineForm .medicine-section-grid {
+13105 |     gap: 7px !important;
+13106 |   }
+13107 | 
+13108 |   #medicineForm .medicine-field {
+13109 |     grid-template-columns: 112px minmax(0, 1fr) !important;
+13110 |   }
+13111 | 
+13112 |   #medicineForm .medicine-control-wrap {
+13113 |     grid-template-columns: minmax(0, 1fr) auto !important;
+13114 |   }
+13115 | 
+13116 |   #medicineForm .medicine-code-field .medicine-control-wrap {
+13117 |     grid-template-columns: minmax(0, 0.75fr) auto !important;
+13118 |   }
+13119 | 
+13120 |   #medicineForm #medicine-kode,
+13121 |   #medicineForm #medicine-kategori,
+13122 |   #medicineForm #medicine-suplier,
+13123 |   #medicineForm #medicine-stok_min,
+13124 |   #medicineForm #medicine-satuan_beli {
+13125 |     max-width: 100% !important;
+13126 |   }
+13127 | 
+13128 |   #medicineForm #medicine-kode {
+13129 |     max-width: 260px !important;
+13130 |   }
+13131 | 
+13132 |   #medicineForm #medicine-kategori,
+13133 |   #medicineForm #medicine-suplier,
+13134 |   #medicineForm #medicine-satuan_beli {
+13135 |     max-width: 360px !important;
+13136 |   }
+13137 | 
+13138 |   #medicineForm #medicine-stok_min {
+13139 |     max-width: 180px !important;
+13140 |   }
+13141 | 
+13142 |   #medicineForm .medicine-stock-row {
+13143 |     grid-template-columns: minmax(0, 310px) 78px !important;
+13144 |     justify-content: start !important;
+13145 |   }
+13146 | 
+13147 |   #medicineForm .medicine-stock-row .medicine-field {
+13148 |     grid-template-columns: 112px minmax(0, 128px) !important;
+13149 |   }
+13150 | 
+13151 |   #medicineForm .medicine-section-jual {
+13152 |     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+13153 |     overflow: visible !important;
+13154 |   }
+13155 | 
+13156 |   #medicineForm .medicine-sale-block {
+13157 |     min-width: 0 !important;
+13158 |     overflow: hidden !important;
+13159 |   }
+13160 | 
+13161 |   #medicineForm .medicine-price-head,
+13162 |   #medicineForm .medicine-sale-row {
+13163 |     width: max-content !important;
+13164 |     max-width: 100% !important;
+13165 |     grid-template-columns: 58px 76px 78px 48px 24px !important;
+13166 |     gap: 4px !important;
+13167 |     align-items: center !important;
+13168 |   }
+13169 | 
+13170 |   #medicineForm .medicine-sale-row .medicine-field,
+13171 |   #medicineForm .medicine-sale-row .medicine-control-wrap {
+13172 |     min-width: 0 !important;
+13173 |     width: 100% !important;
+13174 |   }
+13175 | 
+13176 |   #medicineForm .medicine-sale-row .medicine-control-wrap {
+13177 |     display: block !important;
+13178 |   }
+13179 | 
+13180 |   #medicineForm .medicine-sale-row .medicine-field input,
+13181 |   #medicineForm .medicine-sale-row .medicine-field select {
+13182 |     min-width: 0 !important;
+13183 |     width: 100% !important;
+13184 |     min-height: 27px !important;
+13185 |     padding-inline: 5px !important;
+13186 |     font-size: 0.62rem !important;
+13187 |   }
+13188 | 
+13189 |   #medicineForm .medicine-sale-delete {
+13190 |     width: 24px !important;
+13191 |     height: 27px !important;
+13192 |   }
+13193 | 
+13194 |   #medicineForm > .form-actions {
+13195 |     position: sticky !important;
+13196 |     bottom: -12px !important;
+13197 |     z-index: 4 !important;
+13198 |     padding-top: 8px !important;
+13199 |     background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.96) 44%) !important;
+13200 |   }
+13201 | }
+13202 | 
+13203 | /* 20260607 v52c: last-write desktop medicine form corrections. */
+13204 | @media (min-width: 901px) {
+13205 |   .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+13206 |     width: min(1220px, calc(100vw - 72px)) !important;
+13207 |     max-height: calc(100dvh - 28px) !important;
+13208 |     padding: 18px 20px 14px !important;
+13209 |     overflow-y: auto !important;
+13210 |     overflow-x: hidden !important;
+13211 |   }
+13212 | 
+13213 |   #medicineForm .medicine-form-grid {
+13214 |     grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr) !important;
+13215 |     gap: 10px 12px !important;
+13216 |   }
+13217 | 
+13218 |   #medicineForm .medicine-section-barang,
+13219 |   #medicineForm .medicine-section-beli {
+13220 |     grid-column: 1 !important;
+13221 |   }
+13222 | 
+13223 |   #medicineForm .medicine-section-keterangan {
+13224 |     grid-column: 2 !important;
+13225 |     grid-row: 1 / span 2 !important;
+13226 |   }
+13227 | 
+13228 |   #medicineForm .medicine-section-jual {
+13229 |     grid-column: 1 / -1 !important;
+13230 |     display: grid !important;
+13231 |     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+13232 |     gap: 8px 12px !important;
+13233 |     overflow: visible !important;
+13234 |   }
+13235 | 
+13236 |   #medicineForm .medicine-section {
+13237 |     padding: 12px !important;
+13238 |     min-width: 0 !important;
+13239 |   }
+13240 | 
+13241 |   #medicineForm .medicine-field {
+13242 |     grid-template-columns: 102px minmax(0, 1fr) !important;
+13243 |     gap: 6px !important;
+13244 |   }
+13245 | 
+13246 |   #medicineForm .medicine-control-wrap {
+13247 |     grid-template-columns: minmax(0, 1fr) 30px !important;
+13248 |     gap: 5px !important;
+13249 |   }
+13250 | 
+13251 |   #medicineForm .medicine-code-field .medicine-control-wrap {
+13252 |     max-width: 254px !important;
+13253 |     grid-template-columns: minmax(0, 196px) 44px !important;
+13254 |   }
+13255 | 
+13256 |   #medicineForm #medicine-kode {
+13257 |     width: 196px !important;
+13258 |     max-width: 196px !important;
+13259 |   }
+13260 | 
+13261 |   #medicineForm #medicine-kategori,
+13262 |   #medicineForm #medicine-suplier,
+13263 |   #medicineForm #medicine-satuan_beli {
+13264 |     max-width: 338px !important;
+13265 |   }
+13266 | 
+13267 |   #medicineForm #medicine-stok_min {
+13268 |     max-width: 132px !important;
+13269 |   }
+13270 | 
+13271 |   #medicineForm .medicine-stock-row {
+13272 |     width: max-content !important;
+13273 |     max-width: 100% !important;
+13274 |     grid-template-columns: 236px 78px !important;
+13275 |     gap: 8px !important;
+13276 |   }
+13277 | 
+13278 |   #medicineForm .medicine-stock-row .medicine-field {
+13279 |     grid-template-columns: 102px 118px !important;
+13280 |   }
+13281 | 
+13282 |   #medicineForm #medicine-stok {
+13283 |     width: 118px !important;
+13284 |   }
+13285 | 
+13286 |   #medicineForm .medicine-sale-block {
+13287 |     min-width: 0 !important;
+13288 |     overflow: visible !important;
+13289 |   }
+13290 | 
+13291 |   #medicineForm .medicine-price-head,
+13292 |   #medicineForm .medicine-sale-row {
+13293 |     width: 100% !important;
+13294 |     max-width: 100% !important;
+13295 |     grid-template-columns: 58px 84px 84px 48px 24px !important;
+13296 |     gap: 4px !important;
+13297 |   }
+13298 | 
+13299 |   #medicineForm .medicine-sale-row .medicine-control-wrap {
+13300 |     display: block !important;
+13301 |     max-width: none !important;
+13302 |   }
+13303 | 
+13304 |   #medicineForm .medicine-sale-row .medicine-field input,
+13305 |   #medicineForm .medicine-sale-row .medicine-field select {
+13306 |     min-height: 26px !important;
+13307 |     padding-inline: 5px !important;
+13308 |     font-size: 0.6rem !important;
+13309 |   }
+13310 | }
+13311 | 
+13312 | .stat-green {
+13313 |   color: #0aa66b;
+13314 |   background: #e8fbf1;
+13315 | }
+13316 | 
+13317 | /* 20260607 v53: medicine field sizing, inline AUTO/plus buttons, compact master tables. */
+13318 | #medicineForm .medicine-auto-badge {
+13319 |   display: inline-flex !important;
+13320 |   align-items: center !important;
+13321 |   justify-content: center !important;
+13322 |   width: 44px !important;
+13323 |   min-width: 44px !important;
+13324 |   height: 29px !important;
+13325 |   min-height: 29px !important;
+13326 |   padding: 0 7px !important;
+13327 |   border: 1px solid #d7e4ff !important;
+13328 |   border-radius: 8px !important;
+13329 |   background: #edf4ff !important;
+13330 |   color: #1264eb !important;
+13331 |   font-size: 0.58rem !important;
+13332 |   font-weight: 900 !important;
+13333 |   line-height: 1 !important;
+13334 |   white-space: nowrap !important;
+13335 |   cursor: pointer !important;
+13336 | }
+13337 | 
+13338 | #medicineForm .medicine-auto-badge:hover {
+13339 |   background: #dfeaff !important;
+13340 | }
+13341 | 
+13342 | #view-data-karyawan .module-card,
+13343 | #view-data-supplier .module-card {
+13344 |   max-width: 720px !important;
+13345 | }
+13346 | 
+13347 | #view-data-karyawan .simple-table-wrap,
+13348 | #view-data-supplier .simple-table-wrap {
+13349 |   max-width: 640px !important;
+13350 | }
+13351 | 
+13352 | #view-data-karyawan .simple-table,
+13353 | #view-data-supplier .simple-table {
+13354 |   width: 620px !important;
+13355 |   min-width: 0 !important;
+13356 |   max-width: 100% !important;
+13357 |   table-layout: fixed !important;
+13358 | }
+13359 | 
+13360 | #view-data-supplier .simple-table th:first-child,
+13361 | #view-data-supplier .simple-table td:first-child {
+13362 |   width: calc(100% - 156px) !important;
+13363 | }
+13364 | 
+13365 | #view-data-karyawan .simple-table th:first-child,
+13366 | #view-data-karyawan .simple-table td:first-child {
+13367 |   width: calc(100% - 276px) !important;
+13368 | }
+13369 | 
+13370 | #view-data-karyawan .simple-table th:nth-child(2),
+13371 | #view-data-karyawan .simple-table td:nth-child(2) {
+13372 |   width: 120px !important;
+13373 | }
+13374 | 
+13375 | #view-data-supplier .simple-table td:first-child {
+13376 |   width: calc(100% - 156px) !important;
+13377 | }
+13378 | 
+13379 | #view-data-karyawan .simple-table th:last-child,
+13380 | #view-data-karyawan .simple-table td:last-child,
+13381 | #view-data-supplier .simple-table th:last-child,
+13382 | #view-data-supplier .simple-table td:last-child {
+13383 |   width: 156px !important;
+13384 |   text-align: left !important;
+13385 | }
+13386 | 
+13387 | #view-data-karyawan .simple-table tbody tr:nth-child(odd),
+13388 | #view-data-supplier .simple-table tbody tr:nth-child(odd) {
+13389 |   background: rgba(237, 246, 255, 0.72) !important;
+13390 | }
+13391 | 
+13392 | #view-data-karyawan .simple-table tbody tr:nth-child(even),
+13393 | #view-data-supplier .simple-table tbody tr:nth-child(even) {
+13394 |   background: rgba(255, 244, 250, 0.55) !important;
+13395 | }
+13396 | 
+13397 | #view-data-karyawan .simple-table tbody tr:hover,
+13398 | #view-data-supplier .simple-table tbody tr:hover {
+13399 |   background: rgba(226, 238, 255, 0.92) !important;
+13400 | }
+13401 | 
+13402 | @media (min-width: 901px) {
+13403 |   #medicineForm .medicine-field-kategori .medicine-control-wrap {
+13404 |     max-width: 254px !important;
+13405 |     grid-template-columns: minmax(0, 196px) 30px !important;
+13406 |   }
+13407 | 
+13408 |   #medicineForm .medicine-field-pabrik .medicine-control-wrap {
+13409 |     max-width: 196px !important;
+13410 |     grid-template-columns: minmax(0, 196px) !important;
+13411 |   }
+13412 | 
+13413 |   #medicineForm #medicine-kategori,
+13414 |   #medicineForm #medicine-pabrik {
+13415 |     width: 196px !important;
+13416 |     max-width: 196px !important;
+13417 |   }
+13418 | 
+13419 |   #medicineForm .medicine-price-head,
+13420 |   #medicineForm .medicine-sale-row {
+13421 |     grid-template-columns: 58px 118px 86px 48px 24px !important;
+13422 |     gap: 4px !important;
+13423 |   }
+13424 | 
+13425 |   #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-control-wrap {
+13426 |     display: grid !important;
+13427 |     grid-template-columns: minmax(0, 1fr) 24px !important;
+13428 |     gap: 3px !important;
+13429 |     align-items: center !important;
+13430 |   }
+13431 | 
+13432 |   #medicineForm .medicine-sale-row .medicine-sale-unit select {
+13433 |     min-width: 0 !important;
+13434 |     width: 100% !important;
+13435 |   }
+13436 | 
+13437 |   #medicineForm .medicine-sale-row .medicine-sale-unit .medicine-add-option {
+13438 |     width: 24px !important;
+13439 |     min-width: 24px !important;
+13440 |     height: 26px !important;
+13441 |     min-height: 26px !important;
+13442 |     padding: 0 !important;
+13443 |     font-size: 0.78rem !important;
+13444 |     line-height: 1 !important;
+13445 |   }
+13446 | }
+13447 | 
+13448 | @media (max-width: 900px) {
+13449 |   .dashboard-modal:not([hidden]) > #medicineForm.modal-card-wide {
+13450 |     width: min(100% - 12px, 430px) !important;
+
+===== 23980-24140 =====
+23980 |   z-index: 1 !important;
+23981 | }
+23982 | 
+23983 | .purchase-draft-card-full:not(.is-open) .purchase-draft-item-list,
+23984 | .purchase-draft-card-full:not(.is-open) .purchase-draft-card-actions {
+23985 |   display: none !important;
+23986 | }
+23987 | 
+23988 | .purchase-draft-card-full.is-open .purchase-draft-card-actions {
+23989 |   position: relative !important;
+23990 |   z-index: 2 !important;
+23991 |   display: inline-flex !important;
+23992 |   width: auto !important;
+23993 |   max-width: max-content !important;
+23994 | }
+23995 | 
+23996 | /* 20260620 v40: targeted layout fixes for quick search, sidebar overflow, action menus, restock/log scale, and draft picker. */
+23997 | @media (min-width: 821px) {
+23998 |   body.sidebar-open:not(.home-view-active) .dashboard-main {
+23999 |     overflow-x: auto !important;
+24000 |     overflow-y: auto !important;
+24001 |     -webkit-overflow-scrolling: touch;
+24002 |   }
+24003 | 
+24004 |   body.sidebar-open:not(.home-view-active) .dashboard-view.is-active {
+24005 |     min-width: 980px !important;
+24006 |   }
+24007 | 
+24008 |   body[data-active-view="restok-obat"] #view-restok-obat .restock-page {
+24009 |     width: 111.111% !important;
+24010 |     transform: scale(.9) !important;
+24011 |     transform-origin: top left !important;
+24012 |   }
+24013 | 
+24014 |   body[data-active-view="log-aktivitas"] #view-log-aktivitas .activity-page {
+24015 |     width: 111.111% !important;
+24016 |     transform: scale(.9) !important;
+24017 |     transform-origin: top left !important;
+24018 |   }
+24019 | 
+24020 |   #view-surat-pesanan .purchase-draft-page {
+24021 |     width: 129.87% !important;
+24022 |     transform: scale(.77) !important;
+24023 |     transform-origin: top left !important;
+24024 |   }
+24025 | 
+24026 |   #view-data-karyawan .module-card {
+24027 |     max-width: 640px !important;
+24028 |   }
+24029 | 
+24030 |   #view-data-karyawan .simple-table-wrap {
+24031 |     width: 560px !important;
+24032 |   }
+24033 | 
+24034 |   #view-data-karyawan .simple-table th:first-child,
+24035 |   #view-data-karyawan .simple-table td:first-child {
+24036 |     width: 62% !important;
+24037 |   }
+24038 | 
+24039 |   #view-data-karyawan .simple-table th:nth-child(2),
+24040 |   #view-data-karyawan .simple-table td:nth-child(2) {
+24041 |     width: 76px !important;
+24042 |   }
+24043 | 
+24044 |   #view-data-karyawan .simple-table th:last-child,
+24045 |   #view-data-karyawan .simple-table td:last-child {
+24046 |     width: 48px !important;
+24047 |   }
+24048 | 
+24049 |   #view-data-supplier .module-card {
+24050 |     max-width: 560px !important;
+24051 |   }
+24052 | 
+24053 |   #view-data-supplier .simple-table-wrap {
+24054 |     width: 430px !important;
+24055 |   }
+24056 | 
+24057 |   #view-data-supplier .simple-table th:first-child,
+24058 |   #view-data-supplier .simple-table td:first-child {
+24059 |     width: calc(100% - 52px) !important;
+24060 |   }
+24061 | 
+24062 |   #view-data-supplier .simple-table th:last-child,
+24063 |   #view-data-supplier .simple-table td:last-child {
+24064 |     width: 52px !important;
+24065 |   }
+24066 | }
+24067 | 
+24068 | .table-row-menu[open] .table-row-menu-list {
+24069 |   display: grid !important;
+24070 |   min-width: 116px !important;
+24071 |   max-width: 180px !important;
+24072 |   border-radius: 12px !important;
+24073 |   box-shadow: 0 18px 40px rgba(7, 25, 85, .18) !important;
+24074 | }
+24075 | 
+24076 | #view-cari-data-obat.is-active .quick-search-workspace {
+24077 |   display: grid !important;
+24078 |   grid-template-columns: minmax(0, 1fr) auto !important;
+24079 |   gap: 8px 12px !important;
+24080 |   width: min(100%, 820px) !important;
+24081 |   margin-inline: auto !important;
+24082 |   padding-top: 0 !important;
+24083 | }
+24084 | 
+24085 | #view-cari-data-obat.is-active .quick-search-head,
+24086 | #view-cari-data-obat.is-active .quick-search-head > div {
+24087 |   display: contents !important;
+24088 | }
+24089 | 
+24090 | #view-cari-data-obat.is-active #quickSearchTitle {
+24091 |   display: none !important;
+24092 | }
+24093 | 
+24094 | #view-cari-data-obat.is-active .quick-search-toolbar {
+24095 |   order: 1 !important;
+24096 |   grid-column: 1 !important;
+24097 |   position: sticky !important;
+24098 |   top: calc(var(--desktop-dashboard-header-height, 86px) + 12px) !important;
+24099 |   z-index: 45 !important;
+24100 |   width: 100% !important;
+24101 |   margin: 0 !important;
+24102 |   padding: 0 !important;
+24103 |   background: linear-gradient(90deg, rgba(239, 247, 255, .94), rgba(255, 240, 251, .94)) !important;
+24104 |   border-radius: 14px !important;
+24105 | }
+24106 | 
+24107 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+24108 |   width: 100% !important;
+24109 |   max-width: 100% !important;
+24110 | }
+24111 | 
+24112 | #view-cari-data-obat.is-active #quickBackButton {
+24113 |   order: 1 !important;
+24114 |   grid-column: 2 !important;
+24115 |   align-self: center !important;
+24116 |   white-space: nowrap !important;
+24117 | }
+24118 | 
+24119 | #view-cari-data-obat.is-active #quickSearchStatus {
+24120 |   order: 2 !important;
+24121 |   grid-column: 1 / -1 !important;
+24122 |   margin: 2px 0 4px !important;
+24123 |   text-align: left !important;
+24124 | }
+24125 | 
+24126 | #view-cari-data-obat.is-active .quick-filter-chips {
+24127 |   order: 3 !important;
+24128 |   grid-column: 1 / -1 !important;
+24129 | }
+24130 | 
+24131 | #view-cari-data-obat.is-active .quick-results-list {
+24132 |   order: 4 !important;
+24133 |   grid-column: 1 / -1 !important;
+24134 |   width: 100% !important;
+24135 |   max-height: calc(100vh - var(--desktop-dashboard-header-height, 86px) - 118px) !important;
+24136 |   overflow-y: auto !important;
+24137 |   padding-right: 6px !important;
+24138 |   scroll-padding-top: 10px !important;
+24139 | }
+24140 | 
+
+===== 24510-24690 =====
+24510 |     display: grid !important;
+24511 |     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+24512 |     width: 100% !important;
+24513 |   }
+24514 | 
+24515 |   .purchase-draft-card-actions button {
+24516 |     min-width: 0 !important;
+24517 |     min-height: 28px !important;
+24518 |     font-size: .66rem !important;
+24519 |     padding: 5px 8px !important;
+24520 |   }
+24521 | 
+24522 |   .purchase-draft-card-full.is-open .purchase-draft-item-list {
+24523 |     max-height: 300px !important;
+24524 |     margin-inline: 8px !important;
+24525 |   }
+24526 | }
+24527 | 
+24528 | /* 20260620 ui-v42 sidebar, draft, quick search, and mobile nav polish */
+24529 | @media (min-width: 821px) {
+24530 |   body.sidebar-open:not(.home-view-active) .dashboard-main {
+24531 |     margin-left: 0 !important;
+24532 |     width: 100% !important;
+24533 |     max-width: 100% !important;
+24534 |     transform: none !important;
+24535 |     overflow-x: auto !important;
+24536 |   }
+24537 | 
+24538 |   body.sidebar-open:not(.home-view-active) .dashboard-view.is-active,
+24539 |   body.sidebar-open[data-active-view="presensi"] #view-presensi.is-active,
+24540 |   body.sidebar-open[data-active-view="presensi"] #view-presensi.is-active .attendance-dashboard {
+24541 |     margin-left: 0 !important;
+24542 |     width: 100% !important;
+24543 |     max-width: none !important;
+24544 |     transform: none !important;
+24545 |   }
+24546 | 
+24547 |   body.sidebar-open:not(.home-view-active) .app-sidebar {
+24548 |     transform: translateX(0) scale(.94) !important;
+24549 |     transform-origin: left top !important;
+24550 |   }
+24551 | 
+24552 |   .purchase-draft-card-actions button {
+24553 |     font-size: calc(.82rem - 2pt) !important;
+24554 |   }
+24555 | }
+24556 | 
+24557 | .purchase-draft-list-full,
+24558 | .purchase-draft-page,
+24559 | .purchase-draft-page .purchase-card,
+24560 | .purchase-draft-card-full,
+24561 | .purchase-draft-card-full.is-open {
+24562 |   overflow: visible !important;
+24563 |   contain: none !important;
+24564 | }
+24565 | 
+24566 | .purchase-draft-card-full.is-open {
+24567 |   height: auto !important;
+24568 |   min-height: 0 !important;
+24569 |   max-height: none !important;
+24570 |   padding-bottom: 12px !important;
+24571 |   z-index: 20 !important;
+24572 | }
+24573 | 
+24574 | .purchase-draft-card-full.is-open .purchase-draft-card-head {
+24575 |   border-bottom: 1px solid rgba(94, 134, 205, .18) !important;
+24576 | }
+24577 | 
+24578 | .purchase-draft-card-full.is-open .purchase-draft-item-list {
+24579 |   display: grid !important;
+24580 |   position: relative !important;
+24581 |   height: auto !important;
+24582 |   min-height: 54px !important;
+24583 |   max-height: min(360px, 45vh) !important;
+24584 |   overflow: auto !important;
+24585 |   opacity: 1 !important;
+24586 |   visibility: visible !important;
+24587 |   margin: 10px 12px 12px !important;
+24588 |   padding: 0 !important;
+24589 |   border: 1px solid rgba(114, 146, 210, .32) !important;
+24590 |   border-radius: 14px !important;
+24591 |   background: rgba(255, 255, 255, .96) !important;
+24592 | }
+24593 | 
+24594 | .purchase-draft-card-full.is-open .purchase-draft-card-actions {
+24595 |   display: inline-flex !important;
+24596 |   align-items: center !important;
+24597 |   justify-content: flex-end !important;
+24598 | }
+24599 | 
+24600 | #view-cari-data-obat.is-active .quick-search-workspace {
+24601 |   width: min(100%, 980px) !important;
+24602 |   gap: 14px !important;
+24603 | }
+24604 | 
+24605 | #view-cari-data-obat.is-active .quick-search-sticky-row {
+24606 |   grid-template-columns: minmax(0, 1fr) auto !important;
+24607 |   padding: 0 !important;
+24608 |   border-radius: 28px !important;
+24609 |   background: transparent !important;
+24610 |   box-shadow: none !important;
+24611 | }
+24612 | 
+24613 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+24614 |   min-height: 72px !important;
+24615 |   border-radius: 28px !important;
+24616 |   border: 1px solid rgba(202, 218, 240, .95) !important;
+24617 |   background: rgba(255, 255, 255, .96) !important;
+24618 |   box-shadow: 0 20px 46px rgba(32, 64, 116, .10) !important;
+24619 | }
+24620 | 
+24621 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search svg {
+24622 |   width: 32px !important;
+24623 |   height: 32px !important;
+24624 |   color: #263042 !important;
+24625 | }
+24626 | 
+24627 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+24628 |   min-height: 68px !important;
+24629 |   font-size: 1.05rem !important;
+24630 |   font-weight: 700 !important;
+24631 |   color: #23304a !important;
+24632 | }
+24633 | 
+24634 | #view-cari-data-obat.is-active .quick-scan-button {
+24635 |   width: 54px !important;
+24636 |   height: 54px !important;
+24637 |   border-radius: 16px !important;
+24638 |   background: rgba(247, 250, 255, .96) !important;
+24639 | }
+24640 | 
+24641 | #view-cari-data-obat.is-active #quickSearchStatus {
+24642 |   color: #536887 !important;
+24643 |   font-size: .82rem !important;
+24644 |   font-weight: 800 !important;
+24645 | }
+24646 | 
+24647 | #view-cari-data-obat.is-active .quick-results-list {
+24648 |   gap: 20px !important;
+24649 |   max-height: calc(100vh - var(--desktop-dashboard-header-height, 86px) - 172px) !important;
+24650 |   padding: 2px 6px 22px !important;
+24651 | }
+24652 | 
+24653 | #view-cari-data-obat.is-active .quick-medicine-card {
+24654 |   position: relative !important;
+24655 |   display: grid !important;
+24656 |   gap: 14px !important;
+24657 |   min-height: 168px !important;
+24658 |   padding: 22px 76px 22px 24px !important;
+24659 |   border: 1px solid rgba(218, 230, 246, .96) !important;
+24660 |   border-radius: 28px !important;
+24661 |   background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(240,246,255,.94)) !important;
+24662 |   box-shadow: 0 22px 54px rgba(31, 59, 109, .11) !important;
+24663 | }
+24664 | 
+24665 | #view-cari-data-obat.is-active .quick-medicine-name {
+24666 |   position: relative !important;
+24667 |   width: min(100%, 820px) !important;
+24668 |   min-height: 54px !important;
+24669 |   display: flex !important;
+24670 |   align-items: center !important;
+24671 |   padding: 12px 18px 12px 34px !important;
+24672 |   border: 2px solid rgba(52, 126, 235, .18) !important;
+24673 |   border-radius: 18px !important;
+24674 |   background: rgba(224, 238, 255, .86) !important;
+24675 |   color: #071b50 !important;
+24676 | }
+24677 | 
+24678 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-medicine-name {
+24679 |   border-color: rgba(255, 141, 78, .22) !important;
+24680 |   background: rgba(255, 244, 236, .9) !important;
+24681 | }
+24682 | 
+24683 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-medicine-name {
+24684 |   border-color: rgba(27, 191, 193, .24) !important;
+24685 |   background: rgba(229, 252, 252, .92) !important;
+24686 | }
+24687 | 
+24688 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-medicine-name {
+24689 |   border-color: rgba(139, 91, 246, .22) !important;
+24690 |   background: rgba(239, 234, 255, .92) !important;
+
+===== 24880-25180 =====
+24880 | 
+24881 |   #view-cari-data-obat.is-active .quick-card-arrow {
+24882 |     right: 16px !important;
+24883 |     display: grid !important;
+24884 |     font-size: 3rem !important;
+24885 |   }
+24886 | }
+24887 | 
+24888 | /* 20260620 ui-v43 sidebar restore, compact search, and draft popup */
+24889 | @media (min-width: 821px) {
+24890 |   body.sidebar-open:not(.home-view-active) .app-sidebar {
+24891 |     transform: translateX(0) !important;
+24892 |     width: var(--sidebar-expanded-width, 272px) !important;
+24893 |     max-width: var(--sidebar-expanded-width, 272px) !important;
+24894 |     z-index: 40 !important;
+24895 |   }
+24896 | 
+24897 |   body.sidebar-open:not(.home-view-active) .dashboard-main {
+24898 |     margin-left: var(--sidebar-expanded-width, 272px) !important;
+24899 |     width: calc(100% - var(--sidebar-expanded-width, 272px)) !important;
+24900 |     max-width: calc(100% - var(--sidebar-expanded-width, 272px)) !important;
+24901 |     transform: none !important;
+24902 |     overflow-x: auto !important;
+24903 |     box-sizing: border-box !important;
+24904 |   }
+24905 | 
+24906 |   body.sidebar-open:not(.home-view-active) .dashboard-view.is-active,
+24907 |   body.sidebar-open[data-active-view="presensi"] #view-presensi.is-active,
+24908 |   body.sidebar-open[data-active-view="presensi"] #view-presensi.is-active .attendance-dashboard {
+24909 |     margin-left: 0 !important;
+24910 |     width: 100% !important;
+24911 |     max-width: 100% !important;
+24912 |     transform: none !important;
+24913 |   }
+24914 | 
+24915 |   body.sidebar-open:not(.home-view-active) .dashboard-topbar {
+24916 |     left: var(--sidebar-expanded-width, 272px) !important;
+24917 |     width: calc(100% - var(--sidebar-expanded-width, 272px)) !important;
+24918 |   }
+24919 | 
+24920 |   #view-cari-data-obat.is-active {
+24921 |     display: flex !important;
+24922 |     justify-content: center !important;
+24923 |   }
+24924 | 
+24925 |   #view-cari-data-obat.is-active .quick-search-workspace {
+24926 |     width: min(100%, 760px) !important;
+24927 |     max-width: 760px !important;
+24928 |     margin: 0 auto !important;
+24929 |     padding: 18px 0 34px !important;
+24930 |     display: flex !important;
+24931 |     flex-direction: column !important;
+24932 |     align-items: stretch !important;
+24933 |     gap: 12px !important;
+24934 |   }
+24935 | 
+24936 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+24937 |     position: sticky !important;
+24938 |     top: calc(var(--desktop-dashboard-header-height, 86px) + 8px) !important;
+24939 |     z-index: 22 !important;
+24940 |     width: 100% !important;
+24941 |     display: grid !important;
+24942 |     grid-template-columns: minmax(0, 1fr) auto !important;
+24943 |     align-items: center !important;
+24944 |     gap: 12px !important;
+24945 |     margin: 0 !important;
+24946 |     padding: 0 !important;
+24947 |     background: linear-gradient(90deg, rgba(235, 247, 255, .94), rgba(255, 236, 248, .94)) !important;
+24948 |     border-radius: 16px !important;
+24949 |   }
+24950 | 
+24951 |   #view-cari-data-obat.is-active .quick-search-toolbar {
+24952 |     width: 100% !important;
+24953 |     margin: 0 !important;
+24954 |   }
+24955 | 
+24956 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+24957 |     min-height: 44px !important;
+24958 |     height: 44px !important;
+24959 |     border-radius: 14px !important;
+24960 |     padding: 0 12px !important;
+24961 |     box-shadow: 0 12px 28px rgba(41, 92, 180, .10) !important;
+24962 |   }
+24963 | 
+24964 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+24965 |     font-size: .94rem !important;
+24966 |   }
+24967 | 
+24968 |   #quickBackButton {
+24969 |     height: 40px !important;
+24970 |     padding: 0 16px !important;
+24971 |     border-radius: 12px !important;
+24972 |     white-space: nowrap !important;
+24973 |   }
+24974 | 
+24975 |   #quickSearchStatus {
+24976 |     order: 2 !important;
+24977 |     margin: 2px 0 4px !important;
+24978 |     width: 100% !important;
+24979 |     text-align: left !important;
+24980 |     font-size: .78rem !important;
+24981 |     font-weight: 800 !important;
+24982 |     color: #496290 !important;
+24983 |   }
+24984 | 
+24985 |   #quickSearchResults,
+24986 |   #quickSearchResults .quick-results-list {
+24987 |     width: 100% !important;
+24988 |     max-width: 760px !important;
+24989 |     margin: 0 auto !important;
+24990 |   }
+24991 | 
+24992 |   #quickSearchResults .quick-results-list {
+24993 |     display: flex !important;
+24994 |     flex-direction: column !important;
+24995 |     gap: 12px !important;
+24996 |   }
+24997 | 
+24998 |   #quickSearchResults .quick-medicine-card {
+24999 |     position: relative !important;
+25000 |     width: 100% !important;
+25001 |     min-height: 132px !important;
+25002 |     padding: 14px 54px 14px 16px !important;
+25003 |     border-radius: 18px !important;
+25004 |     background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(238, 246, 255, .94)) !important;
+25005 |     box-shadow: 0 16px 34px rgba(50, 94, 160, .11) !important;
+25006 |   }
+25007 | 
+25008 |   #quickSearchResults .quick-medicine-name {
+25009 |     border-radius: 12px !important;
+25010 |     padding: 9px 12px 9px 18px !important;
+25011 |     margin-bottom: 10px !important;
+25012 |     font-size: .84rem !important;
+25013 |     line-height: 1.25 !important;
+25014 |   }
+25015 | 
+25016 |   #quickSearchResults .quick-medicine-name::before {
+25017 |     width: 5px !important;
+25018 |     left: 8px !important;
+25019 |     top: 8px !important;
+25020 |     bottom: 8px !important;
+25021 |     border-radius: 999px !important;
+25022 |   }
+25023 | 
+25024 |   #quickSearchResults .quick-medicine-meta {
+25025 |     grid-template-columns: 120px minmax(0, 1fr) !important;
+25026 |     gap: 3px 18px !important;
+25027 |     font-size: .78rem !important;
+25028 |     line-height: 1.28 !important;
+25029 |   }
+25030 | 
+25031 |   #quickSearchResults .quick-medicine-chevron {
+25032 |     right: 18px !important;
+25033 |     font-size: 2rem !important;
+25034 |     opacity: .62 !important;
+25035 |   }
+25036 | 
+25037 |   .purchase-draft-list-full,
+25038 |   .purchase-draft-card-full {
+25039 |     overflow: visible !important;
+25040 |   }
+25041 | 
+25042 |   .purchase-draft-card-full {
+25043 |     position: relative !important;
+25044 |   }
+25045 | 
+25046 |   .purchase-draft-card-full.is-open {
+25047 |     z-index: 70 !important;
+25048 |   }
+25049 | 
+25050 |   .purchase-draft-card-full .purchase-draft-card-head {
+25051 |     position: relative !important;
+25052 |     z-index: 2 !important;
+25053 |   }
+25054 | 
+25055 |   .purchase-draft-card-full.is-open .purchase-draft-item-list {
+25056 |     position: absolute !important;
+25057 |     left: 18px !important;
+25058 |     top: calc(100% + 8px) !important;
+25059 |     width: min(640px, calc(100vw - var(--sidebar-expanded-width, 272px) - 96px)) !important;
+25060 |     min-width: min(460px, calc(100% - 36px)) !important;
+25061 |     max-width: 680px !important;
+25062 |     max-height: 320px !important;
+25063 |     overflow: auto !important;
+25064 |     margin: 0 !important;
+25065 |     padding: 10px !important;
+25066 |     border: 1px solid rgba(115, 151, 255, .34) !important;
+25067 |     border-radius: 16px !important;
+25068 |     background: rgba(255, 255, 255, .98) !important;
+25069 |     box-shadow: 0 24px 62px rgba(20, 39, 86, .20) !important;
+25070 |     z-index: 90 !important;
+25071 |   }
+25072 | 
+25073 |   .purchase-draft-card-full.is-open .purchase-draft-item-row {
+25074 |     grid-template-columns: 24px minmax(280px, 1fr) auto !important;
+25075 |     gap: 10px !important;
+25076 |     padding: 8px 10px !important;
+25077 |     font-size: .76rem !important;
+25078 |     border-radius: 10px !important;
+25079 |   }
+25080 | 
+25081 |   .purchase-draft-card-full.is-open .purchase-draft-item-row + .purchase-draft-item-row {
+25082 |     margin-top: 4px !important;
+25083 |   }
+25084 | 
+25085 |   .purchase-draft-card-actions {
+25086 |     gap: 8px !important;
+25087 |   }
+25088 | 
+25089 |   .purchase-draft-card-actions button {
+25090 |     min-width: 92px !important;
+25091 |     height: 28px !important;
+25092 |     padding: 0 12px !important;
+25093 |     font-size: .78rem !important;
+25094 |     line-height: 1 !important;
+25095 |   }
+25096 | }
+25097 | 
+25098 | @media (min-width: 821px) and (max-width: 1160px) {
+25099 |   body.sidebar-open:not(.home-view-active) .dashboard-main {
+25100 |     margin-left: 248px !important;
+25101 |     width: calc(100% - 248px) !important;
+25102 |     max-width: calc(100% - 248px) !important;
+25103 |   }
+25104 | 
+25105 |   body.sidebar-open:not(.home-view-active) .dashboard-topbar {
+25106 |     left: 248px !important;
+25107 |     width: calc(100% - 248px) !important;
+25108 |   }
+25109 | }
+25110 | 
+25111 | @media (max-width: 820px) {
+25112 |   #view-cari-data-obat.is-active .quick-search-workspace {
+25113 |     width: 100% !important;
+25114 |     max-width: 100% !important;
+25115 |     padding: 12px 12px 96px !important;
+25116 |   }
+25117 | 
+25118 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+25119 |     display: grid !important;
+25120 |     grid-template-columns: minmax(0, 1fr) auto !important;
+25121 |     gap: 8px !important;
+25122 |     align-items: center !important;
+25123 |     position: sticky !important;
+25124 |     top: calc(var(--mobile-header-height, 132px) + 4px) !important;
+25125 |     z-index: 30 !important;
+25126 |   }
+25127 | 
+25128 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25129 |     min-height: 42px !important;
+25130 |     height: 42px !important;
+25131 |     border-radius: 14px !important;
+25132 |   }
+25133 | 
+25134 |   #quickBackButton {
+25135 |     height: 40px !important;
+25136 |     padding: 0 12px !important;
+25137 |     border-radius: 12px !important;
+25138 |   }
+25139 | 
+25140 |   #quickSearchStatus {
+25141 |     margin: 4px 0 2px !important;
+25142 |     font-size: .72rem !important;
+25143 |   }
+25144 | 
+25145 |   #quickSearchResults .quick-medicine-card {
+25146 |     min-height: 126px !important;
+25147 |     padding: 12px 42px 12px 12px !important;
+25148 |     border-radius: 16px !important;
+25149 |   }
+25150 | 
+25151 |   #quickSearchResults .quick-medicine-name {
+25152 |     font-size: .76rem !important;
+25153 |     padding: 8px 10px 8px 16px !important;
+25154 |   }
+25155 | 
+25156 |   #quickSearchResults .quick-medicine-meta {
+25157 |     grid-template-columns: 88px minmax(0, 1fr) !important;
+25158 |     font-size: .72rem !important;
+25159 |   }
+25160 | 
+25161 |   .purchase-draft-card-full.is-open .purchase-draft-item-list {
+25162 |     position: relative !important;
+25163 |     left: auto !important;
+25164 |     top: auto !important;
+25165 |     width: 100% !important;
+25166 |     max-width: 100% !important;
+25167 |     max-height: 42vh !important;
+25168 |     overflow: auto !important;
+25169 |     margin: 8px 0 10px !important;
+25170 |     padding: 8px !important;
+25171 |     border-radius: 14px !important;
+25172 |     background: rgba(255, 255, 255, .98) !important;
+25173 |     box-shadow: 0 14px 32px rgba(20, 39, 86, .16) !important;
+25174 |     z-index: 20 !important;
+25175 |   }
+25176 | }
+25177 | 
+25178 | /* 20260620 ui-v44 quick search rebuild */
+25179 | #view-cari-data-obat.is-active {
+25180 |   align-items: flex-start !important;
+
+===== 25178-25510 =====
+25178 | /* 20260620 ui-v44 quick search rebuild */
+25179 | #view-cari-data-obat.is-active {
+25180 |   align-items: flex-start !important;
+25181 |   justify-content: center !important;
+25182 |   overflow-x: hidden !important;
+25183 | }
+25184 | 
+25185 | #view-cari-data-obat.is-active .quick-search-workspace {
+25186 |   width: min(760px, calc(100% - 32px)) !important;
+25187 |   max-width: 760px !important;
+25188 |   margin: 22px auto 88px !important;
+25189 |   padding: 0 !important;
+25190 |   display: grid !important;
+25191 |   grid-template-columns: minmax(0, 1fr) !important;
+25192 |   gap: 12px !important;
+25193 |   align-items: start !important;
+25194 | }
+25195 | 
+25196 | #view-cari-data-obat.is-active .quick-search-sticky-row {
+25197 |   order: 1 !important;
+25198 |   position: sticky !important;
+25199 |   top: calc(var(--desktop-dashboard-header-height, 86px) + 10px) !important;
+25200 |   z-index: 50 !important;
+25201 |   width: 100% !important;
+25202 |   display: grid !important;
+25203 |   grid-template-columns: minmax(0, 1fr) auto !important;
+25204 |   align-items: center !important;
+25205 |   gap: 10px !important;
+25206 |   margin: 0 !important;
+25207 |   padding: 0 !important;
+25208 |   border: 0 !important;
+25209 |   border-radius: 16px !important;
+25210 |   background: linear-gradient(90deg, rgba(232, 245, 255, .96), rgba(255, 235, 248, .96)) !important;
+25211 |   box-shadow: 0 16px 36px rgba(45, 84, 146, .10) !important;
+25212 | }
+25213 | 
+25214 | #view-cari-data-obat.is-active .quick-search-toolbar {
+25215 |   width: 100% !important;
+25216 |   min-width: 0 !important;
+25217 |   margin: 0 !important;
+25218 |   padding: 0 !important;
+25219 | }
+25220 | 
+25221 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25222 |   width: 100% !important;
+25223 |   height: 44px !important;
+25224 |   min-height: 44px !important;
+25225 |   margin: 0 !important;
+25226 |   padding: 0 8px 0 14px !important;
+25227 |   border-radius: 14px !important;
+25228 |   border: 1px solid #bdd6ff !important;
+25229 |   background: rgba(255, 255, 255, .96) !important;
+25230 |   box-shadow: none !important;
+25231 |   display: grid !important;
+25232 |   grid-template-columns: 22px minmax(0, 1fr) 36px !important;
+25233 |   gap: 10px !important;
+25234 |   align-items: center !important;
+25235 | }
+25236 | 
+25237 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search svg {
+25238 |   width: 21px !important;
+25239 |   height: 21px !important;
+25240 |   stroke-width: 2.4 !important;
+25241 | }
+25242 | 
+25243 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+25244 |   min-width: 0 !important;
+25245 |   font-size: .94rem !important;
+25246 |   font-weight: 700 !important;
+25247 |   color: #102255 !important;
+25248 | }
+25249 | 
+25250 | #view-cari-data-obat.is-active .barcode-scan-button {
+25251 |   width: 34px !important;
+25252 |   height: 34px !important;
+25253 |   min-width: 34px !important;
+25254 |   border-radius: 10px !important;
+25255 |   display: inline-grid !important;
+25256 |   place-items: center !important;
+25257 | }
+25258 | 
+25259 | #view-cari-data-obat.is-active #quickBackButton {
+25260 |   width: auto !important;
+25261 |   min-width: 108px !important;
+25262 |   height: 44px !important;
+25263 |   margin: 0 !important;
+25264 |   padding: 0 15px !important;
+25265 |   border-radius: 14px !important;
+25266 |   display: inline-flex !important;
+25267 |   align-items: center !important;
+25268 |   justify-content: center !important;
+25269 |   gap: 8px !important;
+25270 |   white-space: nowrap !important;
+25271 |   background: rgba(255, 255, 255, .96) !important;
+25272 |   box-shadow: none !important;
+25273 | }
+25274 | 
+25275 | #view-cari-data-obat.is-active .quick-search-head {
+25276 |   order: 2 !important;
+25277 |   position: static !important;
+25278 |   width: 100% !important;
+25279 |   min-height: 0 !important;
+25280 |   margin: 0 !important;
+25281 |   padding: 0 4px !important;
+25282 |   border: 0 !important;
+25283 |   border-radius: 0 !important;
+25284 |   background: transparent !important;
+25285 |   box-shadow: none !important;
+25286 |   display: block !important;
+25287 | }
+25288 | 
+25289 | #view-cari-data-obat.is-active .quick-search-head h2 {
+25290 |   display: none !important;
+25291 | }
+25292 | 
+25293 | #view-cari-data-obat.is-active .quick-search-head > div {
+25294 |   width: 100% !important;
+25295 |   display: block !important;
+25296 | }
+25297 | 
+25298 | #view-cari-data-obat.is-active #quickSearchStatus {
+25299 |   display: block !important;
+25300 |   margin: 0 !important;
+25301 |   padding: 0 !important;
+25302 |   text-align: left !important;
+25303 |   font-size: .76rem !important;
+25304 |   font-weight: 800 !important;
+25305 |   line-height: 1.35 !important;
+25306 |   color: #4a6091 !important;
+25307 | }
+25308 | 
+25309 | #view-cari-data-obat.is-active .quick-report-title {
+25310 |   order: 3 !important;
+25311 | }
+25312 | 
+25313 | #view-cari-data-obat.is-active .quick-filter-chips {
+25314 |   order: 4 !important;
+25315 | }
+25316 | 
+25317 | #view-cari-data-obat.is-active #quickResultsList,
+25318 | #view-cari-data-obat.is-active .quick-results-list {
+25319 |   order: 5 !important;
+25320 |   width: 100% !important;
+25321 |   max-width: 760px !important;
+25322 |   margin: 0 !important;
+25323 |   padding: 0 !important;
+25324 |   display: flex !important;
+25325 |   flex-direction: column !important;
+25326 |   gap: 14px !important;
+25327 |   overflow: visible !important;
+25328 | }
+25329 | 
+25330 | #view-cari-data-obat.is-active .quick-medicine-card {
+25331 |   width: 100% !important;
+25332 |   min-height: 176px !important;
+25333 |   margin: 0 !important;
+25334 |   padding: 14px 16px 14px !important;
+25335 |   border: 1px solid rgba(173, 204, 245, .85) !important;
+25336 |   border-radius: 16px !important;
+25337 |   background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(237,246,255,.94)) !important;
+25338 |   box-shadow: 0 12px 28px rgba(55, 93, 145, .10) !important;
+25339 | }
+25340 | 
+25341 | #view-cari-data-obat.is-active .quick-medicine-name {
+25342 |   width: 100% !important;
+25343 |   margin: 0 0 12px !important;
+25344 |   padding: 10px 14px 10px 28px !important;
+25345 |   min-height: 40px !important;
+25346 |   border-radius: 12px !important;
+25347 |   border: 1px solid rgba(131, 190, 255, .86) !important;
+25348 |   background: rgba(229, 242, 255, .86) !important;
+25349 |   display: flex !important;
+25350 |   align-items: center !important;
+25351 |   position: relative !important;
+25352 | }
+25353 | 
+25354 | #view-cari-data-obat.is-active .quick-tone-2 .quick-medicine-name,
+25355 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-medicine-name {
+25356 |   border-color: rgba(255, 185, 143, .9) !important;
+25357 |   background: rgba(255, 243, 237, .92) !important;
+25358 | }
+25359 | 
+25360 | #view-cari-data-obat.is-active .quick-tone-3 .quick-medicine-name,
+25361 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-medicine-name {
+25362 |   border-color: rgba(130, 224, 229, .9) !important;
+25363 |   background: rgba(231, 254, 255, .9) !important;
+25364 | }
+25365 | 
+25366 | #view-cari-data-obat.is-active .quick-tone-4 .quick-medicine-name,
+25367 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-medicine-name {
+25368 |   border-color: rgba(183, 169, 255, .9) !important;
+25369 |   background: rgba(242, 240, 255, .92) !important;
+25370 | }
+25371 | 
+25372 | #view-cari-data-obat.is-active .quick-medicine-name::before,
+25373 | #view-cari-data-obat.is-active .quick-name-accent {
+25374 |   position: absolute !important;
+25375 |   left: 14px !important;
+25376 |   top: 9px !important;
+25377 |   bottom: 9px !important;
+25378 |   width: 5px !important;
+25379 |   height: auto !important;
+25380 |   border-radius: 999px !important;
+25381 |   background: linear-gradient(180deg, #2388ff, #2ad4ff) !important;
+25382 |   content: "" !important;
+25383 | }
+25384 | 
+25385 | #view-cari-data-obat.is-active .quick-tone-2 .quick-name-accent,
+25386 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-name-accent { background: linear-gradient(180deg, #ff4770, #ff9d57) !important; }
+25387 | #view-cari-data-obat.is-active .quick-tone-3 .quick-name-accent,
+25388 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-name-accent { background: linear-gradient(180deg, #17a7ef, #29d0bb) !important; }
+25389 | #view-cari-data-obat.is-active .quick-tone-4 .quick-name-accent,
+25390 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-name-accent { background: linear-gradient(180deg, #7b49ff, #b64df4) !important; }
+25391 | 
+25392 | #view-cari-data-obat.is-active .quick-medicine-name strong {
+25393 |   font-size: .84rem !important;
+25394 |   line-height: 1.28 !important;
+25395 |   letter-spacing: 0 !important;
+25396 |   color: #071d52 !important;
+25397 | }
+25398 | 
+25399 | #view-cari-data-obat.is-active .quick-medicine-list {
+25400 |   display: grid !important;
+25401 |   grid-template-columns: minmax(0, 1fr) !important;
+25402 |   gap: 3px !important;
+25403 |   margin: 0 !important;
+25404 |   padding: 0 !important;
+25405 | }
+25406 | 
+25407 | #view-cari-data-obat.is-active .quick-medicine-list div {
+25408 |   display: grid !important;
+25409 |   grid-template-columns: 168px minmax(0, 1fr) !important;
+25410 |   gap: 14px !important;
+25411 |   align-items: baseline !important;
+25412 |   min-height: 19px !important;
+25413 | }
+25414 | 
+25415 | #view-cari-data-obat.is-active .quick-medicine-list dt,
+25416 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+25417 |   margin: 0 !important;
+25418 |   font-size: .78rem !important;
+25419 |   line-height: 1.25 !important;
+25420 | }
+25421 | 
+25422 | #view-cari-data-obat.is-active .quick-medicine-list dt {
+25423 |   color: #62718d !important;
+25424 |   font-weight: 800 !important;
+25425 | }
+25426 | 
+25427 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+25428 |   color: #061b4f !important;
+25429 |   font-weight: 900 !important;
+25430 | }
+25431 | 
+25432 | #view-cari-data-obat.is-active .quick-card-arrow {
+25433 |   display: none !important;
+25434 | }
+25435 | 
+25436 | #view-cari-data-obat.is-active .quick-pagination {
+25437 |   order: 6 !important;
+25438 |   margin: 2px 0 0 !important;
+25439 | }
+25440 | 
+25441 | @media (max-width: 820px) {
+25442 |   #view-cari-data-obat.is-active .quick-search-workspace {
+25443 |     width: calc(100% - 24px) !important;
+25444 |     max-width: 100% !important;
+25445 |     margin: 10px auto 96px !important;
+25446 |     gap: 10px !important;
+25447 |   }
+25448 | 
+25449 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+25450 |     top: calc(var(--mobile-header-height, 132px) + 6px) !important;
+25451 |     grid-template-columns: minmax(0, 1fr) auto !important;
+25452 |     gap: 8px !important;
+25453 |   }
+25454 | 
+25455 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25456 |     height: 42px !important;
+25457 |     min-height: 42px !important;
+25458 |     grid-template-columns: 20px minmax(0, 1fr) 34px !important;
+25459 |   }
+25460 | 
+25461 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+25462 |     font-size: .78rem !important;
+25463 |   }
+25464 | 
+25465 |   #view-cari-data-obat.is-active #quickBackButton {
+25466 |     min-width: 42px !important;
+25467 |     width: 42px !important;
+25468 |     height: 42px !important;
+25469 |     padding: 0 !important;
+25470 |   }
+25471 | 
+25472 |   #view-cari-data-obat.is-active #quickBackButton span {
+25473 |     display: none !important;
+25474 |   }
+25475 | 
+25476 |   #view-cari-data-obat.is-active #quickSearchStatus {
+25477 |     font-size: .68rem !important;
+25478 |   }
+25479 | 
+25480 |   #view-cari-data-obat.is-active .quick-medicine-card {
+25481 |     min-height: 156px !important;
+25482 |     padding: 12px !important;
+25483 |     border-radius: 15px !important;
+25484 |   }
+25485 | 
+25486 |   #view-cari-data-obat.is-active .quick-medicine-name {
+25487 |     min-height: 38px !important;
+25488 |     padding: 8px 10px 8px 24px !important;
+25489 |   }
+25490 | 
+25491 |   #view-cari-data-obat.is-active .quick-medicine-name strong {
+25492 |     font-size: .72rem !important;
+25493 |   }
+25494 | 
+25495 |   #view-cari-data-obat.is-active .quick-medicine-list div {
+25496 |     grid-template-columns: 92px minmax(0, 1fr) !important;
+25497 |     gap: 10px !important;
+25498 |   }
+25499 | 
+25500 |   #view-cari-data-obat.is-active .quick-medicine-list dt,
+25501 |   #view-cari-data-obat.is-active .quick-medicine-list dd {
+25502 |     font-size: .68rem !important;
+25503 |   }
+25504 | }
+25505 | 
+25506 | /* 20260621 ui-v45 quick search freeze block */
+25507 | #view-cari-data-obat.is-active {
+25508 |   align-items: flex-start !important;
+25509 |   justify-content: center !important;
+25510 |   overflow-x: hidden !important;
+
+===== 25506-26100 =====
+25506 | /* 20260621 ui-v45 quick search freeze block */
+25507 | #view-cari-data-obat.is-active {
+25508 |   align-items: flex-start !important;
+25509 |   justify-content: center !important;
+25510 |   overflow-x: hidden !important;
+25511 | }
+25512 | 
+25513 | #view-cari-data-obat.is-active .quick-search-workspace {
+25514 |   width: min(760px, calc(100% - 32px)) !important;
+25515 |   max-width: 760px !important;
+25516 |   margin: 12px auto 92px !important;
+25517 |   padding: 0 !important;
+25518 |   display: flex !important;
+25519 |   flex-direction: column !important;
+25520 |   align-items: stretch !important;
+25521 |   gap: 14px !important;
+25522 |   overflow: visible !important;
+25523 | }
+25524 | 
+25525 | #view-cari-data-obat.is-active .quick-search-freeze {
+25526 |   position: sticky !important;
+25527 |   top: calc(var(--desktop-dashboard-header-height, 86px) + 8px) !important;
+25528 |   z-index: 120 !important;
+25529 |   width: 100% !important;
+25530 |   display: flex !important;
+25531 |   flex-direction: column !important;
+25532 |   gap: 8px !important;
+25533 |   margin: 0 !important;
+25534 |   padding: 0 0 10px !important;
+25535 |   border-radius: 0 0 18px 18px !important;
+25536 |   background: linear-gradient(90deg, rgba(232, 245, 255, .98), rgba(255, 236, 248, .98)) !important;
+25537 |   box-shadow: 0 18px 32px rgba(50, 89, 150, .10) !important;
+25538 | }
+25539 | 
+25540 | #view-cari-data-obat.is-active .quick-search-sticky-row {
+25541 |   position: static !important;
+25542 |   top: auto !important;
+25543 |   z-index: auto !important;
+25544 |   width: 100% !important;
+25545 |   display: grid !important;
+25546 |   grid-template-columns: minmax(0, 1fr) auto !important;
+25547 |   align-items: center !important;
+25548 |   gap: 10px !important;
+25549 |   margin: 0 !important;
+25550 |   padding: 0 !important;
+25551 |   border: 0 !important;
+25552 |   border-radius: 0 !important;
+25553 |   background: transparent !important;
+25554 |   box-shadow: none !important;
+25555 | }
+25556 | 
+25557 | #view-cari-data-obat.is-active .quick-search-toolbar {
+25558 |   width: 100% !important;
+25559 |   min-width: 0 !important;
+25560 |   margin: 0 !important;
+25561 |   padding: 0 !important;
+25562 | }
+25563 | 
+25564 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25565 |   width: 100% !important;
+25566 |   height: 44px !important;
+25567 |   min-height: 44px !important;
+25568 |   margin: 0 !important;
+25569 |   padding: 0 8px 0 14px !important;
+25570 |   border-radius: 14px !important;
+25571 |   border: 1px solid #bdd6ff !important;
+25572 |   background: rgba(255, 255, 255, .98) !important;
+25573 |   box-shadow: none !important;
+25574 |   display: grid !important;
+25575 |   grid-template-columns: 22px minmax(0, 1fr) 36px !important;
+25576 |   gap: 10px !important;
+25577 |   align-items: center !important;
+25578 | }
+25579 | 
+25580 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search > svg {
+25581 |   width: 21px !important;
+25582 |   height: 21px !important;
+25583 |   stroke-width: 2.4 !important;
+25584 | }
+25585 | 
+25586 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+25587 |   min-width: 0 !important;
+25588 |   font-size: .94rem !important;
+25589 |   font-weight: 700 !important;
+25590 |   color: #102255 !important;
+25591 | }
+25592 | 
+25593 | #view-cari-data-obat.is-active .barcode-scan-button {
+25594 |   width: 34px !important;
+25595 |   height: 34px !important;
+25596 |   min-width: 34px !important;
+25597 |   border-radius: 10px !important;
+25598 |   display: inline-grid !important;
+25599 |   place-items: center !important;
+25600 | }
+25601 | 
+25602 | #view-cari-data-obat.is-active #quickBackButton {
+25603 |   width: auto !important;
+25604 |   min-width: 108px !important;
+25605 |   height: 44px !important;
+25606 |   margin: 0 !important;
+25607 |   padding: 0 15px !important;
+25608 |   border-radius: 14px !important;
+25609 |   display: inline-flex !important;
+25610 |   align-items: center !important;
+25611 |   justify-content: center !important;
+25612 |   gap: 8px !important;
+25613 |   white-space: nowrap !important;
+25614 |   background: rgba(255, 255, 255, .98) !important;
+25615 |   box-shadow: none !important;
+25616 | }
+25617 | 
+25618 | #view-cari-data-obat.is-active .quick-search-head {
+25619 |   position: static !important;
+25620 |   width: 100% !important;
+25621 |   min-height: 0 !important;
+25622 |   margin: 0 !important;
+25623 |   padding: 0 4px !important;
+25624 |   border: 0 !important;
+25625 |   border-radius: 0 !important;
+25626 |   background: transparent !important;
+25627 |   box-shadow: none !important;
+25628 |   display: block !important;
+25629 | }
+25630 | 
+25631 | #view-cari-data-obat.is-active .quick-search-head h2 {
+25632 |   display: none !important;
+25633 | }
+25634 | 
+25635 | #view-cari-data-obat.is-active .quick-search-head > div {
+25636 |   width: 100% !important;
+25637 |   display: block !important;
+25638 | }
+25639 | 
+25640 | #view-cari-data-obat.is-active #quickSearchStatus {
+25641 |   display: block !important;
+25642 |   margin: 0 !important;
+25643 |   padding: 0 !important;
+25644 |   text-align: left !important;
+25645 |   font-size: .76rem !important;
+25646 |   font-weight: 800 !important;
+25647 |   line-height: 1.35 !important;
+25648 |   color: #4a6091 !important;
+25649 | }
+25650 | 
+25651 | #view-cari-data-obat.is-active .quick-report-title,
+25652 | #view-cari-data-obat.is-active .quick-filter-chips {
+25653 |   position: static !important;
+25654 |   margin: 0 !important;
+25655 | }
+25656 | 
+25657 | #view-cari-data-obat.is-active #quickResultsList,
+25658 | #view-cari-data-obat.is-active .quick-results-list {
+25659 |   width: 100% !important;
+25660 |   max-width: 760px !important;
+25661 |   height: auto !important;
+25662 |   max-height: none !important;
+25663 |   margin: 0 !important;
+25664 |   padding: 0 !important;
+25665 |   display: flex !important;
+25666 |   flex-direction: column !important;
+25667 |   gap: 14px !important;
+25668 |   overflow: visible !important;
+25669 | }
+25670 | 
+25671 | #view-cari-data-obat.is-active .quick-medicine-card {
+25672 |   position: relative !important;
+25673 |   width: 100% !important;
+25674 |   min-height: 176px !important;
+25675 |   margin: 0 !important;
+25676 |   padding: 14px 16px !important;
+25677 |   border: 1px solid rgba(173, 204, 245, .85) !important;
+25678 |   border-radius: 16px !important;
+25679 |   background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(237,246,255,.94)) !important;
+25680 |   box-shadow: 0 12px 28px rgba(55, 93, 145, .10) !important;
+25681 | }
+25682 | 
+25683 | #view-cari-data-obat.is-active .quick-medicine-name {
+25684 |   width: 100% !important;
+25685 |   margin: 0 0 12px !important;
+25686 |   padding: 10px 14px 10px 28px !important;
+25687 |   min-height: 40px !important;
+25688 |   border-radius: 12px !important;
+25689 |   border: 1px solid rgba(131, 190, 255, .86) !important;
+25690 |   background: rgba(229, 242, 255, .86) !important;
+25691 |   display: flex !important;
+25692 |   align-items: center !important;
+25693 |   position: relative !important;
+25694 | }
+25695 | 
+25696 | #view-cari-data-obat.is-active .quick-tone-2 .quick-medicine-name,
+25697 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-medicine-name {
+25698 |   border-color: rgba(255, 185, 143, .9) !important;
+25699 |   background: rgba(255, 243, 237, .92) !important;
+25700 | }
+25701 | 
+25702 | #view-cari-data-obat.is-active .quick-tone-3 .quick-medicine-name,
+25703 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-medicine-name {
+25704 |   border-color: rgba(130, 224, 229, .9) !important;
+25705 |   background: rgba(231, 254, 255, .9) !important;
+25706 | }
+25707 | 
+25708 | #view-cari-data-obat.is-active .quick-tone-4 .quick-medicine-name,
+25709 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-medicine-name {
+25710 |   border-color: rgba(183, 169, 255, .9) !important;
+25711 |   background: rgba(242, 240, 255, .92) !important;
+25712 | }
+25713 | 
+25714 | #view-cari-data-obat.is-active .quick-name-accent,
+25715 | #view-cari-data-obat.is-active .quick-medicine-name::before {
+25716 |   position: absolute !important;
+25717 |   left: 14px !important;
+25718 |   top: 9px !important;
+25719 |   bottom: 9px !important;
+25720 |   width: 5px !important;
+25721 |   height: auto !important;
+25722 |   border-radius: 999px !important;
+25723 |   background: linear-gradient(180deg, #2388ff, #2ad4ff) !important;
+25724 |   content: "" !important;
+25725 | }
+25726 | 
+25727 | #view-cari-data-obat.is-active .quick-tone-2 .quick-name-accent,
+25728 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-name-accent { background: linear-gradient(180deg, #ff4770, #ff9d57) !important; }
+25729 | #view-cari-data-obat.is-active .quick-tone-3 .quick-name-accent,
+25730 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-name-accent { background: linear-gradient(180deg, #17a7ef, #29d0bb) !important; }
+25731 | #view-cari-data-obat.is-active .quick-tone-4 .quick-name-accent,
+25732 | #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-name-accent { background: linear-gradient(180deg, #7b49ff, #b64df4) !important; }
+25733 | 
+25734 | #view-cari-data-obat.is-active .quick-medicine-name strong {
+25735 |   font-size: .84rem !important;
+25736 |   line-height: 1.28 !important;
+25737 |   letter-spacing: 0 !important;
+25738 |   color: #071d52 !important;
+25739 | }
+25740 | 
+25741 | #view-cari-data-obat.is-active .quick-medicine-list {
+25742 |   display: grid !important;
+25743 |   grid-template-columns: minmax(0, 1fr) !important;
+25744 |   gap: 3px !important;
+25745 |   margin: 0 !important;
+25746 |   padding: 0 !important;
+25747 | }
+25748 | 
+25749 | #view-cari-data-obat.is-active .quick-medicine-list div {
+25750 |   display: grid !important;
+25751 |   grid-template-columns: 168px minmax(0, 1fr) !important;
+25752 |   gap: 14px !important;
+25753 |   align-items: baseline !important;
+25754 |   min-height: 19px !important;
+25755 | }
+25756 | 
+25757 | #view-cari-data-obat.is-active .quick-medicine-list dt,
+25758 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+25759 |   margin: 0 !important;
+25760 |   font-size: .78rem !important;
+25761 |   line-height: 1.25 !important;
+25762 | }
+25763 | 
+25764 | #view-cari-data-obat.is-active .quick-medicine-list dt {
+25765 |   color: #62718d !important;
+25766 |   font-weight: 800 !important;
+25767 | }
+25768 | 
+25769 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+25770 |   color: #061b4f !important;
+25771 |   font-weight: 900 !important;
+25772 | }
+25773 | 
+25774 | #view-cari-data-obat.is-active .quick-card-arrow {
+25775 |   display: none !important;
+25776 | }
+25777 | 
+25778 | #view-cari-data-obat.is-active .quick-pagination {
+25779 |   position: static !important;
+25780 |   margin: 0 !important;
+25781 | }
+25782 | 
+25783 | @media (max-width: 820px) {
+25784 |   #view-cari-data-obat.is-active .quick-search-workspace {
+25785 |     width: calc(100% - 24px) !important;
+25786 |     max-width: 100% !important;
+25787 |     margin: 10px auto 96px !important;
+25788 |     gap: 12px !important;
+25789 |   }
+25790 | 
+25791 |   #view-cari-data-obat.is-active .quick-search-freeze {
+25792 |     top: calc(var(--mobile-header-height, 132px) + 4px) !important;
+25793 |     gap: 7px !important;
+25794 |     padding-bottom: 8px !important;
+25795 |     border-radius: 0 0 14px 14px !important;
+25796 |   }
+25797 | 
+25798 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+25799 |     grid-template-columns: minmax(0, 1fr) auto !important;
+25800 |     gap: 8px !important;
+25801 |   }
+25802 | 
+25803 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25804 |     height: 42px !important;
+25805 |     min-height: 42px !important;
+25806 |     grid-template-columns: 20px minmax(0, 1fr) 34px !important;
+25807 |   }
+25808 | 
+25809 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+25810 |     font-size: .78rem !important;
+25811 |   }
+25812 | 
+25813 |   #view-cari-data-obat.is-active #quickBackButton {
+25814 |     min-width: 42px !important;
+25815 |     width: 42px !important;
+25816 |     height: 42px !important;
+25817 |     padding: 0 !important;
+25818 |   }
+25819 | 
+25820 |   #view-cari-data-obat.is-active #quickBackButton span {
+25821 |     display: none !important;
+25822 |   }
+25823 | 
+25824 |   #view-cari-data-obat.is-active #quickSearchStatus {
+25825 |     font-size: .68rem !important;
+25826 |   }
+25827 | 
+25828 |   #view-cari-data-obat.is-active .quick-medicine-card {
+25829 |     min-height: 156px !important;
+25830 |     padding: 12px !important;
+25831 |     border-radius: 15px !important;
+25832 |   }
+25833 | 
+25834 |   #view-cari-data-obat.is-active .quick-medicine-name {
+25835 |     min-height: 38px !important;
+25836 |     padding: 8px 10px 8px 24px !important;
+25837 |   }
+25838 | 
+25839 |   #view-cari-data-obat.is-active .quick-medicine-name strong {
+25840 |     font-size: .72rem !important;
+25841 |   }
+25842 | 
+25843 |   #view-cari-data-obat.is-active .quick-medicine-list div {
+25844 |     grid-template-columns: 92px minmax(0, 1fr) !important;
+25845 |     gap: 10px !important;
+25846 |   }
+25847 | 
+25848 |   #view-cari-data-obat.is-active .quick-medicine-list dt,
+25849 |   #view-cari-data-obat.is-active .quick-medicine-list dd {
+25850 |     font-size: .68rem !important;
+25851 |   }
+25852 | }
+25853 | 
+25854 | /* 20260621 ui-v46 quick search list-scroll guard */
+25855 | #view-cari-data-obat.is-active .quick-search-workspace {
+25856 |   height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 34px) !important;
+25857 |   max-height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 34px) !important;
+25858 |   overflow: hidden !important;
+25859 | }
+25860 | 
+25861 | #view-cari-data-obat.is-active .quick-search-freeze {
+25862 |   flex: 0 0 auto !important;
+25863 |   position: relative !important;
+25864 |   top: auto !important;
+25865 |   border-bottom: 1px solid rgba(176, 204, 245, .55) !important;
+25866 | }
+25867 | 
+25868 | #view-cari-data-obat.is-active #quickResultsList,
+25869 | #view-cari-data-obat.is-active .quick-results-list {
+25870 |   flex: 1 1 auto !important;
+25871 |   min-height: 0 !important;
+25872 |   max-height: none !important;
+25873 |   overflow-y: auto !important;
+25874 |   overflow-x: hidden !important;
+25875 |   padding: 0 8px 18px 0 !important;
+25876 |   scrollbar-gutter: stable !important;
+25877 | }
+25878 | 
+25879 | #view-cari-data-obat.is-active .quick-results-list .quick-medicine-card:first-child {
+25880 |   margin-top: 0 !important;
+25881 | }
+25882 | 
+25883 | #view-cari-data-obat.is-active .quick-pagination {
+25884 |   flex: 0 0 auto !important;
+25885 |   padding: 2px 0 0 !important;
+25886 |   background: transparent !important;
+25887 | }
+25888 | 
+25889 | @media (max-width: 820px) {
+25890 |   #view-cari-data-obat.is-active .quick-search-workspace {
+25891 |     height: calc(100dvh - var(--mobile-header-height, 132px) - 108px) !important;
+25892 |     max-height: calc(100dvh - var(--mobile-header-height, 132px) - 108px) !important;
+25893 |   }
+25894 | 
+25895 |   #view-cari-data-obat.is-active #quickResultsList,
+25896 |   #view-cari-data-obat.is-active .quick-results-list {
+25897 |     padding-right: 4px !important;
+25898 |   }
+25899 | }
+25900 | 
+25901 | /* 20260715 dashboard header brand: pharmacy identity is the sidebar toggle. */
+25902 | .dashboard-topbar {
+25903 |   display: flex !important;
+25904 |   align-items: center !important;
+25905 |   justify-content: space-between !important;
+25906 | }
+25907 | 
+25908 | .dashboard-title {
+25909 |   min-width: 0 !important;
+25910 |   flex: 1 1 auto !important;
+25911 |   display: flex !important;
+25912 |   align-items: center !important;
+25913 |   justify-content: flex-start !important;
+25914 |   gap: 22px !important;
+25915 | }
+25916 | 
+25917 | .header-pharmacy-toggle {
+25918 |   min-width: 0 !important;
+25919 |   width: clamp(232px, 25vw, 326px) !important;
+25920 |   max-width: clamp(232px, 25vw, 326px) !important;
+25921 |   flex: 0 0 clamp(232px, 25vw, 326px) !important;
+25922 |   min-height: 50px !important;
+25923 |   padding: 6px 10px 6px 6px !important;
+25924 |   display: inline-grid !important;
+25925 |   grid-template-columns: 42px minmax(0, 1fr) !important;
+25926 |   align-items: center !important;
+25927 |   gap: 11px !important;
+25928 |   border: 1px solid rgba(183, 211, 247, 0.72) !important;
+25929 |   border-radius: 16px !important;
+25930 |   background: rgba(255, 255, 255, 0.56) !important;
+25931 |   color: var(--ink) !important;
+25932 |   font: inherit !important;
+25933 |   text-align: left !important;
+25934 |   text-decoration: none !important;
+25935 |   cursor: pointer !important;
+25936 |   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.08) !important;
+25937 | }
+25938 | 
+25939 | .header-pharmacy-toggle:hover,
+25940 | .header-pharmacy-toggle:focus-visible {
+25941 |   border-color: rgba(232, 23, 152, 0.28) !important;
+25942 |   background: rgba(255, 255, 255, 0.82) !important;
+25943 |   outline: none !important;
+25944 | }
+25945 | 
+25946 | .header-pharmacy-toggle img {
+25947 |   width: 42px !important;
+25948 |   height: 42px !important;
+25949 |   border-radius: 13px !important;
+25950 |   object-fit: cover !important;
+25951 |   background: #ffffff !important;
+25952 |   box-shadow: 0 10px 22px rgba(19, 120, 238, 0.14) !important;
+25953 | }
+25954 | 
+25955 | .header-pharmacy-copy {
+25956 |   min-width: 0 !important;
+25957 |   display: grid !important;
+25958 |   gap: 2px !important;
+25959 | }
+25960 | 
+25961 | .header-pharmacy-copy strong,
+25962 | .header-pharmacy-copy small {
+25963 |   display: block !important;
+25964 |   overflow: hidden !important;
+25965 |   text-overflow: ellipsis !important;
+25966 |   white-space: nowrap !important;
+25967 | }
+25968 | 
+25969 | .header-pharmacy-copy strong {
+25970 |   color: #071655 !important;
+25971 |   font-size: 0.92rem !important;
+25972 |   line-height: 1.15 !important;
+25973 |   font-weight: 800 !important;
+25974 | }
+25975 | 
+25976 | .header-pharmacy-copy small {
+25977 |   color: #61709c !important;
+25978 |   font-size: 0.7rem !important;
+25979 |   line-height: 1.2 !important;
+25980 |   font-weight: 600 !important;
+25981 | }
+25982 | 
+25983 | .dashboard-title h1 {
+25984 |   flex: 0 1 auto !important;
+25985 |   margin: 0 !important;
+25986 | }
+25987 | 
+25988 | body.sidebar-collapsed .header-pharmacy-toggle {
+25989 |   width: 54px !important;
+25990 |   max-width: 54px !important;
+25991 |   min-width: 54px !important;
+25992 |   justify-self: center !important;
+25993 |   align-self: center !important;
+25994 |   padding: 6px !important;
+25995 |   grid-template-columns: 42px !important;
+25996 |   gap: 0 !important;
+25997 | }
+25998 | 
+25999 | body.sidebar-collapsed .header-pharmacy-copy {
+26000 |   display: none !important;
+26001 | }
+26002 | 
+26003 | @media (max-width: 820px) {
+26004 |   .header-pharmacy-toggle {
+26005 |     width: 50px !important;
+26006 |     max-width: 50px !important;
+26007 |     min-width: 50px !important;
+26008 |     flex-basis: 50px !important;
+26009 |     padding: 6px !important;
+26010 |     grid-template-columns: 38px !important;
+26011 |     gap: 0 !important;
+26012 |   }
+26013 | 
+26014 |   .header-pharmacy-toggle img {
+26015 |     width: 38px !important;
+26016 |     height: 38px !important;
+26017 |   }
+26018 | 
+26019 |   .header-pharmacy-copy {
+26020 |     display: none !important;
+26021 |   }
+26022 | }
+26023 | 
+26024 | /* 20260621 ui-v46 scanner alignment fix */
+26025 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search .barcode-scan-button,
+26026 | #view-cari-data-obat.is-active #quickBarcodeButton {
+26027 |   position: static !important;
+26028 |   inset: auto !important;
+26029 |   transform: none !important;
+26030 |   align-self: center !important;
+26031 |   justify-self: end !important;
+26032 |   margin: 0 !important;
+26033 |   padding: 0 !important;
+26034 | }
+26035 | 
+26036 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search .barcode-scan-button svg,
+26037 | #view-cari-data-obat.is-active #quickBarcodeButton svg {
+26038 |   width: 18px !important;
+26039 |   height: 18px !important;
+26040 |   display: block !important;
+26041 | }
+26042 | 
+26043 | /* 20260621 ui-v46 quick search flex alignment */
+26044 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+26045 |   display: flex !important;
+26046 |   align-items: center !important;
+26047 |   justify-content: flex-start !important;
+26048 |   gap: 10px !important;
+26049 | }
+26050 | 
+26051 | #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search > svg {
+26052 |   flex: 0 0 21px !important;
+26053 | }
+26054 | 
+26055 | #view-cari-data-obat.is-active #quickSearchInput {
+26056 |   flex: 1 1 auto !important;
+26057 | }
+26058 | 
+26059 | #view-cari-data-obat.is-active #quickBarcodeButton {
+26060 |   flex: 0 0 34px !important;
+26061 | }
+26062 | 
+26063 | /* 20260716 dashboard header anti-overlap: split brand, title, status into 3 grid zones. */
+26064 | @media (min-width: 821px) {
+26065 |   .dashboard-topbar {
+26066 |     display: grid !important;
+26067 |     grid-template-columns: clamp(232px, 25vw, 326px) minmax(0, 1fr) max-content !important;
+26068 |     align-items: center !important;
+26069 |     justify-content: stretch !important;
+26070 |     column-gap: 22px !important;
+26071 |     overflow: hidden !important;
+26072 |   }
+26073 | 
+26074 |   .dashboard-title {
+26075 |     display: contents !important;
+26076 |     min-width: 0 !important;
+26077 |   }
+26078 | 
+26079 |   .header-pharmacy-toggle {
+26080 |     grid-column: 1 !important;
+26081 |     justify-self: start !important;
+26082 |     align-self: center !important;
+26083 |     width: clamp(232px, 25vw, 326px) !important;
+26084 |     max-width: clamp(232px, 25vw, 326px) !important;
+26085 |     min-width: clamp(232px, 25vw, 326px) !important;
+26086 |     flex: none !important;
+26087 |   }
+26088 | 
+26089 |   #dashboardViewTitle {
+26090 |     grid-column: 2 !important;
+26091 |     justify-self: start !important;
+26092 |     align-self: center !important;
+26093 |     display: block !important;
+26094 |     min-width: 0 !important;
+26095 |     max-width: 100% !important;
+26096 |     overflow: hidden !important;
+26097 |     text-overflow: ellipsis !important;
+26098 |     white-space: nowrap !important;
+26099 |   }
+26100 | 
+
+===== 26260-26460 =====
+26260 |   .dashboard-topbar,
+26261 |   body.home-view-active .dashboard-topbar,
+26262 |   body.sidebar-open:not(.home-view-active) .dashboard-topbar {
+26263 |     column-gap: 16px !important;
+26264 |     padding-right: 18px !important;
+26265 |   }
+26266 | 
+26267 |   #dashboardViewTitle,
+26268 |   .dashboard-title h1,
+26269 |   body.home-view-active #dashboardViewTitle {
+26270 |     min-width: min(100%, 220px) !important;
+26271 |     overflow: hidden !important;
+26272 |     text-overflow: ellipsis !important;
+26273 |   }
+26274 | 
+26275 |   .dashboard-status,
+26276 |   body.home-view-active .dashboard-status {
+26277 |     gap: 8px !important;
+26278 |   }
+26279 | }
+26280 | 
+26281 | /* 20260716 quick search card final: keep details inside card, not collapsed strips. */
+26282 | #view-cari-data-obat.is-active #quickResultsList,
+26283 | #view-cari-data-obat.is-active .quick-results-list {
+26284 |   display: flex !important;
+26285 |   flex-direction: column !important;
+26286 |   align-items: stretch !important;
+26287 |   gap: 14px !important;
+26288 | }
+26289 | 
+26290 | #view-cari-data-obat.is-active .quick-medicine-card {
+26291 |   box-sizing: border-box !important;
+26292 |   position: relative !important;
+26293 |   display: flex !important;
+26294 |   flex-direction: column !important;
+26295 |   align-items: stretch !important;
+26296 |   gap: 8px !important;
+26297 |   width: 100% !important;
+26298 |   height: auto !important;
+26299 |   min-height: 174px !important;
+26300 |   max-height: none !important;
+26301 |   margin: 0 !important;
+26302 |   padding: 14px 16px !important;
+26303 |   overflow: hidden !important;
+26304 | }
+26305 | 
+26306 | #view-cari-data-obat.is-active .quick-medicine-name {
+26307 |   box-sizing: border-box !important;
+26308 |   position: relative !important;
+26309 |   z-index: 1 !important;
+26310 |   flex: 0 0 auto !important;
+26311 |   display: flex !important;
+26312 |   align-items: center !important;
+26313 |   width: 100% !important;
+26314 |   min-width: 0 !important;
+26315 |   min-height: 40px !important;
+26316 |   height: auto !important;
+26317 |   margin: 0 !important;
+26318 |   padding: 9px 14px 9px 28px !important;
+26319 |   overflow: hidden !important;
+26320 | }
+26321 | 
+26322 | #view-cari-data-obat.is-active .quick-name-accent,
+26323 | #view-cari-data-obat.is-active .quick-medicine-name::before {
+26324 |   left: 14px !important;
+26325 |   top: 50% !important;
+26326 |   bottom: auto !important;
+26327 |   width: 5px !important;
+26328 |   height: 24px !important;
+26329 |   min-height: 0 !important;
+26330 |   max-height: none !important;
+26331 |   transform: translateY(-50%) !important;
+26332 | }
+26333 | 
+26334 | #view-cari-data-obat.is-active .quick-medicine-name strong {
+26335 |   display: block !important;
+26336 |   min-width: 0 !important;
+26337 |   max-width: 100% !important;
+26338 |   white-space: normal !important;
+26339 |   overflow-wrap: anywhere !important;
+26340 |   word-break: normal !important;
+26341 | }
+26342 | 
+26343 | #view-cari-data-obat.is-active .quick-medicine-list {
+26344 |   box-sizing: border-box !important;
+26345 |   position: relative !important;
+26346 |   z-index: 1 !important;
+26347 |   flex: 0 0 auto !important;
+26348 |   display: grid !important;
+26349 |   grid-template-columns: minmax(0, 1fr) !important;
+26350 |   gap: 3px !important;
+26351 |   width: 100% !important;
+26352 |   min-width: 0 !important;
+26353 |   margin: 0 !important;
+26354 |   padding: 0 !important;
+26355 | }
+26356 | 
+26357 | #view-cari-data-obat.is-active .quick-medicine-list div {
+26358 |   display: grid !important;
+26359 |   grid-template-columns: 168px minmax(0, 1fr) !important;
+26360 |   gap: 14px !important;
+26361 |   align-items: baseline !important;
+26362 |   min-width: 0 !important;
+26363 |   min-height: 18px !important;
+26364 | }
+26365 | 
+26366 | #view-cari-data-obat.is-active .quick-medicine-list dt,
+26367 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+26368 |   min-width: 0 !important;
+26369 |   line-height: 1.22 !important;
+26370 | }
+26371 | 
+26372 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+26373 |   overflow-wrap: anywhere !important;
+26374 |   word-break: normal !important;
+26375 | }
+26376 | 
+26377 | @media (min-width: 821px) and (max-width: 1100px) {
+26378 |   #view-cari-data-obat.is-active .quick-medicine-card {
+26379 |     min-height: 168px !important;
+26380 |   }
+26381 | 
+26382 |   #view-cari-data-obat.is-active .quick-medicine-list div {
+26383 |     grid-template-columns: 136px minmax(0, 1fr) !important;
+26384 |   }
+26385 | }
+26386 | 
+26387 | @media (max-width: 820px) {
+26388 |   #view-cari-data-obat.is-active #quickResultsList,
+26389 |   #view-cari-data-obat.is-active .quick-results-list {
+26390 |     gap: 12px !important;
+26391 |   }
+26392 | 
+26393 |   #view-cari-data-obat.is-active .quick-medicine-card {
+26394 |     gap: 8px !important;
+26395 |     height: auto !important;
+26396 |     min-height: 152px !important;
+26397 |     max-height: none !important;
+26398 |     padding: 12px !important;
+26399 |     overflow: hidden !important;
+26400 |   }
+26401 | 
+26402 |   #view-cari-data-obat.is-active .quick-medicine-name {
+26403 |     min-height: 38px !important;
+26404 |     height: auto !important;
+26405 |     padding: 8px 10px 8px 24px !important;
+26406 |   }
+26407 | 
+26408 |   #view-cari-data-obat.is-active .quick-name-accent,
+26409 |   #view-cari-data-obat.is-active .quick-medicine-name::before {
+26410 |     left: 11px !important;
+26411 |     top: 50% !important;
+26412 |     bottom: auto !important;
+26413 |     height: 20px !important;
+26414 |     min-height: 0 !important;
+26415 |     max-height: none !important;
+26416 |     transform: translateY(-50%) !important;
+26417 |   }
+26418 | 
+26419 |   #view-cari-data-obat.is-active .quick-medicine-list {
+26420 |     gap: 3px !important;
+26421 |   }
+26422 | 
+26423 |   #view-cari-data-obat.is-active .quick-medicine-list div {
+26424 |     grid-template-columns: minmax(78px, 92px) minmax(0, 1fr) !important;
+26425 |     min-height: 18px !important;
+26426 |     gap: 8px !important;
+26427 |   }
+26428 | 
+26429 |   #view-cari-data-obat.is-active .quick-medicine-list dt,
+26430 |   #view-cari-data-obat.is-active .quick-medicine-list dd {
+26431 |     line-height: 1.25 !important;
+26432 |   }
+26433 | }
+26434 | 
+26435 | /* 20260716 responsive workspace: reflow beside the sidebar and keep wide data scrollable. */
+26436 | :root {
+26437 |   --app-sidebar-rail-width: 76px;
+26438 |   --app-sidebar-open-width: clamp(248px, 20vw, 272px);
+26439 |   --app-content-gutter: clamp(16px, 2vw, 28px);
+26440 |   --app-control-height: 42px;
+26441 | }
+26442 | 
+26443 | .dashboard-page,
+26444 | .app-layout,
+26445 | .dashboard-main,
+26446 | .dashboard-content,
+26447 | .dashboard-view,
+26448 | .attendance-dashboard,
+26449 | .purchase-page,
+26450 | .purchase-draft-page,
+26451 | .restock-page,
+26452 | .activity-page,
+26453 | .data-workspace {
+26454 |   box-sizing: border-box;
+26455 |   min-width: 0 !important;
+26456 |   max-width: 100%;
+26457 | }
+26458 | 
+26459 | .app-layout {
+26460 |   width: 100%;
+
+===== 27390-27610 =====
+27390 |     border-radius: 13px !important;
+27391 |     font-size: 0.55rem !important;
+27392 |   }
+27393 | 
+27394 |   .mobile-bottom-nav button svg,
+27395 |   body.home-view-active .mobile-bottom-nav button svg {
+27396 |     width: 17px !important;
+27397 |     height: 17px !important;
+27398 |   }
+27399 | 
+27400 |   .mobile-bottom-nav .is-featured,
+27401 |   body.home-view-active .mobile-bottom-nav .is-featured {
+27402 |     width: 60px !important;
+27403 |     height: 60px !important;
+27404 |     min-width: 60px !important;
+27405 |     min-height: 60px !important;
+27406 |     margin-top: -20px !important;
+27407 |     border-radius: 999px !important;
+27408 |     background: linear-gradient(140deg, #187ef0 0%, #7d4df7 54%, #e81798 100%) !important;
+27409 |     box-shadow: 0 18px 36px rgba(85, 89, 238, 0.28) !important;
+27410 |   }
+27411 | 
+27412 |   .mobile-bottom-nav .is-featured svg,
+27413 |   body.home-view-active .mobile-bottom-nav .is-featured svg {
+27414 |     width: 22px !important;
+27415 |     height: 22px !important;
+27416 |   }
+27417 | 
+27418 |   .mobile-bottom-nav .is-featured span,
+27419 |   body.home-view-active .mobile-bottom-nav .is-featured span {
+27420 |     position: absolute !important;
+27421 |     top: calc(100% + 2px) !important;
+27422 |     color: #60759d !important;
+27423 |     white-space: nowrap !important;
+27424 |   }
+27425 | }
+27426 | 
+27427 | /* 20260719: cari-data-obat viewport + action-menu final bugfixes. */
+27428 | #view-cari-data-obat.is-active .quick-search-workspace {
+27429 |   height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 14px) !important;
+27430 |   max-height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 14px) !important;
+27431 |   gap: 8px !important;
+27432 |   overflow: hidden !important;
+27433 | }
+27434 | 
+27435 | #view-cari-data-obat.is-active .quick-search-freeze {
+27436 |   flex: 0 0 auto !important;
+27437 |   padding-bottom: 6px !important;
+27438 | }
+27439 | 
+27440 | #view-cari-data-obat.is-active #quickResultsList,
+27441 | #view-cari-data-obat.is-active .quick-results-list {
+27442 |   flex: 1 1 auto !important;
+27443 |   min-height: min(548px, calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 154px)) !important;
+27444 |   max-height: none !important;
+27445 |   gap: 8px !important;
+27446 |   overflow-y: auto !important;
+27447 |   overflow-x: hidden !important;
+27448 |   padding: 0 8px 10px 0 !important;
+27449 | }
+27450 | 
+27451 | #view-cari-data-obat.is-active .quick-medicine-card {
+27452 |   box-sizing: border-box !important;
+27453 |   min-height: 108px !important;
+27454 |   height: auto !important;
+27455 |   padding: 10px 12px !important;
+27456 |   gap: 6px !important;
+27457 |   overflow: hidden !important;
+27458 | }
+27459 | 
+27460 | #view-cari-data-obat.is-active .quick-medicine-name {
+27461 |   min-height: 28px !important;
+27462 |   margin-bottom: 2px !important;
+27463 |   padding: 6px 10px 6px 24px !important;
+27464 | }
+27465 | 
+27466 | #view-cari-data-obat.is-active .quick-medicine-name strong {
+27467 |   display: -webkit-box !important;
+27468 |   overflow: hidden !important;
+27469 |   -webkit-box-orient: vertical !important;
+27470 |   -webkit-line-clamp: 2 !important;
+27471 |   font-size: 0.75rem !important;
+27472 |   line-height: 1.22 !important;
+27473 | }
+27474 | 
+27475 | #view-cari-data-obat.is-active .quick-name-accent,
+27476 | #view-cari-data-obat.is-active .quick-medicine-name::before {
+27477 |   left: 10px !important;
+27478 |   height: 18px !important;
+27479 | }
+27480 | 
+27481 | #view-cari-data-obat.is-active .quick-medicine-list {
+27482 |   display: grid !important;
+27483 |   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+27484 |   gap: 4px 12px !important;
+27485 |   align-content: start !important;
+27486 | }
+27487 | 
+27488 | #view-cari-data-obat.is-active .quick-medicine-list div {
+27489 |   display: grid !important;
+27490 |   grid-template-columns: 78px minmax(0, 1fr) !important;
+27491 |   gap: 6px !important;
+27492 |   min-height: 0 !important;
+27493 |   align-items: start !important;
+27494 | }
+27495 | 
+27496 | #view-cari-data-obat.is-active .quick-medicine-list dt,
+27497 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+27498 |   min-width: 0 !important;
+27499 |   font-size: 0.68rem !important;
+27500 |   line-height: 1.24 !important;
+27501 | }
+27502 | 
+27503 | #view-cari-data-obat.is-active .quick-medicine-list dd {
+27504 |   overflow-wrap: anywhere !important;
+27505 | }
+27506 | 
+27507 | #view-cari-data-obat.is-active .quick-card-arrow {
+27508 |   display: none !important;
+27509 | }
+27510 | 
+27511 | #view-cari-data-obat.is-active .quick-pagination {
+27512 |   flex: 0 0 auto !important;
+27513 |   padding-top: 2px !important;
+27514 | }
+27515 | 
+27516 | #view-data-karyawan .simple-table td:last-child:has(.table-row-menu[open]),
+27517 | #view-data-supplier .simple-table td:last-child:has(.table-row-menu[open]) {
+27518 |   z-index: 80 !important;
+27519 | }
+27520 | 
+27521 | @media (max-width: 820px) {
+27522 |   #view-cari-data-obat.is-active .quick-search-workspace {
+27523 |     height: calc(100dvh - var(--mobile-header-height, 132px) - 82px) !important;
+27524 |     max-height: calc(100dvh - var(--mobile-header-height, 132px) - 82px) !important;
+27525 |   }
+27526 | 
+27527 |   #view-cari-data-obat.is-active #quickResultsList,
+27528 |   #view-cari-data-obat.is-active .quick-results-list {
+27529 |     min-height: min(60dvh, 520px) !important;
+27530 |     gap: 8px !important;
+27531 |   }
+27532 | 
+27533 |   #view-cari-data-obat.is-active .quick-medicine-card {
+27534 |     min-height: 104px !important;
+27535 |     padding: 9px !important;
+27536 |   }
+27537 | 
+27538 |   #view-cari-data-obat.is-active .quick-medicine-list {
+27539 |     grid-template-columns: 1fr !important;
+27540 |     gap: 3px !important;
+27541 |   }
+27542 | 
+27543 |   #view-cari-data-obat.is-active .quick-medicine-list div {
+27544 |     grid-template-columns: 82px minmax(0, 1fr) !important;
+27545 |   }
+27546 | 
+27547 |   #view-cari-data-obat.is-active .quick-medicine-name strong {
+27548 |     font-size: 0.72rem !important;
+27549 |   }
+27550 | }
+27551 | 
+27552 | /* 20260719b: final viewport + sticky action menu hardening. */
+27553 | #view-cari-data-obat.is-active .quick-search-workspace {
+27554 |   min-height: calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 10px) !important;
+27555 | }
+27556 | 
+27557 | #view-cari-data-obat.is-active #quickResultsList,
+27558 | #view-cari-data-obat.is-active .quick-results-list {
+27559 |   min-height: max(520px, calc(100dvh - var(--desktop-dashboard-header-height, 86px) - 132px)) !important;
+27560 |   padding-bottom: 14px !important;
+27561 | }
+27562 | 
+27563 | #view-cari-data-obat.is-active .quick-medicine-card {
+27564 |   min-height: 94px !important;
+27565 |   padding-block: 8px !important;
+27566 | }
+27567 | 
+27568 | #view-cari-data-obat.is-active .quick-medicine-list {
+27569 |   gap: 3px 12px !important;
+27570 | }
+27571 | 
+27572 | #view-data-karyawan .simple-table-wrap,
+27573 | #view-data-supplier .simple-table-wrap {
+27574 |   position: relative !important;
+27575 |   isolation: isolate !important;
+27576 |   overflow-x: auto !important;
+27577 |   overflow-y: visible !important;
+27578 | }
+27579 | 
+27580 | #view-data-karyawan .simple-table,
+27581 | #view-data-supplier .simple-table {
+27582 |   border-collapse: separate !important;
+27583 | }
+27584 | 
+27585 | #view-data-karyawan .simple-table td:last-child,
+27586 | #view-data-supplier .simple-table td:last-child {
+27587 |   overflow: visible !important;
+27588 | }
+27589 | 
+27590 | .table-row-menu-list {
+27591 |   will-change: left, top !important;
+27592 | }
+27593 | 
+27594 | @media (max-width: 820px) {
+27595 |   #view-cari-data-obat.is-active #quickResultsList,
+27596 |   #view-cari-data-obat.is-active .quick-results-list {
+27597 |     min-height: max(460px, 58dvh) !important;
+27598 |   }
+27599 | 
+27600 |   #view-cari-data-obat.is-active .quick-medicine-card {
+27601 |     min-height: 88px !important;
+27602 |   }
+27603 | }
+27604 | 

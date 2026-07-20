@@ -231,7 +231,7 @@
     window.clearTimeout(routeLoadingTimer);
     routeLoadingTimer = window.setTimeout(function () {
       if (routeLoadingOverlay) routeLoadingOverlay.hidden = true;
-    }, 1500);
+    }, 500);
   }
 
   function logLogoutActivity(session) {

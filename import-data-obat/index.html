@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id">
 <head>
+  <base href="/">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - Indo Apotek</title>
@@ -8,18 +9,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260720-presensi-role-v4">
-  <link rel="stylesheet" href="assets/ess.css?v=20260719-ess-v1">
+  <link rel="stylesheet" href="assets/styles.css?v=20260720-fix">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
   <script defer src="assets/app.js?v=20260621-ui-v46"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260720-presensi-role-v4"></script>
-  <script defer src="assets/ess.js?v=20260719-ess-v1"></script>
+  <script defer src="assets/home-dashboard.js?v=20260718-absensi-cleanup-v1"></script>
 </head>
-<body data-page="home" class="dashboard-page">
+<body data-page="home" class="dashboard-page" data-initial-view="import-data-obat">
   <div class="app-layout">
     <aside class="app-sidebar" aria-label="Menu utama">
       <nav class="sidebar-nav">
@@ -53,20 +52,6 @@
             <path d="m15 17 2 2 4-4"></path>
           </svg>
           <span class="sidebar-label">Presensi</span>
-        </button>
-        <button class="sidebar-link" type="button" data-view-target="presensi-karyawan" data-access-key="presensi_karyawan" title="Portal Karyawan">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="16" rx="3"></rect>
-            <circle cx="9" cy="10" r="2.25"></circle><path d="M5.5 16c.7-2 2-3 3.5-3s2.8 1 3.5 3M15 8h3M15 12h3"></path>
-          </svg>
-          <span class="sidebar-label">Portal Karyawan</span>
-        </button>
-        <button class="sidebar-link" type="button" data-view-target="monitoring-presensi" data-access-key="monitoring_presensi" title="Monitoring Presensi">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="16" rx="3"></rect>
-            <path d="M7 16v-3M12 16V8M17 16v-5"></path>
-          </svg>
-          <span class="sidebar-label">Monitoring Presensi</span>
         </button>
         <button class="sidebar-link" type="button" data-view-target="cari-data-obat" data-access-key="cari_data_obat" title="Cari Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -397,22 +382,6 @@
                   </svg>
                 </span>
                 <strong>Presensi<br>Kehadiran</strong>
-              </button>
-              <button class="mobile-home-card" type="button" data-view-target="presensi-karyawan" data-access-key="presensi_karyawan">
-                <span class="mobile-home-icon icon-presence">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2.25"></circle><path d="M5.5 16c.7-2 2-3 3.5-3s2.8 1 3.5 3M15 8h3M15 12h3"></path>
-                  </svg>
-                </span>
-                <strong>Portal<br>Karyawan</strong>
-              </button>
-              <button class="mobile-home-card" type="button" data-view-target="monitoring-presensi" data-access-key="monitoring_presensi">
-                <span class="mobile-home-icon icon-report">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M7 16v-3M12 16V8M17 16v-5"></path>
-                  </svg>
-                </span>
-                <strong>Monitoring<br>Presensi</strong>
               </button>
               <button class="mobile-home-card" type="button" data-view-target="data-obat" data-access-key="data_obat">
                 <span class="mobile-home-icon icon-medicine">
@@ -766,29 +735,6 @@
               </div>
               <div class="salary-history-list" id="salarySlipHistoryList"></div>
             </article>
-          </section>
-        </section>
-
-        <section class="dashboard-view ess-view" id="view-presensi-karyawan" data-view="presensi-karyawan">
-          <section class="ess-shell" aria-labelledby="essTitle">
-            <header class="ess-head">
-              <div><p class="ess-eyebrow">EMPLOYEE SELF SERVICE</p><h2 id="essTitle">Portal Karyawan</h2><p id="essSubtitle">Presensi dan administrasi kerja pribadi dalam satu tempat.</p></div>
-              <button class="secondary-action" type="button" data-ess-refresh>Refresh</button>
-            </header>
-            <nav class="ess-tabs" aria-label="Menu presensi karyawan">
-              <button class="is-active" type="button" data-ess-tab="dashboard">Dashboard Presensi</button><button type="button" data-ess-tab="attendance">Presensi Saya</button><button type="button" data-ess-tab="schedule">Jadwal Kerja</button><button type="button" data-ess-tab="leave">Cuti &amp; Izin</button><button type="button" data-ess-tab="overtime">Lembur</button><button type="button" data-ess-tab="salary">Slip Gaji</button><button type="button" data-ess-tab="documents">Dokumen Saya</button><button type="button" data-ess-tab="announcements">Pengumuman</button>
-            </nav>
-            <div class="ess-content" id="essContent" aria-live="polite"></div>
-          </section>
-        </section>
-
-        <section class="dashboard-view ess-view" id="view-monitoring-presensi" data-view="monitoring-presensi">
-          <section class="ess-shell monitoring-shell" aria-labelledby="monitoringTitle">
-            <header class="ess-head"><div><p class="ess-eyebrow">OWNER / ADMIN</p><h2 id="monitoringTitle">Monitoring Presensi</h2><p id="monitoringSubtitle">Pantau operasional ESS seluruh karyawan.</p></div><button class="secondary-action" type="button" data-monitoring-refresh>Refresh</button></header>
-            <nav class="ess-tabs monitoring-tabs" aria-label="Menu monitoring presensi">
-              <button class="is-active" type="button" data-monitoring-tab="dashboard">Dashboard Monitoring</button><button type="button" data-monitoring-tab="attendance">Monitoring Presensi</button><button type="button" data-monitoring-tab="schedule">Monitoring Jadwal</button><button type="button" data-monitoring-tab="leave">Monitoring Cuti</button><button type="button" data-monitoring-tab="overtime">Monitoring Lembur</button><button type="button" data-monitoring-tab="salary">Monitoring Slip Gaji</button><button type="button" data-monitoring-tab="documents">Monitoring Dokumen</button><button type="button" data-monitoring-tab="announcements">Monitoring Pengumuman</button><button type="button" data-monitoring-tab="attendance-recap">Rekap Kehadiran</button><button type="button" data-monitoring-tab="payroll-recap">Rekap Payroll</button><button type="button" data-monitoring-tab="settings">Pengaturan</button>
-            </nav>
-            <div class="ess-content" id="monitoringContent" aria-live="polite"></div>
           </section>
         </section>
 
@@ -2052,3 +1998,10 @@
   </section>
 </body>
 </html>
+
+
+
+
+
+
+

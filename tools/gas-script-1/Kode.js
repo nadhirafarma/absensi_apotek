@@ -95,7 +95,7 @@ function doGet(e) {
     var sheet = getAbsensiSheet_(spreadsheet);
 
     if (action == 'listAttendanceRecords') {
-      return handleListAttendanceRecords_(params, sheet);
+      return handleListAttendanceRecords_(params, spreadsheet);
     }
 
     if (action == 'listPayrollEmployees') {
@@ -152,7 +152,7 @@ function doPost(e) {
     var sheet = getAbsensiSheet_(spreadsheet);
 
     if (action == 'listAttendanceRecords') {
-      return handleListAttendanceRecords_(payload, sheet);
+      return handleListAttendanceRecords_(payload, spreadsheet);
     }
 
     if (action == 'updateAttendanceRecord') {
@@ -605,11 +605,9 @@ function isInactiveEmployeeStatus_(value) {
   return key == 'nonaktif' || key == 'inactive' || key == 'nonactive' || key == 'tidakaktif' || key == 'keluar' || key == 'resign' || key == 'cuti';
 }
 
-function handleListAttendanceRecords_(params, sheet) {
-  ensureAbsensiHeaders_(sheet);
-
-  var lastRow = sheet.getLastRow();
-  var lastColumn = Math.max(sheet.getLastColumn(), 16);
+function handleListAttendanceRecords_(params, source) {
+  var spreadsheet = source && typeof source.getSheets == 'function' ? source : null;
+  var sheets = spreadsheet ? getAbsensiRecordSheets_(spreadsheet) : [source];
   var role = normalizeAbsensiKey_(params.role || '');
   var isAdmin = isAbsensiAdmin_(params);
   var identityKeys = [
@@ -629,66 +627,82 @@ function handleListAttendanceRecords_(params, sheet) {
   if (!limit || limit < 1) limit = hasRange ? 5000 : 300;
   if (limit > 5000) limit = 5000;
 
-  if (lastRow < 2) {
-    return jsonAbsensi_({
-      ok: true,
-      success: true,
-      records: [],
-      total: 0
-    });
-  }
+  sheets.forEach(function(sheet) {
+    if (!sheet || sheet.getLastRow() < 2) return;
 
-  var values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
-  var headers = values[0].map(normalizeAbsensiHeader_);
-  var columns = getAbsensiColumns_(headers);
+    var lastColumn = Math.max(sheet.getLastColumn(), 16);
+    var values = sheet.getRange(1, 1, sheet.getLastRow(), lastColumn).getValues();
+    var headers = values[0].map(normalizeAbsensiHeader_);
+    var columns = getAbsensiColumns_(headers);
+    var sourceSheet = sheet.getName();
+    var editable = sourceSheet == ABSENSI_SHEET_NAME;
+    var sheetRecordCount = 0;
 
-  for (var rowIndex = values.length - 1; rowIndex >= 1; rowIndex -= 1) {
-    var row = values[rowIndex];
-    var timestamp = row[columns.timestamp];
-    var dateKey = sanitizeAbsensiDateKey_(row[columns.dateKey]) || getJakartaDateKey_(timestamp);
-    var timestampTime = timestamp instanceof Date && !isNaN(timestamp.getTime())
-      ? Utilities.formatDate(timestamp, ABSENSI_TIMEZONE, 'HH:mm')
-      : '';
-    var timeText = timestampTime || sanitizeAbsensiTime_(row[columns.timeText]);
-    var displayName = normalizeDisplayName_(row[columns.name]);
-    var nameKey = normalizeAbsensiKey_(displayName);
+    for (var rowIndex = values.length - 1; rowIndex >= 1; rowIndex -= 1) {
+      var row = values[rowIndex];
+      var timestamp = row[columns.timestamp];
+      var dateKey = sanitizeAbsensiDateKey_(row[columns.dateKey]) || getJakartaDateKey_(timestamp);
+      var timestampTime = timestamp instanceof Date && !isNaN(timestamp.getTime())
+        ? Utilities.formatDate(timestamp, ABSENSI_TIMEZONE, 'HH:mm')
+        : getAbsensiTimeFromTimestamp_(timestamp);
+      var timeText = timestampTime || sanitizeAbsensiTime_(row[columns.timeText]);
+      var displayName = normalizeDisplayName_(row[columns.name]);
+      var nameKey = normalizeAbsensiKey_(displayName);
 
-    if (!isAdmin && identityKeys.length && identityKeys.indexOf(nameKey) < 0) {
-      continue;
+      if (!displayName || !dateKey) continue;
+      if (!isAdmin && identityKeys.length && identityKeys.indexOf(nameKey) < 0) continue;
+      if (!isAdmin && !identityKeys.length) continue;
+      if (dateFrom && dateKey < dateFrom) continue;
+      if (dateTo && dateKey > dateTo) continue;
+
+      records.push({
+        rowNumber: rowIndex + 1,
+        sourceSheet: sourceSheet,
+        editable: editable,
+        timestamp: timestamp instanceof Date && !isNaN(timestamp.getTime()) ? timestamp.toISOString() : String(timestamp || ''),
+        date: dateKey,
+        tanggal_absen: dateKey,
+        tanggalAbsen: dateKey,
+        time: timeText,
+        jam_absen: timeText,
+        jamAbsen: timeText,
+        nama: displayName,
+        nama_karyawan: displayName,
+        status: normalizeAbsensiStatus_(row[columns.status]),
+        shift: String(row[columns.shift] || ''),
+        fotoUrl: String(row[columns.photo] || ''),
+        fileId: String(row[columns.fileId] || ''),
+        latitude: String(row[columns.latitude] || ''),
+        longitude: String(row[columns.longitude] || ''),
+        gpsAccuracy: String(row[columns.gpsAccuracy] || ''),
+        gpsDistance: String(row[columns.gpsDistance] || ''),
+        warningMessage: String(row[columns.warning] || ''),
+        warningFlag: String(row[columns.warningFlag] || '')
+      });
+      sheetRecordCount += 1;
+
+      if (!hasRange && sheetRecordCount >= limit) break;
     }
+  });
 
-    if (!isAdmin && !identityKeys.length) {
-      continue;
-    }
+  var seen = {};
+  records = records.filter(function(record) {
+    var key = [
+      record.date,
+      record.time,
+      normalizeAbsensiKey_(record.nama),
+      record.status,
+      normalizeAbsensiKey_(record.shift)
+    ].join('|');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 
-    if (dateFrom && dateKey < dateFrom) continue;
-    if (dateTo && dateKey > dateTo) continue;
-
-    records.push({
-      rowNumber: rowIndex + 1,
-      timestamp: timestamp instanceof Date && !isNaN(timestamp.getTime()) ? timestamp.toISOString() : String(timestamp || ''),
-      date: dateKey,
-      tanggal_absen: dateKey,
-      tanggalAbsen: dateKey,
-      time: timeText,
-      jam_absen: timeText,
-      jamAbsen: timeText,
-      nama: displayName,
-      nama_karyawan: displayName,
-      status: normalizeAbsensiStatus_(row[columns.status]),
-      shift: String(row[columns.shift] || ''),
-      fotoUrl: String(row[columns.photo] || ''),
-      fileId: String(row[columns.fileId] || ''),
-      latitude: String(row[columns.latitude] || ''),
-      longitude: String(row[columns.longitude] || ''),
-      gpsAccuracy: String(row[columns.gpsAccuracy] || ''),
-      gpsDistance: String(row[columns.gpsDistance] || ''),
-      warningMessage: String(row[columns.warning] || ''),
-      warningFlag: String(row[columns.warningFlag] || '')
-    });
-
-    if (!hasRange && records.length >= limit) break;
-  }
+  records.sort(function(a, b) {
+    return (String(b.date) + ' ' + String(b.time) + ' ' + String(b.timestamp))
+      .localeCompare(String(a.date) + ' ' + String(a.time) + ' ' + String(a.timestamp));
+  });
 
   if (records.length > limit) {
     records = records.slice(0, limit);
@@ -700,8 +714,39 @@ function handleListAttendanceRecords_(params, sheet) {
     records: records,
     total: records.length,
     isAdmin: isAdmin,
-    role: role
+    role: role,
+    sourceSheets: sheets.map(function(sheet) { return sheet.getName(); })
   });
+}
+
+function getAbsensiRecordSheets_(spreadsheet) {
+  var primary = getAbsensiSheet_(spreadsheet);
+  var primaryId = primary.getSheetId();
+  var candidates = [primary];
+
+  spreadsheet.getSheets().forEach(function(sheet) {
+    if (sheet.getSheetId() == primaryId || sheet.getLastRow() < 2 || sheet.getLastColumn() < 3) return;
+
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(normalizeAbsensiHeader_);
+    var timestampColumn = findHeaderIndex_(headers, ['timestamp', 'waktu']);
+    var dateColumn = findHeaderIndex_(headers, ['tanggalabsen', 'tanggalkehadiran', 'tanggal']);
+    var nameColumn = findHeaderIndex_(headers, ['namakaryawan', 'nama', 'karyawan', 'pegawai']);
+    var statusColumn = findHeaderIndex_(headers, ['statuskehadiran', 'status', 'jenisabsen', 'absen']);
+    var nameKey = normalizeAbsensiKey_(sheet.getName());
+    var looksLikeFormResponse = /formresponses?|tanggapanformulir|responsformulir|absensi/.test(nameKey);
+
+    if (looksLikeFormResponse && nameColumn >= 0 && statusColumn >= 0 && (timestampColumn >= 0 || dateColumn >= 0)) {
+      candidates.push(sheet);
+    }
+  });
+
+  return candidates;
+}
+
+function getAbsensiTimeFromTimestamp_(value) {
+  var text = String(value || '').trim();
+  var match = text.match(/(?:T|\s)(\d{1,2})[:.](\d{2})(?::\d{2})?/);
+  return match ? ('0' + match[1]).slice(-2) + ':' + match[2] : '';
 }
 
 function handleUpdateAttendanceRecord_(payload, sheet) {

@@ -187,6 +187,8 @@
     dashboard: "Dashboard",
     presensi: "Presensi / Catatan Kehadiran",
     "cari-data-obat": "Cari Data Obat",
+    "presensi-karyawan": "Portal Karyawan",
+    "monitoring-presensi": "Monitoring Presensi",
     "data-obat": "Data Obat",
     "data-karyawan": "Data Karyawan",
     "data-supplier": "Data Supplier",
@@ -203,6 +205,8 @@
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi", label: "Absensi" },
     { key: "presensi", label: "Presensi / Catatan Kehadiran" },
+    { key: "presensi_karyawan", label: "Portal Karyawan (ESS)" },
+    { key: "monitoring_presensi", label: "Monitoring Presensi" },
     { key: "cari_data_obat", label: "Cari Data Obat" },
     { key: "data_obat", label: "Data Obat" },
     { key: "filter_data_obat", label: "Filter Data Obat" },
@@ -222,14 +226,15 @@
 
   const ROLE_ACCESS = {
     owner: ACCESS_MENUS.map((item) => item.key),
-    administrator: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
-    admin: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
-    apoteker: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
-    kasir: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
-    "asisten apoteker": ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
-    "staf gudang": ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
-    operator: ["dashboard", "absensi", "presensi", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
+    administrator: ["dashboard", "absensi", "presensi", "presensi_karyawan", "monitoring_presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
+    admin: ["dashboard", "absensi", "presensi", "presensi_karyawan", "monitoring_presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
+    apoteker: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    kasir: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "asisten apoteker": ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
+    "staf gudang": ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    operator: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
   };
+
 
   const LOCAL_SCHEMAS = {
     employee: {
@@ -403,7 +408,7 @@
     bindEvents();
     setupHomeMenuReorder();
     if (!routeInitialViewFromQuery()) {
-      switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true });
+      switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true, skipCleanUrl: true });
     }
     renderColumnOptions();
     renderMedicineForm();
@@ -427,12 +432,45 @@
     bindUserAccessSync();
   }
 
-  function routeInitialViewFromQuery() {
+  function readInitialViewRequest() {
+    // 1) Legacy query: index.html?view=X
     const params = new URLSearchParams(window.location.search || "");
-    const requested = String(params.get("view") || "").trim().replace(/_/g, "-");
+    const fromQuery = String(params.get("view") || "").trim().replace(/_/g, "-");
+    if (fromQuery) return fromQuery;
+    // 2) Clean path: /cari-data-obat/ style URLs (full-page clone under a folder).
+    const seg = String(window.location.pathname || "").split("/").filter(Boolean).pop() || "";
+    const fromPath = seg.replace(/\.html$/i, "").trim().replace(/_/g, "-");
+    if (fromPath && VIEW_TITLES[fromPath]) return fromPath;
+    // 3) Clean route fallback: body[data-initial-view] set by per-route index.html clone.
+    const fromBody = String(document.body.dataset.initialView || "").trim().replace(/_/g, "-");
+    if (fromBody) return fromBody;
+    return "";
+  }
+
+  function cleanUrlForView(viewName) {
+    // Map a view to its clean-route path. Keep mobile home at root.
+    if (!viewName || viewName === "home") return "/";
+    if (viewName === "dashboard") return "/dashboard/";
+    if (!VIEW_TITLES[viewName]) return null;
+    return `/${viewName}/`;
+  }
+
+  function syncCleanUrl(viewName) {
+    try {
+      const target = cleanUrlForView(viewName);
+      if (!target) return;
+      if (window.location.pathname === target) return;
+      window.history.pushState({ view: viewName }, "", target);
+    } catch (_) {
+      /* history unsupported: keep single-document behavior */
+    }
+  }
+
+  function routeInitialViewFromQuery() {
+    const requested = readInitialViewRequest();
     if (!requested || !VIEW_TITLES[requested]) return false;
 
-    switchView(requested, { skipHistory: true });
+    switchView(requested, { skipHistory: true, skipCleanUrl: true });
     return true;
   }
 
@@ -882,6 +920,15 @@
       });
     });
 
+    window.addEventListener("popstate", () => {
+      const requested = readInitialViewRequest();
+      const target = requested && VIEW_TITLES[requested]
+        ? requested
+        : (isHomeMobileViewport() ? "home" : "dashboard");
+      if (canView(target)) switchView(target, { skipHistory: true, skipCleanUrl: true, fromHistory: true });
+    });
+
+
     document.addEventListener("click", (event) => {
       const accessElement = event.target.closest("[data-access-key]");
       if (!accessElement || canAccess(accessElement.dataset.accessKey)) return;
@@ -1158,6 +1205,7 @@
     if (els.attendanceDateFilter) els.attendanceDateFilter.addEventListener("change", () => {
       state.attendanceDate = els.attendanceDateFilter.value || getTodayDateKey();
       renderAttendanceDashboard();
+      fetchAttendanceRecords({ silent: true, date: state.attendanceDate });
     });
     [els.attendanceMonthFilter, els.attendanceYearFilter].forEach((control) => {
       if (!control) return;
@@ -1165,6 +1213,7 @@
         state.attendanceMonth = els.attendanceMonthFilter?.value || getCurrentMonthValue();
         state.attendanceYear = els.attendanceYearFilter?.value || String(new Date().getFullYear());
         renderAttendanceDashboard();
+        fetchAttendanceRecords({ silent: true, month: state.attendanceMonth, year: state.attendanceYear });
       });
     });
     if (els.attendanceTableBody) els.attendanceTableBody.addEventListener("click", handleAttendanceTableAction);
@@ -1961,22 +2010,29 @@
       return;
     }
 
-    els.quickResultsList.innerHTML = rows.map((row, index) => `
-      <article class="quick-medicine-card quick-tone-${((start + index) % 4) + 1}">
-        <div class="quick-medicine-name">
-          <span class="quick-name-accent" aria-hidden="true"></span>
-          <strong>${escapeHtml(formatCell(row.nama))}</strong>
-        </div>
-        <dl class="quick-medicine-list">
-          <div><dt>Stok</dt><dd>${escapeHtml(formatCell(row.stok, "stok"))} / ${escapeHtml(formatCell(row.satuan_beli))}</dd></div>
-          <div><dt>Harga 1</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_1, "harga_jual_1"))} / ${escapeHtml(formatCell(row.satuan_1))}</dd></div>
-          <div><dt>Harga 2</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_2, "harga_jual_2"))} / ${escapeHtml(formatCell(row.satuan_2))}</dd></div>
-          <div><dt>Harga 3</dt><dd>${escapeHtml(formatQuickPrice(row.harga_jual_3, "harga_jual_3"))} / ${escapeHtml(formatCell(row.satuan_3))}</dd></div>
-          <div><dt>Expired</dt><dd>${escapeHtml(formatQuickExpiry(row))}</dd></div>
-        </dl>
-        <span class="quick-card-arrow" aria-hidden="true">›</span>
-      </article>
-    `).join("");
+    els.quickResultsList.innerHTML = rows.map((row, index) => {
+      const metaRows = buildQuickMedicineMetaRows(row)
+        .map(({ label, value }) => `
+          <div>
+            <dt>${escapeHtml(label)}</dt>
+            <dd>${escapeHtml(value)}</dd>
+          </div>
+        `)
+        .join("");
+
+      return `
+        <article class="quick-medicine-card quick-tone-${((start + index) % 4) + 1}">
+          <div class="quick-medicine-name">
+            <span class="quick-name-accent" aria-hidden="true"></span>
+            <strong>${escapeHtml(formatCell(row.nama))}</strong>
+          </div>
+          <dl class="quick-medicine-list">
+            ${metaRows}
+          </dl>
+          <span class="quick-card-arrow" aria-hidden="true">›</span>
+        </article>
+      `;
+    }).join("");
   }
 
   function applyReportQuickFilter(type) {
@@ -4503,6 +4559,8 @@
   function canAccess(key) {
     const user = getCurrentUserRecord();
     if (!isActiveRecord(user)) return false;
+    if (key === "monitoring_presensi") return isAdminUser(user);
+    if (key === "presensi_karyawan") return !isOwnerUser(user);
     if (isOwnerUser(user)) return true;
     return user.access.includes(key);
   }
@@ -4523,6 +4581,10 @@
     } else if (isOwnerUser(user)) {
       ACCESS_MENUS.forEach((item) => access.add(item.key));
     }
+    if (isActiveRecord(user) && !isOwnerUser(user)) access.add("presensi_karyawan");
+    if (isActiveRecord(user) && isAdminUser(user)) access.add("monitoring_presensi");
+    if (!isAdminUser(user)) access.delete("monitoring_presensi");
+    if (isOwnerUser(user)) access.delete("presensi_karyawan");
 
     document.querySelectorAll("[data-access-key]").forEach((element) => {
       const allowed = access.has(element.dataset.accessKey);
@@ -4560,14 +4622,20 @@
 
   function canView(viewName, access) {
     if (viewName === "home") return true;
+    const currentUser = getCurrentUserRecord();
+    if (!isActiveRecord(currentUser)) return false;
+    if (viewName === "monitoring-presensi") return isAdminUser(currentUser);
+    if (viewName === "presensi-karyawan") return !isOwnerUser(currentUser);
     if (!access) {
-      const user = getCurrentUserRecord();
+      const user = currentUser;
       access = new Set(user.access || []);
       if (isOwnerUser(user)) ACCESS_MENUS.forEach((item) => access.add(item.key));
     }
     const map = {
       dashboard: "dashboard",
       presensi: "presensi",
+      "presensi-karyawan": "presensi_karyawan",
+      "monitoring-presensi": "monitoring_presensi",
       "cari-data-obat": "cari_data_obat",
       "data-obat": "data_obat",
       "data-karyawan": "data_karyawan",
@@ -4586,6 +4654,8 @@
   function accessKeyToView(key) {
     const map = {
       presensi: "presensi",
+      presensi_karyawan: "presensi-karyawan",
+      monitoring_presensi: "monitoring-presensi",
       cari_data_obat: "cari-data-obat",
       data_obat: "data-obat",
       data_karyawan: "data-karyawan",
@@ -9979,8 +10049,24 @@
   async function fetchAttendanceRecords(options = {}) {
     ensureAttendanceFilterDefaults();
     const user = getCurrentUserRecord();
+    const canSeeAllAttendance = isAdminUser(user);
     const identity = getAttendanceIdentity(user);
     const attendanceName = resolveAttendanceEmployeeName(user);
+    const selectedDate = normalizeAttendanceDateKey(String(options.date || state.attendanceDate || "").trim()) || getTodayDateKey();
+    const selectedMonth = String(options.month || state.attendanceMonth || getCurrentMonthValue()).trim().padStart(2, "0");
+    const selectedYear = /^\d{4}$/.test(String(options.year || state.attendanceYear || "").trim())
+      ? String(options.year || state.attendanceYear).trim()
+      : String(new Date().getFullYear());
+    const monthStart = /^\d{4}$/.test(selectedYear) && /^\d{2}$/.test(selectedMonth)
+      ? `${selectedYear}-${selectedMonth}-01`
+      : "";
+    const monthEnd = monthStart
+      ? formatDateKey(new Date(Number(selectedYear), Number(selectedMonth), 0))
+      : "";
+
+    state.attendanceDate = selectedDate;
+    state.attendanceMonth = selectedMonth;
+    state.attendanceYear = selectedYear;
 
     try {
       if (options.manual && els.attendanceStatusText) {
@@ -9991,11 +10077,15 @@
         action: "listAttendanceRecords",
         role: user.role || "",
         username: user.username || "",
-        name: attendanceName || identity.name,
-        nama: attendanceName || identity.name,
-        nama_karyawan: attendanceName || identity.name,
-        email: identity.email,
-        limit: 1000
+        ...(canSeeAllAttendance ? {} : {
+          name: attendanceName || identity.name,
+          nama: attendanceName || identity.name,
+          nama_karyawan: attendanceName || identity.name,
+          email: identity.email
+        }),
+        dateFrom: monthStart || selectedDate,
+        dateTo: monthEnd || selectedDate,
+        limit: 5000
       });
 
       if (!Array.isArray(payload.records) && !Array.isArray(payload.data)) {
@@ -10085,6 +10175,8 @@
 
     return {
       rowNumber: Number(record.rowNumber || record.row || record._row || 0),
+      sourceSheet: String(record.sourceSheet || record.sheetName || "").trim(),
+      editable: record.editable !== false,
       timestamp,
       date,
       time,
@@ -10120,12 +10212,14 @@
           lemburRow: 0,
           warningMessage: "",
           warningFlag: "",
+          editable: record.editable !== false,
           records: []
         });
       }
 
       const item = map.get(key);
       item.records.push(record);
+      item.editable = item.editable && record.editable !== false;
       if (record.warningMessage && !item.warningMessage) item.warningMessage = record.warningMessage;
       if (record.warningFlag && !item.warningFlag) item.warningFlag = record.warningFlag;
 
@@ -10190,16 +10284,19 @@
     const user = getCurrentUserRecord();
     const canEdit = isAdminUser(user);
     const visibleGroups = getVisibleAttendanceGroups();
-    const selectedDate = state.attendanceDate || getTodayDateKey();
+    const selectedDate = normalizeAttendanceDateKey(state.attendanceDate || getTodayDateKey()) || getTodayDateKey();
+    const selectedMonth = String(state.attendanceMonth || getCurrentMonthValue()).padStart(2, "0");
+    const selectedYear = String(state.attendanceYear || new Date().getFullYear());
+    const selectedMonthKey = `${selectedYear}-${selectedMonth}`;
     const todayGroups = visibleGroups.filter((group) => group.date === selectedDate);
-    const monthGroups = visibleGroups.filter((group) => group.date.slice(0, 7) === `${state.attendanceYear}-${state.attendanceMonth}`);
+    const monthGroups = visibleGroups.filter((group) => String(group.date || "").startsWith(selectedMonthKey));
     const employees = getVisibleAttendanceEmployees();
     const employeeCount = employees.length || countUniqueNames(visibleGroups);
     const regularTodayGroups = todayGroups.filter((group) => !group.isOvertime);
     const presentToday = regularTodayGroups.filter((group) => group.datang).length;
     const lateToday = todayGroups.filter((group) => isLateAttendance(group)).length;
     const absentToday = Math.max(0, employeeCount - presentToday);
-    const workDays = countWorkDaysInMonth(Number(state.attendanceYear), Number(state.attendanceMonth));
+    const workDays = countWorkDaysInMonth(Number(selectedYear), Number(selectedMonth));
     const monthlyRows = buildAttendanceMonthlyRows(monthGroups, employees, workDays);
     const pagi = monthlyRows.reduce((sum, row) => sum + row.pagi, 0);
     const sore = monthlyRows.reduce((sum, row) => sum + row.sore, 0);
@@ -10213,7 +10310,7 @@
     setText(els.attendanceAbsentToday, formatNumber(absentToday));
     setText(els.attendanceWorkDays, `${formatNumber(workDays)} Hari`);
     setText(els.attendanceWorkDaysSide, `${formatNumber(workDays)} Hari`);
-    setText(els.attendanceMonthTitle, `${getMonthName(state.attendanceMonth)} ${state.attendanceYear}`);
+    setText(els.attendanceMonthTitle, `${getMonthName(selectedMonth)} ${selectedYear}`);
     setText(els.attendanceShiftPagi, `${formatNumber(pagi)} Hari`);
     setText(els.attendanceShiftSore, `${formatNumber(sore)} Hari`);
     if (els.attendanceShiftPagi?.nextElementSibling) els.attendanceShiftPagi.nextElementSibling.style.setProperty("--bar", `${Math.round((pagi / shiftTotal) * 100)}%`);
@@ -10226,6 +10323,7 @@
 
   function renderAttendanceTable(groups, canEdit) {
     if (!els.attendanceTableBody) return;
+    const selectedDate = normalizeAttendanceDateKey(state.attendanceDate || getTodayDateKey()) || getTodayDateKey();
 
     if (!groups.length) {
       els.attendanceTableBody.innerHTML = `<tr><td class="empty-table-cell" colspan="${canEdit ? 8 : 7}">Belum ada catatan kehadiran pada tanggal ini.</td></tr>`;
@@ -10234,7 +10332,7 @@
     }
 
     els.attendanceTableBody.innerHTML = groups.map((group) => {
-      const actionCell = canEdit && !group.isOvertime
+      const actionCell = canEdit && group.editable !== false && !group.isOvertime
         ? `<td class="attendance-action-cell"><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
         : canEdit ? `<td class="attendance-action-cell"></td>` : "";
       const displayDatang = group.isOvertime ? (group.lembur || "-") : (group.datang || "-");
@@ -10253,7 +10351,7 @@
         </tr>
       `;
     }).join("");
-    setText(els.attendanceTableInfo, `Menampilkan ${formatNumber(groups.length)} catatan pada ${formatAttendanceDate(state.attendanceDate)}.`);
+    setText(els.attendanceTableInfo, `Menampilkan ${formatNumber(groups.length)} catatan pada ${formatAttendanceDate(selectedDate)}.`);
   }
 
   function renderAttendanceMonthlyTable(monthGroups, employees, workDays, monthlyRows) {
@@ -10301,7 +10399,7 @@
     if (!button) return;
     if (!isAdminUser(getCurrentUserRecord())) return;
     const group = state.attendanceGroups.find((item) => item.key === button.dataset.attendanceKey);
-    if (group) openAttendanceEditModal(group);
+    if (group?.editable !== false) openAttendanceEditModal(group);
   }
 
   function openAttendanceEditModal(group) {
@@ -10442,6 +10540,7 @@
 
   function handlePayrollTableAction(event) {
     const button = event.target.closest("[data-payroll-action]");
+    closeTableActionMenus();
     if (!button || !isAdminUser(getCurrentUserRecord())) return;
 
     const index = Number(button.dataset.index);
@@ -11304,16 +11403,48 @@
     const trigger = menu.querySelector(".table-row-menu-trigger");
     const panel = menu.querySelector(".table-row-menu-list");
     if (!trigger || !panel) return;
-    const triggerRect = trigger.getBoundingClientRect();
-    const panelWidth = Math.max(panel.offsetWidth || 120, 116);
-    const panelHeight = Math.max(panel.offsetHeight || 92, 72);
-    const viewportGap = 10;
-    let left = triggerRect.right + 8;
-    if (left + panelWidth > window.innerWidth - viewportGap) {
-      left = triggerRect.left - panelWidth - 8;
+    const computedStyle = window.getComputedStyle(panel);
+    const requiresMeasurement = computedStyle.display === "none";
+
+    if (requiresMeasurement) {
+      panel.style.setProperty("display", "grid", "important");
+      panel.style.setProperty("visibility", "hidden", "important");
+      panel.style.setProperty("position", "fixed", "important");
+      panel.style.setProperty("left", "-9999px", "important");
+      panel.style.setProperty("top", "0", "important");
     }
+
+    const panelRect = panel.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const anchorCell = trigger.closest("td, th");
+    const anchorRect = anchorCell?.getBoundingClientRect() || triggerRect;
+    const panelWidth = Math.max(Math.ceil(panelRect.width || panel.scrollWidth || panel.offsetWidth || 132), 132);
+    const panelHeight = Math.max(Math.ceil(panelRect.height || panel.scrollHeight || panel.offsetHeight || 92), 84);
+
+    if (requiresMeasurement) {
+      ["display", "visibility", "position", "left", "top", "right", "bottom"].forEach((key) => {
+        panel.style.removeProperty(key);
+      });
+    }
+
+    const viewportGap = 10;
+    const spaceRight = Math.max(0, window.innerWidth - anchorRect.right - viewportGap);
+    const spaceLeft = Math.max(0, anchorRect.left - viewportGap);
+    let left;
+
+    if (spaceLeft >= panelWidth + 8) {
+      left = anchorRect.left - panelWidth - 8;
+    } else if (spaceRight >= panelWidth + 8) {
+      left = anchorRect.right + 8;
+    } else {
+      left = Math.min(
+        Math.max(viewportGap, anchorRect.right - panelWidth),
+        window.innerWidth - panelWidth - viewportGap
+      );
+    }
+
     left = Math.max(viewportGap, Math.min(left, window.innerWidth - panelWidth - viewportGap));
-    let top = triggerRect.top - Math.min(48, Math.max(0, panelHeight - triggerRect.height));
+    let top = triggerRect.top + (triggerRect.height - panelHeight) / 2;
     if (top + panelHeight > window.innerHeight - viewportGap) {
       top = window.innerHeight - panelHeight - viewportGap;
     }
@@ -11472,6 +11603,9 @@
 
   function switchView(viewName, options = {}) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
+    // Navigasi antarmenu tidak memerlukan overlay proses. Bersihkan overlay tertunda
+    // agar logo loading tidak tertinggal di tengah layar pada perangkat mobile.
+    if (state.appLoadingToken) endAppLoading(state.appLoadingToken, { force: true });
     if (viewName !== "home" && !options.skipAccessCheck && !canView(viewName)) {
       showActionToast("Menu ini belum diaktifkan untuk akun Anda.", "error");
       return;
@@ -11505,6 +11639,9 @@
       fetchPayrollEmployees({ silent: true });
       fetchSalarySlipHistory({ silent: true });
     }
+    if (viewName === "presensi-karyawan" || viewName === "monitoring-presensi") {
+      document.dispatchEvent(new CustomEvent("ess:view", { detail: { view: viewName } }));
+    }
     if (viewName === "restok-obat") renderRestockPage();
     if (viewName === "log-aktivitas") {
       fetchOwnerActivityLog({ silent: true });
@@ -11512,8 +11649,10 @@
     }
     if (viewName === "data-role") renderRoleDataPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
+    if (!options.skipCleanUrl) syncCleanUrl(viewName);
     maybeLogViewActivity(viewName, previousView, options);
   }
+
 
   function maybeLogViewActivity(viewName, previousView, options = {}) {
     if (!previousView || previousView === viewName || options.skipHistory || options.fromHistory || options.fromBack) return;
@@ -11730,6 +11869,11 @@
     if (viewportIsMobile === state.viewportIsMobile) return;
     state.viewportIsMobile = viewportIsMobile;
 
+    /* Always collapse sidebar on mobile so search toolbar is visible */
+    if (viewportIsMobile) {
+      setSidebarCollapsed(true, { persist: false });
+    }
+
     if (viewportIsMobile && state.activeView === "dashboard") {
       switchView("home", { skipHistory: true });
       return;
@@ -11859,7 +12003,7 @@
     }
     state.appLoadingTimer = window.setTimeout(() => {
       show();
-    }, Math.min(500, Math.max(250, Number(delayMs) || 350)));
+    }, Math.min(350, Math.max(180, Number(delayMs) || 250)));
     return token;
   }
 
@@ -11873,8 +12017,8 @@
     state.appLoadingTimer = null;
     state.appLoadingMaxTimer = null;
     const elapsed = state.appLoadingShownAt ? Date.now() - state.appLoadingShownAt : 0;
-    if (!options.force && elapsed > 0 && elapsed < 500) {
-      state.appLoadingTimer = window.setTimeout(() => endAppLoading(token, { force: true }), 500 - elapsed);
+    if (!options.force && elapsed > 0 && elapsed < 250) {
+      state.appLoadingTimer = window.setTimeout(() => endAppLoading(token, { force: true }), 250 - elapsed);
       return;
     }
     state.appLoadingToken = 0;
@@ -12117,6 +12261,78 @@
       text = formatIntegerPrice(String(Number(text) * 1000));
     }
     return text === "-" ? "-" : `Rp ${text}`;
+  }
+
+  function shouldRenderQuickPrice(value, key = "") {
+    const normalized = normalizePriceValue(value, key);
+    if (!normalized) return false;
+    const expanded = shouldExpandCompactPrice(normalized, key)
+      ? formatIntegerPrice(String(Number(normalized) * 1000))
+      : normalized;
+    const digits = String(expanded || "").replace(/[^\d-]/g, "");
+    return Boolean(digits) && !/^-?0+$/.test(digits);
+  }
+
+  function formatQuickMetaValue(valueText, unitText, options = {}) {
+    const {
+      keepEmptyUnit = false
+    } = options;
+    const value = String(valueText ?? "").trim() || "-";
+    const unit = String(unitText ?? "").trim();
+    if (!unit || unit === "-") {
+      return keepEmptyUnit ? `${value} / -` : value;
+    }
+    return `${value} / ${unit}`;
+  }
+
+  function buildQuickMedicineMetaRows(row) {
+    const rows = [
+      {
+        label: "Stok",
+        value: formatQuickMetaValue(
+          formatCell(row.stok, "stok"),
+          formatCell(row.satuan_beli),
+          { keepEmptyUnit: true }
+        )
+      }
+    ];
+
+    if (shouldRenderQuickPrice(row.harga_jual_1, "harga_jual_1")) {
+      rows.push({
+        label: "Harga 1",
+        value: formatQuickMetaValue(
+          formatQuickPrice(row.harga_jual_1, "harga_jual_1"),
+          formatCell(row.satuan_1)
+        )
+      });
+    }
+
+    if (shouldRenderQuickPrice(row.harga_jual_2, "harga_jual_2")) {
+      rows.push({
+        label: "Harga 2",
+        value: formatQuickMetaValue(
+          formatQuickPrice(row.harga_jual_2, "harga_jual_2"),
+          formatCell(row.satuan_2)
+        )
+      });
+    }
+
+    if (shouldRenderQuickPrice(row.harga_jual_3, "harga_jual_3")) {
+      rows.push({
+        label: "Harga 3",
+        value: formatQuickMetaValue(
+          formatQuickPrice(row.harga_jual_3, "harga_jual_3"),
+          formatCell(row.satuan_3)
+        )
+      });
+    }
+
+    rows.push({
+      label: "Expired",
+      value: formatQuickExpiry(row)
+    });
+
+    return rows;
   }
 
   function formatQuickDate(value) {

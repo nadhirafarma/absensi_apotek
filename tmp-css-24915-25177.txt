@@ -1,0 +1,263 @@
+﻿24915 |   body.sidebar-open:not(.home-view-active) .dashboard-topbar {
+24916 |     left: var(--sidebar-expanded-width, 272px) !important;
+24917 |     width: calc(100% - var(--sidebar-expanded-width, 272px)) !important;
+24918 |   }
+24919 | 
+24920 |   #view-cari-data-obat.is-active {
+24921 |     display: flex !important;
+24922 |     justify-content: center !important;
+24923 |   }
+24924 | 
+24925 |   #view-cari-data-obat.is-active .quick-search-workspace {
+24926 |     width: min(100%, 760px) !important;
+24927 |     max-width: 760px !important;
+24928 |     margin: 0 auto !important;
+24929 |     padding: 18px 0 34px !important;
+24930 |     display: flex !important;
+24931 |     flex-direction: column !important;
+24932 |     align-items: stretch !important;
+24933 |     gap: 12px !important;
+24934 |   }
+24935 | 
+24936 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+24937 |     position: sticky !important;
+24938 |     top: calc(var(--desktop-dashboard-header-height, 86px) + 8px) !important;
+24939 |     z-index: 22 !important;
+24940 |     width: 100% !important;
+24941 |     display: grid !important;
+24942 |     grid-template-columns: minmax(0, 1fr) auto !important;
+24943 |     align-items: center !important;
+24944 |     gap: 12px !important;
+24945 |     margin: 0 !important;
+24946 |     padding: 0 !important;
+24947 |     background: linear-gradient(90deg, rgba(235, 247, 255, .94), rgba(255, 236, 248, .94)) !important;
+24948 |     border-radius: 16px !important;
+24949 |   }
+24950 | 
+24951 |   #view-cari-data-obat.is-active .quick-search-toolbar {
+24952 |     width: 100% !important;
+24953 |     margin: 0 !important;
+24954 |   }
+24955 | 
+24956 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+24957 |     min-height: 44px !important;
+24958 |     height: 44px !important;
+24959 |     border-radius: 14px !important;
+24960 |     padding: 0 12px !important;
+24961 |     box-shadow: 0 12px 28px rgba(41, 92, 180, .10) !important;
+24962 |   }
+24963 | 
+24964 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input {
+24965 |     font-size: .94rem !important;
+24966 |   }
+24967 | 
+24968 |   #quickBackButton {
+24969 |     height: 40px !important;
+24970 |     padding: 0 16px !important;
+24971 |     border-radius: 12px !important;
+24972 |     white-space: nowrap !important;
+24973 |   }
+24974 | 
+24975 |   #quickSearchStatus {
+24976 |     order: 2 !important;
+24977 |     margin: 2px 0 4px !important;
+24978 |     width: 100% !important;
+24979 |     text-align: left !important;
+24980 |     font-size: .78rem !important;
+24981 |     font-weight: 800 !important;
+24982 |     color: #496290 !important;
+24983 |   }
+24984 | 
+24985 |   #quickSearchResults,
+24986 |   #quickSearchResults .quick-results-list {
+24987 |     width: 100% !important;
+24988 |     max-width: 760px !important;
+24989 |     margin: 0 auto !important;
+24990 |   }
+24991 | 
+24992 |   #quickSearchResults .quick-results-list {
+24993 |     display: flex !important;
+24994 |     flex-direction: column !important;
+24995 |     gap: 12px !important;
+24996 |   }
+24997 | 
+24998 |   #quickSearchResults .quick-medicine-card {
+24999 |     position: relative !important;
+25000 |     width: 100% !important;
+25001 |     min-height: 132px !important;
+25002 |     padding: 14px 54px 14px 16px !important;
+25003 |     border-radius: 18px !important;
+25004 |     background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(238, 246, 255, .94)) !important;
+25005 |     box-shadow: 0 16px 34px rgba(50, 94, 160, .11) !important;
+25006 |   }
+25007 | 
+25008 |   #quickSearchResults .quick-medicine-name {
+25009 |     border-radius: 12px !important;
+25010 |     padding: 9px 12px 9px 18px !important;
+25011 |     margin-bottom: 10px !important;
+25012 |     font-size: .84rem !important;
+25013 |     line-height: 1.25 !important;
+25014 |   }
+25015 | 
+25016 |   #quickSearchResults .quick-medicine-name::before {
+25017 |     width: 5px !important;
+25018 |     left: 8px !important;
+25019 |     top: 8px !important;
+25020 |     bottom: 8px !important;
+25021 |     border-radius: 999px !important;
+25022 |   }
+25023 | 
+25024 |   #quickSearchResults .quick-medicine-meta {
+25025 |     grid-template-columns: 120px minmax(0, 1fr) !important;
+25026 |     gap: 3px 18px !important;
+25027 |     font-size: .78rem !important;
+25028 |     line-height: 1.28 !important;
+25029 |   }
+25030 | 
+25031 |   #quickSearchResults .quick-medicine-chevron {
+25032 |     right: 18px !important;
+25033 |     font-size: 2rem !important;
+25034 |     opacity: .62 !important;
+25035 |   }
+25036 | 
+25037 |   .purchase-draft-list-full,
+25038 |   .purchase-draft-card-full {
+25039 |     overflow: visible !important;
+25040 |   }
+25041 | 
+25042 |   .purchase-draft-card-full {
+25043 |     position: relative !important;
+25044 |   }
+25045 | 
+25046 |   .purchase-draft-card-full.is-open {
+25047 |     z-index: 70 !important;
+25048 |   }
+25049 | 
+25050 |   .purchase-draft-card-full .purchase-draft-card-head {
+25051 |     position: relative !important;
+25052 |     z-index: 2 !important;
+25053 |   }
+25054 | 
+25055 |   .purchase-draft-card-full.is-open .purchase-draft-item-list {
+25056 |     position: absolute !important;
+25057 |     left: 18px !important;
+25058 |     top: calc(100% + 8px) !important;
+25059 |     width: min(640px, calc(100vw - var(--sidebar-expanded-width, 272px) - 96px)) !important;
+25060 |     min-width: min(460px, calc(100% - 36px)) !important;
+25061 |     max-width: 680px !important;
+25062 |     max-height: 320px !important;
+25063 |     overflow: auto !important;
+25064 |     margin: 0 !important;
+25065 |     padding: 10px !important;
+25066 |     border: 1px solid rgba(115, 151, 255, .34) !important;
+25067 |     border-radius: 16px !important;
+25068 |     background: rgba(255, 255, 255, .98) !important;
+25069 |     box-shadow: 0 24px 62px rgba(20, 39, 86, .20) !important;
+25070 |     z-index: 90 !important;
+25071 |   }
+25072 | 
+25073 |   .purchase-draft-card-full.is-open .purchase-draft-item-row {
+25074 |     grid-template-columns: 24px minmax(280px, 1fr) auto !important;
+25075 |     gap: 10px !important;
+25076 |     padding: 8px 10px !important;
+25077 |     font-size: .76rem !important;
+25078 |     border-radius: 10px !important;
+25079 |   }
+25080 | 
+25081 |   .purchase-draft-card-full.is-open .purchase-draft-item-row + .purchase-draft-item-row {
+25082 |     margin-top: 4px !important;
+25083 |   }
+25084 | 
+25085 |   .purchase-draft-card-actions {
+25086 |     gap: 8px !important;
+25087 |   }
+25088 | 
+25089 |   .purchase-draft-card-actions button {
+25090 |     min-width: 92px !important;
+25091 |     height: 28px !important;
+25092 |     padding: 0 12px !important;
+25093 |     font-size: .78rem !important;
+25094 |     line-height: 1 !important;
+25095 |   }
+25096 | }
+25097 | 
+25098 | @media (min-width: 821px) and (max-width: 1160px) {
+25099 |   body.sidebar-open:not(.home-view-active) .dashboard-main {
+25100 |     margin-left: 248px !important;
+25101 |     width: calc(100% - 248px) !important;
+25102 |     max-width: calc(100% - 248px) !important;
+25103 |   }
+25104 | 
+25105 |   body.sidebar-open:not(.home-view-active) .dashboard-topbar {
+25106 |     left: 248px !important;
+25107 |     width: calc(100% - 248px) !important;
+25108 |   }
+25109 | }
+25110 | 
+25111 | @media (max-width: 820px) {
+25112 |   #view-cari-data-obat.is-active .quick-search-workspace {
+25113 |     width: 100% !important;
+25114 |     max-width: 100% !important;
+25115 |     padding: 12px 12px 96px !important;
+25116 |   }
+25117 | 
+25118 |   #view-cari-data-obat.is-active .quick-search-sticky-row {
+25119 |     display: grid !important;
+25120 |     grid-template-columns: minmax(0, 1fr) auto !important;
+25121 |     gap: 8px !important;
+25122 |     align-items: center !important;
+25123 |     position: sticky !important;
+25124 |     top: calc(var(--mobile-header-height, 132px) + 4px) !important;
+25125 |     z-index: 30 !important;
+25126 |   }
+25127 | 
+25128 |   #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search {
+25129 |     min-height: 42px !important;
+25130 |     height: 42px !important;
+25131 |     border-radius: 14px !important;
+25132 |   }
+25133 | 
+25134 |   #quickBackButton {
+25135 |     height: 40px !important;
+25136 |     padding: 0 12px !important;
+25137 |     border-radius: 12px !important;
+25138 |   }
+25139 | 
+25140 |   #quickSearchStatus {
+25141 |     margin: 4px 0 2px !important;
+25142 |     font-size: .72rem !important;
+25143 |   }
+25144 | 
+25145 |   #quickSearchResults .quick-medicine-card {
+25146 |     min-height: 126px !important;
+25147 |     padding: 12px 42px 12px 12px !important;
+25148 |     border-radius: 16px !important;
+25149 |   }
+25150 | 
+25151 |   #quickSearchResults .quick-medicine-name {
+25152 |     font-size: .76rem !important;
+25153 |     padding: 8px 10px 8px 16px !important;
+25154 |   }
+25155 | 
+25156 |   #quickSearchResults .quick-medicine-meta {
+25157 |     grid-template-columns: 88px minmax(0, 1fr) !important;
+25158 |     font-size: .72rem !important;
+25159 |   }
+25160 | 
+25161 |   .purchase-draft-card-full.is-open .purchase-draft-item-list {
+25162 |     position: relative !important;
+25163 |     left: auto !important;
+25164 |     top: auto !important;
+25165 |     width: 100% !important;
+25166 |     max-width: 100% !important;
+25167 |     max-height: 42vh !important;
+25168 |     overflow: auto !important;
+25169 |     margin: 8px 0 10px !important;
+25170 |     padding: 8px !important;
+25171 |     border-radius: 14px !important;
+25172 |     background: rgba(255, 255, 255, .98) !important;
+25173 |     box-shadow: 0 14px 32px rgba(20, 39, 86, .16) !important;
+25174 |     z-index: 20 !important;
+25175 |   }
+25176 | }
+25177 | 
