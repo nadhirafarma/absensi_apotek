@@ -218,7 +218,7 @@
       routeLoadingOverlay.className = "app-loading-overlay route-loading-overlay";
       routeLoadingOverlay.innerHTML = [
         '<div class="app-loading-card" role="status" aria-live="polite">',
-        '<span class="app-loading-orbit"><img src="assets/indo-apotek-mark-transparent.png" alt=""></span>',
+'<span class="app-loading-orbit"><img src="/assets/indo-apotek-mark-transparent.png" alt=""></span>',
         '<strong id="routeLoadingText">Memproses...</strong>',
         '</div>'
       ].join("");
@@ -359,7 +359,7 @@
   }
 
   function getLogoutUrl() {
-    return `${LANDING_PAGE}?logout=1&t=${Date.now()}`;
+    return `/${LANDING_PAGE}?logout=1&t=${Date.now()}`;
   }
 
   updateClock();

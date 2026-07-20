@@ -53,11 +53,11 @@
   function summary(groups) { const month = groups.filter((g) => g.date.startsWith(monthKey())); return { month, hadir: month.filter((g) => g.datang).length, late: month.filter((g) => statusOf(g) === "Terlambat").length, overtime: month.filter((g) => g.overtime).length, today: groups.filter((g) => g.date === dateKey()) }; }
 
   async function load(force) {
-    if (state.loading || (!force && Date.now() - state.loadedAt < 60000)) return;
+    if (state.loading || (!force && Date.now() - state.loadedAt < 120000)) return;
     state.loading = true; state.error = "";
     try {
       const s = session(); const url = new URL(API_URL); url.searchParams.set("action", "listAttendanceRecords"); url.searchParams.set("sessionToken", s.sessionToken || ""); url.searchParams.set("username", s.username || ""); url.searchParams.set("email", s.email || ""); url.searchParams.set("name", s.name || s.username || ""); url.searchParams.set("dateFrom", `${monthKey()}-01`); url.searchParams.set("dateTo", dateKey(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0))); url.searchParams.set("limit", "5000");
-      const res = await fetch(url.toString(), { cache: "no-store" }); const data = await res.json();
+      const res = await fetch(url.toString()); const data = await res.json();
       if (!data || (data.ok !== true && data.success !== true)) throw new Error(data?.message || "Data presensi gagal dimuat.");
       state.records = (data.records || data.data || []).map(normalizeRecord); state.groups = groupRecords(state.records); state.loadedAt = Date.now();
     } catch (error) { state.error = error.message || "Data presensi belum tersedia."; }
