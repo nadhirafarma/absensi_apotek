@@ -365,7 +365,30 @@
   updateClock();
   updateConnection();
   setupProfileMenu();
+  setupSidebarSectionToggles();
   window.addEventListener("online", updateConnection);
   window.addEventListener("offline", updateConnection);
   setInterval(updateClock, 1000);
+
+  function setupSidebarSectionToggles() {
+    const toggles = Array.from(document.querySelectorAll(".sidebar-section-toggle"));
+    if (!toggles.length) return;
+
+    toggles.forEach(function (toggle) {
+      const section = toggle.dataset.section || "";
+      const group = document.getElementById(`section-${section}`);
+      const saved = localStorage.getItem(`nadhira.sidebarSection.${section}`);
+      const expanded = saved !== "0";
+
+      toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (group) group.classList.toggle("is-collapsed", !expanded);
+
+      toggle.addEventListener("click", function () {
+        const nextExpanded = toggle.getAttribute("aria-expanded") !== "true";
+        toggle.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+        if (group) group.classList.toggle("is-collapsed", !nextExpanded);
+        localStorage.setItem(`nadhira.sidebarSection.${section}`, nextExpanded ? "1" : "0");
+      });
+    });
+  }
 })();

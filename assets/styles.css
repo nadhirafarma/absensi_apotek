@@ -28403,3 +28403,322 @@ body.home-view-active .icon-role {
     font-size: .68rem !important;
   }
 }
+
+
+/* 20260721 fintech sidebar section groups */
+.app-sidebar .sidebar-section-toggle {
+  width: 100% !important;
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 8px 0 4px !important;
+  padding: 7px 9px 7px 11px !important;
+  border: 1px solid rgba(72, 111, 255, 0.14) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(236, 72, 153, 0.06)) !important;
+  color: #52698e !important;
+  font: inherit !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 10px 22px rgba(30, 64, 175, 0.04) !important;
+  transition: border-color .22s ease, background .22s ease, color .22s ease, box-shadow .22s ease, transform .22s ease !important;
+}
+
+.app-sidebar .sidebar-section-toggle::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -45% auto auto -20% !important;
+  width: 92px !important;
+  height: 92px !important;
+  border-radius: 999px !important;
+  background: radial-gradient(circle, rgba(59,130,246,.2), transparent 68%) !important;
+  opacity: 0 !important;
+  z-index: -1 !important;
+  transition: opacity .24s ease, transform .24s ease !important;
+}
+
+.app-sidebar .sidebar-section-toggle:hover,
+.app-sidebar .sidebar-section-toggle:focus-visible {
+  border-color: rgba(59,130,246,.28) !important;
+  background: linear-gradient(135deg, rgba(37,99,235,.13), rgba(236,72,153,.1)) !important;
+  color: #153a8a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 14px 28px rgba(37,99,235,.1) !important;
+  transform: translateY(-1px) !important;
+  outline: none !important;
+}
+
+.app-sidebar .sidebar-section-toggle:hover::before,
+.app-sidebar .sidebar-section-toggle:focus-visible::before {
+  opacity: 1 !important;
+  transform: scale(1.12) !important;
+}
+
+.app-sidebar .sidebar-section-toggle .sidebar-section {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: inherit !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .075em !important;
+  text-transform: uppercase !important;
+}
+
+.app-sidebar .sidebar-section-toggle .sidebar-section::after {
+  content: "" !important;
+  height: 1px !important;
+  flex: 1 1 auto !important;
+  background: linear-gradient(90deg, rgba(59,130,246,.26), rgba(236,72,153,.18), transparent) !important;
+}
+
+.app-sidebar .sidebar-section-chevron {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  padding: 3px !important;
+  border-radius: 999px !important;
+  color: #2d61d8 !important;
+  background: rgba(255,255,255,.72) !important;
+  box-shadow: 0 6px 16px rgba(37,99,235,.13) !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  transition: transform .32s cubic-bezier(.22,1,.36,1), background .22s ease, color .22s ease !important;
+}
+
+.app-sidebar .sidebar-section-toggle[aria-expanded="false"] .sidebar-section-chevron {
+  transform: rotate(-90deg) !important;
+  color: #7c3aed !important;
+}
+
+.app-sidebar .sidebar-section-group {
+  display: grid !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+  max-height: 760px !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: max-height .42s cubic-bezier(.22,1,.36,1), opacity .24s ease, transform .28s ease, margin .28s ease !important;
+}
+
+.app-sidebar .sidebar-section-group.is-collapsed {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  margin-top: -2px !important;
+  transform: translateY(-6px) !important;
+  pointer-events: none !important;
+}
+
+body.sidebar-collapsed .app-sidebar .sidebar-section-toggle {
+  width: 46px !important;
+  min-height: 34px !important;
+  justify-content: center !important;
+  padding: 7px 0 !important;
+  margin: 4px auto !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.72) !important;
+}
+
+body.sidebar-collapsed .app-sidebar .sidebar-section-toggle .sidebar-section {
+  display: none !important;
+}
+
+body.sidebar-collapsed .app-sidebar .sidebar-section-chevron {
+  width: 16px !important;
+  height: 16px !important;
+  flex-basis: 16px !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .app-sidebar .sidebar-section-toggle {
+  border-color: rgba(96,165,250,.18) !important;
+  background: linear-gradient(135deg, rgba(59,130,246,.14), rgba(236,72,153,.1)) !important;
+  color: #bfd4ff !important;
+}
+
+body.theme-dark .app-sidebar .sidebar-section-toggle:hover,
+body.theme-dark .app-sidebar .sidebar-section-toggle:focus-visible {
+  color: #fff !important;
+  border-color: rgba(147,197,253,.32) !important;
+  background: linear-gradient(135deg, rgba(59,130,246,.22), rgba(236,72,153,.16)) !important;
+}
+
+body.theme-dark .app-sidebar .sidebar-section-chevron {
+  color: #bfdbfe !important;
+  background: rgba(15,23,42,.62) !important;
+}
+
+/* 20260721 payroll menu: keep table scrollport stable. */
+#view-presensi .payroll-card {
+  overflow: hidden !important;
+}
+
+#view-presensi .payroll-table-wrap,
+#view-presensi .payroll-table-wrap:has(.table-row-menu[open]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+}
+
+#view-presensi .payroll-table {
+  min-width: max(100%, 1180px) !important;
+}
+
+#view-presensi .payroll-table .table-row-menu[open] .table-row-menu-list {
+  position: fixed !important;
+  z-index: 99999 !important;
+}
+/* 20260721 v42 compact desktop Restok â€” smaller font + tighter density, no zoom/transform */
+@media (min-width: 821px) {
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-head h2 {
+    font-size: clamp(1.1rem, 2.2vw, 1.5rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-form-head h2,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-head h3 {
+    font-size: clamp(0.92rem, 1.8vw, 1.15rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-head p,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-form-head p {
+    font-size: 0.72rem !important;
+    line-height: 1.25 !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-head p,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-head span {
+    font-size: 0.72rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat #restockAddButton {
+    min-height: 38px !important;
+    padding-inline: 16px !important;
+    font-size: 0.8rem !important;
+    border-radius: 10px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view {
+    gap: 16px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats {
+    gap: 12px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats article {
+    min-height: 100px !important;
+    padding: 14px 12px !important;
+    column-gap: 12px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stat-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats small {
+    font-size: 0.7rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats strong {
+    font-size: 1.1rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats em,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-dashboard-view .restock-stats span:not(.restock-stat-icon) {
+    font-size: 0.64rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel {
+    padding: 16px 18px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-head {
+    margin-bottom: 14px !important;
+    gap: 10px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-toolbar {
+    gap: 8px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-search,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-toolbar select,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-delete-toolbar-button,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-icon-button {
+    min-height: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-search input {
+    min-height: 32px !important;
+    font-size: 0.76rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-list-panel .restock-toolbar select {
+    font-size: 0.76rem !important;
+    padding-inline: 10px 28px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table th,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table td,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table th,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table td {
+    padding: 10px 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table th,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table th {
+    font-size: 0.66rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table td strong,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table td strong {
+    font-size: 0.76rem !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table td small,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table td small {
+    font-size: 0.6rem !important;
+    margin-top: 2px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-table-wrap,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-table-wrap {
+    border-radius: 8px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-breadcrumb {
+    font-size: 0.72rem !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-delete-grid,
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-draft-tools {
+    gap: 8px !important;
+  }
+
+  body[data-active-view="restok-obat"] #view-restok-obat .restock-stock-input-row {
+    gap: 8px !important;
+  }
+}

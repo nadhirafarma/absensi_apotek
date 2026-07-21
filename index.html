@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260721-desktop-icons-v5">
+  <link rel="stylesheet" href="assets/styles.css?v=20260721-sidebar-gaji-v1">
   <link rel="stylesheet" href="assets/ess.css?v=20260719-ess-v1">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
-  <script defer src="assets/app.js?v=20260720-logout-fix"></script>
+  <script defer src="assets/app.js?v=20260721-sidebar-gaji-v1"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -76,7 +76,11 @@
           <span class="sidebar-label">Cari Data Obat</span>
         </button>
 
-        <span class="sidebar-section">Master Data</span>
+        <button class="sidebar-section-toggle" type="button" aria-expanded="true" aria-controls="section-master-data" data-section="master-data">
+          <span class="sidebar-section">Master Data</span>
+          <svg class="sidebar-section-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <div class="sidebar-section-group" id="section-master-data">
         <button class="sidebar-link" type="button" data-view-target="data-obat" data-access-key="data_obat" title="Data Obat">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"></path>
@@ -133,13 +137,15 @@
           <span class="sidebar-label">Import Data Obat</span>
         </button>
 
-        <span class="sidebar-section">Sistem</span>
-        <button class="sidebar-link" type="button" data-view-target="akun-profil" data-access-key="akun_profil" title="Akun & Profil">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="7" r="4"></circle>
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path>
-          </svg>
-          <span class="sidebar-label">Akun & Profil</span>
+        </div>
+        <button class="sidebar-section-toggle" type="button" aria-expanded="true" aria-controls="section-sistem" data-section="sistem">
+          <span class="sidebar-section">Sistem</span>
+          <svg class="sidebar-section-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <div class="sidebar-section-group" id="section-sistem">
+        <button class="sidebar-link" type="button" data-view-target="akun-profil" data-access-key="akun_profil" title="Pengaturan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2"></path><path d="M12 21v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M18.36 18.36l1.42 1.42"></path><path d="M1 12h2"></path><path d="M21 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M18.36 5.64l1.42-1.42"></path></svg>
+          <span class="sidebar-label">Pengaturan</span>
         </button>
         <button class="sidebar-link" type="button" data-view-target="log-aktivitas" data-access-key="log_aktivitas" title="Log Aktivitas">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -168,6 +174,7 @@
           </svg>
           <span class="sidebar-label">Data Role</span>
         </button>
+        </div>
       </nav>
     </aside>
     <div class="sidebar-scrim" id="sidebarScrim" hidden></div>
@@ -218,7 +225,7 @@
                   <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"></path>
                 </svg>
               </button>
-              <button class="mobile-hero-action mobile-hero-user" id="mobileHeroProfileButton" type="button" aria-label="Akun profil" title="Akun profil">
+              <button class="mobile-hero-action mobile-hero-user" id="mobileHeroProfileButton" type="button" aria-label="Pengaturan" title="Pengaturan">
                 <span class="mobile-hero-avatar" id="mobileHeroProfileAvatar">AK</span>
               </button>
             </div>
@@ -1403,7 +1410,7 @@
             <section class="module-card profile-settings-card">
               <div class="module-head">
                 <div>
-                  <h2>Akun & Profil</h2>
+                  <h2>Pengaturan</h2>
                   <p>Kelola identitas, keamanan, dan pengaturan operasional apotek.</p>
                 </div>
               </div>
@@ -2031,7 +2038,7 @@
         <circle cx="12" cy="12" r="3"></circle>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.9l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 10.4 2.9V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.22.38.6.64 1 .6h.1a2 2 0 1 1 0 4h-.1a1.65 1.65 0 0 0-1 .4Z"></path>
       </svg>
-      <span>Setting</span>
+      <span>Pengaturan</span>
     </button>
   </nav>
 
