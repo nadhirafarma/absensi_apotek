@@ -36,5 +36,3 @@ for f in files:
         print(f'OK: {f}')
     else:
         print(f'SKIP (no match): {f}')
-
-print(f'\n{count} files replaced.')

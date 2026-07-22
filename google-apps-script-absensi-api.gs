@@ -226,7 +226,7 @@ function doPost(e) {
       });
     }
 
-    var shift = payload.shift || payload.SHIFT || getShiftLabel_(timestamp);
+    var shift = normalizeAbsensiShift_(payload.shift || payload.SHIFT || getShiftLabel_(timestamp));
     var sheetShift = status == 'PULANG' ? '' : shift;
     var photo = saveAbsensiPhoto_(payload, displayName, timestamp);
     var attendanceDate = getPayloadAttendanceDate_(payload, timestamp);
@@ -295,7 +295,7 @@ function validateAbsensiSession_(payload) {
       role: values[i][4],
       status: values[i][5] || 'Aktif'
     };
-    var submitted = [payload.username, payload.email, payload.nama_karyawan, payload.namaKaryawan, payload.nama]
+    var submitted = [payload.username, payload.email]
       .map(normalizeAbsensiKey_).filter(Boolean);
     var allowed = [session.username, session.email, session.name].map(normalizeAbsensiKey_).filter(Boolean);
 
@@ -718,9 +718,9 @@ function handleUpdateAttendanceRecord_(payload, sheet) {
   var values = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 16)).getValues();
   var headers = values[0].map(normalizeAbsensiHeader_);
   var columns = getAbsensiColumns_(headers);
-  var dateKey = String(payload.date || payload.tanggal || getJakartaDateKey_(new Date())).trim();
-  var name = normalizeDisplayName_(payload.nama || payload.nama_karyawan || payload.namaKaryawan || '');
-  var shift = String(payload.shift || payload.SHIFT || 'SHIFT PAGI').trim();
+  var dateKey = sanitizeAbsensiDateKey_(payload.date || payload.tanggal) || getJakartaDateKey_(new Date());
+  var name = normalizeDisplayName_(payload.nama || payload.nama_karyawan || payload.namaKaryawan || payload.name || '');
+  var shift = normalizeAbsensiShift_(payload.shift || payload.SHIFT || 'SHIFT PAGI');
   var updatedAt = new Date();
   var updatedBy = String(payload.updatedBy || payload.username || payload.actor || '').trim();
 
@@ -2183,6 +2183,10 @@ function jsonAbsensi_(data) {
 function getShiftLabel_(date) {
   var hour = Number(Utilities.formatDate(date, ABSENSI_TIMEZONE, 'H'));
   return hour < 12 ? 'SHIFT PAGI' : 'SHIFT SORE';
+}
+
+function normalizeAbsensiShift_(value) {
+  return /sore/i.test(String(value || '')) ? 'SHIFT SORE' : 'SHIFT PAGI';
 }
 
 function getJakartaDateKey_(value) {

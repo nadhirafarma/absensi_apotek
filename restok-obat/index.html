@@ -9,15 +9,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260721-desktop-icons-v5">
+  <link rel="stylesheet" href="assets/styles.css?v=20260721-sidebar-gaji-v1">
   <link rel="stylesheet" href="assets/ess.css?v=20260719-ess-v1">
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
-  <script defer src="assets/app.js?v=20260720-logout-fix"></script>
+  <script defer src="assets/app.js?v=20260721-sidebar-gaji-v1"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260720-presensi-role-v4"></script>
+  <script defer src="assets/home-dashboard.js?v=20260722-presensi-manual-fix-v1"></script>
   <script defer src="assets/ess.js?v=20260719-ess-v1"></script>
 </head>
 <body data-page="home" class="dashboard-page" data-initial-view="restok-obat">
@@ -77,7 +77,7 @@
           <span class="sidebar-label">Cari Data Obat</span>
         </button>
 
-        <button class="sidebar-section-toggle" type="button" aria-expanded="true" data-section="master-data">
+        <button class="sidebar-section-toggle" type="button" aria-expanded="true" aria-controls="section-master-data" data-section="master-data">
           <span class="sidebar-section">Master Data</span>
           <svg class="sidebar-section-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
         </button>
@@ -139,7 +139,7 @@
         </button>
 
         </div>
-        <button class="sidebar-section-toggle" type="button" aria-expanded="true" data-section="sistem">
+        <button class="sidebar-section-toggle" type="button" aria-expanded="true" aria-controls="section-sistem" data-section="sistem">
           <span class="sidebar-section">Sistem</span>
           <svg class="sidebar-section-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
         </button>
@@ -602,7 +602,7 @@
               <article class="stat-card attendance-stat-card"><span class="stat-icon stat-pink">B</span><span><small>Total Hari Kerja</small><strong id="attendanceWorkDays">0 Hari</strong><em>Bulan berjalan</em></span></article>
             </section>
 
-            <div class="attendance-layout">
+            <div class="attendance-layout attendance-layout-full">
               <article class="attendance-card attendance-records-card">
                 <div class="attendance-card-head">
                   <div>
@@ -611,6 +611,10 @@
                   </div>
                   <div class="attendance-toolbar">
                     <input id="attendanceDateFilter" type="date" aria-label="Filter tanggal presensi">
+                    <button class="secondary-action attendance-add-button" id="attendanceAddButton" type="button" hidden>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                      Tambah Data
+                    </button>
                   </div>
                 </div>
                 <div class="simple-table-wrap attendance-table-wrap">
@@ -632,41 +636,6 @@
                 </div>
                 <p class="table-footnote" id="attendanceTableInfo">Memuat catatan kehadiran...</p>
               </article>
-
-              <aside class="attendance-card attendance-month-card">
-                <div class="attendance-card-head">
-                  <div>
-                    <h3>Rekap Bulan Ini</h3>
-                    <p id="attendanceMonthTitle">Ringkasan shift bulan berjalan.</p>
-                  </div>
-                </div>
-                <div class="attendance-month-filters">
-                  <select id="attendanceMonthFilter" aria-label="Bulan presensi">
-                    <option value="01">Januari</option>
-                    <option value="02">Februari</option>
-                    <option value="03">Maret</option>
-                    <option value="04">April</option>
-                    <option value="05">Mei</option>
-                    <option value="06">Juni</option>
-                    <option value="07">Juli</option>
-                    <option value="08">Agustus</option>
-                    <option value="09">September</option>
-                    <option value="10">Oktober</option>
-                    <option value="11">November</option>
-                    <option value="12">Desember</option>
-                  </select>
-                  <select id="attendanceYearFilter" aria-label="Tahun presensi"></select>
-                </div>
-                <div class="attendance-month-total">
-                  <span>Total Hari Kerja</span>
-                  <strong id="attendanceWorkDaysSide">0 Hari</strong>
-                </div>
-                <div class="attendance-shift-bars">
-                  <div><span>Pagi</span><strong id="attendanceShiftPagi">0 Hari</strong><i style="--bar:0%"></i></div>
-                  <div><span>Sore</span><strong id="attendanceShiftSore">0 Hari</strong><i style="--bar:0%"></i></div>
-                </div>
-                <button class="filter-action" id="attendanceDetailButton" type="button">Lihat Rekap Detail</button>
-              </aside>
             </div>
 
             <article class="attendance-card attendance-monthly-card">
@@ -1837,7 +1806,7 @@
     <form class="modal-card record-modal-card" id="attendanceEditForm">
       <div class="modal-head">
         <div>
-          <h2>Edit Catatan Kehadiran</h2>
+          <h2 id="attendanceEditModalTitle">Edit Catatan Kehadiran</h2>
           <p id="attendanceEditStatus">Perubahan disimpan langsung ke Google Sheet absensi.</p>
         </div>
         <button class="icon-button" id="closeAttendanceEditButton" type="button" aria-label="Tutup">
@@ -1845,12 +1814,12 @@
         </button>
       </div>
       <div class="form-grid">
-        <label>Nama Karyawan<input id="attendanceEditName" type="text" required></label>
+        <label>Nama Karyawan<select id="attendanceEditName" required><option value="">Pilih karyawan</option></select></label>
         <label>Tanggal<input id="attendanceEditDate" type="date" required></label>
         <label>Shift
           <select id="attendanceEditShift">
-            <option value="Pagi">Pagi</option>
-            <option value="Sore">Sore</option>
+            <option value="SHIFT PAGI">SHIFT PAGI</option>
+            <option value="SHIFT SORE">SHIFT SORE</option>
           </select>
         </label>
         <label>Jam Datang<input id="attendanceEditDatang" type="time"></label>
@@ -2039,7 +2008,7 @@
         <circle cx="12" cy="12" r="3"></circle>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.9l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 10.4 2.9V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.22.38.6.64 1 .6h.1a2 2 0 1 1 0 4h-.1a1.65 1.65 0 0 0-1 .4Z"></path>
       </svg>
-      <span>Setting</span>
+      <span>Pengaturan</span>
     </button>
   </nav>
 

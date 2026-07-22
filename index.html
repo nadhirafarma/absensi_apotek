@@ -16,7 +16,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-  <script defer src="assets/home-dashboard.js?v=20260720-presensi-role-v4"></script>
+  <script defer src="assets/home-dashboard.js?v=20260722-presensi-manual-fix-v1"></script>
   <script defer src="assets/ess.js?v=20260719-ess-v1"></script>
 </head>
 <body data-page="home" class="dashboard-page">
@@ -601,7 +601,7 @@
               <article class="stat-card attendance-stat-card"><span class="stat-icon stat-pink">B</span><span><small>Total Hari Kerja</small><strong id="attendanceWorkDays">0 Hari</strong><em>Bulan berjalan</em></span></article>
             </section>
 
-            <div class="attendance-layout">
+            <div class="attendance-layout attendance-layout-full">
               <article class="attendance-card attendance-records-card">
                 <div class="attendance-card-head">
                   <div>
@@ -610,6 +610,10 @@
                   </div>
                   <div class="attendance-toolbar">
                     <input id="attendanceDateFilter" type="date" aria-label="Filter tanggal presensi">
+                    <button class="secondary-action attendance-add-button" id="attendanceAddButton" type="button" hidden>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                      Tambah Data
+                    </button>
                   </div>
                 </div>
                 <div class="simple-table-wrap attendance-table-wrap">
@@ -631,41 +635,6 @@
                 </div>
                 <p class="table-footnote" id="attendanceTableInfo">Memuat catatan kehadiran...</p>
               </article>
-
-              <aside class="attendance-card attendance-month-card">
-                <div class="attendance-card-head">
-                  <div>
-                    <h3>Rekap Bulan Ini</h3>
-                    <p id="attendanceMonthTitle">Ringkasan shift bulan berjalan.</p>
-                  </div>
-                </div>
-                <div class="attendance-month-filters">
-                  <select id="attendanceMonthFilter" aria-label="Bulan presensi">
-                    <option value="01">Januari</option>
-                    <option value="02">Februari</option>
-                    <option value="03">Maret</option>
-                    <option value="04">April</option>
-                    <option value="05">Mei</option>
-                    <option value="06">Juni</option>
-                    <option value="07">Juli</option>
-                    <option value="08">Agustus</option>
-                    <option value="09">September</option>
-                    <option value="10">Oktober</option>
-                    <option value="11">November</option>
-                    <option value="12">Desember</option>
-                  </select>
-                  <select id="attendanceYearFilter" aria-label="Tahun presensi"></select>
-                </div>
-                <div class="attendance-month-total">
-                  <span>Total Hari Kerja</span>
-                  <strong id="attendanceWorkDaysSide">0 Hari</strong>
-                </div>
-                <div class="attendance-shift-bars">
-                  <div><span>Pagi</span><strong id="attendanceShiftPagi">0 Hari</strong><i style="--bar:0%"></i></div>
-                  <div><span>Sore</span><strong id="attendanceShiftSore">0 Hari</strong><i style="--bar:0%"></i></div>
-                </div>
-                <button class="filter-action" id="attendanceDetailButton" type="button">Lihat Rekap Detail</button>
-              </aside>
             </div>
 
             <article class="attendance-card attendance-monthly-card">
@@ -1836,7 +1805,7 @@
     <form class="modal-card record-modal-card" id="attendanceEditForm">
       <div class="modal-head">
         <div>
-          <h2>Edit Catatan Kehadiran</h2>
+          <h2 id="attendanceEditModalTitle">Edit Catatan Kehadiran</h2>
           <p id="attendanceEditStatus">Perubahan disimpan langsung ke Google Sheet absensi.</p>
         </div>
         <button class="icon-button" id="closeAttendanceEditButton" type="button" aria-label="Tutup">
@@ -1844,12 +1813,12 @@
         </button>
       </div>
       <div class="form-grid">
-        <label>Nama Karyawan<input id="attendanceEditName" type="text" required></label>
+        <label>Nama Karyawan<select id="attendanceEditName" required><option value="">Pilih karyawan</option></select></label>
         <label>Tanggal<input id="attendanceEditDate" type="date" required></label>
         <label>Shift
           <select id="attendanceEditShift">
-            <option value="Pagi">Pagi</option>
-            <option value="Sore">Sore</option>
+            <option value="SHIFT PAGI">SHIFT PAGI</option>
+            <option value="SHIFT SORE">SHIFT SORE</option>
           </select>
         </label>
         <label>Jam Datang<input id="attendanceEditDatang" type="time"></label>

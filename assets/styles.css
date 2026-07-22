@@ -277,6 +277,15 @@
   align-items: start;
 }
 
+.attendance-layout-full,
+.attendance-layout-full .attendance-records-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.attendance-layout-full .attendance-records-card {
+  max-width: 100%;
+}
+
 .attendance-card {
   padding: 16px;
   border-radius: 18px;
@@ -311,6 +320,10 @@
 .attendance-table-wrap {
   max-height: 430px;
   overflow: auto;
+}
+
+.attendance-layout-full .attendance-table-wrap {
+  max-height: 640px;
 }
 
 .attendance-table td:first-child strong {
@@ -440,7 +453,8 @@ body:not(.attendance-can-edit) .attendance-table td:last-child {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .attendance-layout {
+  .attendance-layout,
+  .attendance-layout-full {
     grid-template-columns: 1fr;
   }
 }
@@ -459,6 +473,10 @@ body:not(.attendance-can-edit) .attendance-table td:last-child {
   .attendance-table-wrap,
   .attendance-monthly-card .simple-table-wrap {
     overflow-x: auto;
+  }
+
+  .attendance-layout-full .attendance-table-wrap {
+    max-height: 430px;
   }
 }
 
@@ -27245,6 +27263,11 @@ body.sidebar-collapsed .header-pharmacy-copy {
   grid-template-columns: minmax(0, 1fr) minmax(250px, 300px) !important;
 }
 
+.attendance-layout-full,
+.attendance-layout-full .attendance-records-card {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 .attendance-card-head,
 .attendance-page-head,
 .table-headline,
@@ -27366,7 +27389,8 @@ body.sidebar-collapsed .header-pharmacy-copy {
 }
 
 @container (max-width: 920px) {
-  .attendance-layout {
+  .attendance-layout,
+  .attendance-layout-full {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
@@ -27425,6 +27449,7 @@ body.sidebar-collapsed .header-pharmacy-copy {
   }
 
   .attendance-layout,
+  .attendance-layout-full,
   .attendance-month-card {
     grid-template-columns: minmax(0, 1fr) !important;
   }
