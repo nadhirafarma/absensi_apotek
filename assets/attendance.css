@@ -892,11 +892,11 @@ video {
   background: rgba(255, 255, 255, 0.14);
 }
 
-.attendance-choice-action span svg {
-  width: 54%;
-  height: 54%;
-  stroke-width: 2.4;
-}
+ .attendance-choice-action span svg {
+   width: 54%;
+   height: 54%;
+   stroke-width: 2.4;
+ }
 
 .attendance-choice-action strong {
   min-width: 0;
@@ -940,11 +940,19 @@ video {
 
 .attendance-choice-status[data-type="error"] {
   background: #fff1f4;
+  border: 2px solid rgba(204, 47, 74, 0.28);
   color: var(--red);
+}
+
+.attendance-choice-status[data-type="error"]::before {
+  background:
+    linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(204, 47, 74, 0.12)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cc2f4a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6'/%3E%3Cpath d='m9 9 6 6'/%3E%3C/svg%3E") center / 58% no-repeat;
 }
 
 .attendance-choice-status[data-type="success"] {
   background: #ecfff5;
+  border: 2px solid rgba(15, 169, 104, 0.28);
   color: var(--green);
 }
 
@@ -1374,10 +1382,138 @@ video {
   }
 }
 
+/* 20260723: Improved error/warning message styling for clarity */
 .result-message span {
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #fff6df;
-  color: #9a5300;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff8e6, #fff0d4);
+  border: 1px solid rgba(184, 121, 0, 0.24);
+  color: #8a4a00;
   font-weight: 800;
+  font-size: 0.96rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(184, 121, 0, 0.12);
+}
+
+.result-message span.error {
+  background: linear-gradient(135deg, #fff1f4, #ffe9ed);
+  border-color: rgba(204, 47, 74, 0.28);
+  color: #a01830;
+  box-shadow: 0 4px 12px rgba(204, 47, 74, 0.14);
+}
+
+.result-message span.success {
+  background: linear-gradient(135deg, #ecfff5, #e7f7ef);
+  border-color: rgba(15, 169, 104, 0.24);
+  color: #08764a;
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.12);
+}
+
+html.theme-dark body,
+body.theme-dark {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.16), transparent 25%),
+    radial-gradient(circle at 82% 16%, rgba(217, 70, 239, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(2, 8, 20, 0.98), rgba(7, 19, 38, 0.96)) !important;
+  color: #eef6ff !important;
+}
+
+html.theme-dark body .attendance-card,
+html.theme-dark body .profile-required-card,
+html.theme-dark body .text-reminder-card,
+html.theme-dark body .attendance-choice-card,
+body.theme-dark .attendance-card,
+body.theme-dark .profile-required-card,
+body.theme-dark .text-reminder-card,
+body.theme-dark .attendance-choice-card {
+  background: linear-gradient(180deg, rgba(8, 20, 38, 0.96), rgba(14, 26, 48, 0.92)) !important;
+  border-color: rgba(83, 109, 153, 0.48) !important;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.44) !important;
+  color: #eef6ff !important;
+}
+
+html.theme-dark body .brand-link strong,
+html.theme-dark body .profile-required-card h2,
+html.theme-dark body .attendance-choice-card h2,
+html.theme-dark body .text-reminder-card h2,
+html.theme-dark body .main-status,
+body.theme-dark .brand-link strong,
+body.theme-dark .profile-required-card h2,
+body.theme-dark .attendance-choice-card h2,
+body.theme-dark .text-reminder-card h2,
+body.theme-dark .main-status {
+  color: #f7fbff !important;
+}
+
+html.theme-dark body .brand-link small,
+html.theme-dark body .profile-required-card p,
+html.theme-dark body .attendance-choice-card > p,
+html.theme-dark body .text-reminder-card p,
+html.theme-dark body .attendance-choice-status,
+html.theme-dark body .attendance-choice-home,
+body.theme-dark .brand-link small,
+body.theme-dark .profile-required-card p,
+body.theme-dark .attendance-choice-card > p,
+body.theme-dark .text-reminder-card p,
+body.theme-dark .attendance-choice-status,
+body.theme-dark .attendance-choice-home {
+  color: #9fb6d8 !important;
+}
+
+html.theme-dark body .clock,
+html.theme-dark body .status-pill,
+html.theme-dark body .attendance-select-shell select,
+html.theme-dark body .attendance-choice-action,
+html.theme-dark body .attendance-choice-home,
+body.theme-dark .clock,
+body.theme-dark .status-pill,
+body.theme-dark .attendance-select-shell select,
+body.theme-dark .attendance-choice-action,
+body.theme-dark .attendance-choice-home {
+  background: rgba(13, 27, 49, 0.92) !important;
+  border-color: rgba(83, 109, 153, 0.46) !important;
+  color: #e1ecfb !important;
+  box-shadow: none !important;
+}
+
+html.theme-dark body .status-pill.is-ready,
+body.theme-dark .status-pill.is-ready {
+  background: rgba(25, 135, 84, 0.18) !important;
+  border-color: rgba(25, 135, 84, 0.3) !important;
+  color: #7dffbd !important;
+}
+
+html.theme-dark body .status-pill.is-warning,
+body.theme-dark .status-pill.is-warning {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #ffd37a !important;
+}
+
+html.theme-dark body .status-pill.is-error,
+body.theme-dark .status-pill.is-error {
+  background: rgba(239, 68, 68, 0.18) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ff9bad !important;
+}
+
+html.theme-dark body .attendance-choice-action span,
+html.theme-dark body .attendance-choice-icon,
+html.theme-dark body .profile-required-icon,
+html.theme-dark body .reminder-pill,
+html.theme-dark body .integrity-value-icon,
+body.theme-dark .attendance-choice-action span,
+body.theme-dark .attendance-choice-icon,
+body.theme-dark .profile-required-icon,
+body.theme-dark .reminder-pill,
+body.theme-dark .integrity-value-icon {
+  background: rgba(50, 140, 255, 0.18) !important;
+  color: #9fcbff !important;
+  box-shadow: none !important;
+}
+
+html.theme-dark body .result-message span,
+body.theme-dark .result-message span {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #ffd37a !important;
 }

@@ -14,9 +14,13 @@
   const EMPLOYEE_KEY = "nadhira.employeeRecords";
   const SUPPLIER_KEY = "nadhira.supplierRecords";
   const USER_KEY = "nadhira.userRecords";
+  const USER_SYNC_AT_KEY = "nadhira.userRecordsSyncedAt";
+  const LOCAL_RECORDS_SYNC_AT_KEY = "nadhira.localRecordsSyncedAt";
   const ROLE_KEY = "nadhira.roleRecords";
   const PO_KEY = "nadhira.purchaseOrders";
+  const PO_SYNC_AT_KEY = "nadhira.purchaseOrdersSyncedAt";
   const RESTOCK_KEY = "nadhira.restockRequests";
+  const RESTOCK_SYNC_AT_KEY = "nadhira.restockRequestsSyncedAt";
   const RESTOCK_RESET_KEY = "nadhira.restockRequests.resetVersion";
   const RESTOCK_RESET_VERSION = "20260610-empty-online-v1";
   const RESTOCK_PHOTO_MAX_LENGTH = 220000;
@@ -33,14 +37,22 @@
   const HOME_MENU_ORDER_KEY = "nadhira.homeMenuOrder";
   const SALARY_HISTORY_KEY = "nadhira.salarySlipHistory";
   const REPORT_CACHE_KEY = "nadhira.reportCache";
+  const BACKGROUND_SYNC_AT_KEY = "nadhira.backgroundSyncAt";
   const PLATFORM_LOGO = "logo.png";
   const LOADING_LOGO = "assets/indo-apotek-mark-transparent.png";
   const BACKGROUND_SYNC_INTERVAL_MS = 120000;
   const BACKGROUND_SYNC_MIN_GAP_MS = 45000;
-  const USER_SYNC_MIN_GAP_MS = 300000;
+  const MENU_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+  const PURCHASE_CACHE_TTL_MS = MENU_CACHE_TTL_MS;
+  const RESTOCK_CACHE_TTL_MS = MENU_CACHE_TTL_MS;
+  const USER_SYNC_MIN_GAP_MS = MENU_CACHE_TTL_MS;
   const SALARY_HISTORY_SYNC_MIN_GAP_MS = 180000;
   const SALARY_HISTORY_REQUEST_TIMEOUT_MS = 25000;
   const SALARY_BULK_EXPORT_PAUSE_MS = 180;
+  const XLSX_CDN_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const ZXING_CDN_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js";
+  const JSQR_CDN_URL = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+  const QUAGGA_CDN_URL = "https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js";
   const PAGE_SIZE = 10;
   const QUICK_PAGE_SIZE = 20;
   const DEFAULT_MEDICINE_UNIT_COUNT = 3;
@@ -185,7 +197,7 @@
   const VIEW_TITLES = {
     home: "Home",
     dashboard: "Dashboard",
-    presensi: "Presensi / Catatan Kehadiran",
+    presensi: "Presensi",
     "cari-data-obat": "Cari Data Obat",
     "presensi-karyawan": "Portal Karyawan",
     "monitoring-presensi": "Monitoring Presensi",
@@ -204,7 +216,7 @@
   const ACCESS_MENUS = [
     { key: "dashboard", label: "Dashboard" },
     { key: "absensi", label: "Absensi" },
-    { key: "presensi", label: "Presensi / Catatan Kehadiran" },
+    { key: "presensi", label: "Presensi" },
     { key: "presensi_karyawan", label: "Portal Karyawan (ESS)" },
     { key: "monitoring_presensi", label: "Monitoring Presensi" },
     { key: "cari_data_obat", label: "Cari Data Obat" },
@@ -386,6 +398,8 @@
     homeMenuLongPressed: false,
     homeMenuSuppressClickUntil: 0,
     usersFetchPromise: null,
+    purchaseFetchPromise: null,
+    restockFetchPromise: null,
     lastUserSyncAt: 0,
     backgroundSyncPromise: null,
     lastBackgroundSyncAt: 0,
@@ -396,6 +410,7 @@
   };
 
   const els = {};
+  const externalScriptPromises = Object.create(null);
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -410,28 +425,22 @@
     hydrateProfileName();
     bindEvents();
     setupHomeMenuReorder();
+    loadStoredModules();
+    applyProfilePreferences();
     if (!routeInitialViewFromQuery()) {
       switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true, skipCleanUrl: true });
     }
     renderColumnOptions();
     renderMedicineForm();
     renderTableHead();
-    applyProfilePreferences();
     renderProfile();
     renderProfileSecurity();
     renderActivityLogPage();
     renderAttendanceShiftSettings();
     loadAttendanceShiftSettingsFromBackend({ silent: true });
-    loadStoredModules();
-    fetchRestockRequests({ silent: true });
-    fetchPurchaseOrders({ silent: true });
     fetchDataObat();
     fetchUsers();
     fetchPharmacyProfile({ silent: true });
-    fetchLocalRecords({ silent: true });
-    fetchAttendanceRecords({ silent: true });
-    fetchPayrollEmployees({ silent: true });
-    fetchOwnerActivityLog();
     bindUserAccessSync();
   }
 
@@ -1435,18 +1444,17 @@
   }
 
   function bindUserAccessSync() {
-    window.addEventListener("focus", () => syncBackgroundModules());
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) syncBackgroundModules();
-    });
-    window.setInterval(() => syncBackgroundModules(), BACKGROUND_SYNC_INTERVAL_MS);
+    // ponytail: polling dimatikan agar perpindahan menu tetap ringan.
+    // Tambah lagi saat backend punya updatedAt/version per modul.
+    return;
   }
 
   async function syncBackgroundModules(options = {}) {
     const now = Date.now();
+    const lastPersistedSyncAt = readStoredNumber(BACKGROUND_SYNC_AT_KEY);
     if (document.hidden) return;
     if (state.backgroundSyncPromise) return state.backgroundSyncPromise;
-    if (!options.force && now - state.lastBackgroundSyncAt < BACKGROUND_SYNC_MIN_GAP_MS) return;
+    if (!options.force && now - Math.max(state.lastBackgroundSyncAt, lastPersistedSyncAt) < BACKGROUND_SYNC_MIN_GAP_MS) return;
 
     state.lastBackgroundSyncAt = now;
     state.backgroundSyncPromise = Promise.allSettled([
@@ -1460,6 +1468,7 @@
 
     try {
       await state.backgroundSyncPromise;
+      writeStoredNumber(BACKGROUND_SYNC_AT_KEY, Date.now());
     } finally {
       state.backgroundSyncPromise = null;
     }
@@ -1467,8 +1476,10 @@
 
   async function fetchUsers(options = {}) {
     const now = Date.now();
+    const lastSyncAt = readStoredNumber(USER_SYNC_AT_KEY);
+    const hasCachedUsers = state.users.length || localStorage.getItem(USER_KEY) !== null;
     if (state.usersFetchPromise) return state.usersFetchPromise;
-    if (!options.force && state.users.length && now - state.lastUserSyncAt < USER_SYNC_MIN_GAP_MS) return;
+    if (!options.force && hasCachedUsers && now - Math.max(state.lastUserSyncAt, lastSyncAt) < USER_SYNC_MIN_GAP_MS) return state.users;
 
     state.usersFetchPromise = (async () => {
       try {
@@ -1489,11 +1500,15 @@
           preferences: normalizeProfilePreferences(user.preferences || user.profilePreferences || user.profile_preferences)
         })).filter((user) => user.name || user.username);
 
+        const nextUserSignature = getUserListSignature(nextUsers);
+        const currentUserSignature = getUserListSignature(state.users);
         state.lastUserSyncAt = Date.now();
-        if (getUserListSignature(nextUsers) === getUserListSignature(state.users)) {
+        writeStoredNumber(USER_SYNC_AT_KEY, state.lastUserSyncAt);
+        writeStoredArray(USER_KEY, nextUsers);
+        if (nextUserSignature === currentUserSignature) {
           renderProfile();
           applyCurrentUserAccess();
-          return;
+          return state.users;
         }
         state.users = nextUsers;
         writeStoredArray(USER_KEY, state.users);
@@ -1505,6 +1520,7 @@
         applyCurrentUserAccess();
       } catch (error) {
         state.lastUserSyncAt = Date.now();
+        if (hasCachedUsers) writeStoredNumber(USER_SYNC_AT_KEY, state.lastUserSyncAt);
         if (!options.silent) {
           console.warn("Gagal menyinkronkan data user:", error);
         }
@@ -1538,6 +1554,17 @@
   }
 
   async function fetchLocalRecords(options = {}) {
+    const now = Date.now();
+    const lastSyncAt = readStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY);
+    const hasCachedLocalRecords = state.employees.length || state.suppliers.length || localStorage.getItem(EMPLOYEE_KEY) !== null || localStorage.getItem(SUPPLIER_KEY) !== null;
+    if (!options.force && hasCachedLocalRecords && now - lastSyncAt < MENU_CACHE_TTL_MS) {
+      renderEmployees();
+      renderSuppliers();
+      populateMedicineOptions();
+      renderAttendanceDashboard();
+      return;
+    }
+
     try {
       const payload = await postToApi({ action: "listLocalRecords" });
       if (!payload || (payload.success !== true && payload.ok !== true)) return;
@@ -1579,6 +1606,7 @@
         });
       }
 
+      writeStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY, Date.now());
       renderEmployees();
       renderSuppliers();
       populateMedicineOptions();
@@ -2287,6 +2315,7 @@
     resetDashboardScanCandidate();
     showModal(els.scannerModal);
     setScannerStatus("Membuka kamera scanner...");
+    const scannerLibraryPromise = ensureScannerLibraries();
 
     try {
       state.scannerStream = await openDashboardScannerStream();
@@ -2296,6 +2325,7 @@
       window.setTimeout(tuneDashboardScannerTrack, 700);
       setupDashboardScannerFlashButton();
       await setupDashboardNativeBarcodeDetector();
+      await scannerLibraryPromise;
       scanDashboardFrame();
 
       if (await startDashboardZxingScanner(state.scannerStream)) {
@@ -2899,8 +2929,9 @@
       return matrixToImportRows(parseCsvMatrix(await file.text()));
     }
 
-    if (!window.XLSX) {
-      throw new Error("Library pembaca Excel belum termuat. Muat ulang halaman lalu coba lagi.");
+    const hasXlsx = await ensureXlsxLibrary();
+    if (!hasXlsx || !window.XLSX) {
+      throw new Error("Library pembaca Excel belum termuat. Cek koneksi internet lalu coba lagi.");
     }
 
     const workbook = window.XLSX.read(await file.arrayBuffer(), {
@@ -3497,7 +3528,7 @@
           const actor = item.actor ? ` oleh ${item.actor}` : "";
           const detail = item.detail ? `<span class="notification-detail">${escapeHtml(item.detail)}</span>` : "";
           const restockAction = item.kind === "restock" && item.restockId
-            ? `<button class="notification-open-restock" type="button" data-notification-restock="${escapeHtml(item.restockId)}">Lihat Detail</button>`
+            ? `<button class="notification-open-restock" type="button" data-notification-restock="${escapeHtml(item.restockId)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.4"></circle></svg><span>Lihat Detail</span></button>`
             : "";
           return `<li class="notification-item is-${escapeHtml(item.kind || "activity")}" data-notification-key="${escapeHtml(item.key)}">
             <span class="notification-number">${index + 1}</span>
@@ -4270,6 +4301,12 @@
     state.roles = readStoredArray(ROLE_KEY).map(normalizeRoleRecord).filter((item) => item.name);
     state.purchaseOrders = readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
     state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
+    const now = Date.now();
+    const hasStoredLocalRecords = localStorage.getItem(EMPLOYEE_KEY) !== null || localStorage.getItem(SUPPLIER_KEY) !== null;
+    if (hasStoredLocalRecords && !readStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY)) writeStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY, now);
+    if (localStorage.getItem(USER_KEY) !== null && !readStoredNumber(USER_SYNC_AT_KEY)) writeStoredNumber(USER_SYNC_AT_KEY, now);
+    if (localStorage.getItem(PO_KEY) !== null && !readStoredNumber(PO_SYNC_AT_KEY)) writeStoredNumber(PO_SYNC_AT_KEY, now);
+    if (localStorage.getItem(RESTOCK_KEY) !== null && !readStoredNumber(RESTOCK_SYNC_AT_KEY)) writeStoredNumber(RESTOCK_SYNC_AT_KEY, now);
     renderEmployees();
     renderSuppliers();
     renderUsers();
@@ -4373,6 +4410,7 @@
     }
 
     writeStoredArray(USER_KEY, state.users);
+    writeStoredNumber(USER_SYNC_AT_KEY, Date.now());
     renderUserRoleOptions();
 
     return nextRecord;
@@ -5387,21 +5425,38 @@
   }
 
   async function fetchPurchaseOrders(options = {}) {
-    try {
-      const payload = await postToApi({ action: "listPurchaseOrders" });
-      if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.orders)) {
-        throw new Error(payload?.message || "Endpoint surat pesanan online belum aktif.");
-      }
-      state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number)
-        .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
-      writeStoredArray(PO_KEY, state.purchaseOrders);
-      if (!state.purchaseSelectedNumber && state.purchaseOrders.length) {
-        state.purchaseSelectedNumber = state.purchaseOrders[0].number;
-      }
-      renderPurchaseOrders();
-    } catch (error) {
-      if (!options.silent) showActionToast(`${error.message} Data online belum dapat dimuat.`, "error");
+    const now = Date.now();
+    const lastSyncAt = readStoredNumber(PO_SYNC_AT_KEY);
+    const hasCachedOrders = state.purchaseOrders.length || localStorage.getItem(PO_KEY) !== null;
+    if (state.purchaseFetchPromise) return state.purchaseFetchPromise;
+    if (!options.force && hasCachedOrders && now - lastSyncAt < PURCHASE_CACHE_TTL_MS) {
+      return state.purchaseOrders;
     }
+
+    state.purchaseFetchPromise = (async () => {
+      try {
+        const payload = await postToApi({ action: "listPurchaseOrders" });
+        if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.orders)) {
+          throw new Error(payload?.message || "Endpoint surat pesanan online belum aktif.");
+        }
+        state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number)
+          .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)));
+        writeStoredArray(PO_KEY, state.purchaseOrders);
+        writeStoredNumber(PO_SYNC_AT_KEY, Date.now());
+        if (!state.purchaseSelectedNumber && state.purchaseOrders.length) {
+          state.purchaseSelectedNumber = state.purchaseOrders[0].number;
+        }
+        renderPurchaseOrders();
+        return state.purchaseOrders;
+      } catch (error) {
+        if (!options.silent) showActionToast(`${error.message} Data online belum dapat dimuat.`, "error");
+        return state.purchaseOrders;
+      } finally {
+        state.purchaseFetchPromise = null;
+      }
+    })();
+
+    return state.purchaseFetchPromise;
   }
 
   async function savePurchaseOrdersToBackend(options = {}) {
@@ -5421,6 +5476,7 @@
       if (Array.isArray(payload.orders)) {
         state.purchaseOrders = payload.orders.map(normalizePurchaseOrder).filter((order) => order.number);
         writeStoredArray(PO_KEY, state.purchaseOrders);
+        writeStoredNumber(PO_SYNC_AT_KEY, Date.now());
         renderPurchaseOrders();
       }
       return payload;
@@ -7125,22 +7181,40 @@
   }
 
   async function fetchRestockRequests(options = {}) {
-    try {
-      const payload = await postToApi({ action: "listRestockRequests" });
-      if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.requests)) {
-        throw new Error(payload?.message || "Endpoint restok online belum aktif.");
-      }
-      const nextRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
-      const previousSignature = JSON.stringify(state.restockRequests);
-      const nextSignature = JSON.stringify(nextRequests);
-      if (previousSignature !== nextSignature) {
-        state.restockRequests = nextRequests;
-        persistRestockRequests({ remote: false });
-        renderRestockPage();
-      }
-    } catch (error) {
-      if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
+    const now = Date.now();
+    const lastSyncAt = readStoredNumber(RESTOCK_SYNC_AT_KEY);
+    const hasCachedRequests = state.restockRequests.length || localStorage.getItem(RESTOCK_KEY) !== null;
+    if (state.restockFetchPromise) return state.restockFetchPromise;
+    if (!options.force && hasCachedRequests && now - lastSyncAt < RESTOCK_CACHE_TTL_MS) {
+      return state.restockRequests;
     }
+
+    state.restockFetchPromise = (async () => {
+      try {
+        const payload = await postToApi({ action: "listRestockRequests" });
+        if (!payload || (payload.success !== true && payload.ok !== true) || !Array.isArray(payload.requests)) {
+          throw new Error(payload?.message || "Endpoint restok online belum aktif.");
+        }
+        const nextRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
+        const previousSignature = JSON.stringify(state.restockRequests);
+        const nextSignature = JSON.stringify(nextRequests);
+        writeStoredArray(RESTOCK_KEY, nextRequests);
+        writeStoredNumber(RESTOCK_SYNC_AT_KEY, Date.now());
+        if (previousSignature !== nextSignature) {
+          state.restockRequests = nextRequests;
+          persistRestockRequests({ remote: false });
+          renderRestockPage();
+        }
+        return state.restockRequests;
+      } catch (error) {
+        if (!options.silent) setRestockPageMessage(`${error.message} Pastikan Apps Script terbaru sudah di-deploy.`, "error");
+        return state.restockRequests;
+      } finally {
+        state.restockFetchPromise = null;
+      }
+    })();
+
+    return state.restockFetchPromise;
   }
 
   async function saveRestockRequestsToBackend(options = {}) {
@@ -7160,6 +7234,7 @@
       if (Array.isArray(payload.requests)) {
         state.restockRequests = payload.requests.map(normalizeRestockRequest).filter((item) => item.id);
         writeStoredArray(RESTOCK_KEY, state.restockRequests);
+        writeStoredNumber(RESTOCK_SYNC_AT_KEY, Date.now());
       }
       return payload;
     } catch (error) {
@@ -9707,7 +9782,10 @@
     const localPrefs = readObject(PROFILE_PREFS_KEY);
     const prefs = Object.keys(userPrefs).length ? userPrefs : localPrefs;
     const theme = prefs.theme === "dark" ? "dark" : "light";
+    document.documentElement.classList.toggle("theme-dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
     document.body.classList.toggle("theme-dark", theme === "dark");
+    document.body.style.colorScheme = theme;
     updateThemeToggle(theme);
     document.body.classList.toggle("compact-dashboard", prefs.compact === true);
     delete document.body.dataset.menuIconSize;
@@ -11749,10 +11827,23 @@
       fetchPayrollEmployees({ silent: true });
       fetchSalarySlipHistory({ silent: true });
     }
+    if (viewName === "surat-pesanan") {
+      renderPurchaseOrders();
+      fetchPurchaseOrders({ silent: true });
+    }
     if (viewName === "presensi-karyawan" || viewName === "monitoring-presensi") {
       document.dispatchEvent(new CustomEvent("ess:view", { detail: { view: viewName } }));
     }
-    if (viewName === "restok-obat") renderRestockPage();
+    if (viewName === "restok-obat") {
+      renderRestockPage();
+      fetchRestockRequests({ silent: true });
+    }
+    if (viewName === "data-karyawan" || viewName === "data-supplier") {
+      fetchLocalRecords({ silent: true });
+    }
+    if (viewName === "manajemen-pengguna") {
+      fetchUsers({ silent: true });
+    }
     if (viewName === "log-aktivitas") {
       fetchOwnerActivityLog({ silent: true });
       renderActivityLogPage();
@@ -12669,6 +12760,60 @@
     } catch (error) {
       return {};
     }
+  }
+
+  function readStoredNumber(key) {
+    const value = Number(localStorage.getItem(key) || 0);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  function writeStoredNumber(key, value) {
+    localStorage.setItem(key, String(Number(value) || 0));
+  }
+
+  function loadExternalScript(src, isReady) {
+    if (typeof isReady === "function" && isReady()) return Promise.resolve(true);
+    if (externalScriptPromises[src]) return externalScriptPromises[src];
+
+    externalScriptPromises[src] = new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        existing.addEventListener("load", () => resolve(true), { once: true });
+        existing.addEventListener("error", () => reject(new Error(`Gagal memuat ${src}`)), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => reject(new Error(`Gagal memuat ${src}`));
+      document.head.appendChild(script);
+    });
+
+    return externalScriptPromises[src];
+  }
+
+  async function ensureXlsxLibrary() {
+    if (window.XLSX) return true;
+    await loadExternalScript(XLSX_CDN_URL, () => Boolean(window.XLSX));
+    return Boolean(window.XLSX);
+  }
+
+  async function ensureScannerLibraries() {
+    const tasks = [];
+    if (!(window.ZXingBrowser || window.ZXing)) {
+      tasks.push(loadExternalScript(ZXING_CDN_URL, () => Boolean(window.ZXingBrowser || window.ZXing)).catch(() => null));
+    }
+    if (!window.jsQR) {
+      tasks.push(loadExternalScript(JSQR_CDN_URL, () => Boolean(window.jsQR)).catch(() => null));
+    }
+    if (!(window.Quagga || window.Quagga2)) {
+      tasks.push(loadExternalScript(QUAGGA_CDN_URL, () => Boolean(window.Quagga || window.Quagga2)).catch(() => null));
+    }
+    await Promise.all(tasks);
+    return true;
   }
 
   function loadVisibleColumns() {

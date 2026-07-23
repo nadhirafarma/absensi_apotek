@@ -221,6 +221,12 @@ body::before {
   text-align: left !important;
 }
 
+.internal-note span {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
 .internal-note svg {
   width: clamp(36px, 4.4vw, 52px) !important;
   height: clamp(36px, 4.4vw, 52px) !important;
@@ -1449,4 +1455,124 @@ svg {
   .login-layout {
     padding-block: 18px;
   }
+}
+
+html.theme-dark body,
+body.theme-dark {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.18), transparent 26%),
+    radial-gradient(circle at 86% 16%, rgba(217, 70, 239, 0.14), transparent 28%),
+    linear-gradient(135deg, #020817 0%, #071326 48%, #0d1830 100%) !important;
+  color: #eef6ff !important;
+}
+
+html.theme-dark body::before,
+body.theme-dark::before {
+  opacity: 0.16 !important;
+}
+
+html.theme-dark body .login-page,
+body.theme-dark .login-page {
+  color: #eef6ff !important;
+}
+
+html.theme-dark body .login-card,
+html.theme-dark body .reset-dialog,
+body.theme-dark .login-card,
+body.theme-dark .reset-dialog {
+  background:
+    linear-gradient(160deg, rgba(8, 20, 38, 0.94), rgba(14, 26, 48, 0.84)),
+    rgba(8, 20, 38, 0.9) !important;
+  border-color: rgba(91, 116, 161, 0.5) !important;
+  box-shadow:
+    0 30px 95px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html.theme-dark body .welcome-text,
+html.theme-dark body .login-copy,
+html.theme-dark body .remember-row,
+html.theme-dark body .internal-note,
+html.theme-dark body .login-footer,
+html.theme-dark body .reset-dialog > p,
+body.theme-dark .welcome-text,
+body.theme-dark .login-copy,
+body.theme-dark .remember-row,
+body.theme-dark .internal-note,
+body.theme-dark .login-footer,
+body.theme-dark .reset-dialog > p {
+  color: #9fb6d8 !important;
+}
+
+html.theme-dark body .login-card h1,
+html.theme-dark body .login-form > label,
+html.theme-dark body .reset-dialog h2,
+body.theme-dark .login-card h1,
+body.theme-dark .login-form > label,
+body.theme-dark .reset-dialog h2 {
+  color: #f7fbff !important;
+}
+
+html.theme-dark body .input-shell,
+body.theme-dark .input-shell {
+  background: rgba(13, 27, 49, 0.92) !important;
+  border-color: rgba(83, 109, 153, 0.48) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22) !important;
+}
+
+html.theme-dark body .input-shell:focus-within,
+body.theme-dark .input-shell:focus-within {
+  border-color: rgba(96, 165, 250, 0.68) !important;
+  background: rgba(18, 35, 62, 0.96) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18) !important;
+}
+
+html.theme-dark body .input-shell svg,
+html.theme-dark body .input-shell input,
+html.theme-dark body .input-shell select,
+html.theme-dark body .modal-close,
+html.theme-dark body .icon-toggle,
+body.theme-dark .input-shell svg,
+body.theme-dark .input-shell input,
+body.theme-dark .input-shell select,
+body.theme-dark .modal-close,
+body.theme-dark .icon-toggle {
+  color: #e1ecfb !important;
+}
+
+html.theme-dark body .input-shell input::placeholder,
+html.theme-dark body .input-shell select:invalid,
+body.theme-dark .input-shell input::placeholder,
+body.theme-dark .input-shell select:invalid {
+  color: #7f95b8 !important;
+}
+
+html.theme-dark body .icon-toggle:hover,
+html.theme-dark body .modal-close:hover,
+body.theme-dark .icon-toggle:hover,
+body.theme-dark .modal-close:hover {
+  background: rgba(59, 130, 246, 0.16) !important;
+  color: #ffffff !important;
+}
+
+html.theme-dark body .internal-note,
+html.theme-dark body .login-footer,
+html.theme-dark body .secondary-modal-button,
+html.theme-dark body .modal-close,
+body.theme-dark .internal-note,
+body.theme-dark .login-footer,
+body.theme-dark .secondary-modal-button,
+body.theme-dark .modal-close {
+  background: rgba(10, 23, 42, 0.8) !important;
+  border-color: rgba(83, 109, 153, 0.44) !important;
+}
+
+html.theme-dark body .form-status,
+body.theme-dark .form-status {
+  color: #ff9bad !important;
+}
+
+html.theme-dark body .form-status[data-type="success"],
+body.theme-dark .form-status[data-type="success"] {
+  color: #7dffbd !important;
 }

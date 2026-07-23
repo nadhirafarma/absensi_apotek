@@ -5084,8 +5084,25 @@ td.col-actions {
 .purchase-row-muted,
 .purchase-detail-content small {
   color: #5c74a5;
-  font-size: 0.78rem;
-  font-weight: 700;
+}
+
+body.theme-dark .purchase-row-title,
+body.theme-dark .purchase-row-title span,
+body.theme-dark .purchase-row-title strong,
+body.theme-dark .purchase-row-title small,
+body.theme-dark .purchase-row-muted,
+body.theme-dark .purchase-detail-content small,
+body.theme-dark .purchase-stat-icon,
+body.theme-dark .purchase-stats strong,
+body.theme-dark .purchase-draft-card strong,
+body.theme-dark .purchase-table th,
+body.theme-dark .purchase-detail-title strong,
+body.theme-dark .purchase-detail-card dt,
+body.theme-dark .purchase-summary-card dt,
+body.theme-dark .purchase-order-summary-card dt,
+body.theme-dark .purchase-product-table th,
+body.theme-dark .purchase-table td:nth-last-child(2) {
+  color: #e8f0ff !important;
 }
 
 .purchase-status-pill {
@@ -7332,6 +7349,8 @@ body.theme-dark .dashboard-table td {
 body.theme-dark .status-item,
 body.theme-dark .online-pill,
 body.theme-dark .notification-action,
+
+
 body.theme-dark .mobile-home-card,
 body.theme-dark .mobile-bottom-nav,
 body.theme-dark .simple-name-button,
@@ -9557,9 +9576,9 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
     justify-items: center;
     gap: 4px;
     padding: 5px 4px;
-    border: 1px solid rgba(210, 225, 245, 0.94);
+    border: 1px solid transparent;
     border-radius: 19px;
-    background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(237, 246, 255, 0.92));
+    background: transparent;
     color: #08245c;
     font-family: inherit;
     text-align: center;
@@ -9588,8 +9607,9 @@ body.sidebar-open #view-cari-data-obat.is-active .quick-search-toolbar {
     place-items: center;
     border-radius: 0;
     color: #fff;
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
   }
 
   .mobile-home-icon svg {
@@ -10064,6 +10084,25 @@ body.theme-dark .shift-rule-card input {
 body.theme-dark .notification-card::before {
   background: rgba(12, 27, 52, 0.98);
   border-color: rgba(74, 104, 154, 0.86);
+}
+
+body.theme-dark .notification-toolbar button,
+body.theme-dark .notification-delete {
+  background: rgba(255, 71, 126, 0.18) !important;
+  border-color: rgba(255, 71, 126, 0.42) !important;
+  color: #ffb3cc !important;
+}
+
+body.theme-dark .notification-close {
+  color: #ffb3cc !important;
+  background: rgba(255, 71, 126, 0.18) !important;
+  border-color: rgba(255, 71, 126, 0.42) !important;
+}
+
+body.theme-dark .notification-toolbar button:hover,
+body.theme-dark .notification-delete:hover {
+  background: rgba(255, 71, 126, 0.32) !important;
+  color: #ffd0e0 !important;
 }
 
 @media (max-width: 760px) {
@@ -28746,4 +28785,1160 @@ body.theme-dark .app-sidebar .sidebar-section-chevron {
   body[data-active-view="restok-obat"] #view-restok-obat .restock-stock-input-row {
     gap: 8px !important;
   }
+}
+
+/* 20260722 dark mode contrast audit v1: final cascade guard for every dashboard menu. */
+body.theme-dark {
+  color-scheme: dark;
+  --bg: #020814;
+  --surface: #0b1629;
+  --surface-soft: #111f36;
+  --surface-elevated: #152743;
+  --surface-muted: #1b2f50;
+  --ink: #f7fbff;
+  --muted: #c3d2ea;
+  --line: #335071;
+  --shadow: 0 18px 52px rgba(0, 0, 0, 0.42);
+  background: #020814 !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark.dashboard-page,
+body.theme-dark .app-layout,
+body.theme-dark .dashboard-main,
+body.theme-dark .dashboard-content,
+body.theme-dark .dashboard-view,
+body.theme-dark .mobile-home-shell {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .dashboard-topbar,
+body.theme-dark .module-card,
+body.theme-dark .table-card,
+body.theme-dark .stat-card,
+body.theme-dark .attendance-page-head,
+body.theme-dark .attendance-card,
+body.theme-dark .attendance-month-total,
+body.theme-dark .payroll-card,
+body.theme-dark .salary-slip-card,
+body.theme-dark .salary-history-card,
+body.theme-dark .purchase-card,
+body.theme-dark .purchase-summary-card,
+body.theme-dark .purchase-detail-panel,
+body.theme-dark .purchase-main-panel,
+body.theme-dark .purchase-draft-card,
+body.theme-dark .purchase-print-settings-card,
+body.theme-dark .restock-hero,
+body.theme-dark .restock-card,
+body.theme-dark .restock-request-card,
+body.theme-dark .restock-list-panel,
+body.theme-dark .restock-form-panel,
+body.theme-dark .restock-detail-panel,
+body.theme-dark .restock-delete-panel,
+body.theme-dark .restock-notifications,
+body.theme-dark .profile-card,
+body.theme-dark .profile-settings-card,
+body.theme-dark .profile-tabs,
+body.theme-dark .profile-panel.is-active,
+body.theme-dark .security-form,
+body.theme-dark .setting-row,
+body.theme-dark .activity-page,
+body.theme-dark .activity-list article,
+body.theme-dark .import-page,
+body.theme-dark .import-summary-card,
+body.theme-dark .quick-search-head,
+body.theme-dark .quick-report-title,
+body.theme-dark .quick-medicine-card,
+body.theme-dark .mobile-home-card,
+body.theme-dark .app-sidebar,
+body.theme-dark .modal-card,
+body.theme-dark .dashboard-modal-card,
+body.theme-dark .record-modal-card,
+body.theme-dark .payroll-modal-card,
+body.theme-dark .role-editor-card,
+body.theme-dark .profile-dropdown,
+body.theme-dark .notification-card,
+body.theme-dark .mobile-hero-profile-popover {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .dashboard-topbar {
+  background:
+    linear-gradient(90deg, rgba(4, 13, 30, 0.98), rgba(14, 26, 48, 0.96)) !important;
+}
+
+body.theme-dark .dashboard-topbar h1,
+body.theme-dark .dashboard-topbar p,
+body.theme-dark .dashboard-topbar small,
+body.theme-dark .dashboard-topbar strong,
+body.theme-dark .attendance-page-head h2,
+body.theme-dark .attendance-card h3,
+body.theme-dark .module-card h2,
+body.theme-dark .module-card h3,
+body.theme-dark .purchase-card h3,
+body.theme-dark .purchase-detail-panel h3,
+body.theme-dark .purchase-form-head h2,
+body.theme-dark .purchase-summary-card h3,
+body.theme-dark .purchase-draft-card strong,
+body.theme-dark .restock-hero h2,
+body.theme-dark .restock-card h3,
+body.theme-dark .restock-card-title h3,
+body.theme-dark .restock-panel-head h3,
+body.theme-dark .profile-card h2,
+body.theme-dark .profile-card h3,
+body.theme-dark .profile-settings-card h3,
+body.theme-dark .activity-page h2,
+body.theme-dark .activity-page h3,
+body.theme-dark .role-editor-head h2,
+body.theme-dark .modal-card h2,
+body.theme-dark .modal-card h3,
+body.theme-dark .quick-report-title h3,
+body.theme-dark .quick-medicine-card strong,
+body.theme-dark .salary-history-copy strong,
+body.theme-dark .salary-history-empty strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-page-head p,
+body.theme-dark .attendance-card-head p,
+body.theme-dark .attendance-monthly-card p,
+body.theme-dark .module-card p,
+body.theme-dark .module-card small,
+body.theme-dark .purchase-card-head p,
+body.theme-dark .purchase-form-head p,
+body.theme-dark .purchase-summary-card p,
+body.theme-dark .purchase-detail-panel p,
+body.theme-dark .purchase-detail-panel small,
+body.theme-dark .restock-hero p,
+body.theme-dark .restock-card-title small,
+body.theme-dark .restock-card small,
+body.theme-dark .restock-card-grid dt,
+body.theme-dark .restock-detail-grid dt,
+body.theme-dark .profile-card p,
+body.theme-dark .profile-card small,
+body.theme-dark .setting-row small,
+body.theme-dark .activity-page p,
+body.theme-dark .activity-list time,
+body.theme-dark .role-editor-head p,
+body.theme-dark .modal-card p,
+body.theme-dark .quick-medicine-card small,
+body.theme-dark .quick-medicine-list dt,
+body.theme-dark .salary-history-copy small,
+body.theme-dark .salary-history-copy em,
+body.theme-dark .notification-detail,
+body.theme-dark .notification-empty,
+body.theme-dark .notification-upload-note {
+  color: var(--muted) !important;
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea,
+body.theme-dark .record-control,
+body.theme-dark .dashboard-search,
+body.theme-dark .dashboard-filter-panel,
+body.theme-dark .compact-toolbar select,
+body.theme-dark .import-page-grid select,
+body.theme-dark .setting-row select,
+body.theme-dark .salary-slip-panel select,
+body.theme-dark .payroll-form-grid input,
+body.theme-dark .payroll-form-grid select,
+body.theme-dark .purchase-form-grid input,
+body.theme-dark .purchase-form-grid select,
+body.theme-dark .purchase-card textarea,
+body.theme-dark .purchase-product-table input,
+body.theme-dark .restock-search,
+body.theme-dark .restock-search input,
+body.theme-dark .restock-toolbar select,
+body.theme-dark .restock-form-grid input,
+body.theme-dark .restock-form-grid select,
+body.theme-dark .restock-form-grid textarea,
+body.theme-dark .role-editor-field input,
+body.theme-dark #medicineForm .medicine-field input,
+body.theme-dark #medicineForm .medicine-field select,
+body.theme-dark #medicineForm .medicine-field textarea,
+body.theme-dark .medicine-field input,
+body.theme-dark .medicine-field select,
+body.theme-dark .medicine-field textarea {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark input::placeholder,
+body.theme-dark textarea::placeholder,
+body.theme-dark #medicineForm .medicine-field input::placeholder,
+body.theme-dark #medicineForm .medicine-field textarea::placeholder {
+  color: #8ea4c6 !important;
+  opacity: 1 !important;
+}
+
+body.theme-dark input:focus,
+body.theme-dark select:focus,
+body.theme-dark textarea:focus,
+body.theme-dark input:focus-visible,
+body.theme-dark select:focus-visible,
+body.theme-dark textarea:focus-visible,
+body.theme-dark button:focus-visible,
+body.theme-dark a:focus-visible {
+  border-color: #68a8ff !important;
+  outline: 3px solid rgba(104, 168, 255, 0.34) !important;
+  outline-offset: 2px !important;
+}
+
+body.theme-dark button:disabled,
+body.theme-dark .filter-action:disabled,
+body.theme-dark .secondary-action:disabled,
+body.theme-dark .table-action-button:disabled {
+  opacity: 0.48 !important;
+  cursor: not-allowed !important;
+}
+
+body.theme-dark .secondary-action,
+body.theme-dark .filter-action,
+body.theme-dark .action-button,
+body.theme-dark .sync-nav-action,
+body.theme-dark .table-action-button,
+body.theme-dark .table-row-menu-action,
+body.theme-dark .notification-action,
+body.theme-dark .theme-action,
+body.theme-dark .profile-chip,
+body.theme-dark .global-sidebar-toggle,
+body.theme-dark .barcode-scan-button,
+body.theme-dark .restock-icon-button,
+body.theme-dark .restock-delete-toolbar-button,
+body.theme-dark .purchase-action-button,
+body.theme-dark .role-editor-cancel,
+body.theme-dark .profile-panel-close,
+body.theme-dark .mobile-hero-action,
+body.theme-dark .mobile-hero-date-pill,
+body.theme-dark .mobile-hero-logo-tile {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .secondary-action:hover,
+body.theme-dark .filter-action:hover,
+body.theme-dark .action-button:hover,
+body.theme-dark .table-action-button:hover,
+body.theme-dark .table-row-menu-action:hover,
+body.theme-dark .notification-action:hover,
+body.theme-dark .theme-action:hover,
+body.theme-dark .profile-chip:hover,
+body.theme-dark .global-sidebar-toggle:hover,
+body.theme-dark .barcode-scan-button:hover,
+body.theme-dark .restock-icon-button:hover,
+body.theme-dark .purchase-action-button:hover,
+body.theme-dark .mobile-hero-action:hover {
+  background: var(--surface-muted) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .secondary-action.is-primary,
+body.theme-dark .filter-action.is-primary,
+body.theme-dark .action-button.is-primary,
+body.theme-dark .attendance-add-button,
+body.theme-dark .role-editor-save,
+body.theme-dark .purchase-primary-action,
+body.theme-dark .restock-primary-action,
+body.theme-dark .mobile-bottom-nav .is-featured {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #328cff, #7a5cff 56%, #e535ad) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .simple-table-wrap,
+body.theme-dark .dashboard-table-wrap,
+body.theme-dark .attendance-table-wrap,
+body.theme-dark .payroll-table-wrap,
+body.theme-dark .purchase-table-wrap,
+body.theme-dark .purchase-product-table-wrap,
+body.theme-dark .restock-table-wrap,
+body.theme-dark .restock-draft-table-wrap,
+body.theme-dark .activity-table-wrap,
+body.theme-dark .table-scroll,
+body.theme-dark .ess-table-wrap {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .simple-table,
+body.theme-dark .dashboard-table,
+body.theme-dark .attendance-table,
+body.theme-dark .attendance-monthly-table,
+body.theme-dark .payroll-table,
+body.theme-dark .purchase-table,
+body.theme-dark .purchase-product-table,
+body.theme-dark .restock-table,
+body.theme-dark .restock-draft-table,
+body.theme-dark .activity-table,
+body.theme-dark .role-access-table {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .simple-table th,
+body.theme-dark .dashboard-table th,
+body.theme-dark .attendance-table th,
+body.theme-dark .attendance-monthly-table th,
+body.theme-dark .payroll-table th,
+body.theme-dark .purchase-table th,
+body.theme-dark .purchase-product-table th,
+body.theme-dark .restock-table th,
+body.theme-dark .restock-draft-table th,
+body.theme-dark .activity-table th,
+body.theme-dark .role-access-table th {
+  background: #162844 !important;
+  border-color: var(--line) !important;
+  color: #dce9fb !important;
+}
+
+body.theme-dark .simple-table td,
+body.theme-dark .dashboard-table td,
+body.theme-dark .attendance-table td,
+body.theme-dark .attendance-monthly-table td,
+body.theme-dark .payroll-table td,
+body.theme-dark .purchase-table td,
+body.theme-dark .purchase-product-table td,
+body.theme-dark .restock-table td,
+body.theme-dark .restock-draft-table td,
+body.theme-dark .activity-table td,
+body.theme-dark .role-access-table td {
+  background: #0c182d !important;
+  border-color: #2c4868 !important;
+  color: #e8f2ff !important;
+}
+
+body.theme-dark .simple-table td strong,
+body.theme-dark .dashboard-table td strong,
+body.theme-dark .attendance-table td strong,
+body.theme-dark .attendance-monthly-table td strong,
+body.theme-dark .payroll-table td strong,
+body.theme-dark .purchase-table td strong,
+body.theme-dark .purchase-product-table td strong,
+body.theme-dark .restock-table td strong,
+body.theme-dark .restock-draft-table td strong,
+body.theme-dark .activity-table td strong,
+body.theme-dark .role-access-table td strong,
+body.theme-dark .purchase-table td:nth-last-child(2),
+body.theme-dark .quick-medicine-list dd {
+  color: #ffffff !important;
+}
+
+body.theme-dark .simple-table tbody tr:hover td,
+body.theme-dark .dashboard-table tbody tr:hover td,
+body.theme-dark .purchase-table tbody tr:hover td,
+body.theme-dark .restock-table-row:hover td,
+body.theme-dark .activity-table tbody tr:hover td {
+  background: #13233d !important;
+  border-color: #4f79a6 !important;
+}
+
+@media (max-width: 820px) {
+  body.theme-dark .purchase-table tr,
+  body.theme-dark .restock-table tr,
+  body.theme-dark .simple-table tr {
+    background: var(--surface) !important;
+    border-color: var(--line) !important;
+  }
+
+  body.theme-dark .purchase-table td::before,
+  body.theme-dark .simple-table td::before,
+  body.theme-dark .restock-table td::before {
+    color: #b7c8e3 !important;
+  }
+}
+
+body.theme-dark .pill-tag,
+body.theme-dark .badge,
+body.theme-dark .status-pill,
+body.theme-dark .attendance-status-pill,
+body.theme-dark .attendance-shift-pill,
+body.theme-dark .purchase-status-pill,
+body.theme-dark .restock-priority,
+body.theme-dark .restock-status,
+body.theme-dark .table-action-status,
+body.theme-dark .online-pill,
+body.theme-dark .profile-tab,
+body.theme-dark .quick-filter-chips button,
+body.theme-dark .medicine-tabs button,
+body.theme-dark .medicine-auto-badge,
+body.theme-dark .medicine-stock-unit,
+body.theme-dark .role-access-summary,
+body.theme-dark #view-manajemen-pengguna .access-summary {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: #e8f2ff !important;
+}
+
+body.theme-dark .profile-tab.is-active,
+body.theme-dark .quick-filter-chips button.is-active,
+body.theme-dark .medicine-tabs button.is-active,
+body.theme-dark .sidebar-link.is-active,
+body.theme-dark .mobile-bottom-nav button.is-active {
+  background: linear-gradient(135deg, rgba(50, 140, 255, 0.28), rgba(229, 53, 173, 0.24)) !important;
+  border-color: rgba(117, 171, 255, 0.7) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .attendance-status-pill.is-hadir,
+body.theme-dark .purchase-status-pill.is-done,
+body.theme-dark .table-action-status.is-activate,
+body.theme-dark .restock-card-grid .is-safe,
+body.theme-dark .restock-detail-grid .is-safe,
+body.theme-dark .form-status[data-type="success"],
+body.theme-dark .profile-status[data-type="success"],
+body.theme-dark .modal-head p[data-type="success"],
+body.theme-dark #dashboardStatusText[data-type="success"],
+body.theme-dark .import-summary-card p[data-type="success"],
+body.theme-dark .restock-hero p[data-type="success"] {
+  background: rgba(25, 135, 84, 0.18) !important;
+  color: #7dffbd !important;
+}
+
+body.theme-dark .attendance-status-pill.is-terlambat,
+body.theme-dark .purchase-status-pill.is-processing,
+body.theme-dark .ess-badge.is-warning,
+body.theme-dark .restock-card-grid .is-warning,
+body.theme-dark .restock-detail-grid .is-warning {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #ffd37a !important;
+}
+
+body.theme-dark .attendance-status-pill.is-tidak-hadir,
+body.theme-dark .purchase-status-pill.is-draft,
+body.theme-dark .purchase-action-button.is-red,
+body.theme-dark .table-action-delete,
+body.theme-dark .ess-badge.is-danger,
+body.theme-dark .restock-card-grid .is-danger,
+body.theme-dark .restock-detail-grid .is-danger,
+body.theme-dark .form-status[data-type="error"],
+body.theme-dark .profile-status[data-type="error"],
+body.theme-dark .restock-hero p[data-type="error"] {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #ff9bad !important;
+}
+
+/* 20260722 final polish: theme sync UI, table parity, lighter sidebar icons, and stable menu cache visuals. */
+.action-toast.is-success {
+  color: #087a4b;
+  border-color: rgba(16, 185, 109, 0.18);
+}
+
+.action-toast.is-success .action-toast-icon {
+  background: linear-gradient(110deg, #10b981 0%, #22c55e 100%);
+}
+
+.action-toast-icon::before {
+  content: "\2713";
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.action-toast.is-error .action-toast-icon::before {
+  content: "!";
+  font-size: 15px;
+}
+
+.action-toast.is-info .action-toast-icon::before {
+  content: "i";
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.action-toast-icon svg {
+  display: none !important;
+}
+
+body.theme-dark .action-toast {
+  background: rgba(10, 23, 42, 0.94) !important;
+  border-color: rgba(96, 165, 250, 0.22) !important;
+  color: #e5efff !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.theme-dark .action-toast.is-success {
+  color: #7dffbd !important;
+  border-color: rgba(25, 135, 84, 0.28) !important;
+}
+
+body.theme-dark .action-toast.is-error {
+  color: #ffb6c3 !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+}
+
+body.theme-dark .action-toast.is-info {
+  color: #b9d7ff !important;
+  border-color: rgba(96, 165, 250, 0.28) !important;
+}
+
+body.theme-dark .app-loading-overlay.is-success .app-loading-card,
+body.theme-dark .app-loading-overlay.is-error .app-loading-card {
+  background: rgba(10, 23, 42, 0.94) !important;
+  border: 1px solid rgba(80, 113, 164, 0.62) !important;
+  border-radius: 22px !important;
+  padding: 22px 20px !important;
+  color: #eef5ff !important;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38) !important;
+}
+
+body.theme-dark .app-loading-overlay.is-success .app-loading-card::before {
+  background: rgba(25, 135, 84, 0.18) !important;
+  color: #7dffbd !important;
+}
+
+body.theme-dark .app-loading-overlay.is-error .app-loading-card::before {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #ffb6c3 !important;
+}
+
+body.theme-dark .app-loading-overlay.is-success .app-loading-card > strong,
+body.theme-dark .app-loading-overlay.is-error .app-loading-card > strong {
+  color: #eef5ff !important;
+}
+
+body.theme-dark .restock-delete-success-icon {
+  color: #7dffbd !important;
+}
+
+body.theme-dark .restock-delete-success-panel strong,
+body.theme-dark .restock-delete-success-panel p {
+  color: #eef5ff !important;
+}
+
+#view-data-karyawan .module-card,
+#view-data-supplier .module-card {
+  max-width: none !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+#view-data-karyawan .simple-table-wrap,
+#view-data-supplier .simple-table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: clamp(320px, calc(100dvh - 280px), 640px) !important;
+  overflow: auto !important;
+  isolation: isolate !important;
+  position: relative !important;
+}
+
+#view-data-karyawan .simple-table,
+#view-data-supplier .simple-table {
+  width: 100% !important;
+  min-width: 640px !important;
+  border-collapse: separate !important;
+  table-layout: auto !important;
+}
+
+#view-data-karyawan .simple-table tbody tr:nth-child(odd),
+#view-data-karyawan .simple-table tbody tr:nth-child(even),
+#view-data-supplier .simple-table tbody tr:nth-child(odd),
+#view-data-supplier .simple-table tbody tr:nth-child(even) {
+  background: transparent !important;
+}
+
+#view-data-karyawan .simple-table tbody tr:hover,
+#view-data-supplier .simple-table tbody tr:hover {
+  background: rgba(226, 238, 255, 0.92) !important;
+}
+
+#view-data-karyawan .simple-table thead th,
+#view-data-supplier .simple-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 6 !important;
+  background: #f8fbff !important;
+}
+
+body.theme-dark #view-data-karyawan .simple-table thead th,
+body.theme-dark #view-data-supplier .simple-table thead th {
+  background: linear-gradient(180deg, rgba(7, 19, 38, 0.98), rgba(11, 22, 41, 0.94)) !important;
+}
+
+@media (min-width: 761px) {
+  .app-sidebar .sidebar-link svg,
+  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+    padding: 8px !important;
+    box-shadow: 0 10px 18px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.18)) !important;
+  }
+
+  .app-sidebar .sidebar-link:hover svg,
+  .app-sidebar .sidebar-link.is-active svg {
+    box-shadow: 0 12px 20px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.2)) !important;
+  }
+
+  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    padding: 6px !important;
+    box-shadow: none !important;
+  }
+}
+
+body.theme-dark #payrollAddButton {
+  border-color: transparent !important;
+  background: linear-gradient(110deg, #2563ff 0%, #6a4df4 52%, #c927c9 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(81, 74, 226, 0.2) !important;
+}
+
+#view-presensi .payroll-card {
+  overflow: visible !important;
+}
+
+#view-presensi .payroll-table-wrap,
+#view-presensi .payroll-table-wrap:has(.table-row-menu[open]) {
+  overflow-y: auto !important;
+  padding-bottom: 14px !important;
+}
+
+body.theme-dark .stat-icon,
+body.theme-dark .purchase-stat-icon,
+body.theme-dark .restock-stat-icon,
+body.theme-dark .salary-history-icon,
+body.theme-dark .role-editor-icon,
+body.theme-dark .mobile-home-icon,
+body.theme-dark .ess-icon {
+  color: #ffffff !important;
+}
+
+body.theme-dark .stat-blue,
+body.theme-dark .purchase-stat-icon.is-blue,
+body.theme-dark .restock-stat-icon.is-blue {
+  background: rgba(69, 151, 255, 0.22) !important;
+  color: #8cc6ff !important;
+}
+
+body.theme-dark .stat-green,
+body.theme-dark .purchase-stat-icon.is-green,
+body.theme-dark .restock-stat-icon.is-green {
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #7dffbd !important;
+}
+
+body.theme-dark .stat-orange,
+body.theme-dark .purchase-stat-icon.is-orange {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #ffd37a !important;
+}
+
+body.theme-dark .stat-purple,
+body.theme-dark .stat-pink,
+body.theme-dark .purchase-stat-icon.is-pink {
+  background: rgba(168, 85, 247, 0.22) !important;
+  color: #d8b4fe !important;
+}
+
+body.theme-dark .quick-medicine-name,
+body.theme-dark .quick-medicine-name strong,
+body.theme-dark .medicine-name-chip,
+body.theme-dark .medicine-name-chip strong,
+body.theme-dark .results-popover .medicine-name-chip,
+body.theme-dark #view-cari-data-obat .quick-medicine-name,
+body.theme-dark #view-cari-data-obat .quick-medicine-name strong,
+body.theme-dark #view-cari-data-obat .medicine-name-chip {
+  background: #e8f2ff !important;
+  border-color: #b8c9e3 !important;
+  color: #06142e !important;
+}
+
+body.theme-dark .quick-medicine-name small,
+body.theme-dark .medicine-name-chip small,
+body.theme-dark #view-cari-data-obat .quick-medicine-name small,
+body.theme-dark #view-cari-data-obat .medicine-name-chip small {
+  color: #31415f !important;
+}
+
+body.theme-dark .medicine-section,
+body.theme-dark .medicine-price-head,
+body.theme-dark .medicine-sale-row,
+body.theme-dark .password-rules,
+body.theme-dark .profile-photo-picker,
+body.theme-dark .shift-rule-card,
+body.theme-dark .shift-input-shell,
+body.theme-dark .role-editor-access label,
+body.theme-dark .notification-empty,
+body.theme-dark .notification-upload-note,
+body.theme-dark .notification-item,
+body.theme-dark .notification-list li,
+body.theme-dark .password-field,
+body.theme-dark .text-reminder-card,
+body.theme-dark .reminder-pill,
+body.theme-dark .reminder-verse,
+body.theme-dark .text-reminder-close {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-section legend,
+body.theme-dark .medicine-field,
+body.theme-dark .medicine-auto-label,
+body.theme-dark .medicine-check-row,
+body.theme-dark .shift-rule-card legend,
+body.theme-dark .shift-rule-card label,
+body.theme-dark .shift-time-field,
+body.theme-dark .shift-input-shell input,
+body.theme-dark .role-editor-access label,
+body.theme-dark .record-access-field > span,
+body.theme-dark .pharmacy-identity-head h3,
+body.theme-dark .pharmacy-identity-head p {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .mobile-bottom-nav {
+  background: rgba(9, 20, 38, 0.98) !important;
+  border-color: rgba(81, 112, 155, 0.82) !important;
+  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.42) !important;
+}
+
+body.theme-dark .mobile-bottom-nav button,
+body.theme-dark .mobile-bottom-nav button span,
+body.theme-dark .mobile-bottom-nav button svg {
+  color: #dbe8fb !important;
+  stroke: currentColor !important;
+}
+
+body.theme-dark .mobile-bottom-nav .is-featured,
+body.theme-dark .mobile-bottom-nav .is-featured svg,
+body.theme-dark .mobile-bottom-nav .is-featured span {
+  color: #ffffff !important;
+  stroke: currentColor !important;
+}
+
+@media (max-width: 820px) {
+  body.theme-dark .dashboard-view,
+  body.theme-dark .module-card,
+  body.theme-dark .attendance-card,
+  body.theme-dark .purchase-card,
+  body.theme-dark .purchase-main-panel,
+  body.theme-dark .activity-page,
+  body.theme-dark .restock-card,
+  body.theme-dark .restock-request-card,
+  body.theme-dark .quick-medicine-card {
+    background: var(--surface) !important;
+    color: var(--ink) !important;
+  }
+
+  body.theme-dark .mobile-hero-header {
+    background: linear-gradient(180deg, rgba(7, 17, 34, 0.98), rgba(7, 17, 34, 0.9)) !important;
+    border-color: rgba(81, 112, 155, 0.62) !important;
+  }
+
+  body.theme-dark .mobile-hero-brand-copy small,
+  body.theme-dark .mobile-hero-brand-copy strong,
+  body.theme-dark .mobile-hero-welcome p,
+  body.theme-dark .mobile-hero-welcome h2,
+  body.theme-dark .mobile-hero-welcome > span {
+    color: var(--ink) !important;
+  }
+}
+
+/* 20260722 dark audit v3: dropdown, purchase modal, draft card, mobile cleanup. */
+body.theme-dark .table-row-menu-trigger,
+body.theme-dark .table-row-menu-list,
+body.theme-dark .purchase-detail-modal-card,
+body.theme-dark .purchase-product-results,
+body.theme-dark .purchase-product-floating-results,
+body.theme-dark .purchase-detail-card,
+body.theme-dark .purchase-draft-card-full {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .table-row-menu-trigger,
+body.theme-dark .table-row-menu-list,
+body.theme-dark .table-row-menu-action {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .table-row-menu-action.is-danger {
+  color: #ff9bad !important;
+}
+
+body.theme-dark .table-row-menu-action:hover,
+body.theme-dark .table-row-menu-action:focus,
+body.theme-dark .table-row-menu-action:focus-visible {
+  background: var(--surface-muted) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .purchase-detail-title strong,
+body.theme-dark .purchase-detail-card div,
+body.theme-dark .purchase-summary-card dl div,
+body.theme-dark .purchase-summary-card dd,
+body.theme-dark .purchase-draft-card small,
+body.theme-dark .purchase-draft-card-toggle,
+body.theme-dark .purchase-draft-card-toggle strong,
+body.theme-dark .purchase-draft-card-full strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .purchase-detail-card dt,
+body.theme-dark .purchase-summary-card dt,
+body.theme-dark .purchase-product-result small,
+body.theme-dark .purchase-draft-card-toggle b {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .purchase-product-result {
+  background: #0c182d !important;
+  border: 1px solid #2c4868 !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .purchase-product-result:hover,
+body.theme-dark .purchase-product-result:focus {
+  background: #13233d !important;
+}
+
+body.theme-dark .purchase-summary-card dl div.is-total {
+  background: linear-gradient(135deg, rgba(50, 140, 255, 0.18), rgba(122, 92, 255, 0.18) 58%, rgba(229, 53, 173, 0.18)) !important;
+  border: 1px solid rgba(122, 156, 219, 0.28) !important;
+  color: #f7fbff !important;
+}
+
+body.theme-dark .purchase-mini-icon {
+  background: rgba(50, 140, 255, 0.18) !important;
+  color: #9fcbff !important;
+}
+
+body.theme-dark .purchase-mini-icon.is-green {
+  background: rgba(25, 135, 84, 0.18) !important;
+  color: #7dffbd !important;
+}
+
+body.theme-dark .purchase-draft-card-full.is-tone-0,
+body.theme-dark .purchase-draft-card-full.is-tone-1,
+body.theme-dark .purchase-draft-card-full.is-tone-2,
+body.theme-dark .purchase-draft-card-full.is-tone-3,
+body.theme-dark .purchase-draft-card-full.is-tone-4,
+body.theme-dark .purchase-draft-card-full.is-tone-5 {
+  background: linear-gradient(135deg, rgba(12, 24, 45, 0.96), rgba(24, 43, 70, 0.92)) !important;
+}
+
+body.theme-dark .mobile-bottom-nav {
+  background: rgba(9, 20, 38, 0.98) !important;
+  border-color: rgba(81, 112, 155, 0.82) !important;
+}
+
+/* 20260722 dark audit v4: targeted fixes for remaining bright dashboard surfaces. */
+body.theme-dark .report-stats .stat-icon {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.theme-dark .report-stats .stat-total {
+  background: rgba(69, 151, 255, 0.22) !important;
+  color: #8cc6ff !important;
+}
+
+body.theme-dark .report-stats .stat-active {
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #7dffbd !important;
+}
+
+body.theme-dark .report-stats .stat-inactive,
+body.theme-dark .report-stats .stat-low {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #ffd37a !important;
+}
+
+body.theme-dark .report-stats .stat-expiring,
+body.theme-dark .report-stats .stat-expired {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #ff9bad !important;
+}
+
+body.theme-dark .report-stats .stat-empty,
+body.theme-dark .report-stats .stat-minus {
+  background: rgba(168, 85, 247, 0.22) !important;
+  color: #d8b4fe !important;
+}
+
+body.theme-dark .dashboard-search,
+body.theme-dark .restock-search,
+body.theme-dark .compact-toolbar,
+body.theme-dark #view-log-aktivitas .activity-toolbar,
+body.theme-dark #view-data-obat.is-active .data-workspace > .data-toolbar,
+body.theme-dark.sidebar-open #view-data-obat.is-active .data-workspace > .data-toolbar,
+body.theme-dark.dashboard-modal-open #view-data-obat.is-active .data-workspace > .data-toolbar {
+  background: linear-gradient(180deg, rgba(7, 19, 38, 0.98), rgba(11, 22, 41, 0.94)) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .dashboard-search input,
+body.theme-dark .restock-search input,
+body.theme-dark .dashboard-search input:focus,
+body.theme-dark .restock-search input:focus {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .dashboard-search input::placeholder,
+body.theme-dark .restock-search input::placeholder {
+  color: #8ea4c6 !important;
+}
+
+body.theme-dark .dashboard-search svg,
+body.theme-dark .restock-search svg {
+  color: #dbe8fb !important;
+  stroke: currentColor !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-search-workspace {
+  background: transparent !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-search-freeze {
+  background: linear-gradient(180deg, rgba(2, 8, 20, 0.98), rgba(11, 22, 41, 0.94)) !important;
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.32) !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-search-sticky-row,
+body.theme-dark #view-cari-data-obat.is-active .quick-search-toolbar {
+  background: transparent !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search,
+body.theme-dark #view-cari-data-obat.is-active .quick-search-sticky-row .secondary-action,
+body.theme-dark #view-cari-data-obat.is-active .quick-search-sticky-row .barcode-scan-button {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .salary-slip-panel label,
+body.theme-dark .payroll-form-grid label {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .salary-slip-summary span,
+body.theme-dark .salary-history-item,
+body.theme-dark #view-surat-pesanan .purchase-stats article,
+body.theme-dark #view-restok-obat .restock-stats article,
+body.theme-dark #view-restok-obat .restock-dashboard-view .restock-stats article,
+body.theme-dark #view-log-aktivitas .activity-summary-grid article {
+  background: var(--surface-soft) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .salary-slip-summary small,
+body.theme-dark .salary-history-copy small,
+body.theme-dark .salary-history-copy em,
+body.theme-dark #view-surat-pesanan .purchase-stats small,
+body.theme-dark #view-surat-pesanan .purchase-stats em,
+body.theme-dark #view-restok-obat .restock-stats small,
+body.theme-dark #view-restok-obat .restock-stats em,
+body.theme-dark #view-restok-obat .restock-stats span:not(.restock-stat-icon),
+body.theme-dark #view-log-aktivitas .activity-summary-grid small,
+body.theme-dark #view-log-aktivitas .activity-summary-grid p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .salary-slip-summary strong,
+body.theme-dark .salary-history-copy strong,
+body.theme-dark #view-surat-pesanan .purchase-stats strong,
+body.theme-dark #view-restok-obat .restock-stats strong,
+body.theme-dark #view-log-aktivitas .activity-summary-grid strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .salary-history-icon {
+  background: rgba(69, 151, 255, 0.18) !important;
+  color: #9fcbff !important;
+}
+
+body.theme-dark .activity-tool-button {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .activity-tool-button:hover,
+body.theme-dark .activity-tool-button:focus-visible {
+  background: var(--surface-muted) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark #view-data-karyawan .simple-table thead th,
+body.theme-dark #view-data-supplier .simple-table thead th,
+body.theme-dark #view-manajemen-pengguna .simple-table thead th,
+body.theme-dark #view-data-role .role-access-table thead th {
+  background: #162844 !important;
+  box-shadow: inset 0 -1px #2c4868 !important;
+  color: #dce9fb !important;
+}
+
+body.theme-dark #view-data-karyawan .simple-table th:last-child,
+body.theme-dark #view-data-karyawan .simple-table td:last-child,
+body.theme-dark #view-data-supplier .simple-table th:last-child,
+body.theme-dark #view-data-supplier .simple-table td:last-child,
+body.theme-dark #view-manajemen-pengguna .simple-table th:last-child,
+body.theme-dark #view-manajemen-pengguna .simple-table td:last-child,
+body.theme-dark #view-data-role .role-access-table th:last-child,
+body.theme-dark #view-data-role .role-access-table td:last-child {
+  background: #0c182d !important;
+  box-shadow: -10px 0 18px rgba(2, 8, 20, 0.72) !important;
+}
+
+body.theme-dark #view-data-karyawan .simple-table th:last-child,
+body.theme-dark #view-data-supplier .simple-table th:last-child,
+body.theme-dark #view-manajemen-pengguna .simple-table th:last-child,
+body.theme-dark #view-data-role .role-access-table th:last-child {
+  background: #162844 !important;
+}
+
+@media (min-width: 761px) {
+  body.theme-dark .app-sidebar .sidebar-link svg,
+  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link svg {
+    border-color: rgba(84, 115, 162, 0.74) !important;
+    background: linear-gradient(135deg, rgba(15, 27, 48, 0.96), rgba(24, 41, 69, 0.92)) !important;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.34) !important;
+    color: #dbe8fb !important;
+  }
+
+  body.theme-dark .app-sidebar .sidebar-link:hover svg,
+  body.theme-dark .app-sidebar .sidebar-link.is-active svg,
+  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link.is-active svg {
+    border-color: rgba(160, 191, 255, 0.78) !important;
+    background: linear-gradient(135deg, rgba(50, 140, 255, 0.46), rgba(122, 92, 255, 0.4) 56%, rgba(229, 53, 173, 0.34)) !important;
+    color: #ffffff !important;
+  }
+}
+
+/* 20260722 dark audit v5: finish purchase/restock/presensi contrast fixes. */
+body.theme-dark #view-surat-pesanan .purchase-page,
+body.theme-dark #view-surat-pesanan .purchase-form-page,
+body.theme-dark #view-surat-pesanan .purchase-draft-page {
+  background: transparent !important;
+}
+
+body.theme-dark #view-surat-pesanan .purchase-page-head,
+body.theme-dark #view-surat-pesanan .purchase-form-head {
+  background: linear-gradient(180deg, rgba(7, 19, 38, 0.98), rgba(11, 22, 41, 0.94)) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.theme-dark #view-surat-pesanan .purchase-page-head h2,
+body.theme-dark #view-surat-pesanan .purchase-form-head h2,
+body.theme-dark #view-surat-pesanan .purchase-page-head p,
+body.theme-dark #view-surat-pesanan .purchase-form-head p,
+body.theme-dark #view-surat-pesanan .purchase-page-info,
+body.theme-dark #view-surat-pesanan .purchase-filters label {
+  color: var(--ink) !important;
+}
+
+body.theme-dark #view-surat-pesanan .purchase-filters,
+body.theme-dark #view-surat-pesanan .purchase-search,
+body.theme-dark #view-surat-pesanan .purchase-filters input,
+body.theme-dark #view-surat-pesanan .purchase-filters select,
+body.theme-dark #view-surat-pesanan .purchase-reset-button,
+body.theme-dark #view-surat-pesanan .purchase-row-menu-trigger {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark #view-surat-pesanan .purchase-search svg,
+body.theme-dark #view-surat-pesanan .purchase-row-menu-trigger svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+body.theme-dark .salary-history-open {
+  background: rgba(50, 140, 255, 0.18) !important;
+  border: 1px solid rgba(122, 156, 219, 0.28) !important;
+  color: #9fcbff !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .salary-history-open:hover,
+body.theme-dark .salary-history-open:focus-visible {
+  background: rgba(50, 140, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .salary-history-open svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+body.theme-dark .restock-stat-icon.is-purple {
+  background: rgba(168, 85, 247, 0.22) !important;
+  color: #d8b4fe !important;
+}
+
+body.theme-dark .restock-stat-icon.is-orange {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #ffd37a !important;
+}
+
+body.theme-dark .restock-status-chip.is-pending,
+body.theme-dark .restock-status-label.is-pending {
+  color: #ffd37a !important;
+  background: rgba(245, 158, 11, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+body.theme-dark .restock-status-chip.is-processing,
+body.theme-dark .restock-status-label.is-processing {
+  color: #9fcbff !important;
+  background: rgba(50, 140, 255, 0.16) !important;
+  border-color: rgba(122, 156, 219, 0.28) !important;
+}
+
+body.theme-dark .restock-status-chip.is-done,
+body.theme-dark .restock-status-label.is-done {
+  color: #7dffbd !important;
+  background: rgba(25, 135, 84, 0.16) !important;
+  border-color: rgba(25, 135, 84, 0.28) !important;
+}
+
+body.theme-dark .restock-status-chip.is-rejected,
+body.theme-dark .restock-status-label.is-rejected {
+  color: #ff9bad !important;
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+}
+
+body.theme-dark .restock-view-button {
+  background: rgba(50, 140, 255, 0.16) !important;
+  border-color: rgba(122, 156, 219, 0.28) !important;
+  color: #9fcbff !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .restock-view-button:hover,
+body.theme-dark .restock-view-button:focus-visible {
+  background: rgba(50, 140, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .restock-view-button svg,
+body.theme-dark .restock-status-chip svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
 }

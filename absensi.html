@@ -5,10 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Absensi - Indo Apotek</title>
   <meta name="description" content="Absensi Indo Apotek dengan bukti foto dan validasi GPS.">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function () {
+      var KEY = "nadhira.profilePreferences";
+      var theme = "light";
+      try {
+        var prefs = JSON.parse(localStorage.getItem(KEY) || "{}");
+        if (prefs && prefs.theme === "dark") theme = "dark";
+        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) theme = "dark";
+      } catch (_) {
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) theme = "dark";
+      }
+      document.documentElement.classList.toggle("theme-dark", theme === "dark");
+      document.documentElement.style.colorScheme = theme;
+      function applyBodyTheme() {
+        if (!document.body) return false;
+        document.body.classList.toggle("theme-dark", theme === "dark");
+        document.body.style.colorScheme = theme;
+        return true;
+      }
+      if (!applyBodyTheme()) {
+        new MutationObserver(function (_, observer) {
+          if (applyBodyTheme()) observer.disconnect();
+        }).observe(document.documentElement, { childList: true });
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/attendance.css?v=20260718-absensi-cleanup-v1">
+  <link rel="stylesheet" href="assets/attendance.css?v=20260722-absensi-dark-v1">
+  <link rel="stylesheet" href="assets/dark-mode-fixes.css?v=20260724-dark-v2">
   <script defer src="assets/auth-guard.js?v=20260716-photo-v1"></script>
   <script defer src="assets/attendance.js?v=20260718-absensi-cleanup-v1"></script>
 </head>

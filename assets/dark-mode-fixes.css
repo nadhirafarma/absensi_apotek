@@ -1,0 +1,620 @@
+/* 20260724 Dark Mode Fixes: 7 komponen dengan kontras buruk di dark mode */
+
+/* ===== 1) Tabel daftar obat restok: background cerah dengan font putih (tidak terbaca) ===== */
+body.theme-dark .restock-list-panel {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+body.theme-dark .restock-list-head {
+  background: var(--surface) !important;
+}
+
+body.theme-dark .restock-list-head h3 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-list-head p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-table {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-table th {
+  background: var(--surface-soft) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-table td {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-table td strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-table td small {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-table-row:hover td {
+  background: var(--surface-soft) !important;
+}
+
+body.theme-dark .restock-table-row.is-selected {
+  outline-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+/* ===== 2) Notifikasi: nomor item putih pada background terang, tombol tidak terbaca ===== */
+body.theme-dark .notification-item {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .notification-number {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #3f5ff4 !important;
+}
+
+body.theme-dark .notification-body strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .notification-body small,
+body.theme-dark .notification-detail {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .notification-toolbar {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+body.theme-dark .notification-toolbar strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .notification-toolbar button,
+body.theme-dark .notification-delete {
+  background: rgba(255, 37, 84, 0.14) !important;
+  border-color: rgba(255, 99, 132, 0.4) !important;
+  color: #ff8fa3 !important;
+}
+
+body.theme-dark .notification-toolbar button:hover,
+body.theme-dark .notification-delete:hover {
+  background: rgba(255, 99, 132, 0.28) !important;
+  border-color: rgba(255, 99, 132, 0.6) !important;
+}
+
+body.theme-dark .notification-list {
+  background: var(--surface) !important;
+}
+
+body.theme-dark .notification-empty {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+}
+
+body.theme-dark .notification-upload-note {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+  border-top: 1px solid var(--line) !important;
+}
+
+body.theme-dark .notification-open-restock {
+  background: rgba(37, 99, 235, 0.18) !important;
+  border-color: rgba(37, 99, 235, 0.42) !important;
+  color: #3f5ff4 !important;
+}
+
+body.theme-dark .notification-open-restock:hover {
+  background: rgba(37, 99, 235, 0.28) !important;
+}
+
+/* ===== 3) Halaman pengingat integritas absensi: dominasi white, font gelap tidak terbaca ===== */
+body.theme-dark .text-reminder-modal {
+  background: rgba(0, 8, 24, 0.72) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body.theme-dark .text-reminder-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 34px 110px rgba(16, 31, 76, 0.32) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .text-reminder-card h2 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .text-reminder-card p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .text-reminder-close {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--blue) !important;
+}
+
+body.theme-dark .text-reminder-close:hover {
+  background: rgba(59, 130, 246, 0.18) !important;
+}
+
+body.theme-dark .reminder-pill {
+  background: rgba(82, 76, 255, 0.12) !important;
+  color: #2620b6 !important;
+}
+
+body.theme-dark .integrity-scroll {
+  background: transparent !important;
+}
+
+body.theme-dark .integrity-values article {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .integrity-values strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .integrity-values p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .reminder-note {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .integrity-read-hint {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .reminder-primary {
+  border: 0 !important;
+  background: linear-gradient(100deg, #364df4, #e81798) !important;
+  color: #fff !important;
+}
+
+body.theme-dark .reminder-primary:hover {
+  filter: brightness(1.08) !important;
+}
+
+/* ===== 4) Info shift/absensi: padding opacity berlebihan, font putih pada background cerah ===== */
+body.theme-dark .attendance-choice-modal {
+  background: rgba(0, 8, 24, 0.72) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body.theme-dark .attendance-choice-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 34px 110px rgba(20, 31, 75, 0.30) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-choice-card h2 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-choice-card > p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .attendance-choice-close {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--blue) !important;
+}
+
+body.theme-dark .attendance-choice-field {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-select-shell select {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: rgba(59, 130, 246, 0.42) !important;
+}
+
+body.theme-dark .attendance-choice-action {
+  box-shadow: 0 18px 34px rgba(87, 73, 228, 0.28) !important;
+}
+
+body.theme-dark .attendance-choice-status {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-choice-status::before {
+  background: rgba(81, 100, 255, 0.12) !important;
+}
+
+body.theme-dark .attendance-choice-status[data-type="error"] {
+  background: rgba(255, 37, 84, 0.12) !important;
+  border-color: rgba(255, 99, 132, 0.4) !important;
+  color: #ff8fa3 !important;
+}
+
+body.theme-dark .attendance-choice-status[data-type="success"] {
+  background: rgba(15, 169, 104, 0.12) !important;
+  border-color: rgba(15, 169, 104, 0.42) !important;
+  color: #20c275 !important;
+}
+
+/* ===== 5) Kartu dashboard: kolom header terlalu lebar (keterbacaan rendah) ===== */
+body.theme-dark .attendance-page-head {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 18px 48px rgba(24, 52, 112, 0.08) !important;
+}
+
+body.theme-dark .attendance-page-head h2 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-page-head p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .attendance-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 18px 48px rgba(24, 52, 112, 0.08) !important;
+}
+
+body.theme-dark .attendance-card h3 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-card-head p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .attendance-month-total {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .attendance-month-total span {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .attendance-month-total strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .attendance-toolbar input,
+body.theme-dark .attendance-month-filters select {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+/* ===== 6) Tabel tambah obat data obat: form fields dominasi white, font putih tidak terbaca ===== */
+body.theme-dark #medicineForm {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark #medicineForm .modal-head h2 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark #medicineForm .modal-head p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .medicine-section {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .medicine-section legend {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-field-label {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .medicine-field input,
+body.theme-dark .medicine-field select,
+body.theme-dark .medicine-field textarea {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .medicine-field input::placeholder,
+body.theme-dark .medicine-field textarea::placeholder {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .medicine-auto-badge {
+  background: rgba(37, 99, 235, 0.18) !important;
+  border-color: rgba(37, 99, 235, 0.42) !important;
+  color: #3f5ff4 !important;
+}
+
+body.theme-dark .medicine-stock-unit {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .medicine-sale-price input,
+body.theme-dark .medicine-sale-profit input {
+  background: rgba(15, 169, 104, 0.12) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-sale-prescription input {
+  background: rgba(255, 37, 84, 0.12) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-sale-conversion input,
+body.theme-dark .medicine-sale-conversion-unit select {
+  background: rgba(184, 121, 0, 0.12) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-info-tabs button {
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .medicine-info-tabs button.is-active {
+  background: var(--surface) !important;
+  border-color: var(--blue) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .medicine-sale-delete {
+  background: rgba(255, 37, 84, 0.14) !important;
+  border-color: rgba(255, 99, 132, 0.4) !important;
+  color: #ff8fa3 !important;
+}
+
+body.theme-dark .medicine-sale-delete:hover {
+  background: rgba(255, 99, 132, 0.28) !important;
+}
+
+/* ===== 7) Detail permintaan stok: background putih, font/tabel tidak terbaca ===== */
+body.theme-dark #restockDetailModal {
+  background: rgba(0, 8, 24, 0.48) !important;
+}
+
+body.theme-dark .restock-detail-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 34px 110px rgba(16, 31, 76, 0.32) !important;
+}
+
+body.theme-dark .restock-detail-summary-modern {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-summary-modern h3 {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-summary-modern small {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-grid-modern {
+  background: var(--surface) !important;
+}
+
+body.theme-dark .restock-detail-grid-modern dt {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-grid-modern dd {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-items-card > strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-table {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-table th {
+  background: var(--surface-soft) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-items-table td {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-items-table td strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-table td small {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-note {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-note strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-note p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-actions > button {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--line) !important;
+  color: #b7c8e3 !important;
+}
+
+body.theme-dark .restock-detail-actions > button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.theme-dark .restock-detail-actions .secondary-action {
+  background: linear-gradient(135deg, #2f70ff, #2856e8) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.theme-dark .restock-detail-actions .filter-action {
+  background: linear-gradient(135deg, #8844f4, #6a38e9) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.theme-dark .restock-detail-actions .restock-done-button {
+  background: linear-gradient(135deg, #18b66b, #20c979) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.theme-dark .restock-detail-actions .restock-danger-button {
+  background: linear-gradient(135deg, #ff315c, #ff4569) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.theme-dark .restock-detail-actions .restock-soft-button {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-actions .restock-cancel-button {
+  background: rgba(255, 37, 84, 0.14) !important;
+  border-color: rgba(255, 99, 132, 0.4) !important;
+  color: #ff8fa3 !important;
+}
+
+/* ===== 8) Final contrast + color accents for the two attendance dialogs ===== */
+body.theme-dark .attendance-integrity-modal .text-reminder-card h2,
+body.theme-dark .attendance-integrity-modal .text-reminder-card p,
+body.theme-dark .attendance-integrity-modal .integrity-values strong,
+body.theme-dark .attendance-integrity-modal .integrity-values p,
+body.theme-dark .attendance-integrity-modal .reminder-note,
+body.theme-dark .attendance-integrity-modal .integrity-read-hint {
+  color: #eef5ff !important;
+}
+
+body.theme-dark .attendance-integrity-modal .text-reminder-card p,
+body.theme-dark .attendance-integrity-modal .integrity-values p,
+body.theme-dark .attendance-integrity-modal .integrity-read-hint {
+  color: #b9cae3 !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article {
+  border-width: 1px !important;
+  border-color: rgba(109, 139, 196, 0.48) !important;
+  background: linear-gradient(160deg, rgba(20, 38, 69, 0.96), rgba(12, 26, 49, 0.98)) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(1) {
+  border-color: rgba(56, 189, 248, 0.72) !important;
+  box-shadow: inset 0 3px 0 #38bdf8, 0 12px 26px rgba(14, 165, 233, 0.14) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(2) {
+  border-color: rgba(251, 113, 133, 0.72) !important;
+  box-shadow: inset 0 3px 0 #fb7185, 0 12px 26px rgba(244, 63, 94, 0.14) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(3) {
+  border-color: rgba(52, 211, 153, 0.72) !important;
+  box-shadow: inset 0 3px 0 #34d399, 0 12px 26px rgba(16, 185, 129, 0.14) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(1) .integrity-value-icon {
+  background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(2) .integrity-value-icon {
+  background: linear-gradient(135deg, #e11d48, #fb7185) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(3) .integrity-value-icon {
+  background: linear-gradient(135deg, #059669, #34d399) !important;
+}
+
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(1) strong { color: #7dd3fc !important; }
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(2) strong { color: #fda4af !important; }
+body.theme-dark .attendance-integrity-modal .integrity-values article:nth-child(3) strong { color: #6ee7b7 !important; }
+
+body.theme-dark .attendance-choice-field .attendance-select-shell {
+  border-radius: clamp(16px, 3vw, 22px);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.24), 0 12px 26px rgba(37, 99, 235, 0.12) !important;
+}
+
+body.theme-dark .attendance-select-shell select {
+  border-color: rgba(139, 92, 246, 0.72) !important;
+  background: linear-gradient(120deg, rgba(30, 41, 95, 0.98), rgba(27, 30, 70, 0.98)) !important;
+  color: #f3f6ff !important;
+}
+
+body.theme-dark .attendance-select-icon { color: #c084fc !important; }
+body.theme-dark .attendance-select-caret { color: #a78bfa !important; }
+body.theme-dark .attendance-select-shell select option {
+  background: #101d37 !important;
+  color: #eef5ff !important;
+}
+
+body.theme-dark .attendance-choice-action {
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+body.theme-dark #attendanceArrivalButton {
+  background: linear-gradient(110deg, #0369a1, #0284c7 52%, #22d3ee) !important;
+}
+
+body.theme-dark #attendanceReturnButton {
+  background: linear-gradient(110deg, #b45309, #ea580c 52%, #fbbf24) !important;
+}
+
+body.theme-dark #attendanceOvertimeButton {
+  background: linear-gradient(110deg, #047857, #10b981 52%, #34d399) !important;
+}
+
+body.theme-dark #attendanceArrivalButton > span { background: rgba(125, 211, 252, 0.22) !important; color: #bae6fd !important; }
+body.theme-dark #attendanceReturnButton > span { background: rgba(253, 186, 116, 0.22) !important; color: #fed7aa !important; }
+body.theme-dark #attendanceOvertimeButton > span { background: rgba(110, 231, 183, 0.22) !important; color: #bbf7d0 !important; }
+
+

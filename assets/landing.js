@@ -1,6 +1,7 @@
 (function () {
   const SESSION_KEY = "nadhira.authSession";
   const THEME_KEY = "nadhira.landingTheme";
+  const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
   const loginLink = document.getElementById("landingLoginLink");
   const languageSelect = document.getElementById("languageSelect");
   const themeToggle = document.getElementById("themeToggle");
@@ -158,6 +159,11 @@
     if (event.key === "Escape") hidePopup();
   });
 
+  window.addEventListener("storage", (event) => {
+    if (event.key !== THEME_KEY && event.key !== PROFILE_PREFS_KEY) return;
+    applyTheme(getInitialTheme(), { persist: false });
+  });
+
   function updateLoginHref() {
     if (!loginLink) return;
     const params = new URLSearchParams(window.location.search);
@@ -165,10 +171,23 @@
     loginLink.href = `login.html?next=${encodeURIComponent(getSafeNext(next))}`;
   }
 
-  function applyTheme(theme) {
+  function applyTheme(theme, options = {}) {
     const selectedTheme = theme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = selectedTheme;
-    localStorage.setItem(THEME_KEY, selectedTheme);
+    document.documentElement.classList.toggle("theme-dark", selectedTheme === "dark");
+    document.documentElement.style.colorScheme = selectedTheme;
+    if (options.persist !== false) {
+      localStorage.setItem(THEME_KEY, selectedTheme);
+      try {
+        const prefs = JSON.parse(localStorage.getItem(PROFILE_PREFS_KEY) || "{}") || {};
+        localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify({
+          ...prefs,
+          theme: selectedTheme
+        }));
+      } catch (error) {
+        localStorage.setItem(PROFILE_PREFS_KEY, JSON.stringify({ theme: selectedTheme }));
+      }
+    }
     updateThemeButton();
   }
 
@@ -183,6 +202,12 @@
   }
 
   function getInitialTheme() {
+    try {
+      const prefs = JSON.parse(localStorage.getItem(PROFILE_PREFS_KEY) || "{}") || {};
+      if (prefs.theme === "dark" || prefs.theme === "light") return prefs.theme;
+    } catch (error) {
+      /* ignore profile prefs parse error */
+    }
     const stored = localStorage.getItem(THEME_KEY);
     if (stored === "dark" || stored === "light") return stored;
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

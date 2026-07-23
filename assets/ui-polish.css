@@ -1,0 +1,727 @@
+/* 20260723 ui polish: sidebar toggle opacity, dark medicine cards, equal PO actions, restock results dark, no outer focus boxes. */
+
+/* 1) Sidebar hide/unhide toggle cover: match Master Data opacity/feel in dark mode */
+body.theme-dark .header-pharmacy-toggle,
+body.theme-dark #sidebarToggle.header-pharmacy-toggle {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(236, 72, 153, 0.10)) !important;
+  border-color: rgba(96, 165, 250, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 22px rgba(0, 0, 0, 0.12) !important;
+  color: #e8f1ff !important;
+}
+
+body.theme-dark .header-pharmacy-toggle:hover,
+body.theme-dark .header-pharmacy-toggle:focus-visible,
+body.theme-dark #sidebarToggle.header-pharmacy-toggle:hover,
+body.theme-dark #sidebarToggle.header-pharmacy-toggle:focus-visible {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(236, 72, 153, 0.16)) !important;
+  border-color: rgba(147, 197, 253, 0.32) !important;
+  outline: none !important;
+}
+
+body.theme-dark .header-pharmacy-copy strong {
+  color: #eef5ff !important;
+}
+
+body.theme-dark .header-pharmacy-copy small {
+  color: #9db4d6 !important;
+}
+
+body.theme-dark .header-pharmacy-toggle img {
+  background: rgba(15, 23, 42, 0.72) !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Also soften mobile/desktop sidebar scrim so open-sidebar overlay is not heavy */
+.sidebar-scrim {
+  background: rgba(8, 25, 58, 0.10) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+body.theme-dark .sidebar-scrim {
+  background: rgba(2, 8, 20, 0.16) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* 2) Cari Data Obat cards: dark surface, keep colorful name accents */
+body.theme-dark .quick-medicine-card,
+body.theme-dark #view-cari-data-obat .quick-medicine-card,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-card {
+  background: linear-gradient(165deg, rgba(14, 28, 52, 0.98), rgba(10, 20, 40, 0.96)) !important;
+  border: 1px solid rgba(96, 130, 180, 0.28) !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28) !important;
+  color: #e8f1ff !important;
+}
+
+body.theme-dark .quick-medicine-card .quick-medicine-list,
+body.theme-dark .quick-medicine-card .quick-medicine-list dt,
+body.theme-dark .quick-medicine-card .quick-medicine-list dd,
+body.theme-dark #view-cari-data-obat .quick-medicine-list dt,
+body.theme-dark #view-cari-data-obat .quick-medicine-list dd {
+  color: #c5d6f0 !important;
+  background: transparent !important;
+}
+
+body.theme-dark .quick-medicine-name,
+body.theme-dark .quick-medicine-name strong,
+body.theme-dark #view-cari-data-obat .quick-medicine-name,
+body.theme-dark #view-cari-data-obat .quick-medicine-name strong,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-name,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-name strong {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.10)) !important;
+  border-color: rgba(96, 165, 250, 0.42) !important;
+  color: #eef5ff !important;
+}
+
+body.theme-dark .quick-medicine-name small,
+body.theme-dark #view-cari-data-obat .quick-medicine-name small {
+  color: #9db4d6 !important;
+}
+
+/* Keep colorful name-row accents per card tone */
+body.theme-dark #view-cari-data-obat.is-active .quick-tone-2 .quick-medicine-name,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+2) .quick-medicine-name {
+  background: linear-gradient(135deg, rgba(255, 120, 70, 0.16), rgba(255, 157, 87, 0.08)) !important;
+  border-color: rgba(255, 185, 143, 0.55) !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-tone-3 .quick-medicine-name,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+3) .quick-medicine-name {
+  background: linear-gradient(135deg, rgba(27, 191, 193, 0.16), rgba(41, 208, 187, 0.08)) !important;
+  border-color: rgba(130, 224, 229, 0.55) !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-tone-4 .quick-medicine-name,
+body.theme-dark #view-cari-data-obat.is-active .quick-medicine-card:nth-child(4n+4) .quick-medicine-name {
+  background: linear-gradient(135deg, rgba(123, 73, 255, 0.16), rgba(182, 77, 244, 0.08)) !important;
+  border-color: rgba(183, 169, 255, 0.55) !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-name-accent {
+  opacity: 1 !important;
+}
+
+/* 3) Equal-size Edit / Tandai Diproses / Terima Barang action columns */
+.purchase-detail-actions {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.purchase-detail-actions > .purchase-action-button,
+.purchase-detail-actions > #poEditSelectedButton,
+.purchase-detail-actions > #poMarkProcessButton,
+.purchase-detail-actions > #poReceiveButton {
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 48px !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Keep red cancel / print row full-width friendly if present after the three primary actions */
+.purchase-detail-actions > .purchase-action-button.is-red,
+.purchase-detail-actions > #poCancelButton,
+.purchase-detail-actions > #poPrintButton {
+  grid-column: auto;
+}
+
+@media (max-width: 560px) {
+  .purchase-detail-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 4) Restok search result cards dark mode */
+body.theme-dark .restock-medicine-results,
+body.theme-dark #view-restok-obat .restock-medicine-results {
+  background: linear-gradient(165deg, rgba(12, 24, 46, 0.98), rgba(8, 16, 32, 0.98)) !important;
+  border-color: rgba(96, 130, 180, 0.34) !important;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.42) !important;
+  color: #e8f1ff !important;
+}
+
+body.theme-dark .restock-medicine-result,
+body.theme-dark #view-restok-obat .restock-medicine-result {
+  background: linear-gradient(150deg, rgba(18, 34, 62, 0.98), rgba(12, 24, 46, 0.96)) !important;
+  border-color: rgba(96, 130, 180, 0.28) !important;
+  color: #eef5ff !important;
+}
+
+body.theme-dark .restock-medicine-result:hover,
+body.theme-dark .restock-medicine-result:focus,
+body.theme-dark .restock-medicine-result:focus-visible {
+  background: linear-gradient(150deg, rgba(30, 54, 96, 0.98), rgba(20, 38, 70, 0.98)) !important;
+  border-color: rgba(104, 168, 255, 0.48) !important;
+  outline: none !important;
+}
+
+body.theme-dark .restock-medicine-result strong,
+body.theme-dark .restock-medicine-empty strong {
+  color: #f3f8ff !important;
+}
+
+body.theme-dark .restock-medicine-result small,
+body.theme-dark .restock-medicine-empty small {
+  color: #9db4d6 !important;
+}
+
+body.theme-dark .restock-medicine-result em {
+  color: #9fcbff !important;
+}
+
+body.theme-dark .restock-medicine-empty {
+  background: rgba(18, 34, 62, 0.9) !important;
+  color: #c5d6f0 !important;
+}
+
+/* 5) Remove outer rectangular focus boxes on all inputs/search; keep in-field border cue only */
+body.dashboard-page input:focus,
+body.dashboard-page select:focus,
+body.dashboard-page textarea:focus,
+body.dashboard-page input:focus-visible,
+body.dashboard-page select:focus-visible,
+body.dashboard-page textarea:focus-visible,
+body.theme-dark input:focus,
+body.theme-dark select:focus,
+body.theme-dark textarea:focus,
+body.theme-dark input:focus-visible,
+body.theme-dark select:focus-visible,
+body.theme-dark textarea:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+body.dashboard-page .dashboard-search:focus-within,
+body.dashboard-page .restock-medicine-search:focus-within,
+body.dashboard-page .restock-search:focus-within,
+body.dashboard-page .purchase-search:focus-within,
+body.dashboard-page .search-box:focus-within,
+body.theme-dark .dashboard-search:focus-within,
+body.theme-dark .restock-medicine-search:focus-within,
+body.theme-dark .restock-search:focus-within,
+body.theme-dark .purchase-search:focus-within,
+body.theme-dark .search-box:focus-within,
+#view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search:focus-within {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
+}
+
+body.theme-dark .dashboard-search:focus-within,
+body.theme-dark .restock-medicine-search:focus-within,
+body.theme-dark .restock-search:focus-within,
+body.theme-dark .purchase-search:focus-within,
+body.theme-dark .search-box:focus-within,
+body.theme-dark #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search:focus-within {
+  border-color: rgba(104, 168, 255, 0.62) !important;
+  box-shadow: inset 0 0 0 1px rgba(104, 168, 255, 0.22) !important;
+}
+
+body.dashboard-page .dashboard-search input:focus,
+body.dashboard-page .restock-medicine-search input:focus,
+body.dashboard-page .restock-search input:focus,
+body.dashboard-page .purchase-search input:focus,
+body.theme-dark .dashboard-search input:focus,
+body.theme-dark .restock-medicine-search input:focus,
+body.theme-dark .restock-search input:focus,
+body.theme-dark .purchase-search input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* 20260723b ui polish: search box text white in dark mode, restock draft panel dark, unify save buttons, sidebar link padding/radius. */
+
+/* 6) Cari Data Obat: typed text stays white in dark mode (same tone as medicine cards) */
+body.theme-dark #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input,
+body.theme-dark .quick-search-toolbar .dashboard-search input,
+body.theme-dark .dashboard-search input {
+  color: #eef5ff !important;
+}
+
+body.theme-dark #view-cari-data-obat.is-active .quick-search-toolbar .dashboard-search input::placeholder,
+body.theme-dark .dashboard-search input::placeholder {
+  color: #9db4d6 !important;
+}
+
+/* 7) Restok Obat draft panel/table: full dark surface (was still light/white). */
+body.theme-dark .restock-draft-panel {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+body.theme-dark .restock-list-head p,
+body.theme-dark .restock-draft-head p {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-draft-footer {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-draft-footer strong,
+body.theme-dark #restockDraftTotalItem,
+body.theme-dark #restockDraftSummary {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-draft-footer output {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-cancel-button {
+  background: rgba(255, 37, 84, 0.14) !important;
+  border-color: rgba(255, 99, 132, 0.4) !important;
+  color: #ff8fa3 !important;
+}
+
+body.theme-dark .purchase-soft-button,
+body.theme-dark .purchase-reset-button,
+body.theme-dark .purchase-back-button,
+body.theme-dark .purchase-detail-close {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+/* 8) Unify all Simpan/Save buttons to the same blue-magenta gradient used by "Pilih Foto".
+   Hapus/Delete buttons intentionally stay red/pink (destructive-action convention) — not touched here. */
+button.secondary-action[type="submit"],
+.profile-overview-save,
+.role-editor-save,
+#poSaveDraftButton,
+#restockSaveDraftButton,
+#poSaveOrderButton,
+#poSummaryConfirmButton,
+#restockSubmitDraftButton,
+.restock-primary-button,
+.purchase-primary-button {
+  border: 0 !important;
+  border-color: transparent !important;
+  background: linear-gradient(120deg, #2769ff, #c827cf) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 20px rgba(92, 66, 222, 0.2) !important;
+}
+
+button.secondary-action[type="submit"]:hover,
+.profile-overview-save:hover,
+.role-editor-save:hover,
+#poSaveDraftButton:hover,
+#restockSaveDraftButton:hover,
+#poSaveOrderButton:hover,
+#poSummaryConfirmButton:hover,
+#restockSubmitDraftButton:hover,
+.restock-primary-button:hover,
+.purchase-primary-button:hover {
+  filter: brightness(1.06);
+}
+
+body.theme-dark button.secondary-action[type="submit"],
+body.theme-dark .profile-overview-save,
+body.theme-dark .role-editor-save,
+body.theme-dark #poSaveDraftButton,
+body.theme-dark #restockSaveDraftButton,
+body.theme-dark #poSaveOrderButton,
+body.theme-dark #poSummaryConfirmButton,
+body.theme-dark #restockSubmitDraftButton,
+body.theme-dark .restock-primary-button,
+body.theme-dark .purchase-primary-button {
+  background: linear-gradient(120deg, #2769ff, #c827cf) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+/* 9) Sidebar link: shrink vertical padding to hug icon size (~34px) and match the
+   Master Data / Sistem section-toggle corner radius (14px). */
+.app-sidebar .sidebar-link,
+body.sidebar-collapsed .app-sidebar .sidebar-link {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  border-radius: 14px !important;
+}
+
+/* 20260724 DARK MODE FIXES: 7 masalah kontras + baca-tulis */
+
+/* 1) Tabel daftar obat restok: background gelap + font putih di dark mode */
+body.theme-dark .restock-list {
+  background: var(--surface) !important;
+}
+
+body.theme-dark .restock-table th,
+body.theme-dark .restock-table td {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-table th {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-table td strong,
+body.theme-dark .restock-table td {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-table td small {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-table-row:hover td {
+  background: rgba(22, 42, 80, 0.5) !important;
+}
+
+/* 2) Notifikasi: nomor & tombol terbaca di dark mode */
+body.theme-dark .notification-number {
+  color: var(--ink) !important;
+  background: transparent !important;
+}
+
+body.theme-dark .notification-item {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .notification-toolbar button {
+  background: rgba(255, 71, 126, 0.16) !important;
+  color: #ff8fa3 !important;
+  border-color: rgba(255, 99, 132, 0.3) !important;
+}
+
+body.theme-dark .notification-toolbar button:hover {
+  background: rgba(255, 71, 126, 0.28) !important;
+}
+
+body.theme-dark .notification-delete {
+  background: rgba(255, 71, 126, 0.16) !important;
+  color: #ff8fa3 !important;
+}
+
+body.theme-dark .notification-delete:hover {
+  background: rgba(255, 71, 126, 0.28) !important;
+}
+
+/* 3) Halaman pengingat integritas: background gelap penuh */
+body.theme-dark .text-reminder-card {
+  background: var(--surface) !important;
+  border-color: rgba(81, 106, 163, 0.4) !important;
+}
+
+body.theme-dark .integrity-values article {
+  background: var(--surface-soft) !important;
+  border-color: rgba(81, 106, 163, 0.3) !important;
+}
+
+body.theme-dark .reminder-note {
+  background: var(--surface-soft) !important;
+  border-color: rgba(81, 106, 163, 0.3) !important;
+  color: #cfddf5 !important;
+}
+
+body.theme-dark .text-reminder-close {
+  background: var(--surface-soft) !important;
+  border-color: rgba(97, 124, 184, 0.4) !important;
+  color: #7f9cff !important;
+}
+
+/* 4) Info shift/absensi: padding & opacity wajar di dark mode */
+body.theme-dark .attendance-choice-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .attendance-choice-status {
+  background: var(--surface-soft) !important;
+  border-color: rgba(81, 106, 163, 0.3) !important;
+  color: #cfddf5 !important;
+}
+
+/* 5) Kartu dashboard: lebar kolom normal (tidak diperbesar) */
+/* (No changes needed - this was layout issue, handled by existing CSS) */
+
+/* 6) Tabel tambah obat data obat: background gelap + font terbaca */
+body.theme-dark #medicineForm .medicine-section {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark #medicineForm .medicine-section legend {
+  color: var(--ink) !important;
+}
+
+body.theme-dark #medicineForm .medicine-field label,
+body.theme-dark #medicineForm .medicine-field-label {
+  color: var(--muted) !important;
+}
+
+body.theme-dark #medicineForm .medicine-field input,
+body.theme-dark #medicineForm .medicine-field select,
+body.theme-dark #medicineForm .medicine-field textarea {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark #medicineForm .medicine-field input::placeholder,
+body.theme-dark #medicineForm .medicine-field textarea::placeholder {
+  color: #9db4d6 !important;
+}
+
+/* 7) Detail permintaan stok: background + font terbaca */
+body.theme-dark .restock-detail-summary-modern,
+body.theme-dark .restock-detail-grid-modern,
+body.theme-dark .restock-detail-items-card,
+body.theme-dark .restock-detail-note {
+  background: var(--surface-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-grid-modern dt {
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-grid-modern dd {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-table th {
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+}
+
+body.theme-dark .restock-detail-items-table td {
+  background: var(--surface-soft) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+body.theme-dark .restock-detail-items-table td strong {
+  color: var(--ink) !important;
+}
+
+body.theme-dark .restock-detail-items-table td small {
+  color: var(--muted) !important;
+}
+
+/* ===== 20260724 final dark-mode pass ===== */
+
+/* Cari Data Obat: keep the stable single-column card flow. */
+@media (min-width: 821px) {
+  #view-cari-data-obat.is-active .quick-search-workspace {
+    width: min(760px, calc(100% - 32px)) !important;
+  }
+
+  #view-cari-data-obat.is-active #quickResultsList,
+  #view-cari-data-obat.is-active .quick-results-list {
+    display: flex !important;
+    flex-direction: column !important;
+    align-content: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  #view-cari-data-obat.is-active .quick-medicine-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 820px) {
+  #view-cari-data-obat.is-active #quickResultsList,
+  #view-cari-data-obat.is-active .quick-results-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+}
+
+/* Tambah Obat: remove the remaining light surfaces from every nested form part. */
+body.theme-dark #medicineForm,
+body.theme-dark #medicineForm .modal-head,
+body.theme-dark #medicineForm .form-actions,
+body.theme-dark #medicineForm .medicine-section,
+body.theme-dark #medicineForm .medicine-info-panel,
+body.theme-dark #medicineForm .medicine-sale-block,
+body.theme-dark #medicineForm .medicine-check-row,
+body.theme-dark #medicineForm .medicine-profit-row,
+body.theme-dark #medicineForm .medicine-price-head,
+body.theme-dark #medicineForm .medicine-auto-label,
+body.theme-dark #medicineForm .medicine-stock-unit {
+  background: #0f1d34 !important;
+  color: #eef5ff !important;
+  border-color: #2a4162 !important;
+}
+
+body.theme-dark #medicineForm .medicine-section {
+  background: linear-gradient(155deg, #142641, #0e1b31) !important;
+}
+
+body.theme-dark #medicineForm .medicine-section legend,
+body.theme-dark #medicineForm .medicine-section h4,
+body.theme-dark #medicineForm .medicine-price-head,
+body.theme-dark #medicineForm .medicine-price-head span,
+body.theme-dark #medicineForm .medicine-field-label,
+body.theme-dark #medicineForm .medicine-field > label {
+  color: #dbeafe !important;
+}
+
+body.theme-dark #medicineForm .medicine-field input,
+body.theme-dark #medicineForm .medicine-field select,
+body.theme-dark #medicineForm .medicine-field textarea,
+body.theme-dark #medicineForm .medicine-stock-unit,
+body.theme-dark #medicineForm .medicine-control-wrap {
+  background: #09172c !important;
+  color: #f1f5ff !important;
+  border-color: #355277 !important;
+}
+
+body.theme-dark #medicineForm .medicine-field input:focus,
+body.theme-dark #medicineForm .medicine-field select:focus,
+body.theme-dark #medicineForm .medicine-field textarea:focus {
+  border-color: #6ea8ff !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.16) !important;
+}
+
+body.theme-dark #medicineForm .medicine-field input::placeholder,
+body.theme-dark #medicineForm .medicine-field textarea::placeholder {
+  color: #8fa7c9 !important;
+}
+
+body.theme-dark #medicineForm .medicine-tabs button,
+body.theme-dark #medicineForm .medicine-info-tabs button {
+  background: #162944 !important;
+  color: #9fb6d8 !important;
+  border-color: #2a4162 !important;
+}
+
+body.theme-dark #medicineForm .medicine-tabs button.is-active,
+body.theme-dark #medicineForm .medicine-info-tabs button.is-active {
+  background: linear-gradient(120deg, #1d4ed8, #7c3aed) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+body.theme-dark #medicineForm .medicine-section-icon,
+body.theme-dark #medicineForm .medicine-auto-badge {
+  background: rgba(96, 165, 250, 0.18) !important;
+  color: #93c5fd !important;
+  border-color: rgba(96, 165, 250, 0.42) !important;
+}
+
+body.theme-dark #medicineForm .medicine-price-head,
+body.theme-dark #medicineForm .medicine-sale-block h4 {
+  color: #f0abfc !important;
+}
+
+body.theme-dark #medicineForm .medicine-sale-delete,
+body.theme-dark #medicineForm .medicine-remove-sale-row,
+body.theme-dark #medicineForm .medicine-remove-unit {
+  background: rgba(244, 63, 94, 0.16) !important;
+  color: #fda4af !important;
+  border-color: rgba(251, 113, 133, 0.42) !important;
+}
+
+body.theme-dark #medicineForm .form-actions button,
+body.theme-dark #medicineForm .medicine-add-option,
+body.theme-dark #medicineForm .medicine-add-sale-row,
+body.theme-dark #medicineForm .medicine-add-unit {
+  background: #1b3355 !important;
+  color: #dbeafe !important;
+  border-color: #41638d !important;
+}
+
+body.theme-dark #medicineForm .form-actions button[type="submit"] {
+  background: linear-gradient(120deg, #2769ff, #c827cf) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Notification detail action: a distinct view affordance, not another delete button. */
+.notification-open-restock {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 32px !important;
+  padding: 0 12px 0 10px !important;
+  border: 1px solid rgba(34, 211, 238, 0.72) !important;
+  background: linear-gradient(135deg, #1264d8, #0891b2) !important;
+  color: #ffffff !important;
+  box-shadow: 0 7px 16px rgba(8, 145, 178, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease !important;
+}
+
+.notification-open-restock svg {
+  width: 15px !important;
+  height: 15px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 1.8 !important;
+}
+
+.notification-open-restock:hover,
+.notification-open-restock:focus-visible {
+  background: linear-gradient(135deg, #2178f3, #06b6d4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 9px 20px rgba(6, 182, 212, 0.34), 0 0 0 3px rgba(34, 211, 238, 0.14) !important;
+  filter: brightness(1.06) !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+}
+
+.notification-open-restock:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+/* Close the remaining light table/control layers inside the add-medicine modal. */
+body.theme-dark #medicineForm,
+body.theme-dark #medicineForm * {
+  scrollbar-color: #355277 #0b192e;
+}
+
+body.theme-dark #medicineForm .medicine-form-grid,
+body.theme-dark #medicineForm .medicine-section-grid,
+body.theme-dark #medicineForm .medicine-sale-grid,
+body.theme-dark #medicineForm .medicine-sale-row,
+body.theme-dark #medicineForm .medicine-info-panel,
+body.theme-dark #medicineForm .medicine-control-wrap,
+body.theme-dark #medicineForm .medicine-sale-unit-pair,
+body.theme-dark #medicineForm .medicine-price-head {
+  background: transparent !important;
+  color: #eef5ff !important;
+}
+
+body.theme-dark #medicineForm .medicine-sale-price input,
+body.theme-dark #medicineForm .medicine-sale-profit input,
+body.theme-dark #medicineForm .medicine-sale-prescription input,
+body.theme-dark #medicineForm .medicine-sale-conversion input,
+body.theme-dark #medicineForm .medicine-sale-conversion-unit select {
+  background: #0b192e !important;
+  color: #f1f5ff !important;
+  border-color: #355277 !important;
+}
+
+body.theme-dark #medicineForm .medicine-sale-note,
+body.theme-dark #medicineForm .medicine-check-row label,
+body.theme-dark #medicineForm .medicine-profit-row,
+body.theme-dark #medicineForm .medicine-price-head span {
+  color: #a9bddc !important;
+}
+
+
+
+
