@@ -207,7 +207,7 @@
     "restok-obat": "Restok Obat",
     "surat-pesanan": "Surat Pesanan Pembelian",
     "import-data-obat": "Import Data Obat",
-    "akun-profil": "Akun & Profil",
+    "akun-profil": "Pengaturan",
     "log-aktivitas": "Log Aktivitas",
     "manajemen-pengguna": "Manajemen Pengguna",
     "data-role": "Data Role"
@@ -229,7 +229,7 @@
     { key: "restok_obat", label: "Restok Obat" },
     { key: "surat_pesanan", label: "Surat Pesanan Pembelian" },
     { key: "import_data_obat", label: "Import Data Obat" },
-    { key: "akun_profil", label: "Akun & Profil" },
+    { key: "akun_profil", label: "Pengaturan" },
     { key: "log_aktivitas", label: "Log Aktivitas" },
     { key: "manajemen_pengguna", label: "Manajemen Pengguna" },
     { key: "data_role", label: "Data Role" },
@@ -441,6 +441,7 @@
     fetchDataObat();
     fetchUsers();
     fetchPharmacyProfile({ silent: true });
+    fetchOwnerActivityLog({ silent: true });
     bindUserAccessSync();
   }
 
@@ -750,10 +751,18 @@
       profileEmail: document.getElementById("profileEmail"),
       profilePhonePreview: document.getElementById("profilePhonePreview"),
       profileRole: document.getElementById("profileRole"),
+      profileLastLogin: document.getElementById("profileLastLogin"),
+      profileAccountStatus: document.getElementById("profileAccountStatus"),
       profileTabButtons: Array.from(document.querySelectorAll("[data-profile-tab]")),
       profilePanels: Array.from(document.querySelectorAll("[data-profile-panel]")),
       profilePanelCloseButtons: Array.from(document.querySelectorAll("[data-profile-panel-close]")),
       profileStatusText: document.getElementById("profileStatusText"),
+      settingsSaveButton: document.querySelector("[data-settings-save]"),
+      settingsCancelButton: document.querySelector("[data-settings-cancel]"),
+      profilePhotoMenuButton: document.getElementById("profilePhotoMenuButton"),
+      profilePhotoMenu: document.getElementById("profilePhotoMenu"),
+      profilePhotoChangeButton: document.querySelector("[data-profile-photo-change]"),
+      profilePhotoMenuRemoveButton: document.querySelector("[data-profile-photo-remove]"),
       profileNameInput: document.getElementById("profileNameInput"),
       profileEmailInput: document.getElementById("profileEmailInput"),
       profilePhoneInput: document.getElementById("profilePhoneInput"),
@@ -900,7 +909,22 @@
       reportEmpty: document.getElementById("reportEmpty"),
       reportLow: document.getElementById("reportLow"),
       reportMinus: document.getElementById("reportMinus"),
-      reportOut: document.getElementById("reportOut")
+      reportOut: document.getElementById("reportOut"),
+      dashboardExpiryAlertText: document.getElementById("dashboardExpiryAlertText"),
+      inventoryDonut: document.getElementById("inventoryDonut"),
+      inventoryDonutTotal: document.getElementById("inventoryDonutTotal"),
+      compositionActiveCount: document.getElementById("compositionActiveCount"),
+      compositionInactiveCount: document.getElementById("compositionInactiveCount"),
+      compositionExpiringCount: document.getElementById("compositionExpiringCount"),
+      compositionMinusCount: document.getElementById("compositionMinusCount"),
+      compositionActivePercent: document.getElementById("compositionActivePercent"),
+      compositionInactivePercent: document.getElementById("compositionInactivePercent"),
+      compositionExpiringPercent: document.getElementById("compositionExpiringPercent"),
+      compositionMinusPercent: document.getElementById("compositionMinusPercent"),
+      compositionActiveBar: document.getElementById("compositionActiveBar"),
+      compositionInactiveBar: document.getElementById("compositionInactiveBar"),
+      compositionExpiringBar: document.getElementById("compositionExpiringBar"),
+      compositionMinusBar: document.getElementById("compositionMinusBar")
     });
 
     if (els.poDetailPanel && els.poDetailPanel.parentElement !== document.body) {
@@ -1181,6 +1205,16 @@
     if (els.profileOverviewSaveButton) {
       els.profileOverviewSaveButton.addEventListener("click", () => els.profileForm?.requestSubmit());
     }
+    if (els.settingsSaveButton) {
+      els.settingsSaveButton.addEventListener("click", () => els.profileForm?.requestSubmit());
+    }
+    if (els.settingsCancelButton) els.settingsCancelButton.addEventListener("click", closeProfilePanel);
+    if (els.profilePhotoMenuButton) els.profilePhotoMenuButton.addEventListener("click", toggleProfilePhotoMenu);
+    if (els.profilePhotoChangeButton) els.profilePhotoChangeButton.addEventListener("click", triggerProfilePhotoInput);
+    if (els.profilePhotoMenuRemoveButton) els.profilePhotoMenuRemoveButton.addEventListener("click", removeProfilePhoto);
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".account-photo-menu-wrap")) closeProfilePhotoMenu();
+    });
     if (els.profilePhotoInput) els.profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
     if (els.profileRemovePhotoButton) els.profileRemovePhotoButton.addEventListener("click", removeProfilePhoto);
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
@@ -3188,7 +3222,7 @@
   }
 
   function getOwnerActivityNotificationItems() {
-    return getVisibleActivityNotificationItems();
+    return getEmployeeActivityNotificationItems();
   }
 
   function getVisibleActivityNotificationItems() {
@@ -3212,6 +3246,46 @@
       .map(normalizeActivityRecord);
   }
 
+  function getEmployeeActivityNotificationItems() {
+    const owner = getCurrentUserRecord();
+    if (!isOwnerUser(owner)) return [];
+
+    const localActivity = readStoredArray(PROFILE_ACTIVITY_KEY).map(normalizeActivityRecord);
+    const remoteActivity = (state.ownerActivities || []).map(normalizeActivityRecord);
+    return remoteActivity.concat(localActivity)
+      .map(normalizeActivityRecord)
+      .filter((item) => item.title || item.detail)
+      .filter((item) => !isOwnerActivity(item))
+      .filter((item) => isOperationalActivityNotification(item))
+      .filter((item, index, list) => {
+        const key = `${item.at}|${item.title}|${item.actor}|${item.detail}|${item.username}|${item.email}`;
+        return list.findIndex((entry) => `${entry.at}|${entry.title}|${entry.actor}|${entry.detail}|${entry.username}|${entry.email}` === key) === index;
+      })
+      .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+      .slice(0, 20);
+  }
+
+  function isOwnerActivity(item) {
+    const owner = getCurrentUserRecord();
+    const role = normalizeSearch(item?.role || item?.userRole || "");
+    if (role === "owner") return true;
+
+    const identity = normalizeSearch(`${item?.actor || ""} ${item?.username || ""} ${item?.email || ""} ${item?.detail || ""}`);
+    if (/\bowner\b/.test(identity)) return true;
+
+    const ownerKeys = [owner?.name, owner?.username, owner?.email, "owner"]
+      .map(normalizeSearch)
+      .filter(Boolean);
+    return ownerKeys.some((key) => key && (identity === key || identity.includes(key)));
+  }
+
+  function isOperationalActivityNotification(item) {
+    const text = normalizeSearch(`${item?.title || ""} ${item?.detail || ""} ${item?.scope || ""}`);
+    if (!text) return false;
+    if (/preferensi|tema|mode ringkas|tampilan diperbarui|login|logout|password|foto profil/.test(text)) return false;
+    return /obat|stok|restok|restock|pesanan|pembelian|supplier|absen|presensi|terlambat|piutang|tempo|expired|import|data obat|karyawan|gaji|cuti/.test(text);
+  }
+
   function isOwnAccountActivity(item, user) {
     if (!item || !user) return false;
     const accountText = normalizeSearch(`${item.title} ${item.detail} ${item.scope}`);
@@ -3232,6 +3306,8 @@
 
   function getNotificationItems() {
     const dismissed = new Set(readDismissedNotificationKeys());
+    const user = getCurrentUserRecord();
+    const isOwner = isOwnerUser(user);
     const items = [];
     const uploadedAt = normalizeTimestamp(state.uploadedAt || "");
 
@@ -3248,14 +3324,86 @@
 
     getRestockNotificationItems().forEach((item) => items.push(item));
     getPurchaseOrderNotificationItems().forEach((item) => items.push(item));
+    getDuePurchaseNotificationItems().forEach((item) => items.push(item));
     getMedicineNotificationItems().forEach((item) => items.push(item));
-    getProfileChangeNotificationItems().forEach((item) => items.push(item));
+    getEmployeeAttendanceNotificationItems().forEach((item) => items.push(item));
+
+    // Owner: hanya log operasional karyawan (bukan log aktivitas owner sendiri).
+    if (isOwner) {
+      getEmployeeActivityNotificationItems().forEach((item) => items.push({
+        key: `employee-activity|${item.at}|${item.title}|${item.username || item.actor}`,
+        kind: "activity",
+        title: item.title || "Aktivitas karyawan",
+        detail: item.detail || "Aktivitas terbaru karyawan tercatat.",
+        actor: item.actor || "Karyawan",
+        at: item.at
+      }));
+    }
 
     return items
       .filter((item, index, list) => list.findIndex((entry) => entry.key === item.key) === index)
       .filter((item) => !dismissed.has(item.key))
+      .filter((item) => {
+        if (!isOwner) return true;
+        // Owner tidak melihat preferensi/tema/login miliknya di popup notifikasi.
+        const text = normalizeSearch(`${item.title || ""} ${item.detail || ""} ${item.actor || ""}`);
+        if (/preferensi|tema|mode ringkas|tampilan diperbarui/.test(text) && isOwnerActivity({
+          title: item.title,
+          detail: item.detail,
+          actor: item.actor,
+          role: "owner"
+        })) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
       .slice(0, 30);
+  }
+
+  function getEmployeeAttendanceNotificationItems() {
+    const user = getCurrentUserRecord();
+    if (isOwnerUser(user)) return [];
+
+    const today = getTodayDateKey();
+    const employee = getVisibleAttendanceEmployees()[0] || {};
+    const name = employee.name || user.name || user.username || "Karyawan";
+    const group = getVisibleAttendanceGroups().find((item) => item.date === today && !item.isOvertime);
+    const items = [];
+
+    if (!group?.datang) {
+      items.push({
+        key: `attendance-arrival|${today}|${normalizeSearch(name)}`,
+        kind: "attendance",
+        title: "Belum absen datang",
+        detail: "Silakan lakukan absen datang untuk hari ini.",
+        actor: name,
+        at: new Date().toISOString()
+      });
+      return items;
+    }
+
+    if (isLateAttendance(group)) {
+      items.push({
+        key: `attendance-late|${today}|${normalizeSearch(name)}|${group.datang}`,
+        kind: "attendance",
+        title: "Keterlambatan presensi",
+        detail: `Absen datang tercatat pukul ${group.datang}.`,
+        actor: name,
+        at: `${today}T${group.datang}:00`
+      });
+    }
+
+    if (!group.pulang) {
+      items.push({
+        key: `attendance-return|${today}|${normalizeSearch(name)}`,
+        kind: "attendance",
+        title: "Belum absen pulang",
+        detail: "Jangan lupa lakukan absen pulang setelah shift selesai.",
+        actor: name,
+        at: new Date().toISOString()
+      });
+    }
+
+    return items;
   }
 
   function getRestockNotificationItems() {
@@ -3295,6 +3443,36 @@
       })
       .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
       .slice(0, 8);
+  }
+
+  function getDuePurchaseNotificationItems() {
+    const today = getTodayDateKey();
+    if (!today) return [];
+
+    return state.purchaseOrders
+      .map((order) => normalizePurchaseOrder(order))
+      .filter((order) => {
+        if (!order.dueDate) return false;
+        const method = normalizeSearch(order.paymentMethod || "");
+        const isTempo = /tempo|kredit|piutang/.test(method) || Boolean(order.dueDate);
+        if (!isTempo) return false;
+        const status = normalizePurchaseOrderStatus(order.status);
+        if (["cancelled", "canceled", "void", "batal", "closed", "lunas", "paid", "done", "selesai"].includes(status)) return false;
+        return order.dueDate <= today;
+      })
+      .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
+      .slice(0, 8)
+      .map((order) => {
+        const isOverdue = order.dueDate < today;
+        return {
+          key: ["purchase-due", order.number, order.dueDate, order.status].map((part) => String(part || "").replace(/\|/g, " ")).join("|"),
+          kind: "purchase",
+          title: isOverdue ? "Piutang/tempo sudah jatuh tempo" : "Piutang/tempo jatuh tempo hari ini",
+          detail: `${order.number || "Surat pesanan"} - ${order.supplier || "Supplier"} - tempo ${formatShortDate(order.dueDate)} - ${formatRupiah(order.total || 0)}`,
+          actor: order.createdBy || "Keuangan",
+          at: `${order.dueDate}T08:00:00`
+        };
+      });
   }
 
   function getMedicineNotificationItems() {
@@ -8721,17 +8899,14 @@
     if (els.profileDisplayName) els.profileDisplayName.textContent = profile.name;
     if (els.profileDisplayRole) els.profileDisplayRole.textContent = profile.role;
     if (els.profileUsername) els.profileUsername.textContent = profile.username || "-";
-    if (els.profileEmail) els.profileEmail.textContent = profile.email || "-";
     if (els.profilePhonePreview) els.profilePhonePreview.textContent = profile.phone || "-";
-    if (els.profileRole) els.profileRole.textContent = profile.role || "-";
+    syncProfileAccountSummary(profile);
     if (els.profileNameInput) els.profileNameInput.value = profile.name || "";
     if (els.profileEmailInput) els.profileEmailInput.value = profile.email || "";
     if (els.profilePhoneInput) els.profilePhoneInput.value = profile.phone || "";
     if (els.profileJobInput) els.profileJobInput.value = profile.role || profile.job || "";
     if (els.profileAddressInput) els.profileAddressInput.value = profile.address || "";
-    if (els.profilePhotoFileName) {
-      els.profilePhotoFileName.textContent = state.pendingProfilePhotoName || (profile.photo ? "Foto profil tersimpan" : "Belum ada foto dipilih");
-    }
+    if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = state.pendingProfilePhotoName || "";
     renderPharmacyIdentity();
     syncProfileActivityAccess();
   }
@@ -8752,6 +8927,48 @@
       username: user?.username || session.username || stored.username || "",
       role: formatRoleLabel(role)
     };
+  }
+
+  function syncProfileAccountSummary(profile = getProfileData()) {
+    if (els.profileEmail) els.profileEmail.textContent = profile.email || "-";
+    if (els.profileRole) els.profileRole.textContent = profile.role || "-";
+    if (els.profileAccountStatus) els.profileAccountStatus.textContent = getProfileAccountStatus();
+    if (els.profileLastLogin) els.profileLastLogin.textContent = getProfileLastLoginLabel();
+  }
+
+  function getProfileAccountStatus() {
+    const user = getCurrentUserRecord() || {};
+    const session = readSession() || {};
+    return String(user.status || session.status || "Aktif").trim() || "Aktif";
+  }
+
+  function getProfileLastLoginLabel() {
+    const latestLogin = getLatestProfileLoginActivity();
+    if (latestLogin?.at) return formatActivityDateTime(latestLogin.at);
+    const session = readSession() || {};
+    if (session.loginAt) return formatActivityDateTime(session.loginAt);
+    return "-";
+  }
+
+  function getLatestProfileLoginActivity() {
+    const session = readSession() || {};
+    const user = getCurrentUserRecord() || {};
+    const identity = {
+      username: user.username || session.username || "",
+      email: user.email || session.email || "",
+      name: user.name || session.name || ""
+    };
+    return (state.ownerActivities || [])
+      .concat(readStoredArray(PROFILE_ACTIVITY_KEY))
+      .map(normalizeActivityRecord)
+      .filter(isLoginActivityItem)
+      .filter((item) => isOwnActivityLogItem(item, identity))
+      .sort((left, right) => new Date(right.at || 0) - new Date(left.at || 0))[0] || null;
+  }
+
+  function isLoginActivityItem(item) {
+    const source = normalizeSearch(`${item?.title} ${item?.detail} ${item?.module} ${item?.scope}`);
+    return /login|masuk|autentikasi/.test(source);
   }
 
   function getProfileStorageIdentity() {
@@ -8837,18 +9054,22 @@
     const pharmacy = normalizePharmacyProfile(profile);
     const logo = pharmacy.logo || PLATFORM_LOGO;
     const name = pharmacy.name || DEFAULT_PHARMACY_PROFILE.name;
-    const subtitle = pharmacy.address || "Sistem Informasi Apotek Digital";
+    // Header kiri atas hanya menampilkan nama apotek (tanpa alamat di bawahnya).
+    const subtitle = "Sistem Informasi Apotek Digital";
 
     setImageSource(els.headerToggleLogo, logo);
     setImageSource(els.homeHeaderPharmacyLogo, logo);
     setImageSource(els.mobileHomePharmacyLogo, logo);
     setImageSource(els.mobileHeroPharmacyLogo, logo);
     if (els.headerToggleName) els.headerToggleName.textContent = name;
-    if (els.headerToggleSubtitle) els.headerToggleSubtitle.textContent = subtitle;
+    if (els.headerToggleSubtitle) {
+      els.headerToggleSubtitle.textContent = "";
+      els.headerToggleSubtitle.hidden = true;
+    }
     if (els.homeHeaderPharmacyName) els.homeHeaderPharmacyName.textContent = name;
     if (els.mobileHomePharmacyName) els.mobileHomePharmacyName.textContent = name;
     if (els.mobileHeroPharmacyName) els.mobileHeroPharmacyName.textContent = formatMobileHeroPharmacyName(name);
-    if (els.homeHeaderPharmacySubtitle) els.homeHeaderPharmacySubtitle.textContent = "Sistem Informasi Apotek Digital";
+    if (els.homeHeaderPharmacySubtitle) els.homeHeaderPharmacySubtitle.textContent = subtitle;
     if (els.mobileHomePharmacySubtitle) els.mobileHomePharmacySubtitle.textContent = subtitle;
     document.title = `${name} - Dashboard`;
   }
@@ -9225,7 +9446,7 @@
 
     if (!/^image\//.test(file.type || "")) {
       setProfileStatus("File foto harus berupa gambar.", "error");
-      if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Belum ada foto dipilih";
+      if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "";
       event.target.value = "";
       return;
     }
@@ -9238,7 +9459,7 @@
       if (photo.length > 42000) {
         state.pendingProfilePhoto = null;
         state.pendingProfilePhotoName = "";
-        if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Belum ada foto dipilih";
+        if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "";
         setProfileStatus("Foto masih terlalu besar untuk database. Coba foto lain yang lebih kecil.", "error");
         return;
       }
@@ -9258,8 +9479,8 @@
 
   function removeProfilePhoto() {
     state.pendingProfilePhoto = "";
-    state.pendingProfilePhotoName = "Foto akan dihapus";
-    if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "Foto akan dihapus";
+    state.pendingProfilePhotoName = "";
+    if (els.profilePhotoFileName) els.profilePhotoFileName.textContent = "";
     renderProfile();
     setProfileStatus("Foto profil akan dihapus setelah tombol Simpan Profil diklik.", "info");
   }
@@ -9419,6 +9640,25 @@
     document.querySelector(".profile-modern-layout")?.classList.toggle("profile-panel-open", openPanel);
     document.body.classList.toggle("profile-panel-modal-open", openPanel);
     setProfileStatus("", "");
+  }
+
+  function closeProfilePhotoMenu() {
+    if (!els.profilePhotoMenu) return;
+    els.profilePhotoMenu.hidden = true;
+    els.profilePhotoMenuButton?.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleProfilePhotoMenu(event) {
+    event?.stopPropagation();
+    if (!els.profilePhotoMenu) return;
+    const open = els.profilePhotoMenu.hidden;
+    els.profilePhotoMenu.hidden = !open;
+    els.profilePhotoMenuButton?.setAttribute("aria-expanded", String(open));
+  }
+
+  function triggerProfilePhotoInput() {
+    closeProfilePhotoMenu();
+    els.profilePhotoInput?.click();
   }
 
   function closeProfilePanel() {
@@ -9628,7 +9868,7 @@
       ["restok-obat", "Restok Obat"],
       ["surat-pesanan", "Surat Pesanan Pembelian"],
       ["import-data-obat", "Import Data Obat"],
-      ["akun-profil", "Akun & Profil"],
+      ["akun-profil", "Pengaturan"],
       ["log-aktivitas", "Log Aktivitas"],
       ["manajemen-pengguna", "Manajemen Pengguna"],
       ["autentikasi", "Autentikasi"]
@@ -9699,7 +9939,7 @@
     if (/supplier|pbf/.test(source)) return { key: "data-supplier", label: "Data Supplier" };
     if (/karyawan/.test(source)) return { key: "data-karyawan", label: "Data Karyawan" };
     if (/operator|pengguna|user/.test(source)) return { key: "manajemen-pengguna", label: "Manajemen Pengguna" };
-    if (/profil|password|foto|preferensi|apotek|shift/.test(source)) return { key: "akun-profil", label: "Akun & Profil" };
+    if (/profil|password|foto|preferensi|apotek|shift/.test(source)) return { key: "akun-profil", label: "Pengaturan" };
     return { key: normalizeSearch(item.module) || "sistem", label: item.module || "Sistem" };
   }
 
@@ -9763,6 +10003,7 @@
     activity.unshift(entry);
     writeStoredArray(PROFILE_ACTIVITY_KEY, activity.slice(0, 30));
     sendActivityLog(entry);
+    syncProfileAccountSummary();
     renderActivityLogPage();
   }
 
@@ -9846,7 +10087,6 @@
       });
     }
     applyProfilePreferences();
-    setProfileStatus("Preferensi tampilan berhasil disimpan.", "success");
     addProfileActivity("Preferensi tampilan diperbarui", `${prefs.theme === "dark" ? "Tema gelap" : "Tema terang"}, ${prefs.compact ? "mode ringkas aktif" : "mode ringkas nonaktif"}`);
   }
 
@@ -11725,6 +11965,7 @@
     els.reportLow.textContent = formatNumber(low);
     if (els.reportMinus) els.reportMinus.textContent = formatNumber(minus);
     if (els.reportOut) els.reportOut.textContent = formatNumber(empty);
+    renderInventoryDashboard({ active, inactive, expiring, expired, empty, low, minus, total: state.rows.length });
     persistReportCache({ signature, active, inactive, expiring, expired, empty, low, minus, total: state.rows.length, uploadedAt: state.uploadedAt });
 
   }
@@ -11743,6 +11984,52 @@
     if (els.reportLow) els.reportLow.textContent = formatNumber(snapshot.low || 0);
     if (els.reportMinus) els.reportMinus.textContent = formatNumber(snapshot.minus || 0);
     if (els.reportOut) els.reportOut.textContent = formatNumber(snapshot.empty || 0);
+    renderInventoryDashboard(snapshot);
+  }
+
+  function renderInventoryDashboard(summary) {
+    const total = Math.max(0, Number(summary?.total) || 0);
+    const active = Math.max(0, Number(summary?.active) || 0);
+    const inactive = Math.max(0, Number(summary?.inactive) || 0);
+    const expiring = Math.max(0, Number(summary?.expiring) || 0);
+    const expired = Math.max(0, Number(summary?.expired) || 0);
+    const minus = Math.max(0, Number(summary?.minus) || 0);
+    const percent = (value) => total ? (value / total) * 100 : 0;
+    const formatPercent = (value) => `${percent(value).toFixed(1)}%`;
+    const setCount = (element, value) => { if (element) element.textContent = formatNumber(value); };
+    const setPercent = (element, value) => { if (element) element.textContent = formatPercent(value); };
+    const setBar = (element, value) => { if (element) element.style.width = `${Math.min(100, percent(value))}%`; };
+
+    if (els.dashboardExpiryAlertText) {
+      if (!total) els.dashboardExpiryAlertText.textContent = "Belum ada data obat untuk diperiksa.";
+      else if (expiring || expired) els.dashboardExpiryAlertText.textContent = `Perhatian: ${formatNumber(expiring)} obat akan expired dalam 90 hari ke depan dan ${formatNumber(expired)} obat telah melewati tanggal kedaluwarsa.`;
+      else els.dashboardExpiryAlertText.textContent = "Status aman: belum ada obat yang mendekati atau melewati tanggal kedaluwarsa.";
+    }
+
+    if (els.inventoryDonut) {
+      const values = [active, inactive, expiring, minus];
+      const visualTotal = values.reduce((sum, value) => sum + value, 0) || 1;
+      const segments = values.map((value) => (value / visualTotal) * 100);
+      const first = segments[0];
+      const second = first + segments[1];
+      const third = second + segments[2];
+      els.inventoryDonut.style.setProperty("--inventory-donut", `conic-gradient(#1378ee 0 ${first}%, #e81798 ${first}% ${second}%, #14b8a6 ${second}% ${third}%, #f59e0b ${third}% 100%)`);
+
+    }
+
+    setCount(els.inventoryDonutTotal, total);
+    setCount(els.compositionActiveCount, active);
+    setCount(els.compositionInactiveCount, inactive);
+    setCount(els.compositionExpiringCount, expiring);
+    setCount(els.compositionMinusCount, minus);
+    setPercent(els.compositionActivePercent, active);
+    setPercent(els.compositionInactivePercent, inactive);
+    setPercent(els.compositionExpiringPercent, expiring);
+    setPercent(els.compositionMinusPercent, minus);
+    setBar(els.compositionActiveBar, active);
+    setBar(els.compositionInactiveBar, inactive);
+    setBar(els.compositionExpiringBar, expiring);
+    setBar(els.compositionMinusBar, minus);
   }
 
   function persistReportCache(snapshot) {

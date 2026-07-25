@@ -1,3 +1,21 @@
+.sidebar-nav .nav-item {
+  min-height: 48px;
+  padding-block: 6px;
+}
+
+.sidebar-nav .nav-icon,
+.sidebar.is-collapsed .sidebar-nav .nav-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 10px;
+}
+
+.sidebar-nav .nav-icon svg,
+.sidebar.is-collapsed .sidebar-nav .nav-icon svg {
+  width: 16px;
+  height: 16px;
+}
 :root {
   --bg: #eef7ff;
   --surface: #ffffff;
@@ -12,7 +30,7 @@
   --yellow: #b87900;
   --red: #cc2f4a;
   --shadow: 0 18px 48px rgba(17, 69, 134, 0.12);
-}
+}v1
 
 /* 20260607 v52b: final compact medicine modal + realtime attendance page. */
 @media (min-width: 901px) {
@@ -10278,8 +10296,8 @@ body.profile-panel-modal-open {
   position: fixed;
   inset: 0;
   z-index: 6100;
-  background: rgba(6, 17, 42, 0.46);
-  backdrop-filter: blur(12px);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .profile-modern-layout.profile-panel-open .profile-panel.is-active {
@@ -10308,7 +10326,7 @@ body.theme-dark .profile-panel-close {
 }
 
 body.theme-dark .profile-modern-layout.profile-panel-open::after {
-  background: rgba(0, 8, 24, 0.72);
+  background: transparent;
 }
 
 body.theme-dark .profile-modern-layout.profile-panel-open .profile-panel.is-active {
@@ -23950,6 +23968,69 @@ body.profile-panel-modal-open {
   overscroll-behavior: contain !important;
 }
 
+/* 20260724 profile dialog final: keep panels beside open sidebar and above side cards. */
+body.profile-panel-modal-open {
+  overflow: hidden !important;
+}
+
+.profile-modern-layout.profile-panel-open::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9000 !important;
+  display: block !important;
+  pointer-events: auto !important;
+  background: rgba(6, 19, 43, 0.28) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+.profile-modern-layout.profile-panel-open .profile-panel.is-active {
+  position: fixed !important;
+  z-index: 9010 !important;
+  inset: 50% auto auto 50% !important;
+  width: min(92vw, 920px) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: min(86dvh, 760px) !important;
+  overflow: hidden auto !important;
+  transform: translate(-50%, -50%) !important;
+  box-sizing: border-box !important;
+}
+
+body.sidebar-open .profile-modern-layout.profile-panel-open .profile-panel.is-active {
+  left: calc(var(--app-sidebar-open-width, 272px) + 12px) !important;
+  right: 12px !important;
+  width: auto !important;
+  max-width: none !important;
+  transform: translateY(-50%) !important;
+}
+
+body.sidebar-open .profile-modern-layout.profile-panel-open::after {
+  background: rgba(6, 19, 43, 0.18) !important;
+}
+
+.profile-modern-layout.profile-panel-open .profile-panel.is-active .profile-panel-close {
+  z-index: 2;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  body.profile-panel-modal-open { overflow: hidden !important; }
+  .profile-modern-layout.profile-panel-open .profile-panel.is-active,
+  body.sidebar-open .profile-modern-layout.profile-panel-open .profile-panel.is-active {
+    inset: max(12px, env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform: none !important;
+    border-radius: 20px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-modern-layout.profile-panel-open .profile-panel.is-active { scroll-behavior: auto; }
+}
+
 .purchase-draft-card-full:not(.is-open) .purchase-draft-item-list,
 .purchase-draft-card-full:not(.is-open) .purchase-draft-card-actions {
   display: none !important;
@@ -25661,10 +25742,10 @@ body.profile-panel-modal-open {
   .app-sidebar .sidebar-link svg,
   body.sidebar-collapsed .app-sidebar .sidebar-link svg {
     display: block !important;
-    width: 42px !important;
-    height: 42px !important;
-    flex: 0 0 42px !important;
-    padding: 10px;
+    width: 30px !important;
+    height: 30px !important;
+    flex: 0 0 30px !important;
+    padding: 6px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.82);
     background: var(--sidebar-icon-surface, linear-gradient(135deg, #3f82ff, #2157e4));
@@ -25692,10 +25773,10 @@ body.profile-panel-modal-open {
   }
 
   body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-    width: 36px !important;
-    height: 36px !important;
-    flex-basis: 36px !important;
-    padding: 8px;
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    padding: 6px;
   }
 }
 
@@ -29367,10 +29448,10 @@ body.theme-dark #view-data-supplier .simple-table thead th {
 @media (min-width: 761px) {
   .app-sidebar .sidebar-link svg,
   body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-    width: 38px !important;
-    height: 38px !important;
-    flex-basis: 38px !important;
-    padding: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    padding: 6px !important;
     box-shadow: 0 10px 18px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.18)) !important;
   }
 
