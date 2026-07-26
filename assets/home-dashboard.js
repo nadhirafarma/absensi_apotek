@@ -10882,7 +10882,6 @@
         throw new Error(payload?.message || payload?.error || "Catatan kehadiran gagal disimpan.");
       }
 
-      showAppLoadingSuccess("Catatan berhasil disimpan.", "success");
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Catatan berhasil disimpan online.";
       closeAttendanceEditModal();
       await fetchAttendanceRecords({ manual: true });
