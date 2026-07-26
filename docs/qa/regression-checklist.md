@@ -60,3 +60,22 @@ Gunakan sebelum setiap deploy yang menyentuh auth, presensi, data obat, atau pay
 Checklist ini hasil analisis source code (current-state), BUKAN hasil
 eksekusi test nyata. Setiap item wajib dijalankan manual/otomatis sebelum
 dianggap "lulus regresi".
+
+## Smoke log (2026-07-26, pre-merge ke main)
+
+### Otomatis (lokal + live API)
+- [x] Syntax JS: `home-dashboard.js`, `attendance.js`, `auth-guard.js`, `login.js`, `ess.js`, `app.js` — OK.
+- [x] Simulasi enrich `postToApi`: token/username/email/role menempel; field eksplisit menang.
+- [x] GAS A `GET sheet=data_obat` → 200, `success/ok true`, total 3310.
+- [x] GAS A `POST getPharmacyProfile` tanpa token → 200 (masih unlocked, sesuai fase 1).
+- [x] GAS A `POST getPharmacyProfile` + fake token → 200 (token diabaikan backend; non-breaking).
+- [x] GAS A `POST getAttendanceShiftSettings` → 200 settings.
+- [x] GAS B `POST listAttendanceRecords` tanpa token → ditolak: "Sesi login tidak tersedia...".
+- [x] Live site `https://indoapotek.my.id/` → 200.
+- [x] Mirror GAS B root vs clasp hash identik.
+
+### Manual browser (wajib setelah merge ke main / Pages live)
+- [ ] Login owner/admin sukses; sessionToken ada di sessionStorage.
+- [ ] Dashboard load profil apotek + shift (Network: payload membawa sessionToken).
+- [ ] Buka halaman absensi: gate integritas + choice shift jalan.
+- [ ] Logout → session hilang; request GAS B ditolak.
