@@ -318,6 +318,8 @@ function applyAbsensiSession_(payload, session) {
   payload.email = session.email || '';
   payload.role = session.role || '';
   payload.actor = session.username || session.email || session.name || '';
+  // KEAMANAN: nama terverifikasi dari session (bukan input klien) untuk otorisasi baca non-admin.
+  payload.__sessionName = session.name || '';
 }
 
 function validateAbsensiSubmission_(payload, now) {
@@ -615,12 +617,11 @@ function handleListAttendanceRecords_(params, source) {
   var sheets = spreadsheet ? getAbsensiRecordSheets_(spreadsheet) : [source];
   var role = normalizeAbsensiKey_(params.role || '');
   var isAdmin = isAbsensiAdmin_(params);
-  var identityKeys = [
-    params.nama,
-    params.nama_karyawan,
-    params.namaKaryawan,
+  // KEAMANAN: non-admin difilter HANYA oleh identitas session (bukan field nama klien),
+  // mencegah baca presensi (GPS/foto/jam) karyawan lain. Admin melihat semua.
+  var identityKeys = isAdmin ? [] : [
+    params.__sessionName,
     params.username,
-    params.name,
     params.email
   ].map(normalizeAbsensiKey_).filter(Boolean);
   var dateFrom = String(params.dateFrom || params.from || '').trim();
@@ -1019,11 +1020,12 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   var fileIdColumn = findHeaderIndex_(headers, ['fileid']);
   var fileUrlColumn = findHeaderIndex_(headers, ['fileurl', 'url']);
   var isAdmin = isAbsensiAdmin_(params);
-  var identityKeys = [
-    params.name,
-    params.nama,
-    params.nama_karyawan,
-    params.username
+  // KEAMANAN: non-admin difilter HANYA oleh identitas session (bukan field nama klien),
+  // mencegah baca histori gaji karyawan lain. Admin melihat semua (identityKeys diabaikan).
+  var identityKeys = isAdmin ? [] : [
+    params.__sessionName,
+    params.username,
+    params.email
   ].map(normalizeAbsensiKey_).filter(Boolean);
   var history = [];
 

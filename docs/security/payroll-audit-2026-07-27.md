@@ -62,5 +62,18 @@ buang field nama klien. PDF: berhenti pakai ANYONE_WITH_LINK (butuh cek pemakaia
 - Injeksi nominal finansial ke slip via payload — angka gaji dibaca dari sheet, bukan payload.
 
 ## Status remediasi
-- 2026-07-27: fix CRITICAL 3-lapis diterapkan di source (lihat commit). Deploy: lihat epics.md.
-- HIGH-read & PDF & hardening: antre, butuh keputusan/uji anti-lockout.
+- 2026-07-27 CRITICAL: fix 3-lapis **deployed** (GAS B @66, GAS A @121), live-verified tertutup.
+- 2026-07-27 HIGH IDOR-read (a+b): **deployed** (GAS B @67). Identitas non-admin untuk
+  `handleListSalarySlipHistory_` & `handleListAttendanceRecords_` kini HANYA dari session
+  (`__sessionName`/username/email via `applyAbsensiSession_`); field nama klien diabaikan
+  untuk non-admin; admin tetap lihat semua. Frontend selalu kirim identitas-sendiri-dari-session,
+  jadi self-view sah tak berubah (perlu smoke-test ESS: presensi & histori slip karyawan).
+  Residu kecil: karyawan yang nama di sheet `user` berbeda-normalisasi dari nama di record
+  presensi/slip. Rollback: `-V 66`.
+- 2026-07-27 HIGH PDF `ANYONE_WITH_LINK` (c): **belum diubah.** Frontend membuka slip via
+  URL Drive langsung (`window.open`/`<a href>`, `home-dashboard.js:1315,11383`) — memprivat-kan
+  tanpa endpoint penyaji akan memutus buka/print slip. Karena a+b sudah menutup panen-massal
+  fileUrl lewat API, severity c turun ke **defense-in-depth**. Fix benar butuh: endpoint GAS B
+  `downloadSalarySlip` (session+ownership) yang stream PDF base64 → blob di frontend, set slip
+  baru privat, dan migrasi re-private file lama. Perubahan fitur live → rollout terpisah + uji.
+- MED/LOW hardening: antre.

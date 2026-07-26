@@ -54,9 +54,10 @@ alur ringan.
     3 lapis — `isAbsensiAdmin_` buang fallback `params.nama`;
     `validateAbsensiSession_` tolak sesi identitas-kosong; `syncAuthSession_`
     tolak mint sesi tanpa identitas. Exploit tanpa-login **live-verified tertutup**.
-  - [ ] HIGH IDOR-read: histori slip & kehadiran lintas-karyawan (bind identitas
-    non-admin ke session, exact-match) — hati-hati anti-lockout ESS.
-  - [ ] HIGH: PDF slip `ANYONE_WITH_LINK` → akses terverifikasi (cek pemakaian `fileUrl` frontend).
+  - [x] HIGH IDOR-read a+b **deployed** (GAS B @67): identitas non-admin histori slip &
+    presensi kini HANYA dari session; admin lihat semua. Perlu smoke-test self-view ESS. Rollback -V 66.
+  - [ ] HIGH PDF slip `ANYONE_WITH_LINK` (c): defense-in-depth (a+b sudah tutup panen API);
+    butuh endpoint penyaji PDF + blob frontend + migrasi — rollout terpisah.
   - [ ] MED/LOW: positional delete IDOR, deleteAll konfirmasi server, formula injection, generateSalarySlip di doGet.
 
 ## Tier 2 — Risiko menengah (workflow lengkap, cakupan lebih kecil)
