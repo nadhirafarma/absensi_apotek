@@ -20,11 +20,16 @@ yang teridentifikasi — repo == deploy artifact untuk frontend.
 
 ## Deploy frontend (GitHub Pages)
 1. Commit perubahan HTML/CSS/JS di root/assets/subfolder halaman.
-2. Push ke branch yang dikonfigurasi Pages (cek repo settings — belum
-   diverifikasi di dokumen ini, `⚠ perlu validasi`).
-3. Tunggu build Pages, verifikasi via URL live (`CNAME`) — bukan hanya lokal.
-4. Rollback: revert commit, push ulang (tidak ada mekanisme rollback binary
+2. Branch kerja lokal saat ini: `work/local-regression-20260719` (ahead of
+   `origin/main` hanya commit lokal yang belum di-push).
+3. Push ke branch yang dikonfigurasi Pages. Default remote `origin/main`
+   (`https://github.com/nadhirafarma/absensi_apotek.git`). Verifikasi Settings
+   → Pages: root branch mana yang live (`⚠ perlu validasi` di UI GitHub).
+4. **Jangan force-push `main`** tanpa backup. Prefer merge/PR dari branch kerja.
+5. Tunggu build Pages, verifikasi via URL live (`CNAME`) — bukan hanya lokal.
+6. Rollback: revert commit, push ulang (tidak ada mekanisme rollback binary
    terpisah karena repo == deploy).
+
 
 ## Deploy GAS A (dataObatAuth)
 1. Edit source di root (`google-apps-script-*.gs`) ATAU Apps Script editor
@@ -37,13 +42,21 @@ yang teridentifikasi — repo == deploy artifact untuk frontend.
 4. Verifikasi endpoint via `tools/live_probe.js` sebelum menganggap selesai.
 
 ## Deploy GAS B (attendanceAndPayroll)
+**Sumber kebenaran:** `tools/gas-script-1/Kode.js` (clasp aktif; scriptId di
+`.clasp.json` / `tools/gas-projects.json`).
+`google-apps-script-absensi-api.gs` di root adalah **mirror referensi** —
+wajib byte-identik dengan clasp setelah setiap edit, bukan tempat edit
+langsung.
+
 1. Edit `tools/gas-script-1/Kode.js` (source clasp).
-2. `clasp push` dari `tools/gas-script-1/` (butuh clasp login & konfigurasi
-   `.clasp.json` di folder tersebut).
-3. Deploy versi baru via clasp atau Apps Script editor.
-4. **Wajib** sinkronkan perubahan ke `google-apps-script-absensi-api.gs` root
-   jika root dipertahankan sebagai referensi/backup — atau nyatakan root
-   deprecated secara eksplisit di README.
+2. Salin ke mirror root:
+   `Copy-Item tools\gas-script-1\Kode.js google-apps-script-absensi-api.gs -Force`
+   lalu cek hash sama.
+3. `clasp push` dari workspace root (`.clasp.json` menunjuk
+   `rootDir: tools/gas-script-1`) — butuh clasp login.
+4. Deploy versi Web App baru via clasp atau Apps Script editor.
+5. Jangan deploy dari mirror root; mirror hanya untuk review/diff/backup di git.
+
 
 ## Yang dikecualikan dari paket deploy GitHub Pages
 - `_bmad/`, `_bmad-output/` — artefak internal BMAD, tidak dibutuhkan

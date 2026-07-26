@@ -27,6 +27,12 @@ alur ringan.
 - Setup proses sinkronisasi atau deprecate salah satu.
 - **Value:** cegah bug akibat deploy dari salinan usang.
 - **Risk driver:** deployment, integritas kode.
+- **Progress (2026-07-26):**
+  - [x] Canonical = `tools/gas-script-1/Kode.js` (clasp); root = mirror.
+  - [x] Root disalin dari clasp (hash byte-identik, 2307 baris).
+  - [x] SOP deploy + gas-contracts diperbarui (copy mirror setelah edit).
+  - [ ] Opsional: script/hook pre-commit cek hash root vs clasp.
+
 
 ### Epic 3: Payroll & Slip Gaji — Verifikasi & Pengamanan
 - Validasi ulang `generateSalarySlip`, `deleteSalarySlipHistory` terhadap

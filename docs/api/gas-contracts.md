@@ -94,8 +94,12 @@ Wajib admin: `updateAttendanceRecord` (`:708`), `listPayrollEmployees` (`:768`),
 - Batasan foto ≤3MB, drift timestamp ≤10 menit, akurasi GPS ≤200m, toleransi radius 160m (`:24-27`).
 - Foto base64 → Drive `Foto_Absensi`.
 
-## 6. Sumber-of-truth ganda (drift risk)
-- GAS B punya **dua mirror**: `google-apps-script-absensi-api.gs` (root) dan `tools/gas-script-1/Kode.js` (clasp aktif). Header action identik pada scan ini, tetapi wajib disinkron manual. `⚠ perlu validasi` bahwa keduanya byte-identik saat deploy.
+## 6. Sumber-of-truth GAS B
+- **Canonical deploy source:** `tools/gas-script-1/Kode.js` (clasp; scriptId `1_WgOmzhpGLCNyx1Oucl_a8to1vUXgtdzh_bplbCP7ruFUdk9dNA6qkL_`).
+- **Mirror referensi di git:** `google-apps-script-absensi-api.gs` (root) — disalin dari clasp, bukan diedit langsung.
+- **Epic 2 (2026-07-26):** root disinkron ulang ke clasp (hash identik, 2307 baris). Termasuk `handleListAttendanceRecords_` multi-sheet + `getAbsensiRecordSheets_`.
+- Setelah edit clasp: salin ke root mirror sebelum commit (lihat `docs/ops/deploy-sop.md`).
+
 
 ## 7. Ringkasan verifikasi
 - Diverifikasi dari source: daftar action, gerbang admin/session, format response, batas validasi absensi.
