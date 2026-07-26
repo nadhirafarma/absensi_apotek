@@ -16,9 +16,13 @@ alur ringan.
 - **Risk driver:** keamanan, data pengguna.
 - **Progress (2026-07-26):**
   - [x] Fase 1 frontend (non-breaking): `assets/home-dashboard.js` `postToApi` + `assets/attendance.js` profile/shift attach `sessionToken`/`username`/`email`/`role`.
-  - [ ] Fase 2 backend: gerbang session di GAS A setelah frontend live & diverifikasi.
+  - [x] Frontend live di GitHub Pages (`sessionToken` terverifikasi di `home-dashboard.js` / `attendance.js`).
+  - [x] Fase 2 backend (kode repo): `validatePharmacySession_` + gerbang di `handleUnlockedPostAction_` + `doGet listLoginUsers`.
+    - Public tetap: `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings`.
+    - Wajib session: `listLoginUsers`, `listActivityLog`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`.
+  - [ ] Deploy manual GAS A live (paste `google-apps-script-api-search-box-final.gs` ke project "API Search Box") + smoke test.
   - [ ] Standardisasi `ok`/`success` (bisa parallel, low risk docs first).
-  - Urutan deploy aman: GitHub Pages frontend dulu → uji → baru deploy GAS A dengan gerbang.
+
 
 
 ### Epic 2: Konsolidasi Sumber GAS B (hilangkan drift)

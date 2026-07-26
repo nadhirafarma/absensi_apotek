@@ -161,6 +161,15 @@ function doGet(e) {
     }
 
     if (String(e.parameter.action || '').trim() == 'listLoginUsers') {
+      var listUsersSession = validatePharmacySession_(e.parameter);
+      if (!listUsersSession.ok) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: listUsersSession.message
+        });
+      }
+
       var loginSheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
 
       if (!loginSheet) {
@@ -277,6 +286,53 @@ function getAuthSessionSheet_() {
   var sheet = ss.getSheetByName(AUTH_SESSION_SHEET_NAME) || ss.insertSheet(AUTH_SESSION_SHEET_NAME);
   if (sheet.getLastRow() < 1) sheet.getRange(1, 1, 1, 8).setValues([['token', 'username', 'email', 'name', 'role', 'status', 'expiresAt', 'updatedAt']]);
   return sheet;
+}
+
+function validatePharmacySession_(payload) {
+  payload = payload || {};
+  var token = String(payload.sessionToken || payload.token || '').trim();
+  if (!token) return { ok: false, message: 'Sesi login tidak tersedia. Silakan masuk ulang.' };
+
+  var sheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(AUTH_SESSION_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (String(values[i][0] || '').trim() != token) continue;
+    if (Number(values[i][6] || 0) <= Date.now()) {
+      return { ok: false, message: 'Sesi login sudah berakhir. Silakan masuk ulang.' };
+    }
+
+    var session = {
+      ok: true,
+      username: values[i][1],
+      email: values[i][2],
+      name: values[i][3] || values[i][1],
+      role: values[i][4],
+      status: values[i][5] || 'Aktif'
+    };
+    var submitted = [payload.username, payload.email]
+      .map(function(s) { return String(s || '').trim().toLowerCase(); })
+      .filter(Boolean);
+    var allowed = [session.username, session.email, session.name]
+      .map(function(s) { return String(s || '').trim().toLowerCase(); })
+      .filter(Boolean);
+
+    if (submitted.some(function(key) { return allowed.indexOf(key) < 0; })) {
+      return { ok: false, message: 'Identitas tidak sesuai dengan sesi login.' };
+    }
+    return session;
+  }
+
+  return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+}
+
+function applyPharmacySession_(payload, session) {
+  payload = payload || {};
+  payload.username = session.username || '';
+  payload.email = session.email || '';
+  payload.role = session.role || '';
+  payload.actor = session.username || session.email || session.name || '';
 }
 
 function doPost(e) {
@@ -449,12 +505,9 @@ function doPost(e) {
 }
 
 function handleUnlockedPostAction_(action, data) {
+  // Public read — tetap tanpa session (non-breaking untuk landing/cache)
   if (action == 'getDataObatFilter') {
     return handleGetDataObatFilter_();
-  }
-
-  if (action == 'listActivityLog') {
-    return handleListActivityLog_();
   }
 
   if (action == 'getAttendanceShiftSettings') {
@@ -463,6 +516,31 @@ function handleUnlockedPostAction_(action, data) {
 
   if (action == 'getPharmacyProfile') {
     return handleGetPharmacyProfile_();
+  }
+
+  // Sensitive read — wajib session (Epic 1 fase 2)
+  var sessionActions = {
+    listActivityLog: true,
+    listLoginUsers: true,
+    listRestockRequests: true,
+    listPurchaseOrders: true,
+    listLocalRecords: true
+  };
+
+  if (sessionActions[action]) {
+    var session = validatePharmacySession_(data || {});
+    if (!session.ok) {
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: session.message
+      });
+    }
+    applyPharmacySession_(data, session);
+  }
+
+  if (action == 'listActivityLog') {
+    return handleListActivityLog_(data);
   }
 
   if (action == 'listRestockRequests') {

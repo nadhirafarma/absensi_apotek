@@ -49,14 +49,20 @@ Data lokal: `listLocalRecords`, `saveLocalRecord`, `deleteLocalRecord`.
 Auth & user: `login`, `listLoginUsers`, `saveLoginUser`/`updateLoginUser`, `deleteLoginUser`, `resetPassword`, `saveResetPassword`/`updatePassword`/`confirmResetPassword`/`savePassword`/`setPassword`.
 Fallback: `{ success:false, ok:false, message:'Action tidak ditemukan' }` (`:434-438`).
 
-### 3.3 Aksi tanpa lock / terbuka (`handleUnlockedPostAction_` `:451-486`)
-`getDataObatFilter`, `listActivityLog`, `getAttendanceShiftSettings`, `getPharmacyProfile`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`, `listLoginUsers` — dijalankan **sebelum** `LockService` dan **tanpa cek role/session**.
+### 3.3 Aksi early-path (`handleUnlockedPostAction_`)
+Dijalankan sebelum `LockService`. **Epic 1 fase 2 (kode repo, 2026-07-26):**
 
-> ⚠ Risiko keamanan: read endpoint sensitif (daftar user, profil apotek) dapat dipanggil tanpa autentikasi.
->
-> **Status Epic 1:**
-> - Fase 1 (selesai, non-breaking): frontend sudah mengirim `sessionToken`/identitas pada pemanggil utama GAS A (`postToApi`, `attendance.js` profile/shift).
-> - Fase 2 (belum): gerbang session di backend GAS A. Harus deploy frontend dulu, verifikasi traffic membawa token, baru tutup endpoint unlocked. Jangan aktifkan gerbang backend sebelum frontend live.
+| Kelas | Action | Auth |
+|---|---|---|
+| Public read | `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings` | tanpa session |
+| Sensitive read | `listActivityLog`, `listLoginUsers`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords` | wajib `validatePharmacySession_` |
+
+`doGet action=listLoginUsers` juga melewati `validatePharmacySession_`.
+
+Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `expiresAt`, cocokkan `username`/`email` payload vs session, lalu `applyPharmacySession_` menimpa identitas dari session.
+
+> **Deploy status:** kode di repo sudah siap. **Belum aktif di production** sampai di-paste ke project GAS "API Search Box" dan di-deploy. Setelah deploy: request tanpa token ke aksi sensitive harus ditolak.
+
 
 
 ### 3.4 Session server-side
