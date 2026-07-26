@@ -83,4 +83,4 @@ Root `.clasp.json` = **GAS B** (canonical). Deploy GAS A dijalankan dari `tools/
 2. Mirror ganda (root `.gs` vs clasp) bisa drift bila SOP salin-setelah-edit dilewati — mitigasi: cek hash (lihat §6).
 3. Cross-read GAS B → Spreadsheet A membuat GAS B bergantung pada schema `auth_sessions` yang dimiliki GAS A; perubahan kolom harus dikoordinasikan.
 4. Public read GAS A (`getPharmacyProfile` dll.) terbuka tanpa token — keputusan sadar, ditinjau ulang di epic hardening berikutnya.
-5. Kode repo GAS bisa lebih baru dari deployment live — status deploy dicatat per-epic di `gas-contracts.md` §3.3.
+5. Kode repo GAS bisa lebih baru dari deployment live — status deploy dicatat per-epic di `gas-contracts.md` §3.3 (per 2026-07-27: gerbang session GAS A fase 2 terverifikasi aktif di production via smoke test).

@@ -63,7 +63,7 @@ Dijalankan sebelum `LockService`. **Epic 1 fase 2 (kode repo, 2026-07-26):**
 
 Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `expiresAt`, cocokkan `username`/`email` payload vs session, lalu `applyPharmacySession_` menimpa identitas dari session.
 
-> **Deploy status:** kode di repo sudah siap. **Belum aktif di production** sampai di-paste ke project GAS "API Search Box" dan di-deploy. Setelah deploy: request tanpa token ke aksi sensitive harus ditolak.
+> **Deploy status (2026-07-27): AKTIF di production.** Terverifikasi via `tools/smoke_gas_a.js` terhadap deployment live `AKfycbzk3yq…`: aksi public read lolos tanpa token; `listLoginUsers` (POST & GET) dan `listActivityLog` tanpa token **ditolak** dengan pesan "Sesi login tidak tersedia. Silakan masuk ulang."
 
 
 

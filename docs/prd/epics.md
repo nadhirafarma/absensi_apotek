@@ -20,7 +20,7 @@ alur ringan.
   - [x] Fase 2 backend (kode repo): `validatePharmacySession_` + gerbang di `handleUnlockedPostAction_` + `doGet listLoginUsers`.
     - Public tetap: `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings`.
     - Wajib session: `listLoginUsers`, `listActivityLog`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`.
-  - [ ] Deploy manual GAS A live (paste `google-apps-script-api-search-box-final.gs` ke project "API Search Box") + smoke test.
+  - [x] Deploy GAS A live + smoke test — **terverifikasi production 2026-07-27** via `tools/smoke_gas_a.js`: 3 public read OK tanpa token (`getPharmacyProfile`, `getAttendanceShiftSettings`, `getDataObatFilter`); 3 sensitive read ditolak tanpa token (`listLoginUsers` POST+GET, `listActivityLog` → "Sesi login tidak tersedia").
   - [ ] Standardisasi `ok`/`success` (bisa parallel, low risk docs first).
 
 
@@ -35,7 +35,7 @@ alur ringan.
   - [x] Canonical = `tools/gas-script-1/Kode.js` (clasp); root = mirror.
   - [x] Root disalin dari clasp (hash byte-identik, 2307 baris).
   - [x] SOP deploy + gas-contracts diperbarui (copy mirror setelah edit).
-  - [ ] Opsional: script/hook pre-commit cek hash root vs clasp.
+  - [x] Opsional: `tools/check_gas_mirrors.js` (2026-07-27) — cek hash root vs clasp untuk GAS A & GAS B; dipanggil manual/di SOP (belum sebagai git hook).
 
 
 ### Epic 3: Payroll & Slip Gaji — Verifikasi & Pengamanan

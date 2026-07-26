@@ -41,7 +41,7 @@ root adalah **mirror referensi** — wajib byte-identik dengan clasp
 1. Edit `tools/gas-a/Kode.js` (source clasp).
 2. Salin ke mirror root:
    `Copy-Item tools\gas-a\Kode.js google-apps-script-api-search-box-final.gs -Force`
-   lalu cek hash sama.
+   lalu verifikasi: `node tools/check_gas_mirrors.js`.
 3. `clasp push` dari dalam `tools/gas-a/` (JANGAN dari root — root
    `.clasp.json` adalah milik GAS B).
 4. Deploy sebagai Web App versi baru via clasp atau Apps Script editor.
@@ -61,7 +61,7 @@ langsung.
 1. Edit `tools/gas-script-1/Kode.js` (source clasp).
 2. Salin ke mirror root:
    `Copy-Item tools\gas-script-1\Kode.js google-apps-script-absensi-api.gs -Force`
-   lalu cek hash sama.
+   lalu verifikasi: `node tools/check_gas_mirrors.js`.
 3. `clasp push` dari workspace root (`.clasp.json` menunjuk
    `rootDir: tools/gas-script-1`) — butuh clasp login.
 4. Deploy versi Web App baru via clasp atau Apps Script editor.
