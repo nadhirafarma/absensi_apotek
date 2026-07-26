@@ -30,7 +30,7 @@ Bahasa output: Indonesia. Setiap entri di bawah dilacak ke nomor baris kode yang
 - **GAS A**: umumnya `{ success: boolean, ok: boolean, message?, data?, ... }`. GET data obat menambah `sheet`, `total`, `updatedAt`, `uploadedAt`, `data`. (`google-apps-script-api-search-box-final.gs` doGet `:154-230`, fallback `:493`)
 - **GAS B**: umumnya `{ ok: boolean, success?: boolean, message?, ... }`. Selalu `ContentService` JSON. (`google-apps-script-absensi-api.gs:2223-2225`)
 
-> Inkonsistensi `ok` vs `success` adalah risiko kontrak nyata → kandidat epic standardisasi.
+> Inkonsistensi `ok` vs `success` adalah risiko kontrak nyata → standar target + rencana migrasi ditetapkan di **§8** (docs-first 2026-07-27).
 
 ## 3. GAS A — dataObatAuth
 
@@ -112,4 +112,77 @@ Wajib admin: `updateAttendanceRecord` (`:753`), `listPayrollEmployees` (`:813`),
 
 ## 7. Ringkasan verifikasi
 - Diverifikasi dari source: daftar action, gerbang admin/session, format response, batas validasi absensi.
-- `⚠ perlu validasi` live: URL deployment aktif, schema kolom sheet, keterbukaan read endpoint GAS A di produksi, kesetaraan mirror GAS B.
+- Terverifikasi live 2026-07-27: URL deployment aktif, keterbukaan read GAS A di produksi (public OK, sensitive rejected), kesetaraan mirror GAS A & B (hash identik).
+- `⚠ perlu validasi` tersisa: schema kolom Google Sheets live.
+
+## 8. Standar envelope response — target Epic 1 (docs-first, 2026-07-27)
+
+Status: **Fase A (kontrak target) — ditetapkan.** Implementasi bertahap Fase B–D di bawah.
+Dasar: survei menyeluruh 3 sisi (response GAS A, response GAS B, konsumen frontend) 2026-07-27; klaim baris kunci di-spot-check terhadap source.
+
+### 8.1 Envelope standar (target)
+
+Semua response HTTP JSON dari GAS A & GAS B wajib berbentuk objek envelope:
+
+```jsonc
+{
+  "ok": true,          // KANONIK — kunci keputusan sukses/gagal (boolean asli)
+  "success": true,     // alias transisi, nilai SELALU === ok (dihapus di Fase D)
+  "message": "...",    // kanal pesan utama; WAJIB terisi saat ok=false
+  "error": "...",      // alias legacy khusus catch block; jangan diandalkan klien
+  // ...payload domain: data / records / users / history / total / dst.
+}
+```
+
+Aturan tambahan:
+- Boolean asli, bukan string (saat ini sudah dipatuhi — survei: 0 boolean string).
+- Tidak boleh array mentah tanpa envelope.
+- Error path aksi list menyertakan payload utama kosong (mis. `records: []`) agar
+  iterasi klien tidak crash — saat ini hanya `listPayrollEmployees` yang melakukannya.
+
+**Kenapa `ok` kanonik:** hadir di 100% response backend (GAS A 63/63 envelope +
+import 3/3; GAS B 35/35), dipakai sebagai kunci keputusan internal kedua backend
+(`if (!session.ok)`), dan `slip-gaji-bulanan.gs` memakai `ok` eksklusif (30 titik,
+0 `success`). `success` dipertahankan sebagai alias transisi karena 8 titik
+frontend paling kritis saat ini success-only (lihat 8.2).
+
+### 8.2 Divergensi current-state (temuan survei — target perbaikan)
+
+| # | Lokasi | Masalah |
+|---|---|---|
+| 1 | GAS B `:116` (status harian), `:218` (sudah absen), `:252` (simpan absensi) | response sukses inti absensi **tanpa `success`** — frontend pola success-only menganggap gagal |
+| 2 | GAS B catch `:133`, `:269` | `{ ok:false, error }` — tanpa `success`, tanpa `message` |
+| 3 | GAS A `:221` | GET `sheet=<nama>` generik mengembalikan **array mentah** tanpa envelope |
+| 4 | `google-apps-script-import-data-obat.gs` `:26`, `:31`, `:88` | hanya `{ ok, error/... }` — 0 `success`, 0 `message`; bentuk `import_data_obat` beda dari file utama (`:2488-2498`); definisi `doPost`/`jsonOutput_` bertabrakan bila satu project dengan file utama |
+| 5 | Frontend success-only: `assets/login.js:83,134,239`, `reset.html:354`, `assets/home-dashboard.js:1521,1809,4332,4387` | login, reset password, listLoginUsers, filter & CRUD data_obat **patah** bila backend berhenti mengirim `success` |
+| 6 | Frontend ok-only: `assets/search-obat.js:620` | import di cari-obat patah bila backend hanya mengirim `success` |
+| 7 | Helper fetch tanpa cek HTTP `response.ok`: `home-dashboard.js:12447` (postToApi), `:10451`, `:10467`, `ess.js:60` | HTTP 500/HTML lolos ke parse body; kegagalan tampil sebagai pesan generik |
+| 8 | `assets/attendance.js:937-944` | body non-JSON ber-HTTP-200 disintesis jadi `{ok:true}` → error page bisa dianggap "absensi tersimpan" |
+
+Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 ok-only —
+`success` dibaca di 40/41 titik cek body, `ok` di 33/41.
+
+### 8.3 Rencana migrasi non-breaking (fase)
+
+- **Fase A — docs (SELESAI 2026-07-27):** kontrak target ini.
+- **Fase B — backend, perbaikan sekali-tempat:**
+  1. GAS B `jsonAbsensi_` (`:2222`): normalisasi sebelum `JSON.stringify` —
+     `if (!('success' in data)) data.success = data.ok;` dan
+     `if (!data.message && data.error) data.message = data.error;`
+     → memperbaiki divergensi #1 & #2 tanpa menyentuh 35 call site.
+  2. GAS A `:221`: bungkus jadi envelope `{ ok, success, sheet, data }` —
+     **koordinasi wajib** dengan pembaca bentuk mentah (`home-dashboard.js:1400`,
+     `search-obat.js:365`) di rilis yang sama, atau tunda ke Fase C.
+  3. File `import-data-obat.gs`: samakan envelope dengan file utama ATAU
+     deprecate (action `import_data_obat` sudah di-handle file utama) — butuh
+     keputusan pemilik project (cek dulu apakah ter-deploy sebagai project terpisah).
+- **Fase C — frontend:** helper bersama `isApiOk(res)` =
+  `!!res && (res.ok === true || res.success === true)`; ganti 8 titik success-only
+  + 1 titik ok-only ke helper; tambah cek HTTP `response.ok` di `postToApi`/
+  `postToAbsensiApi`/`ess.js`; perbaiki sintesis sukses `attendance.js:937-944`.
+- **Fase D — cleanup (opsional, setelah C stabil + regression lulus):** hapus
+  alias `success` dari backend; `ok` jadi satu-satunya kunci.
+
+Verifikasi tiap fase: `node tools/smoke_gas_a.js` + item regression checklist
+terkait (login, absensi, data obat, payroll). Jangan gabungkan Fase B dan C
+dalam satu deploy kecuali item #2 (perubahan bentuk `:221`).

@@ -21,7 +21,11 @@ alur ringan.
     - Public tetap: `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings`.
     - Wajib session: `listLoginUsers`, `listActivityLog`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`.
   - [x] Deploy GAS A live + smoke test — **terverifikasi production 2026-07-27** via `tools/smoke_gas_a.js`: 3 public read OK tanpa token (`getPharmacyProfile`, `getAttendanceShiftSettings`, `getDataObatFilter`); 3 sensitive read ditolak tanpa token (`listLoginUsers` POST+GET, `listActivityLog` → "Sesi login tidak tersedia").
-  - [ ] Standardisasi `ok`/`success` (bisa parallel, low risk docs first).
+  - [ ] Standardisasi `ok`/`success` — kontrak target + rencana migrasi: `docs/api/gas-contracts.md` §8.
+    - [x] Fase A docs-first (2026-07-27): survei 3 sisi (GAS A 63/63 dual, GAS B 30/35 dual + 5 ok-only, frontend 32 dual + 8 success-only + 1 ok-only); kanonik = `ok`, `success` alias transisi.
+    - [ ] Fase B backend: normalisasi `jsonAbsensi_`, envelope GAS A `:221`, keputusan file `import-data-obat.gs`.
+    - [ ] Fase C frontend: helper `isApiOk()`, ganti 9 titik cek tunggal, cek HTTP `response.ok` di helper fetch, perbaiki `attendance.js:937-944`.
+    - [ ] Fase D: hapus alias `success` (setelah C stabil + regression lulus).
 
 
 
