@@ -23,12 +23,16 @@ function doPost(e) {
     }
 
     return jsonOutput_({
+      success: false,
       ok: false,
+      message: 'Action tidak dikenal.',
       error: 'Action tidak dikenal.'
     });
   } catch (error) {
     return jsonOutput_({
+      success: false,
       ok: false,
+      message: error.message,
       error: error.message
     });
   } finally {
@@ -85,6 +89,7 @@ function handleImportDataObat_(payload) {
   SpreadsheetApp.flush();
 
   return jsonOutput_({
+    success: true,
     ok: true,
     spreadsheetId: ss.getId(),
     sheet: sheetName,

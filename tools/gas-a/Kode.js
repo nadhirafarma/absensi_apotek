@@ -218,7 +218,14 @@ function doGet(e) {
       });
     }
 
-    return jsonOutput_(rows);
+    // Envelope standar (docs/api/gas-contracts.md §8) — sebelumnya array mentah tanpa envelope.
+    return jsonOutput_({
+      success: true,
+      ok: true,
+      sheet: sheetName,
+      total: rows.length,
+      data: rows
+    });
   } catch (error) {
     return jsonOutput_({
       success: false,
@@ -2952,7 +2959,7 @@ function buildResetPasswordHtml_(email) {
     'setLoading(true);setStatus("Menyimpan password...","success");',
     'google.script.run.withSuccessHandler(function(result){',
     'setLoading(false);',
-    'if(!result||result.success!==true){setStatus((result&&result.message)||"Password baru gagal disimpan.","error");return;}',
+    'if(!result||(result.success!==true&&result.ok!==true)){setStatus((result&&result.message)||"Password baru gagal disimpan.","error");return;}',
     'setStatus(result.message||"Password baru berhasil disimpan. Silakan login kembali.","success");',
     'showSuccessPopup(password);',
     '}).withFailureHandler(function(error){setLoading(false);setStatus((error&&error.message)||"Password baru gagal disimpan.","error");}).updateResetPassword(email,password,confirmPassword);',

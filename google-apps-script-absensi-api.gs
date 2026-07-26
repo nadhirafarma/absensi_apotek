@@ -2220,6 +2220,11 @@ function isAbsensiAdmin_(params) {
 }
 
 function jsonAbsensi_(data) {
+  // Normalisasi envelope standar (docs/api/gas-contracts.md §8): success = alias ok, message fallback dari error.
+  if (data && typeof data == 'object' && !Array.isArray(data)) {
+    if (!('success' in data) && ('ok' in data)) data.success = data.ok;
+    if (!data.message && data.error) data.message = data.error;
+  }
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
