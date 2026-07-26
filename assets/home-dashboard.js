@@ -12436,14 +12436,23 @@
   }
 
   async function postToApi(payload) {
+    const session = readSession() || {};
+    const enrichedPayload = {
+      sessionToken: session.sessionToken || "",
+      username: session.username || "",
+      email: session.email || "",
+      role: session.role || "",
+      ...payload
+    };
     const response = await fetch(API_BASE, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(enrichedPayload)
     });
     const text = await response.text();
     return text ? JSON.parse(text) : {};
   }
+
 
   function changePage(delta) {
     const totalPages = getTotalPages();

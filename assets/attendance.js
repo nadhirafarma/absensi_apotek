@@ -320,12 +320,20 @@
 
   async function loadPharmacyProfileFromBackend(options = {}) {
     try {
+      const session = readSession() || {};
       const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "getPharmacyProfile" }),
+        body: JSON.stringify({
+          action: "getPharmacyProfile",
+          sessionToken: session.sessionToken || session.token || "",
+          username: session.username || "",
+          email: session.email || "",
+          role: session.role || ""
+        }),
         cache: "no-store"
       });
+
       if (!response.ok) throw new Error(`Profil apotek gagal dimuat (${response.status}).`);
       const result = await response.json();
       if (!result || (result.ok !== true && result.success !== true) || !result.profile) {
@@ -1071,11 +1079,19 @@
 
   async function loadAttendanceShiftSettingsFromBackend(options = {}) {
     try {
+      const session = readSession() || {};
       const response = await fetchWithTimeout(DASHBOARD_API_BASE, {
         method: "POST",
-        body: JSON.stringify({ action: "getAttendanceShiftSettings" }),
+        body: JSON.stringify({
+          action: "getAttendanceShiftSettings",
+          sessionToken: session.sessionToken || session.token || "",
+          username: session.username || "",
+          email: session.email || "",
+          role: session.role || ""
+        }),
         cache: "no-store"
       }, 10000);
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
       const remoteRules = result?.settings || result?.rules;

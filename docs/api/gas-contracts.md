@@ -17,8 +17,11 @@ Bahasa output: Indonesia. Setiap entri di bawah dilacak ke nomor baris kode yang
 
 - Transport: HTTPS `fetch` dari browser (bukan `google.script.run`).
 - Body POST: JSON `{ action, ...payload }` (lihat `assets/home-dashboard.js` `postToApi`).
+- **Epic 1 fase 1 (frontend, non-breaking):** `postToApi` di `assets/home-dashboard.js` otomatis menempelkan `sessionToken`, `username`, `email`, `role` dari `sessionStorage` ke setiap payload GAS A. Field eksplisit di payload pemanggil tetap menang (spread di akhir). GAS A saat ini mengabaikan field ini pada aksi unlocked, jadi perilaku runtime tidak berubah.
+- `assets/attendance.js` juga mengirim identitas sesi yang sama pada `getPharmacyProfile` dan `getAttendanceShiftSettings`.
 - Sebagian besar list/read menggunakan `cache: "no-store"`.
 - Beberapa aksi dikirim via GET query string (`action=...`), mis. `listLoginUsers`, `listAttendanceRecords` (ESS), `import_data_obat` fallback.
+
 
 ## 2. Format response (TIDAK identik antar backend)
 
@@ -49,7 +52,12 @@ Fallback: `{ success:false, ok:false, message:'Action tidak ditemukan' }` (`:434
 ### 3.3 Aksi tanpa lock / terbuka (`handleUnlockedPostAction_` `:451-486`)
 `getDataObatFilter`, `listActivityLog`, `getAttendanceShiftSettings`, `getPharmacyProfile`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`, `listLoginUsers` — dijalankan **sebelum** `LockService` dan **tanpa cek role/session**.
 
-> ⚠ Risiko keamanan: read endpoint sensitif (daftar user, profil apotek) dapat dipanggil tanpa autentikasi. Kandidat epic autentikasi/otorisasi risiko tinggi.
+> ⚠ Risiko keamanan: read endpoint sensitif (daftar user, profil apotek) dapat dipanggil tanpa autentikasi.
+>
+> **Status Epic 1:**
+> - Fase 1 (selesai, non-breaking): frontend sudah mengirim `sessionToken`/identitas pada pemanggil utama GAS A (`postToApi`, `attendance.js` profile/shift).
+> - Fase 2 (belum): gerbang session di backend GAS A. Harus deploy frontend dulu, verifikasi traffic membawa token, baru tutup endpoint unlocked. Jangan aktifkan gerbang backend sebelum frontend live.
+
 
 ### 3.4 Session server-side
 - `login` → `createAuthSession_` menulis ke sheet `auth_sessions` (token, username, email, name, role, status, expiresAt=+12 jam). (`:246-263`)
