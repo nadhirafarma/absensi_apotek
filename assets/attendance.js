@@ -14,6 +14,11 @@
   const ATTENDANCE_DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   const ATTENDANCE_SHIFT_KEYS = ["pagi", "sore"];
 
+  // Standar envelope Epic 1 (docs/api/gas-contracts.md §8): sukses = ok ATAU success.
+  function isApiOk(res) {
+    return !!res && (res.ok === true || res.success === true);
+  }
+
   const els = {};
   const state = {
     stream: null,
@@ -934,14 +939,14 @@
       }
 
       if (responseText) {
-        result = { ok: true, raw: responseText };
-      } else {
-        throw error;
+        // GAS B selalu membalas JSON (jsonAbsensi_); body HTTP 200 non-JSON = halaman error.
+        throw new Error("Respons server tidak dikenali. Absensi mungkin belum tersimpan — periksa monitoring presensi atau coba lagi.");
       }
+      throw error;
     }
 
-    if (result && (result.error || result.ok === false || result.success === false)) {
-      throw new Error(result.error || result.message || "Server gagal menyimpan absensi.");
+    if (!isApiOk(result)) {
+      throw new Error((result && (result.error || result.message)) || "Server gagal menyimpan absensi.");
     }
 
     if (result && result.sudahAbsen) {

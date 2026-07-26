@@ -11,6 +11,11 @@
   const LOGIN_TIMEOUT_MS = 10000;
   const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
 
+  // Standar envelope Epic 1 (docs/api/gas-contracts.md §8): sukses = ok ATAU success.
+  function isApiOk(res) {
+    return !!res && (res.ok === true || res.success === true);
+  }
+
   const form = document.getElementById("loginForm");
   const usernameInput = document.getElementById("usernameInput");
   const passwordInput = document.getElementById("passwordInput");
@@ -80,7 +85,7 @@
     try {
       const result = await resetPassword(username, email);
 
-      if (!result || result.success !== true) {
+      if (!isApiOk(result)) {
         throw new Error(result?.message || "Gagal mengirim link reset password.");
       }
 
@@ -131,7 +136,7 @@
 
       const result = await login(username, password);
 
-      if (!result || result.success !== true) {
+      if (!isApiOk(result)) {
         throw new Error(result?.message || "Username atau password salah.");
       }
 
@@ -236,7 +241,7 @@
 
   async function fetchLoginUsers() {
     const ensureSuccess = (result) => {
-      if (result && result.success === true) return result;
+      if (isApiOk(result)) return result;
       throw new Error((result && result.message) || "Daftar user online belum tersedia.");
     };
 

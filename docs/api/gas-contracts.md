@@ -154,10 +154,11 @@ frontend paling kritis saat ini success-only (lihat 8.2).
 | 2 | GAS B catch `:133`, `:269` | `{ ok:false, error }` — tanpa `success`, tanpa `message` |
 | 3 | GAS A `:221` | GET `sheet=<nama>` generik mengembalikan **array mentah** tanpa envelope |
 | 4 | `google-apps-script-import-data-obat.gs` `:26`, `:31`, `:88` | hanya `{ ok, error/... }` — 0 `success`, 0 `message`; bentuk `import_data_obat` beda dari file utama (`:2488-2498`); definisi `doPost`/`jsonOutput_` bertabrakan bila satu project dengan file utama |
-| 5 | Frontend success-only: `assets/login.js:83,134,239`, `reset.html:354`, `assets/home-dashboard.js:1521,1809,4332,4387` | login, reset password, listLoginUsers, filter & CRUD data_obat **patah** bila backend berhenti mengirim `success` |
-| 6 | Frontend ok-only: `assets/search-obat.js:620` | import di cari-obat patah bila backend hanya mengirim `success` |
-| 7 | Helper fetch tanpa cek HTTP `response.ok`: `home-dashboard.js:12447` (postToApi), `:10451`, `:10467`, `ess.js:60` | HTTP 500/HTML lolos ke parse body; kegagalan tampil sebagai pesan generik |
-| 8 | `assets/attendance.js:937-944` | body non-JSON ber-HTTP-200 disintesis jadi `{ok:true}` → error page bisa dianggap "absensi tersimpan" |
+| 5 | Frontend success-only: `assets/login.js`, `assets/home-dashboard.js` (7 titik) | ✅ **FIXED Fase C 2026-07-27** — helper lokal `isApiOk()` per IIFE |
+| 5b | Halaman reset live: `buildResetPasswordHtml_` (`google-apps-script-api-search-box-final.gs:2955` + mirror `tools/gas-a/Kode.js:2955`) cek `result.success` saja | **Digeser ke Fase B** — halaman reset dirender inline oleh GAS A (HtmlService), butuh deploy GAS A. Catatan: `reset.html` root & `tools/gas-a/reset.html` hanyalah **arsip**, tidak diserve |
+| 6 | Frontend ok-only: `assets/search-obat.js:620` | **Dead code** — file tidak dimuat halaman mana pun (`cari-obat.html` = redirect ke SPA); tidak diubah, kandidat cleanup terpisah |
+| 7 | Helper fetch tanpa cek HTTP `response.ok`: `postToApi`, `postToAbsensiApi`, `getAbsensiRecords` (home-dashboard.js), `ess.js` load | ✅ **FIXED Fase C 2026-07-27** — `if (!response.ok) throw` sebelum parse body |
+| 8 | `assets/attendance.js` submit: body non-JSON ber-HTTP-200 disintesis jadi `{ok:true}` | ✅ **FIXED Fase C 2026-07-27** — non-JSON kini error eksplisit; cek negatif diganti positif `isApiOk(result)` (body kosong `{}` kini = gagal, bukan sukses senyap) |
 
 Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 ok-only —
 `success` dibaca di 40/41 titik cek body, `ok` di 33/41.
@@ -176,10 +177,14 @@ Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 o
   3. File `import-data-obat.gs`: samakan envelope dengan file utama ATAU
      deprecate (action `import_data_obat` sudah di-handle file utama) — butuh
      keputusan pemilik project (cek dulu apakah ter-deploy sebagai project terpisah).
-- **Fase C — frontend:** helper bersama `isApiOk(res)` =
-  `!!res && (res.ok === true || res.success === true)`; ganti 8 titik success-only
-  + 1 titik ok-only ke helper; tambah cek HTTP `response.ok` di `postToApi`/
-  `postToAbsensiApi`/`ess.js`; perbaiki sintesis sukses `attendance.js:937-944`.
+- **Fase C — frontend (SELESAI 2026-07-27):** helper `isApiOk(res)` =
+  `!!res && (res.ok === true || res.success === true)` didefinisikan **lokal per IIFE**
+  (`login.js`, `home-dashboard.js`, `ess.js`, `attendance.js` — tidak ada mekanisme
+  modul/ekspor global di codebase); 7 titik success-only diganti; cek HTTP
+  `response.ok` ditambahkan di `postToApi`/`postToAbsensiApi`/`getAbsensiRecords`/
+  `ess.js`; sintesis sukses `attendance.js` dihapus (non-JSON & body kosong = error).
+  **Residu digeser ke Fase B:** halaman reset (`buildResetPasswordHtml_` `:2955`).
+  `search-obat.js` tidak disentuh (dead code).
 - **Fase D — cleanup (opsional, setelah C stabil + regression lulus):** hapus
   alias `success` dari backend; `ok` jadi satu-satunya kunci.
 

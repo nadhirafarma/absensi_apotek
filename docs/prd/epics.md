@@ -24,7 +24,7 @@ alur ringan.
   - [ ] Standardisasi `ok`/`success` — kontrak target + rencana migrasi: `docs/api/gas-contracts.md` §8.
     - [x] Fase A docs-first (2026-07-27): survei 3 sisi (GAS A 63/63 dual, GAS B 30/35 dual + 5 ok-only, frontend 32 dual + 8 success-only + 1 ok-only); kanonik = `ok`, `success` alias transisi.
     - [ ] Fase B backend: normalisasi `jsonAbsensi_`, envelope GAS A `:221`, keputusan file `import-data-obat.gs`.
-    - [ ] Fase C frontend: helper `isApiOk()`, ganti 9 titik cek tunggal, cek HTTP `response.ok` di helper fetch, perbaiki `attendance.js:937-944`.
+    - [x] Fase C frontend (2026-07-27): helper `isApiOk()` lokal per IIFE (login, home-dashboard, ess, attendance); 7 titik success-only diganti; cek HTTP `response.ok` di 4 helper fetch; fix sintesis sukses submit absensi (non-JSON/body kosong kini error). Residu: halaman reset live (`buildResetPasswordHtml_`) → Fase B; `search-obat.js` = dead code, tidak disentuh.
     - [ ] Fase D: hapus alias `success` (setelah C stabil + regression lulus).
 
 

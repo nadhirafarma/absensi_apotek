@@ -3,6 +3,11 @@
   const API_URL = `${API_BASE}?sheet=data_obat`;
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const SESSION_KEY = "nadhira.authSession";
+
+  // Standar envelope Epic 1 (docs/api/gas-contracts.md §8): sukses = ok ATAU success.
+  function isApiOk(res) {
+    return !!res && (res.ok === true || res.success === true);
+  }
   const META_KEY = "nadhira.obatCacheMeta";
   const DATA_OBAT_ROWS_CACHE_KEY = "nadhira.dataObatRowsCache";
   const DATA_OBAT_SYNC_AT_KEY = "nadhira.dataObatRowsCacheSyncedAt";
@@ -1518,7 +1523,7 @@
     state.usersFetchPromise = (async () => {
       try {
         const payload = await postToApi({ action: "listLoginUsers" });
-        if (!payload || payload.success !== true || !Array.isArray(payload.users)) return;
+        if (!isApiOk(payload) || !Array.isArray(payload.users)) return;
 
         const nextUsers = payload.users.map((user, index) => ({
           id: `sheet-user-${index}`,
@@ -1806,7 +1811,7 @@
 
     try {
       const result = await postToApi({ action: "getDataObatFilter" });
-      if (result && result.success === true && result.filter && typeof result.filter === "object") {
+      if (isApiOk(result) && result.filter && typeof result.filter === "object") {
         filter = normalizeDataObatFilterState(result.filter);
         localStorage.setItem(DATA_OBAT_FILTER_KEY, JSON.stringify(filter));
       }
@@ -4329,7 +4334,7 @@
     try {
       const action = mode === "add" ? "add_data_obat" : "update_data_obat";
       const result = await postToApi({ action, row, rowNumber: row._row, kode: row.kode });
-      if (!result || result.success !== true) throw new Error(result?.message || "Apps Script belum menerima perubahan data_obat.");
+      if (!isApiOk(result)) throw new Error(result?.message || "Apps Script belum menerima perubahan data_obat.");
 
       setMedicineStatus(result.message || "Data obat berhasil disimpan.", "success");
       addProfileActivity(mode === "add" ? "Tambah data obat" : "Edit data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
@@ -4384,7 +4389,7 @@
       const token = startAppLoading("Menghapus data obat...", 0);
       try {
         const result = await postToApi({ action: "delete_data_obat", rowNumber: row._row, kode: row.kode });
-        if (!result || result.success !== true) throw new Error(result?.message || "Apps Script belum menerima hapus data_obat.");
+        if (!isApiOk(result)) throw new Error(result?.message || "Apps Script belum menerima hapus data_obat.");
         addProfileActivity("Hapus data obat", `${row.kode || "-"} - ${row.nama || "Obat"}`);
         closeDeleteModal();
         await fetchDataObat({ manual: true });
@@ -10453,6 +10458,7 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(requestPayload)
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     return text ? JSON.parse(text) : {};
   }
@@ -10465,6 +10471,7 @@
     });
     if (session.sessionToken) url.searchParams.set("sessionToken", session.sessionToken);
     const response = await fetch(url.toString(), { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     return text ? JSON.parse(text) : {};
   }
@@ -12449,6 +12456,7 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(enrichedPayload)
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     return text ? JSON.parse(text) : {};
   }

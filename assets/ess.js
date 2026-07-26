@@ -2,6 +2,8 @@
   "use strict";
   const API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const SESSION_KEY = "nadhira.authSession";
+  // Standar envelope Epic 1 (docs/api/gas-contracts.md §8): sukses = ok ATAU success.
+  function isApiOk(res) { return !!res && (res.ok === true || res.success === true); }
   const state = { records: [], groups: [], loading: false, error: "", employeeTab: "dashboard", monitoringTab: "dashboard", employeeFilter: { date: "", status: "" }, monitoringFilter: { date: "", status: "", search: "" }, loadedAt: 0 };
   const icons = {
     attendance: '<svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"></path><rect x="4" y="4" width="16" height="18" rx="2"></rect><path d="M8 12h8M8 16h5m2 1 2 2 4-4"></path></svg>',
@@ -57,8 +59,10 @@
     state.loading = true; state.error = "";
     try {
       const s = session(); const url = new URL(API_URL); url.searchParams.set("action", "listAttendanceRecords"); url.searchParams.set("sessionToken", s.sessionToken || ""); url.searchParams.set("username", s.username || ""); url.searchParams.set("email", s.email || ""); url.searchParams.set("name", s.name || s.username || ""); url.searchParams.set("dateFrom", `${monthKey()}-01`); url.searchParams.set("dateTo", dateKey(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0))); url.searchParams.set("limit", "5000");
-      const res = await fetch(url.toString()); const data = await res.json();
-      if (!data || (data.ok !== true && data.success !== true)) throw new Error(data?.message || "Data presensi gagal dimuat.");
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!isApiOk(data)) throw new Error(data?.message || "Data presensi gagal dimuat.");
       state.records = (data.records || data.data || []).map(normalizeRecord); state.groups = groupRecords(state.records); state.loadedAt = Date.now();
     } catch (error) { state.error = error.message || "Data presensi belum tersedia."; }
     finally { state.loading = false; }
