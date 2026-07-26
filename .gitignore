@@ -8,3 +8,22 @@
 /review-artifacts/
 /local-review/
 /tmp-review/
+
+# Local rollback snapshots — not needed for GitHub Pages deploy.
+/backups/
+
+# Windows shell artifact.
+/$null
+
+# Local ad-hoc audit/context scratch files.
+/tmp-css-*.txt
+/.css-target-audit.txt
+/.quick-search-context.txt
+/.quick-search-css-audit.txt
+/.styles-current.diff
+
+# BMAD tooling/output — internal planning artifacts, not website runtime.
+/_bmad/
+/_bmad-output/
+
+
