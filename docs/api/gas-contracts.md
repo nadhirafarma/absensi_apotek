@@ -166,17 +166,23 @@ Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 o
 ### 8.3 Rencana migrasi non-breaking (fase)
 
 - **Fase A — docs (SELESAI 2026-07-27):** kontrak target ini.
-- **Fase B — backend, perbaikan sekali-tempat:**
-  1. GAS B `jsonAbsensi_` (`:2222`): normalisasi sebelum `JSON.stringify` —
-     `if (!('success' in data)) data.success = data.ok;` dan
-     `if (!data.message && data.error) data.message = data.error;`
-     → memperbaiki divergensi #1 & #2 tanpa menyentuh 35 call site.
-  2. GAS A `:221`: bungkus jadi envelope `{ ok, success, sheet, data }` —
-     **koordinasi wajib** dengan pembaca bentuk mentah (`home-dashboard.js:1400`,
-     `search-obat.js:365`) di rilis yang sama, atau tunda ke Fase C.
-  3. File `import-data-obat.gs`: samakan envelope dengan file utama ATAU
-     deprecate (action `import_data_obat` sudah di-handle file utama) — butuh
-     keputusan pemilik project (cek dulu apakah ter-deploy sebagai project terpisah).
+- **Fase B — backend (SELESAI & DEPLOYED 2026-07-27 — GAS B @65, GAS A @120, URL tetap):**
+  1. ✅ GAS B `jsonAbsensi_`: normalisasi sebelum `JSON.stringify` (success=ok bila
+     absen, message fallback dari error) → memperbaiki divergensi #1 & #2 tanpa
+     menyentuh 35 call site. Kode di `tools/gas-script-1/Kode.js` + mirror root.
+  2. ✅ GAS A GET sheet generik: dibungkus envelope `{ success, ok, sheet, total, data }`
+     — **terverifikasi tidak ada konsumen frontend** untuk GET `?sheet=` non-data_obat
+     (grep seluruh assets/*.js: 0 hit), jadi aman tanpa koordinasi.
+  3. ✅ GAS A halaman reset (`buildResetPasswordHtml_`): cek `success` → dual
+     `success||ok` (residu Fase C).
+  4. ✅ File `import-data-obat.gs`: envelope disamakan (success+message ditambahkan).
+     Status: **legacy/orphan** — frontend hanya mereferensikan 2 URL deployment utama;
+     import live dilayani GAS A utama (`import_data_obat`). Tidak perlu deploy terpisah.
+  - **Deploy (2026-07-27):** `clasp push` + `create-version` + `update-deployment`
+    ke ID live yang sama. Verifikasi pasca-deploy: smoke GAS A utuh (3 public OK,
+    3 sensitive rejected); GET `?sheet=` kini ber-envelope `{success, ok, sheet,
+    total, data}` (live-verified); gerbang GAS B utuh. Rollback: `-V 63` (GAS B) /
+    `-V 119` (GAS A).
 - **Fase C — frontend (SELESAI 2026-07-27):** helper `isApiOk(res)` =
   `!!res && (res.ok === true || res.success === true)` didefinisikan **lokal per IIFE**
   (`login.js`, `home-dashboard.js`, `ess.js`, `attendance.js` — tidak ada mekanisme

@@ -287,9 +287,7 @@ function validateAbsensiSession_(payload) {
     if (String(values[i][0] || '').trim() != token) continue;
     if (Number(values[i][6] || 0) <= Date.now()) return { ok: false, message: 'Sesi login sudah berakhir. Silakan masuk ulang.' };
 
-    // Identitas server-authoritative dari baris sesi (applyAbsensiSession_ menimpa payload);
-    // username/email kiriman klien tidak dicocokkan karena bisa drift setelah edit profil.
-    return {
+    var session = {
       ok: true,
       username: values[i][1],
       email: values[i][2],
@@ -297,6 +295,13 @@ function validateAbsensiSession_(payload) {
       role: values[i][4],
       status: values[i][5] || 'Aktif'
     };
+    // KEAMANAN: tolak sesi ber-identitas kosong (bisa dicetak lewat saveActivityLog tanpa auth).
+    if (![session.username, session.email, session.name].map(normalizeAbsensiKey_).filter(Boolean).length) {
+      return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+    }
+    // Identitas server-authoritative dari baris sesi (applyAbsensiSession_ menimpa payload);
+    // username/email kiriman klien tidak dicocokkan karena bisa drift setelah edit profil.
+    return session;
   }
 
   return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
@@ -307,6 +312,8 @@ function applyAbsensiSession_(payload, session) {
   payload.email = session.email || '';
   payload.role = session.role || '';
   payload.actor = session.username || session.email || session.name || '';
+  // KEAMANAN: nama terverifikasi dari session (bukan input klien) untuk otorisasi baca non-admin.
+  payload.__sessionName = session.name || '';
 }
 
 function validateAbsensiSubmission_(payload, now) {
@@ -604,12 +611,11 @@ function handleListAttendanceRecords_(params, source) {
   var sheets = spreadsheet ? getAbsensiRecordSheets_(spreadsheet) : [source];
   var role = normalizeAbsensiKey_(params.role || '');
   var isAdmin = isAbsensiAdmin_(params);
-  var identityKeys = [
-    params.nama,
-    params.nama_karyawan,
-    params.namaKaryawan,
+  // KEAMANAN: non-admin difilter HANYA oleh identitas session (bukan field nama klien),
+  // mencegah baca presensi (GPS/foto/jam) karyawan lain. Admin melihat semua.
+  var identityKeys = isAdmin ? [] : [
+    params.__sessionName,
     params.username,
-    params.name,
     params.email
   ].map(normalizeAbsensiKey_).filter(Boolean);
   var dateFrom = String(params.dateFrom || params.from || '').trim();
@@ -1008,11 +1014,12 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   var fileIdColumn = findHeaderIndex_(headers, ['fileid']);
   var fileUrlColumn = findHeaderIndex_(headers, ['fileurl', 'url']);
   var isAdmin = isAbsensiAdmin_(params);
-  var identityKeys = [
-    params.name,
-    params.nama,
-    params.nama_karyawan,
-    params.username
+  // KEAMANAN: non-admin difilter HANYA oleh identitas session (bukan field nama klien),
+  // mencegah baca histori gaji karyawan lain. Admin melihat semua (identityKeys diabaikan).
+  var identityKeys = isAdmin ? [] : [
+    params.__sessionName,
+    params.username,
+    params.email
   ].map(normalizeAbsensiKey_).filter(Boolean);
   var history = [];
 
@@ -2208,12 +2215,20 @@ function fallbackHeaderIndex_(headers, keys, fallback) {
 }
 
 function isAbsensiAdmin_(params) {
+  // KEAMANAN: username HANYA dari field yang ditimpa session (username/actor).
+  // params.nama TIDAK pernah ditimpa applyAbsensiSession_ -> bila dipakai, non-admin
+  // bisa lolos dengan mengirim nama='admin' (lihat docs/security/payroll-audit-2026-07-27.md).
   var role = normalizeAbsensiKey_(params.role || '');
-  var username = normalizeAbsensiKey_(params.username || params.actor || params.nama || '');
+  var username = normalizeAbsensiKey_(params.username || params.actor || '');
   return role == 'owner' || role == 'admin' || role == 'administrator' || username == 'owner' || username == 'admin';
 }
 
 function jsonAbsensi_(data) {
+  // Normalisasi envelope standar (docs/api/gas-contracts.md §8): success = alias ok, message fallback dari error.
+  if (data && typeof data == 'object' && !Array.isArray(data)) {
+    if (!('success' in data) && ('ok' in data)) data.success = data.ok;
+    if (!data.message && data.error) data.message = data.error;
+  }
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);

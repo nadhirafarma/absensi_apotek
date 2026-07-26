@@ -23,7 +23,7 @@ alur ringan.
   - [x] Deploy GAS A live + smoke test — **terverifikasi production 2026-07-27** via `tools/smoke_gas_a.js`: 3 public read OK tanpa token (`getPharmacyProfile`, `getAttendanceShiftSettings`, `getDataObatFilter`); 3 sensitive read ditolak tanpa token (`listLoginUsers` POST+GET, `listActivityLog` → "Sesi login tidak tersedia").
   - [ ] Standardisasi `ok`/`success` — kontrak target + rencana migrasi: `docs/api/gas-contracts.md` §8.
     - [x] Fase A docs-first (2026-07-27): survei 3 sisi (GAS A 63/63 dual, GAS B 30/35 dual + 5 ok-only, frontend 32 dual + 8 success-only + 1 ok-only); kanonik = `ok`, `success` alias transisi.
-    - [ ] Fase B backend: normalisasi `jsonAbsensi_`, envelope GAS A `:221`, keputusan file `import-data-obat.gs`.
+    - [x] Fase B backend (2026-07-27, **deployed**: GAS B @65, GAS A @120, URL tetap): normalisasi `jsonAbsensi_` GAS B; envelope GET sheet generik GAS A (live-verified `{success, ok, sheet, total, data}`); reset page dual-check; `import-data-obat.gs` disamakan + ditandai legacy/orphan. Smoke pasca-deploy hijau. Rollback: `-V 63`/`-V 119`.
     - [x] Fase C frontend (2026-07-27): helper `isApiOk()` lokal per IIFE (login, home-dashboard, ess, attendance); 7 titik success-only diganti; cek HTTP `response.ok` di 4 helper fetch; fix sintesis sukses submit absensi (non-JSON/body kosong kini error). Residu: halaman reset live (`buildResetPasswordHtml_`) → Fase B; `search-obat.js` = dead code, tidak disentuh.
     - [ ] Fase D: hapus alias `success` (setelah C stabil + regression lulus).
 
@@ -48,6 +48,17 @@ alur ringan.
 - Regression test penuh sesuai `docs/qa/regression-checklist.md` §4.
 - **Value:** payroll salah = risiko finansial & kepercayaan karyawan.
 - **Risk driver:** keuangan, kepatuhan.
+- **Progress (2026-07-27):** audit adversarial 14 temuan terverifikasi
+  (`docs/security/payroll-audit-2026-07-27.md`).
+  - [x] **CRITICAL bypass admin ditutup & deployed** (GAS B @66, GAS A @121):
+    3 lapis — `isAbsensiAdmin_` buang fallback `params.nama`;
+    `validateAbsensiSession_` tolak sesi identitas-kosong; `syncAuthSession_`
+    tolak mint sesi tanpa identitas. Exploit tanpa-login **live-verified tertutup**.
+  - [x] HIGH IDOR-read a+b **deployed** (GAS B @67): identitas non-admin histori slip &
+    presensi kini HANYA dari session; admin lihat semua. Perlu smoke-test self-view ESS. Rollback -V 66.
+  - [ ] HIGH PDF slip `ANYONE_WITH_LINK` (c): defense-in-depth (a+b sudah tutup panen API);
+    butuh endpoint penyaji PDF + blob frontend + migrasi — rollout terpisah.
+  - [ ] MED/LOW: positional delete IDOR, deleteAll konfirmasi server, formula injection, generateSalarySlip di doGet.
 
 ## Tier 2 — Risiko menengah (workflow lengkap, cakupan lebih kecil)
 

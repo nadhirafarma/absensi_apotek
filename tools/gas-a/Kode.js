@@ -218,7 +218,14 @@ function doGet(e) {
       });
     }
 
-    return jsonOutput_(rows);
+    // Envelope standar (docs/api/gas-contracts.md §8) — sebelumnya array mentah tanpa envelope.
+    return jsonOutput_({
+      success: true,
+      ok: true,
+      sheet: sheetName,
+      total: rows.length,
+      data: rows
+    });
   } catch (error) {
     return jsonOutput_({
       success: false,
@@ -240,11 +247,17 @@ function syncAuthSession_(payload, activity) {
   }
   if (eventName != 'login') return;
 
+  var syncUsername = String(activity.username || payload.username || '').trim();
+  var syncEmail = String(activity.email || payload.email || '').trim();
+  // KEAMANAN: jangan mint sesi tanpa identitas (username & email kosong) — ini bisa
+  // dipakai memalsukan sesi 'admin' di GAS B (lihat docs/security/payroll-audit-2026-07-27.md).
+  if (!syncUsername && !syncEmail) return;
+
   var expiresAt = Number(payload.sessionExpiresAt || 0);
   saveAuthSession_({
     token: token,
-    username: String(activity.username || payload.username || '').trim(),
-    email: String(activity.email || payload.email || '').trim(),
+    username: syncUsername,
+    email: syncEmail,
     name: String(payload.name || activity.actor || '').split(' - ')[0].trim(),
     role: String(activity.role || payload.role || '').trim(),
     status: String(payload.status || 'Aktif').trim(),
@@ -2975,7 +2988,7 @@ function buildResetPasswordHtml_(email) {
     'setLoading(true);setStatus("Menyimpan password...","success");',
     'google.script.run.withSuccessHandler(function(result){',
     'setLoading(false);',
-    'if(!result||result.success!==true){setStatus((result&&result.message)||"Password baru gagal disimpan.","error");return;}',
+    'if(!result||(result.success!==true&&result.ok!==true)){setStatus((result&&result.message)||"Password baru gagal disimpan.","error");return;}',
     'setStatus(result.message||"Password baru berhasil disimpan. Silakan login kembali.","success");',
     'showSuccessPopup(password);',
     '}).withFailureHandler(function(error){setLoading(false);setStatus((error&&error.message)||"Password baru gagal disimpan.","error");}).updateResetPassword(email,password,confirmPassword);',
