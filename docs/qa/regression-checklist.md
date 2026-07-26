@@ -79,3 +79,11 @@ dianggap "lulus regresi".
 - [ ] Dashboard load profil apotek + shift (Network: payload membawa sessionToken).
 - [ ] Buka halaman absensi: gate integritas + choice shift jalan.
 - [ ] Logout → session hilang; request GAS B ditolak.
+
+### Post-deploy smoke test (2026-07-26, setelah merge ke main)
+- [x] GitHub Pages live `https://indoapotek.my.id/` → 200, Last-Modified terbaru.
+- [x] `home-dashboard.js` live → 200, 594KB, mengandung `sessionToken`.
+- [x] `attendance.js` live → 200, 48KB, mengandung `sessionToken`.
+- [x] Halaman `/dashboard/`, `/login/` → 200.
+- [x] Cache-Control max-age=600 (10 menit), ETag valid.
+- [x] Commit `6bea653` ter-deploy ke origin/main.
