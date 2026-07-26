@@ -247,11 +247,17 @@ function syncAuthSession_(payload, activity) {
   }
   if (eventName != 'login') return;
 
+  var syncUsername = String(activity.username || payload.username || '').trim();
+  var syncEmail = String(activity.email || payload.email || '').trim();
+  // KEAMANAN: jangan mint sesi tanpa identitas (username & email kosong) — ini bisa
+  // dipakai memalsukan sesi 'admin' di GAS B (lihat docs/security/payroll-audit-2026-07-27.md).
+  if (!syncUsername && !syncEmail) return;
+
   var expiresAt = Number(payload.sessionExpiresAt || 0);
   saveAuthSession_({
     token: token,
-    username: String(activity.username || payload.username || '').trim(),
-    email: String(activity.email || payload.email || '').trim(),
+    username: syncUsername,
+    email: syncEmail,
     name: String(payload.name || activity.actor || '').split(' - ')[0].trim(),
     role: String(activity.role || payload.role || '').trim(),
     status: String(payload.status || 'Aktif').trim(),

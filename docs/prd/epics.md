@@ -48,6 +48,16 @@ alur ringan.
 - Regression test penuh sesuai `docs/qa/regression-checklist.md` §4.
 - **Value:** payroll salah = risiko finansial & kepercayaan karyawan.
 - **Risk driver:** keuangan, kepatuhan.
+- **Progress (2026-07-27):** audit adversarial 14 temuan terverifikasi
+  (`docs/security/payroll-audit-2026-07-27.md`).
+  - [x] **CRITICAL bypass admin ditutup & deployed** (GAS B @66, GAS A @121):
+    3 lapis — `isAbsensiAdmin_` buang fallback `params.nama`;
+    `validateAbsensiSession_` tolak sesi identitas-kosong; `syncAuthSession_`
+    tolak mint sesi tanpa identitas. Exploit tanpa-login **live-verified tertutup**.
+  - [ ] HIGH IDOR-read: histori slip & kehadiran lintas-karyawan (bind identitas
+    non-admin ke session, exact-match) — hati-hati anti-lockout ESS.
+  - [ ] HIGH: PDF slip `ANYONE_WITH_LINK` → akses terverifikasi (cek pemakaian `fileUrl` frontend).
+  - [ ] MED/LOW: positional delete IDOR, deleteAll konfirmasi server, formula injection, generateSalarySlip di doGet.
 
 ## Tier 2 — Risiko menengah (workflow lengkap, cakupan lebih kecil)
 

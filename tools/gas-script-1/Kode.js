@@ -299,6 +299,11 @@ function validateAbsensiSession_(payload) {
       .map(normalizeAbsensiKey_).filter(Boolean);
     var allowed = [session.username, session.email, session.name].map(normalizeAbsensiKey_).filter(Boolean);
 
+    // KEAMANAN: tolak sesi ber-identitas kosong (bisa dicetak lewat saveActivityLog tanpa auth).
+    if (!allowed.length) {
+      return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
+    }
+
     if (submitted.some(function(key) { return allowed.indexOf(key) < 0; })) {
       return { ok: false, message: 'Identitas absensi tidak sesuai dengan sesi login.' };
     }
@@ -2214,8 +2219,11 @@ function fallbackHeaderIndex_(headers, keys, fallback) {
 }
 
 function isAbsensiAdmin_(params) {
+  // KEAMANAN: username HANYA dari field yang ditimpa session (username/actor).
+  // params.nama TIDAK pernah ditimpa applyAbsensiSession_ -> bila dipakai, non-admin
+  // bisa lolos dengan mengirim nama='admin' (lihat docs/security/payroll-audit-2026-07-27.md).
   var role = normalizeAbsensiKey_(params.role || '');
-  var username = normalizeAbsensiKey_(params.username || params.actor || params.nama || '');
+  var username = normalizeAbsensiKey_(params.username || params.actor || '');
   return role == 'owner' || role == 'admin' || role == 'administrator' || username == 'owner' || username == 'admin';
 }
 
