@@ -10884,8 +10884,10 @@
 
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Catatan berhasil disimpan online.";
       closeAttendanceEditModal();
-      await fetchAttendanceRecords({ manual: true });
       showActionToast(isAddMode ? "Catatan kehadiran berhasil ditambahkan." : "Catatan kehadiran berhasil diubah.");
+      fetchAttendanceRecords({ manual: true }).catch((syncError) => {
+        console.warn("Gagal menyinkronkan ulang catatan kehadiran:", syncError);
+      });
     } catch (error) {
       showAppLoadingSuccess(error.message || "Catatan kehadiran gagal disimpan.", "error");
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = error.message || "Catatan kehadiran gagal disimpan.";
