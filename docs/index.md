@@ -1,9 +1,11 @@
 # Dokumentasi Indo Apotek — Index
 
 Dihasilkan via BMM `bmad-document-project` (deep scan) + validasi manual,
-2026-07-26. Semua dokumen berstatus **draft current-state** — bagian yang
-ditandai `⚠ perlu validasi` belum dikonfirmasi terhadap deployment live,
-Google Sheets, atau repo GitHub aktual.
+2026-07-26; scan diselesaikan penuh (step 2–12) + validasi source 2026-07-27.
+Terverifikasi 2026-07-27: mirror GAS A & GAS B byte-identik dengan clasp,
+sitasi baris di-refresh, live site `https://indoapotek.my.id` HTTP 200
+(Pages branch `main`). Yang masih `⚠ perlu validasi`: schema kolom
+Google Sheets live dan status deployment kode GAS terbaru di Apps Script.
 
 ## Lima fondasi project
 
@@ -20,8 +22,11 @@ Google Sheets, atau repo GitHub aktual.
 - `prd/epics.md` — daftar epic diprioritaskan risiko × nilai bisnis, dengan
   urutan eksekusi rekomendasi dan penempatan TEA.
 
+## Catatan implementasi epic
+- `epic1-phase2-gas-a-session-gate.md` — gerbang session GAS A (Epic 1 fase 2).
+
 ## Scan mentah
-`project-scan-report.json` — output scan awal BMM sebelum divalidasi manual.
+`project-scan-report.json` — state file scan BMM (step 1–12 selesai 2026-07-27).
 
 ## Langkah berikutnya
 - Jalankan Epic 1 (hardening auth) sebagai prioritas tertinggi — lihat

@@ -1,6 +1,6 @@
 # Source Tree Overview — Indo Apotek
 
-Status: draft current-state (BMM bmad-document-project, 2026-07-26)
+Status: current-state (BMM bmad-document-project, 2026-07-26; update 2026-07-27)
 
 ## Root files
 | File | Peran |
@@ -53,15 +53,24 @@ akun-profil/, log-aktivitas/, manajemen-pengguna/, login/.
 ## tools/
 | File | Peran |
 |---|---|
-| gas-script-1/Kode.js | GAS B clasp mirror |
+| gas-script-1/Kode.js | GAS B clasp source (canonical deploy GAS B) |
 | gas-script-1/appsscript.json | Konfigurasi clasp GAS B |
+| gas-a/Kode.js | GAS A clasp source (canonical deploy GAS A) |
+| gas-a/.clasp.json | Config clasp GAS A (scriptId `1oj9Ff…`) |
+| gas-a/reset.html | Halaman reset password GAS A |
 | gas-projects.json | Referensi URL deployment |
 | generate_clean_routes.js | Generator routing |
 | live_probe.js | Probe deployment live |
+| smoke_gas_a.js | Smoke test gerbang session GAS A |
+| diagnose_gas_a.js | Diagnosa endpoint GAS A |
 
 ## docs/ (keluaran BMM)
+index.md — master index dokumentasi
 architecture/: frontend-gas-data-store.md, integration-architecture.md, source-tree.md
 api/: gas-contracts.md
 security/: role-permission-matrix.md
-ops/: deploy-sop.md (mendatang)
-qa/: regression-checklist.md (mendatang)
+ops/: deploy-sop.md
+qa/: regression-checklist.md
+prd/: prd.md, epics.md
+epic1-phase2-gas-a-session-gate.md — catatan implementasi Epic 1 fase 2
+project-scan-report.json — state file scan BMM

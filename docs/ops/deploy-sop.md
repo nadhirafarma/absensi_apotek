@@ -1,6 +1,6 @@
 # SOP Source ↔ Deploy — Indo Apotek
 
-Status: draft current-state (BMM bmad-document-project, 2026-07-26)
+Status: current-state (BMM bmad-document-project, 2026-07-26; validasi 2026-07-27)
 
 ## Prinsip
 Working tree ini (`c:\Users\asus\Documents\Website Indo Apotek`) ADALAH sumber
@@ -32,14 +32,24 @@ yang teridentifikasi — repo == deploy artifact untuk frontend.
 
 
 ## Deploy GAS A (dataObatAuth)
-1. Edit source di root (`google-apps-script-*.gs`) ATAU Apps Script editor
-   langsung — **tetapkan satu arah sumber kebenaran** untuk part ini
-   (`⚠ belum ada clasp config untuk GAS A` — cek `.clasp.json` root sebelum
-   asumsi).
-2. Deploy sebagai Web App versi baru dari Apps Script editor.
-3. Update `AUTH_API_URL`/`ABSENSI_API_URL` di `assets/*.js` bila URL deployment
+**Sumber kebenaran:** `tools/gas-a/Kode.js` (clasp; scriptId
+`1oj9FfGGSv4FNiaK6kPqV_39kg2vESJ4RfUg_FH8mrpnzVhz2u42AiE5M`, config di
+`tools/gas-a/.clasp.json`). `google-apps-script-api-search-box-final.gs` di
+root adalah **mirror referensi** — wajib byte-identik dengan clasp
+(terverifikasi identik 2026-07-27, sha256 `ae52804…`).
+
+1. Edit `tools/gas-a/Kode.js` (source clasp).
+2. Salin ke mirror root:
+   `Copy-Item tools\gas-a\Kode.js google-apps-script-api-search-box-final.gs -Force`
+   lalu cek hash sama.
+3. `clasp push` dari dalam `tools/gas-a/` (JANGAN dari root — root
+   `.clasp.json` adalah milik GAS B).
+4. Deploy sebagai Web App versi baru via clasp atau Apps Script editor.
+5. Update `AUTH_API_URL`/`ABSENSI_API_URL` di `assets/*.js` bila URL deployment
    berubah.
-4. Verifikasi endpoint via `tools/live_probe.js` sebelum menganggap selesai.
+6. Verifikasi endpoint via `tools/live_probe.js` + `tools/smoke_gas_a.js`
+   (smoke gerbang session: public read lolos, sensitive read tanpa token
+   ditolak) sebelum menganggap selesai.
 
 ## Deploy GAS B (attendanceAndPayroll)
 **Sumber kebenaran:** `tools/gas-script-1/Kode.js` (clasp aktif; scriptId di
@@ -69,8 +79,13 @@ langsung.
   `$null`) — kandidat cleanup, tambahkan ke `.gitignore` jika memang tidak
   dipakai lagi.
 
-## ⚠ Perlu validasi
-- Branch/folder Pages sebenarnya (root vs `/docs` vs `gh-pages`) — cek repo
-  Settings → Pages.
-- Apakah GAS A memiliki clasp project sendiri atau full manual.
-- Kebijakan final untuk `backups/` (ignore vs commit) — lihat item audit repo.
+## Keputusan yang sudah ditetapkan (2026-07-27)
+- **Pages**: serve dari branch `main` root. Live terverifikasi:
+  `https://indoapotek.my.id` (CNAME) HTTP 200;
+  `nadhirafarma.github.io/absensi_apotek` redirect ke CNAME.
+- **GAS A**: punya clasp project sendiri di `tools/gas-a/` (lihat SOP di atas);
+  root `.clasp.json` tetap canonical GAS B — jangan ditimpa.
+- **`backups/`**: kebijakan = **ignore** (ada di `.gitignore`), disimpan di
+  disk sebagai snapshot rollback lokal, tidak di-commit.
+- **`.agents/`** (skill BMM) dan `/_bmad/`, `/_bmad-output/`: ignore — tooling
+  AI lokal, bukan runtime website.

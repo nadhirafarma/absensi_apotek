@@ -2,25 +2,98 @@
   "workflow_version": "1.2.0",
   "timestamps": {
     "started": "2026-07-26T00:25:55Z",
-    "last_updated": "2026-07-26T00:27:42Z"
+    "last_updated": "2026-07-26T17:25:00Z",
+    "completed": "2026-07-26T17:25:00Z"
   },
   "mode": "initial_scan",
   "scan_level": "deep",
   "project_root": "C:\\Users\\asus\\Documents\\Website Indo Apotek",
   "project_knowledge": "docs",
+  "output_naming_note": "Output menggunakan struktur adaptasi repo (docs/architecture, docs/api, docs/ops, docs/qa, docs/security, docs/prd), bukan nama file default BMAD (architecture-{part}.md dst).",
   "completed_steps": [
     {
       "step": "step_1",
       "status": "completed",
       "timestamp": "2026-07-26T00:27:42Z",
       "summary": "User confirmed a multi-part deployment repository with three independently deployable parts: GitHub Pages frontend, GAS data/auth, and GAS attendance/payroll."
+    },
+    {
+      "step": "step_2",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:18:00Z",
+      "summary": "Inventaris dokumentasi: README.md (catatan deploy 2026-06-09, sebagian usang) + 12 file docs/ (5 fondasi, PRD induk, epics, epic1-phase2 note, index, scan report). Konteks user: lanjutkan scan sampai selesai, validasi ke kode."
+    },
+    {
+      "step": "step_3",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:18:30Z",
+      "summary": "Tech stack: frontend vanilla HTML/CSS/JS statis tanpa build system/package manifest (GitHub Pages, clean routes via tools/generate_clean_routes.js); GAS A & GAS B Apps Script V8 dengan clasp (tools/gas-a, tools/gas-script-1); data store Google Sheets x2 + Drive. Pola arsitektur: static multi-page + dua web-app API."
+    },
+    {
+      "step": "step_4",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:19:00Z",
+      "summary": "Analisis kondisional: kontrak API kedua backend didokumentasikan dan sitasi baris diverifikasi ulang terhadap source pasca Epic 1 fase 2 & Epic 2 (drift +45 GAS B setelah :608, +~55 GAS A setelah :223 dikoreksi). Data model = sheet Google Sheets (didokumentasikan di frontend-gas-data-store.md).",
+      "outputs": ["docs/api/gas-contracts.md (sitasi di-refresh)"]
+    },
+    {
+      "step": "step_5",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:20:00Z",
+      "summary": "Source tree diperbarui: tambah tools/gas-a/ (clasp GAS A), smoke_gas_a.js, diagnose_gas_a.js; status ops/qa docs tidak lagi 'mendatang'; tambah prd/, epic1 note, index.",
+      "outputs": ["docs/architecture/source-tree.md"]
+    },
+    {
+      "step": "step_6",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:21:00Z",
+      "summary": "Dev/ops: deploy-sop.md diperbarui — SOP deploy GAS A via clasp tools/gas-a/ (mirror root byte-identik sha256 ae52804...), root .clasp.json ditetapkan canonical GAS B, kebijakan backups/.agents/_bmad = ignore. Tidak ada CI/CD pipeline; deploy frontend = push branch main.",
+      "outputs": ["docs/ops/deploy-sop.md"]
+    },
+    {
+      "step": "step_7",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:22:00Z",
+      "summary": "Integration architecture ditulis (file sebelumnya 0 byte): 6 titik integrasi, alur auth lintas bagian (session GAS A sebagai gerbang GAS B via cross-read auth_sessions), topologi source-deploy terverifikasi hash, 5 risiko integrasi.",
+      "outputs": ["docs/architecture/integration-architecture.md"]
+    },
+    {
+      "step": "step_8",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:22:30Z",
+      "summary": "Arsitektur per bagian: docs/architecture/frontend-gas-data-store.md (sudah ada, mencakup ketiga part: lapisan frontend, GAS projects, alur data inti, batasan arsitektur) — divalidasi masih akurat; scriptId GAS A kini juga tercermin di tools/gas-a/.clasp.json."
+    },
+    {
+      "step": "step_9",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:23:00Z",
+      "summary": "Dokumen pendukung lengkap dalam struktur adaptasi: role-permission-matrix (security), regression-checklist (qa), deploy-sop (ops), prd + epics (prd). Tidak ada CONTRIBUTING/deployment-guide terpisah — SOP ops jadi padanannya."
+    },
+    {
+      "step": "step_10",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:23:30Z",
+      "summary": "Master index docs/index.md diperbarui: status validasi 2026-07-27, link catatan epic 1 fase 2, status scan selesai. Tidak ada marker '(To be generated)' tersisa.",
+      "outputs": ["docs/index.md"]
+    },
+    {
+      "step": "step_11",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:24:00Z",
+      "summary": "Validasi: (1) mirror GAS B root==clasp byte-identik sha256 7f0bd9f..., 2307 baris; (2) mirror GAS A root==tools/gas-a/Kode.js byte-identik sha256 ae52804...; (3) sitasi baris gas-contracts.md dicek terhadap grep source dan dikoreksi; (4) live site https://indoapotek.my.id HTTP 200, Pages branch main, CNAME redirect verified; (5) tidak ada dokumen kosong atau marker incomplete tersisa di docs/."
+    },
+    {
+      "step": "step_12",
+      "status": "completed",
+      "timestamp": "2026-07-26T17:25:00Z",
+      "summary": "Workflow selesai. Entry point AI: docs/index.md. Follow-up di luar scan: validasi schema kolom Google Sheets live dan status deployment kode GAS terbaru di Apps Script (butuh akses akun Google)."
     }
   ],
-  "current_step": "step_2",
+  "current_step": "completed",
   "findings": {
     "project_classification": {
       "repository_type": "multi-part deployment repository",
-      "summary": "Static frontend in the repository root integrates with two Google Apps Script web apps; GAS B has a tracked clasp source directory while GAS A is represented by root source mirrors.",
+      "summary": "Static frontend in the repository root integrates with two Google Apps Script web apps; both GAS parts now have tracked clasp source directories (tools/gas-a, tools/gas-script-1) with byte-identical root mirrors.",
       "project_types": [
         {
           "part_id": "frontend",
@@ -32,7 +105,7 @@
           "part_id": "gas-data-auth",
           "project_type_id": "backend",
           "display_name": "Google Apps Script data and authentication API",
-          "root_path": "google-apps-script-*.gs"
+          "root_path": "tools/gas-a"
         },
         {
           "part_id": "gas-attendance-payroll",
@@ -41,10 +114,29 @@
           "root_path": "tools/gas-script-1"
         }
       ]
+    },
+    "existing_docs_count": 13,
+    "technology_stack": "Vanilla HTML/CSS/JS statis (tanpa build) + 2x Google Apps Script V8 (clasp) + Google Sheets/Drive",
+    "integration_points": 6,
+    "verification": {
+      "gas_b_mirror_sha256": "7f0bd9f09fb46c07380ac32ff4734e84dcd717a88a9de5c0af80bcad88539831",
+      "gas_a_mirror_sha256": "ae5280448182d33bfce20dbe51046c12ffcd8d8a26dd8f5f5f70a969875e102b",
+      "live_site": "https://indoapotek.my.id (HTTP 200, Pages branch main)",
+      "verified_at": "2026-07-26T17:24:00Z"
     }
   },
   "outputs_generated": [
-    "docs/project-scan-report.json"
+    "docs/project-scan-report.json",
+    "docs/index.md",
+    "docs/architecture/frontend-gas-data-store.md",
+    "docs/architecture/integration-architecture.md",
+    "docs/architecture/source-tree.md",
+    "docs/api/gas-contracts.md",
+    "docs/security/role-permission-matrix.md",
+    "docs/ops/deploy-sop.md",
+    "docs/qa/regression-checklist.md",
+    "docs/prd/prd.md",
+    "docs/prd/epics.md"
   ],
-  "resume_instructions": "Project classification confirmed; continue from step 2 to inventory existing documentation."
+  "resume_instructions": "Scan selesai (step 1-12). Untuk update berikutnya jalankan mode full_rescan atau deep_dive per area."
 }
