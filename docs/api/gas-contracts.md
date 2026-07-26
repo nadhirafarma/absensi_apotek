@@ -166,7 +166,7 @@ Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 o
 ### 8.3 Rencana migrasi non-breaking (fase)
 
 - **Fase A — docs (SELESAI 2026-07-27):** kontrak target ini.
-- **Fase B — backend (KODE SIAP 2026-07-27, menunggu deploy clasp):**
+- **Fase B — backend (SELESAI & DEPLOYED 2026-07-27 — GAS B @65, GAS A @120, URL tetap):**
   1. ✅ GAS B `jsonAbsensi_`: normalisasi sebelum `JSON.stringify` (success=ok bila
      absen, message fallback dari error) → memperbaiki divergensi #1 & #2 tanpa
      menyentuh 35 call site. Kode di `tools/gas-script-1/Kode.js` + mirror root.
@@ -178,10 +178,11 @@ Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 o
   4. ✅ File `import-data-obat.gs`: envelope disamakan (success+message ditambahkan).
      Status: **legacy/orphan** — frontend hanya mereferensikan 2 URL deployment utama;
      import live dilayani GAS A utama (`import_data_obat`). Tidak perlu deploy terpisah.
-  - **Deploy:** remote HEAD kedua project diverifikasi identik dengan source lokal
-    pra-patch (beda line-ending saja). Perintah: `clasp push` + `create-version` +
-    `update-deployment` ke ID live (GAS B `AKfycbx7fkoL…`, GAS A `AKfycbzk3yq…`) —
-    lihat `docs/ops/deploy-sop.md`.
+  - **Deploy (2026-07-27):** `clasp push` + `create-version` + `update-deployment`
+    ke ID live yang sama. Verifikasi pasca-deploy: smoke GAS A utuh (3 public OK,
+    3 sensitive rejected); GET `?sheet=` kini ber-envelope `{success, ok, sheet,
+    total, data}` (live-verified); gerbang GAS B utuh. Rollback: `-V 63` (GAS B) /
+    `-V 119` (GAS A).
 - **Fase C — frontend (SELESAI 2026-07-27):** helper `isApiOk(res)` =
   `!!res && (res.ok === true || res.success === true)` didefinisikan **lokal per IIFE**
   (`login.js`, `home-dashboard.js`, `ess.js`, `attendance.js` — tidak ada mekanisme
