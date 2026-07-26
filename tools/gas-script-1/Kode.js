@@ -287,7 +287,9 @@ function validateAbsensiSession_(payload) {
     if (String(values[i][0] || '').trim() != token) continue;
     if (Number(values[i][6] || 0) <= Date.now()) return { ok: false, message: 'Sesi login sudah berakhir. Silakan masuk ulang.' };
 
-    var session = {
+    // Identitas server-authoritative dari baris sesi (applyAbsensiSession_ menimpa payload);
+    // username/email kiriman klien tidak dicocokkan karena bisa drift setelah edit profil.
+    return {
       ok: true,
       username: values[i][1],
       email: values[i][2],
@@ -295,14 +297,6 @@ function validateAbsensiSession_(payload) {
       role: values[i][4],
       status: values[i][5] || 'Aktif'
     };
-    var submitted = [payload.username, payload.email]
-      .map(normalizeAbsensiKey_).filter(Boolean);
-    var allowed = [session.username, session.email, session.name].map(normalizeAbsensiKey_).filter(Boolean);
-
-    if (submitted.some(function(key) { return allowed.indexOf(key) < 0; })) {
-      return { ok: false, message: 'Identitas absensi tidak sesuai dengan sesi login.' };
-    }
-    return session;
   }
 
   return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };

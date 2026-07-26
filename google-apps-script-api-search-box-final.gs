@@ -288,6 +288,32 @@ function getAuthSessionSheet_() {
   return sheet;
 }
 
+function refreshAuthSessionAfterSave_(data, originalUsername, originalEmail, saved) {
+  var token = String(data.sessionToken || data.token || '').trim();
+  if (!token) return;
+  try {
+    var sheet = getAuthSessionSheet_();
+    if (sheet.getLastRow() < 2) return;
+    var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getDisplayValues();
+    for (var i = values.length - 1; i >= 0; i -= 1) {
+      if (String(values[i][0] || '').trim() != token) continue;
+      // Hanya segarkan bila user yang disimpan adalah pemilik baris sesi ini.
+      // Cocokkan username/email saja (bukan kolom name) dan utamakan identitas asal,
+      // agar admin yang mengedit user lain tidak menimpa identitas sesinya sendiri.
+      var rowKeys = [values[i][1], values[i][2]].map(normalizeLoginKey_).filter(Boolean);
+      var candidates = [originalUsername, originalEmail].map(normalizeLoginKey_).filter(Boolean);
+      if (!candidates.length) candidates = [saved.username, saved.email].map(normalizeLoginKey_).filter(Boolean);
+      if (!candidates.some(function(key) { return rowKeys.indexOf(key) >= 0; })) return;
+      // Segarkan kolom identitas saja; role/status sesi dibiarkan sampai login ulang
+      // agar alur sync karyawan (role = job) tidak mendemosi sesi admin yang aktif.
+      sheet.getRange(i + 2, 2, 1, 3).setValues([[saved.username || '', saved.email || '',
+        saved.name || saved.username || '']]);
+      sheet.getRange(i + 2, 8).setValue(new Date().toISOString());
+      return;
+    }
+  } catch (error) {}
+}
+
 function validatePharmacySession_(payload) {
   payload = payload || {};
   var token = String(payload.sessionToken || payload.token || '').trim();
@@ -303,7 +329,9 @@ function validatePharmacySession_(payload) {
       return { ok: false, message: 'Sesi login sudah berakhir. Silakan masuk ulang.' };
     }
 
-    var session = {
+    // Identitas server-authoritative dari baris sesi (applyPharmacySession_ menimpa payload);
+    // username/email kiriman klien tidak dicocokkan karena bisa drift setelah edit profil.
+    return {
       ok: true,
       username: values[i][1],
       email: values[i][2],
@@ -311,17 +339,6 @@ function validatePharmacySession_(payload) {
       role: values[i][4],
       status: values[i][5] || 'Aktif'
     };
-    var submitted = [payload.username, payload.email]
-      .map(function(s) { return String(s || '').trim().toLowerCase(); })
-      .filter(Boolean);
-    var allowed = [session.username, session.email, session.name]
-      .map(function(s) { return String(s || '').trim().toLowerCase(); })
-      .filter(Boolean);
-
-    if (submitted.some(function(key) { return allowed.indexOf(key) < 0; })) {
-      return { ok: false, message: 'Identitas tidak sesuai dengan sesi login.' };
-    }
-    return session;
   }
 
   return { ok: false, message: 'Sesi login tidak valid. Silakan masuk ulang.' };
@@ -818,6 +835,12 @@ function handleSaveLoginUser_(data, userSheet) {
   }
 
   SpreadsheetApp.flush();
+
+  refreshAuthSessionAfterSave_(data, originalUsername, originalEmail, {
+    username: username,
+    email: email,
+    name: name || username
+  });
 
   return jsonOutput_({
     success: true,

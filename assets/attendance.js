@@ -669,8 +669,6 @@
     const params = new URLSearchParams({
       nama: identity.displayName,
       nama_karyawan: identity.displayName,
-      username: identity.username,
-      email: identity.email,
       sessionToken: identity.sessionToken
     });
     const response = await fetchWithTimeout(`${ABSENSI_API_URL}?${params.toString()}`, {
@@ -878,8 +876,6 @@
       nama: label,
       nama_karyawan: displayName,
       namaKaryawan: displayName,
-      username: identity.username,
-      email: identity.email,
       sessionToken: identity.sessionToken,
       status: attendanceType,
       status_kehadiran: attendanceType,

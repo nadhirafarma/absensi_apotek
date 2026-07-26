@@ -4429,7 +4429,6 @@
         const result = await postToAbsensiApi({
           action: "deletePayrollEmployee",
           role: getCurrentUserRecord().role || "",
-          username: getCurrentUserRecord().username || "",
           originalNip: record.nip || "",
           originalName: record.name || ""
         });
@@ -10404,12 +10403,10 @@
       const payload = await getAbsensiRecords({
         action: "listAttendanceRecords",
         role: user.role || "",
-        username: user.username || "",
         ...(canSeeAllAttendance ? {} : {
           name: attendanceName || identity.name,
           nama: attendanceName || identity.name,
-          nama_karyawan: attendanceName || identity.name,
-          email: identity.email
+          nama_karyawan: attendanceName || identity.name
         }),
         dateFrom: monthStart || selectedDate,
         dateTo: monthEnd || selectedDate,
@@ -10448,11 +10445,13 @@
     const session = readSession() || {};
     const requestPayload = {
       ...payload,
-      username: String(session.username || "").trim(),
-      email: String(session.email || "").trim(),
       role: String(session.role || "").trim(),
       sessionToken: String(session.sessionToken || "").trim()
     };
+    // Identitas ditentukan server dari sheet auth_sessions berdasarkan sessionToken;
+    // username/email dari klien bisa drift setelah edit profil dan memicu tolakan palsu.
+    delete requestPayload.username;
+    delete requestPayload.email;
     const response = await fetch(ABSENSI_API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -10467,6 +10466,7 @@
     const url = new URL(ABSENSI_API_URL);
     const session = readSession() || {};
     Object.entries(params || {}).forEach(([key, value]) => {
+      if (key === "username" || key === "email") return;
       if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
     });
     if (session.sessionToken) url.searchParams.set("sessionToken", session.sessionToken);
@@ -10865,7 +10865,6 @@
       const payload = await postToAbsensiApi({
         action: "updateAttendanceRecord",
         role: user.role || "",
-        username: user.username || user.name || "",
         nama: name,
         name,
         date,
@@ -10911,8 +10910,7 @@
       if (options.manual && els.payrollStatusText) els.payrollStatusText.textContent = "Menyinkronkan data gaji...";
       const payload = await getAbsensiRecords({
         action: "listPayrollEmployees",
-        role: user.role || "",
-        username: user.username || user.name || ""
+        role: user.role || ""
       });
 
       if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.employees)) {
@@ -11036,7 +11034,6 @@
       const result = await postToAbsensiApi({
         action: "savePayrollEmployee",
         role: user.role || "",
-        username: user.username || user.name || "",
         originalNip: original.nip || "",
         originalName: original.name || "",
         employee
@@ -11240,7 +11237,6 @@
           const result = await postToAbsensiApi({
             action: "generateSalarySlip",
             role: user.role || "",
-            username: user.username || user.name || "",
             nip: employee.nip || "",
             name: employee.name || "",
             month: els.salarySlipMonthSelect?.value || getCurrentMonthValue(),
@@ -11313,7 +11309,6 @@
         const payload = await withTimeout(getAbsensiRecords({
           action: "listSalarySlipHistory",
           role: user.role || "",
-          username: user.username || user.name || "",
           name: user.name || user.username || ""
         }), SALARY_HISTORY_REQUEST_TIMEOUT_MS, "Histori slip gaji belum merespons. Coba sinkron ulang sebentar lagi.");
 
@@ -11412,7 +11407,6 @@
         const result = await withTimeout(postToAbsensiApi({
           action: "deleteSalarySlipHistory",
           role: user.role || "",
-          username: user.username || user.name || "",
           rowNumber: item.rowNumber,
           fileId: item.fileId || ""
         }), SALARY_HISTORY_REQUEST_TIMEOUT_MS, "Server terlalu lama menghapus histori slip gaji.");
@@ -11450,8 +11444,7 @@
     try {
       const result = await withTimeout(postToAbsensiApi({
         action: "deleteAllSalarySlipHistory",
-        role: user.role || "",
-        username: user.username || user.name || ""
+        role: user.role || ""
       }), 45000, "Server terlalu lama menghapus semua histori slip gaji.");
 
       if (!result || (result.ok !== true && result.success !== true)) {

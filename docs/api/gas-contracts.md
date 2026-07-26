@@ -61,7 +61,7 @@ Dijalankan sebelum `LockService`. **Epic 1 fase 2 (kode repo, 2026-07-26):**
 
 `doGet action=listLoginUsers` juga melewati `validatePharmacySession_`.
 
-Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `expiresAt`, cocokkan `username`/`email` payload vs session, lalu `applyPharmacySession_` menimpa identitas dari session.
+Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `expiresAt`, lalu `applyPharmacySession_` menimpa identitas dari session. **(2026-07-27)** Pencocokan `username`/`email` payload vs session **dihapus** — identitas selalu server-authoritative dari `sessionToken`; cek lama memicu tolakan palsu ("Identitas tidak sesuai dengan sesi login") saat identitas di browser drift setelah edit profil, karena `saveLoginUser` tidak menyegarkan baris sesi. Kini `handleSaveLoginUser_` juga memanggil `refreshAuthSessionAfterSave_` untuk menyegarkan **kolom identitas** (username/email/name — role/status/expiresAt tidak disentuh) pada baris `auth_sessions` milik token, hanya bila `originalUsername`/`originalEmail` user yang disimpan cocok dengan username/email pemilik baris sesi.
 
 > **Deploy status (2026-07-27): AKTIF di production.** Terverifikasi via `tools/smoke_gas_a.js` terhadap deployment live `AKfycbzk3yq…`: aksi public read lolos tanpa token; `listLoginUsers` (POST & GET) dan `listActivityLog` tanpa token **ditolak** dengan pesan "Sesi login tidak tersedia. Silakan masuk ulang."
 
@@ -79,11 +79,11 @@ Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `ex
 
 ### 5.1 Gerbang session WAJIB
 Semua `doGet`/`doPost` memanggil `validateAbsensiSession_(payload)` sebelum aksi apa pun (`:91-92`, `:147-148`).
-`validateAbsensiSession_` (`:278-309`):
+`validateAbsensiSession_` (`:278-303`):
 - Butuh `sessionToken`/`token`.
 - Lookup token di `auth_sessions` (spreadsheet A), tolak jika `expiresAt <= now`.
-- Cocokkan `username`/`email` payload dengan session; mismatch → ditolak.
-`applyAbsensiSession_` menimpa `role/username/actor` dari session, bukan dari input klien (`:311-316`).
+- **(2026-07-27)** Pencocokan `username`/`email` payload vs session **dihapus** — identitas selalu server-authoritative dari `sessionToken`. Cek lama menolak palsu ("Identitas absensi tidak sesuai dengan sesi login") ketika email/nama di sessionStorage drift setelah edit profil (bug edit catatan kehadiran). Frontend kini juga tidak lagi mengirim `username`/`email` ke GAS B.
+`applyAbsensiSession_` menimpa `role/username/actor` dari session, bukan dari input klien.
 
 ### 5.2 doGet actions (`:97-131`)
 `listAttendanceRecords`, `listPayrollEmployees`, `generateSalarySlip`, `listSalarySlipHistory`; default = cek absensi hari ini untuk `session.name`.

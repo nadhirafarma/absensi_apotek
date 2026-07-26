@@ -58,7 +58,7 @@
     if (state.loading || (!force && Date.now() - state.loadedAt < 120000)) return;
     state.loading = true; state.error = "";
     try {
-      const s = session(); const url = new URL(API_URL); url.searchParams.set("action", "listAttendanceRecords"); url.searchParams.set("sessionToken", s.sessionToken || ""); url.searchParams.set("username", s.username || ""); url.searchParams.set("email", s.email || ""); url.searchParams.set("name", s.name || s.username || ""); url.searchParams.set("dateFrom", `${monthKey()}-01`); url.searchParams.set("dateTo", dateKey(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0))); url.searchParams.set("limit", "5000");
+      const s = session(); const url = new URL(API_URL); url.searchParams.set("action", "listAttendanceRecords"); url.searchParams.set("sessionToken", s.sessionToken || ""); url.searchParams.set("name", s.name || s.username || ""); url.searchParams.set("dateFrom", `${monthKey()}-01`); url.searchParams.set("dateTo", dateKey(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0))); url.searchParams.set("limit", "5000");
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
