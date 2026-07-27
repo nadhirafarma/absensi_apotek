@@ -36,8 +36,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles.css?v=20260725-header-sidebar-fix-v2">
-  <link rel="stylesheet" href="assets/ess.css?v=20260722-dark-audit-v2">
+    <link rel="stylesheet" href="assets/styles.css?v=20260728-presensi-icons-scroll-v1">
+  <link rel="stylesheet" href="assets/ess.css?v=20260728-mobile-scroll-v1">
   <link rel="stylesheet" href="assets/dark-mode-fixes.css?v=20260724-dark-v2">
   <link rel="stylesheet" href="assets/ui-polish.css?v=20260725-ui-polish-v7">
 
@@ -45,7 +45,7 @@
   <script defer src="assets/auth-guard.js?v=20260618-ui-v29"></script>
   <script defer src="assets/app.js?v=20260721-sidebar-gaji-v1"></script>
     <script defer src="assets/home-dashboard.js?v=20260727-session-identity-fix-v1"></script>
-  <script defer src="assets/ess.js?v=20260727-session-identity-fix-v1"></script>
+  <script defer src="assets/ess.js?v=20260727-salary-history-v1"></script>
 </head>
 <body data-page="home" class="dashboard-page" data-initial-view="akun-profil">
   <div class="app-layout">
@@ -643,11 +643,11 @@
             </div>
 
             <section class="attendance-stats" aria-label="Ringkasan presensi">
-              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-blue">K</span><span><small>Total Karyawan</small><strong id="attendanceTotalEmployees">0</strong><em>Seluruh karyawan aktif</em></span></article>
-              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-green">H</span><span><small>Hadir Hari Ini</small><strong id="attendancePresentToday">0</strong><em>Sudah absen datang</em></span></article>
-              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-purple">T</span><span><small>Terlambat Hari Ini</small><strong id="attendanceLateToday">0</strong><em>Datang melewati batas</em></span></article>
-              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-orange">A</span><span><small>Tidak Hadir Hari Ini</small><strong id="attendanceAbsentToday">0</strong><em>Belum ada absen</em></span></article>
-              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-pink">B</span><span><small>Total Hari Kerja</small><strong id="attendanceWorkDays">0 Hari</strong><em>Bulan berjalan</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"></path></svg></span><span><small>Total Karyawan</small><strong id="attendanceTotalEmployees">0</strong><em>Seluruh karyawan aktif</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-green" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"></path><rect x="4" y="4" width="16" height="18" rx="2"></rect><path d="M8 12h8M8 16h5m2 1 2 2 4-4"></path></svg></span><span><small>Hadir Hari Ini</small><strong id="attendancePresentToday">0</strong><em>Sudah absen datang</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span><small>Terlambat Hari Ini</small><strong id="attendanceLateToday">0</strong><em>Datang melewati batas</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-red" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"></path><rect x="4" y="4" width="16" height="18" rx="2"></rect><path d="M4 10h16M9 15l6 6m0-6-6 6"></path></svg></span><span><small>Tidak Hadir Hari Ini</small><strong id="attendanceAbsentToday">0</strong><em>Belum ada absen</em></span></article>
+              <article class="stat-card attendance-stat-card"><span class="stat-icon stat-purple" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg></span><span><small>Total Hari Kerja</small><strong id="attendanceWorkDays">0 Hari</strong><em>Bulan berjalan</em></span></article>
             </section>
 
             <div class="attendance-layout attendance-layout-full">

@@ -46,6 +46,7 @@ alur ringan.
 - Validasi ulang `generateSalarySlip`, `deleteSalarySlipHistory` terhadap
   data nyata; pastikan gerbang admin tidak bisa dilewati.
 - Regression test penuh sesuai `docs/qa/regression-checklist.md` §4.
+- **Progress (2026-07-27):** Portal Karyawan > Slip Gaji dan Monitoring Presensi > Monitoring Slip Gaji kini di-wire ke `listSalarySlipHistory` (`assets/ess.js`): non-admin menerima self-view server-filtered; owner/admin menerima semua histori + pencarian; PDF dapat dibuka. Menunggu smoke-test live Ayu + owner.
 - **Value:** payroll salah = risiko finansial & kepercayaan karyawan.
 - **Risk driver:** keuangan, kepatuhan.
 - **Progress (2026-07-27):** audit adversarial 14 temuan terverifikasi

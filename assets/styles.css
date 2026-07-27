@@ -3745,6 +3745,11 @@ body.dashboard-page {
   background: #fff0f8;
 }
 
+.stat-red {
+  color: #f22643;
+  background: #ffeaed;
+}
+
 .report-stats .stat-icon {
   border-radius: 50%;
 }
@@ -14053,8 +14058,18 @@ body.notification-open .mobile-bottom-nav {
     width: 42px;
     height: 42px;
     min-width: 42px;
-    border-radius: 12px;
+    border-radius: 50%;
     font-size: 0.95rem;
+  }
+
+  .attendance-stat-card .stat-icon svg {
+    width: 23px;
+    height: 23px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .attendance-stat-card strong {
@@ -28715,6 +28730,13 @@ body.theme-dark .app-sidebar .sidebar-section-chevron {
   overscroll-behavior-x: contain !important;
 }
 
+/* Presensi tables: horizontal stays local; vertical wheel may chain to dashboard. */
+#view-presensi .attendance-monthly-card .simple-table-wrap,
+#view-presensi .payroll-table-wrap,
+#view-presensi .payroll-table-wrap:has(.table-row-menu[open]) {
+  overscroll-behavior-y: auto !important;
+}
+
 #view-presensi .payroll-table {
   min-width: max(100%, 1180px) !important;
 }
@@ -29521,6 +29543,11 @@ body.theme-dark .stat-pink,
 body.theme-dark .purchase-stat-icon.is-pink {
   background: rgba(168, 85, 247, 0.22) !important;
   color: #d8b4fe !important;
+}
+
+body.theme-dark .stat-red {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #ff9bad !important;
 }
 
 body.theme-dark .quick-medicine-name,

@@ -5,7 +5,7 @@
 .ess-head h2 { margin:3px 0 5px; color:#0b1f4d; font-size:clamp(1.3rem,2vw,1.75rem); }
 .ess-head p { margin:0; color:#607697; font-size:.82rem; }
 .ess-eyebrow { color:#1677ea!important; font-weight:700; font-size:.66rem!important; letter-spacing:.14em; }
-.ess-tabs { display:flex; gap:7px; padding:7px; overflow-x:auto; scrollbar-width:thin; border:1px solid #dbe8f7; border-radius:16px; background:#fff; box-shadow:0 8px 22px rgba(17,69,134,.055); }
+.ess-tabs { display:flex; gap:7px; width:100%; max-width:100%; min-width:0; padding:7px; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; border:1px solid #dbe8f7; border-radius:16px; background:#fff; box-shadow:0 8px 22px rgba(17,69,134,.055); -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
 .ess-tabs button { min-height:38px; flex:0 0 auto; padding:0 14px; border:0; border-radius:11px; background:transparent; color:#526c91; font:600 .7rem Poppins,sans-serif; cursor:pointer; white-space:nowrap; transition:.18s ease; }
 .ess-tabs button:hover { color:#116fd5; background:#f1f7ff; }
 .ess-tabs button.is-active { color:#fff; background:linear-gradient(135deg,#157ce8,#3459ea 58%,#8554f5); box-shadow:0 7px 16px rgba(41,100,224,.22); }
@@ -46,7 +46,7 @@
 .ess-control { min-width:135px; padding:0 10px; }
 .ess-tool-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 11px; cursor:pointer; font-weight:600; }
 .ess-tool-button:hover { border-color:#7ab5ef; background:#f4f9ff; }.ess-tool-button.is-primary{border-color:transparent;color:#fff;background:#1678e5}.ess-tool-button.is-danger{color:#c72f4c;background:#fff3f5;border-color:#ffd0d8}
-.ess-table-wrap { max-width:100%; overflow:auto; border:1px solid #e0e9f4; border-radius:13px; }
+.ess-table-wrap { box-sizing:border-box; width:100%; max-width:100%; min-width:0; overflow-x:auto; overflow-y:auto; border:1px solid #e0e9f4; border-radius:13px; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
 .ess-table { width:100%; min-width:720px; border-collapse:collapse; font-size:.64rem; }
 .ess-table th { position:sticky; top:0; z-index:1; padding:10px 11px; background:#f3f7fd; color:#516987; text-align:left; white-space:nowrap; }
 .ess-table td { padding:10px 11px; border-top:1px solid #e7eef7; color:#304a70; white-space:nowrap; }.ess-table td strong{color:#132d5d}.ess-table tr:hover td{background:#fbfdff}
@@ -59,6 +59,7 @@
 body.theme-dark .ess-head,body.theme-dark .ess-tabs,body.theme-dark .ess-stat-card,body.theme-dark .ess-panel{background:#13223b;border-color:#29405e}body.theme-dark .ess-head h2,body.theme-dark .ess-stat-card strong,body.theme-dark .ess-panel h4{color:#edf5ff}body.theme-dark .ess-tabs button,body.theme-dark .ess-stat-card small,body.theme-dark .ess-panel p{color:#9bb0ca}body.theme-dark .ess-shortcut-card,body.theme-dark .ess-today-row,body.theme-dark .ess-control,body.theme-dark .ess-tool-button{background:#182c48;border-color:#314967;color:#d7e6f8}body.theme-dark .ess-table th{background:#1d304c;color:#bed0e4}body.theme-dark .ess-table td{border-color:#2c405c;color:#c3d2e5}body.theme-dark .ess-table tr:hover td{background:#182a44}
 @media(max-width:1100px){.ess-shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ess-grid-2{grid-template-columns:1fr}}
 @media(max-width:820px){.ess-view{padding:0 0 86px}.ess-shell{gap:12px}.ess-head{padding:15px;border-radius:16px}.ess-head .secondary-action{min-width:auto;padding-inline:11px;font-size:.62rem}.ess-tabs{margin-inline:-2px;border-radius:13px}.ess-tabs button{min-height:36px;padding-inline:12px;font-size:.62rem}.ess-content{min-height:240px}.ess-welcome{align-items:flex-start;padding:15px}.ess-live{display:none}.ess-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ess-stat-card{grid-template-columns:36px 1fr;padding:11px;gap:3px 8px;border-radius:13px}.ess-stat-icon{width:36px;height:36px;border-radius:10px}.ess-stat-card strong{font-size:1rem}.ess-stat-card small{font-size:.55rem}.ess-panel{padding:13px;border-radius:14px}.ess-shortcut-card{min-height:80px}.ess-table-tools{display:grid;grid-template-columns:1fr 1fr}.ess-control,.ess-tool-button{width:100%;min-width:0}.ess-empty{min-height:180px;padding:22px 14px}}
+@media(max-width:480px){.ess-panel-head{flex-direction:column;align-items:stretch}.ess-panel-head>*{min-width:0}.ess-panel-head .ess-tool-button{width:100%}.ess-table-tools{grid-template-columns:1fr}}
 @media(max-width:420px){.ess-head p:not(.ess-eyebrow){display:none}.ess-stats{grid-template-columns:1fr 1fr}.ess-shortcut-grid{grid-template-columns:1fr 1fr}}
 
 /* 20260722 dark audit v2: ESS contrast/mobile hardening. */

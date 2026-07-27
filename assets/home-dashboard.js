@@ -943,7 +943,26 @@
     }
   }
 
+  function bindHorizontalTableWheelScroll() {
+    document.querySelectorAll("#view-presensi .attendance-monthly-card .simple-table-wrap, #view-presensi .payroll-table-wrap").forEach((wrapper) => {
+      wrapper.addEventListener("wheel", (event) => {
+        const horizontalDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.shiftKey
+            ? event.deltaY
+            : 0;
+        if (!horizontalDelta || wrapper.scrollWidth <= wrapper.clientWidth) return;
+        const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth;
+        const nextScrollLeft = Math.max(0, Math.min(maxScrollLeft, wrapper.scrollLeft + horizontalDelta));
+        if (nextScrollLeft === wrapper.scrollLeft) return;
+        event.preventDefault();
+        wrapper.scrollLeft = nextScrollLeft;
+      }, { passive: false });
+    });
+  }
+
   function bindEvents() {
+    bindHorizontalTableWheelScroll();
     if (els.sidebarToggle) els.sidebarToggle.addEventListener("click", toggleSidebar);
     if (els.sidebarScrim) els.sidebarScrim.addEventListener("click", () => setSidebarCollapsed(true));
     window.addEventListener("resize", handleViewportRoute);
