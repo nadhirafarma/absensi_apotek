@@ -17,9 +17,18 @@ var DATA_OBAT_LAST_UPLOAD_PROPERTY = 'DATA_OBAT_LAST_UPLOAD_AT';
 var DATA_OBAT_FILTER_PROPERTY = 'DATA_OBAT_GLOBAL_FILTER';
 var OWNER_ACTIVITY_LOG_PROPERTY = 'OWNER_ACTIVITY_LOG';
 var ATTENDANCE_SHIFT_RULES_PROPERTY = 'ATTENDANCE_SHIFT_RULES';
+var ROLE_POLICIES_PROPERTY = 'ROLE_POLICIES';
 var EMPLOYEE_STATUS_CACHE_KEY = 'EMPLOYEE_STATUS_MAP_V1';
 var PHARMACY_PROFILE_SHEET_NAME = 'pharmacy_profile';
 var AUTH_SESSION_SHEET_NAME = 'auth_sessions';
+var PASSWORD_RESET_TOKEN_SHEET_NAME = 'auth_reset_tokens';
+var PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+var PASSWORD_RESET_TOKEN_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+var PASSWORD_HASH_VERSION = 'pbkdf2-sha256';
+// Apps Script memanggil Utilities.computeHmacSha256Signature per iterasi (bukan native loop),
+// jadi >~2000 iterasi melewati batas eksekusi web app 30s. 1000 = kompromi aman-interaktif.
+// Nilai iterasi disimpan di dalam string hash, jadi bisa dinaikkan kelak tanpa memecah row lama.
+var PASSWORD_PBKDF2_ITERATIONS = 1000;
 var EMPLOYEE_DEFAULT_HEADERS = ['name', 'username', 'phone', 'address', 'job', 'email', 'status', 'updated_at'];
 var SUPPLIER_DEFAULT_HEADERS = ['name', 'address', 'city', 'phone', 'pic', 'updated_at'];
 var RESTOCK_REQUEST_HEADERS = [
@@ -92,6 +101,27 @@ var DATA_OBAT_QUANTITY_HEADERS = [
   'stokkonversi3',
   'stokkonversi4'
 ];
+var ROLE_POLICY_ALLOWED_ACCESS = [
+  'dashboard',
+  'absensi',
+  'presensi',
+  'presensi_karyawan',
+  'monitoring_presensi',
+  'cari_data_obat',
+  'data_obat',
+  'filter_data_obat',
+  'edit_obat',
+  'hapus_obat',
+  'data_karyawan',
+  'data_supplier',
+  'restok_obat',
+  'surat_pesanan',
+  'import_data_obat',
+  'akun_profil',
+  'log_aktivitas',
+  'manajemen_pengguna',
+  'data_role'
+];
 var DATA_OBAT_DEFAULT_HEADERS = [
   'kode',
   'nama',
@@ -157,39 +187,31 @@ function doGet(e) {
     e.parameter = e.parameter || {};
 
     if (e.parameter.page == 'reset') {
-      return renderResetPasswordPage_(e.parameter.email || '');
+      return renderResetPasswordPage_(e.parameter.token || '');
     }
 
+    // Story 3.1: Hapus GET listLoginUsers (POST-only)
     if (String(e.parameter.action || '').trim() == 'listLoginUsers') {
-      var listUsersSession = validatePharmacySession_(e.parameter);
-      if (!listUsersSession.ok) {
-        return jsonOutput_({
-          success: false,
-          ok: false,
-          message: listUsersSession.message
-        });
-      }
-
-      var loginSheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
-
-      if (!loginSheet) {
-        return jsonOutput_({
-          success: false,
-          ok: false,
-          message: 'Sheet user tidak ditemukan'
-        });
-      }
-
-      return handleListLoginUsers_(readUserRows_(loginSheet));
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: 'Aksi listLoginUsers via GET tidak didukung lagi. Gunakan POST.'
+      });
     }
 
     var sheetName = String(e.parameter.sheet || 'user').trim();
 
-    if (sheetName == USER_SHEET_NAME) {
+    // Story 3.1: Public GET allowlist. Sheet di luar ini ditolak-by-default.
+    var publicSheets = {
+      [DATA_OBAT_SHEET_NAME]: true,
+      [PHARMACY_PROFILE_SHEET_NAME]: true
+    };
+
+    if (!publicSheets[sheetName]) {
       return jsonOutput_({
         success: false,
         ok: false,
-        message: 'Akses sheet user tidak diizinkan lewat GET.'
+        message: 'Akses sheet via GET ditolak.' // Neutral deny message
       });
     }
 
@@ -301,6 +323,22 @@ function getAuthSessionSheet_() {
   return sheet;
 }
 
+// Story 3.1b: Invalidate all sessions for a user after password reset
+function invalidateAllAuthSessionsForUser_(email) {
+  var emailKey = normalizeLoginKey_(email);
+  if (!emailKey) return;
+
+  var sheet = getAuthSessionSheet_();
+  if (sheet.getLastRow() < 2) return;
+
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (normalizeLoginKey_(values[i][2]) == emailKey || normalizeLoginKey_(values[i][1]) == emailKey) {
+      sheet.deleteRow(i + 2);
+    }
+  }
+}
+
 function refreshAuthSessionAfterSave_(data, originalUsername, originalEmail, saved) {
   var token = String(data.sessionToken || data.token || '').trim();
   if (!token) return;
@@ -376,7 +414,42 @@ function doPost(e) {
     }
   });
   var earlyAction = String(earlyData.action || e.parameter.action || '').trim();
-  var unlockedOutput = handleUnlockedPostAction_(earlyAction, earlyData);
+
+  // Story 3.1: Enforce session global gate untuk write operasional/admin/owner & sensitive reads.
+  // Pengecualian: login (Public POST) dan reset password flow (Public POST).
+  var publicPostActions = {
+    login: true,
+    resetPassword: true,
+    saveResetPassword: true,
+    updatePassword: true,
+    confirmResetPassword: true,
+    savePassword: true,
+    setPassword: true
+  };
+
+  // Public read actions (getDataObatFilter, getPharmacyProfile, getAttendanceShiftSettings)
+  // dilayani via handleUnlockedPostAction_ tanpa validasi session.
+  var publicReadActions = {
+    getDataObatFilter: true,
+    getPharmacyProfile: true,
+    getAttendanceShiftSettings: true
+  };
+
+  var session = null;
+  if (!publicPostActions[earlyAction] && !publicReadActions[earlyAction]) {
+    session = validatePharmacySession_(earlyData || {});
+    if (!session.ok) {
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: session.message
+      });
+    }
+    // Override identitas dari session tepercaya
+    applyPharmacySession_(earlyData, session);
+  }
+
+  var unlockedOutput = handleUnlockedPostAction_(earlyAction, earlyData, session);
 
   if (unlockedOutput) {
     return unlockedOutput;
@@ -397,8 +470,72 @@ function doPost(e) {
     });
     var action = String(data.action || e.parameter.action || '').trim();
 
+    // Pastikan payload di dalam lock block juga di-gate & override identitas jika bukan public POST/read
+    if (!publicPostActions[action] && !publicReadActions[action]) {
+      if (!session) {
+        session = validatePharmacySession_(data || {});
+      }
+      if (!session.ok) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: session.message
+        });
+      }
+      applyPharmacySession_(data, session);
+
+      // Story 3.1: Role/Otorisasi backend untuk write actions
+      var userRole = normalizeLoginKey_(session.role || '');
+      var username = normalizeLoginKey_(session.username || '');
+      var isOwner = userRole == 'owner' || username == 'owner';
+      var isAdmin = userRole == 'admin' || userRole == 'administrator' || username == 'admin' || isOwner;
+
+      // a) Aksi Owner-Only
+      var ownerOnlyActions = {
+        savePharmacyProfile: true,
+        deleteActivityLog: true,
+        saveRolePolicies: true
+      };
+      if (ownerOnlyActions[action] && !isOwner) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: 'Aksi ditolak. Hanya Owner yang diizinkan.'
+        });
+      }
+
+      // b) Aksi Admin-Only (termasuk Owner)
+      var adminOnlyActions = {
+        saveLoginUser: true,
+        updateLoginUser: true,
+        deleteLoginUser: true,
+        saveAttendanceShiftSettings: true,
+        clearRestockRequests: true,
+        savePurchaseOrders: true,
+        import_data_obat: true,
+        add_data_obat: true,
+        update_data_obat: true,
+        delete_data_obat: true
+      };
+      if (adminOnlyActions[action] && !isAdmin) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: 'Aksi ditolak. Hanya Owner/Admin yang diizinkan.'
+        });
+      }
+
+      // c) Aksi Write Umum (Operator/Apoteker/Staf Gudang)
+      // Menerapkan payload enrichment dengan session actor
+      if (action == 'saveRestockRequests') {
+        // Penulis diidentifikasi dari session
+        data.username = session.username;
+        data.actor = session.username;
+      }
+    }
+
     if (action == 'import_data_obat') {
-      return handleImportDataObat_(data);
+      return handleImportDataObat_(data, session);
     }
 
     if (action == 'getDataObatFilter') {
@@ -481,6 +618,14 @@ function doPost(e) {
       return handleDeleteLocalRecord_(data);
     }
 
+    if (action == 'listRolePolicies') {
+      return handleListRolePolicies_();
+    }
+
+    if (action == 'saveRolePolicies') {
+      return handleSaveRolePolicies_(data);
+    }
+
     var userSheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
 
     if (!userSheet) {
@@ -534,7 +679,7 @@ function doPost(e) {
   }
 }
 
-function handleUnlockedPostAction_(action, data) {
+function handleUnlockedPostAction_(action, data, prevalidatedSession) {
   // Public read — tetap tanpa session (non-breaking untuk landing/cache)
   if (action == 'getDataObatFilter') {
     return handleGetDataObatFilter_();
@@ -554,19 +699,23 @@ function handleUnlockedPostAction_(action, data) {
     listLoginUsers: true,
     listRestockRequests: true,
     listPurchaseOrders: true,
-    listLocalRecords: true
+    listLocalRecords: true,
+    listRolePolicies: true
   };
 
   if (sessionActions[action]) {
-    var session = validatePharmacySession_(data || {});
-    if (!session.ok) {
-      return jsonOutput_({
-        success: false,
-        ok: false,
-        message: session.message
-      });
+    var session = prevalidatedSession;
+    if (!session) {
+      session = validatePharmacySession_(data || {});
+      if (!session.ok) {
+        return jsonOutput_({
+          success: false,
+          ok: false,
+          message: session.message
+        });
+      }
+      applyPharmacySession_(data, session);
     }
-    applyPharmacySession_(data, session);
   }
 
   if (action == 'listActivityLog') {
@@ -583,6 +732,10 @@ function handleUnlockedPostAction_(action, data) {
 
   if (action == 'listLocalRecords') {
     return handleListLocalRecords_(data);
+  }
+
+  if (action == 'listRolePolicies') {
+    return handleListRolePolicies_();
   }
 
   if (action == 'listLoginUsers') {
@@ -611,13 +764,18 @@ function handleLogin_(data, users) {
     var usernameKey = normalizeLoginKey_(user.username);
     var emailKey = normalizeLoginKey_(user.email);
 
-    if ((usernameKey == loginKey || emailKey == loginKey) && String(user.password || '') == password) {
+    if ((usernameKey == loginKey || emailKey == loginKey) && verifyPassword_(password, user.password)) {
       if (isLoginUserInactive_(user, employeeStatusMap)) {
         return jsonOutput_({
           success: false,
           ok: false,
           message: 'Akun/karyawan sedang nonaktif. Silakan hubungi Owner/Admin.'
         });
+      }
+
+      // Lazy migration: plaintext legacy ditingkatkan ke PBKDF2 saat login sukses.
+      if (!isPasswordHash_(user.password)) {
+        upgradeLegacyPasswordAfterLogin_(user, password);
       }
 
       var sessionToken = createAuthSession_(user);
@@ -629,6 +787,7 @@ function handleLogin_(data, users) {
         role: user.role,
         email: user.email,
         menu: user.menu,
+        accessMode: normalizeAccessMode_(user.accessMode),
         status: user.status || 'Aktif',
         phone: user.phone || '',
         address: user.address || '',
@@ -668,6 +827,7 @@ function handleListLoginUsers_(users) {
       email: user.email,
       menu: user.menu,
       access: user.menu,
+      accessMode: normalizeAccessMode_(user.accessMode),
       status: user.status || 'Aktif',
       phone: user.phone || '',
       address: user.address || '',
@@ -764,6 +924,8 @@ function handleSaveLoginUser_(data, userSheet) {
   var hasMenu = hasRequestKey_(input, ['access', 'menu', 'aksesMenu', 'menuakses']);
   var hasPhoto = hasRequestKey_(input, ['profilePhoto', 'photo', 'foto', 'profile_photo', 'fotoProfil']);
   var hasPreferences = hasRequestKey_(input, ['preferences', 'profilePreferences', 'profile_preferences', 'preferensi']);
+  var hasAccessMode = hasRequestKey_(input, ['accessMode', 'access_mode']);
+  var requestedAccessMode = normalizeAccessMode_(pickRequestValueAllowEmpty_(input, ['accessMode', 'access_mode']));
   var menuValue = hasMenu
     ? normalizeUserMenuValue_(pickRequestValueAllowEmpty_(input, ['access', 'menu', 'aksesMenu', 'menuakses']))
     : '';
@@ -800,6 +962,7 @@ function handleSaveLoginUser_(data, userSheet) {
   var roleColumn = ensureUserColumn_(userSheet, headers, ['role', 'akses', 'level'], 'role');
   var emailColumn = ensureUserColumn_(userSheet, headers, ['email', 'alamatemail', 'gmail'], 'email');
   var menuColumn = ensureUserColumn_(userSheet, headers, ['menu', 'aksesmenu', 'menuakses'], 'menu');
+  var accessModeColumn = ensureUserColumn_(userSheet, headers, ['accessmode', 'access_mode'], 'access_mode');
   var statusColumn = ensureUserColumn_(userSheet, headers, ['status', 'aktif', 'keterangan'], 'status');
   var phoneColumn = ensureUserColumn_(userSheet, headers, ['phone', 'nohp', 'telepon', 'hp'], 'phone');
   var addressColumn = ensureUserColumn_(userSheet, headers, ['address', 'alamat'], 'address');
@@ -820,15 +983,18 @@ function handleSaveLoginUser_(data, userSheet) {
   });
   var rowNumber = rowIndex >= 1 ? rowIndex + 1 : userSheet.getLastRow() + 1;
 
+  var existingAccessMode = rowIndex >= 1 ? normalizeAccessMode_(values[rowIndex][accessModeColumn]) : 'inherit';
+  if (hasAccessMode && normalizeLoginKey_(data.role || '') != 'owner' && normalizeLoginKey_(data.username || '') != 'owner') {
+    return jsonOutput_({ success: false, ok: false, message: 'Override akses hanya dapat diubah Owner.' });
+  }
+  var accessMode = hasAccessMode ? requestedAccessMode : existingAccessMode;
   if (!hasMenu && rowIndex >= 1) {
     menuValue = String(values[rowIndex][menuColumn] || '');
   }
+  if (accessMode == 'inherit') menuValue = '';
+  if (hasMenu && !hasAccessMode && rowIndex >= 1) menuValue = String(values[rowIndex][menuColumn] || '');
 
   if (!hasPhoto && rowIndex >= 1) {
-    profilePhoto = String(values[rowIndex][profilePhotoColumn] || '');
-  }
-
-  if (!hasPreferences && rowIndex >= 1) {
     preferences = String(values[rowIndex][preferencesColumn] || '');
   }
 
@@ -837,6 +1003,7 @@ function handleSaveLoginUser_(data, userSheet) {
   userSheet.getRange(rowNumber, roleColumn + 1).setValue(role);
   userSheet.getRange(rowNumber, emailColumn + 1).setValue(email);
   userSheet.getRange(rowNumber, menuColumn + 1).setValue(menuValue);
+  userSheet.getRange(rowNumber, accessModeColumn + 1).setValue(accessMode);
   userSheet.getRange(rowNumber, statusColumn + 1).setValue(status);
   userSheet.getRange(rowNumber, phoneColumn + 1).setValue(phone);
   userSheet.getRange(rowNumber, addressColumn + 1).setValue(address);
@@ -844,7 +1011,7 @@ function handleSaveLoginUser_(data, userSheet) {
   userSheet.getRange(rowNumber, preferencesColumn + 1).setValue(preferences);
 
   if (password && passwordColumn >= 0) {
-    userSheet.getRange(rowNumber, passwordColumn + 1).setValue(password);
+    userSheet.getRange(rowNumber, passwordColumn + 1).setValue(createPasswordHash_(password));
   }
 
   SpreadsheetApp.flush();
@@ -866,6 +1033,7 @@ function handleSaveLoginUser_(data, userSheet) {
       email: email,
       menu: menuValue,
       access: menuValue,
+      accessMode: accessMode,
       status: status,
       phone: phone,
       address: address,
@@ -912,180 +1080,109 @@ function handleDeleteLoginUser_(data, userSheet) {
   });
 }
 
+function getPasswordResetRequestMessage_() {
+  return 'Jika data akun sesuai, link reset password akan dikirim ke email terdaftar.';
+}
+
 function handleResetPassword_(data, users) {
   var usernameKey = normalizeLoginKey_(data.username || '');
   var emailKey = normalizeLoginKey_(data.email || '');
+  var message = getPasswordResetRequestMessage_();
+  var user = null;
 
+  // Response selalu netral untuk mencegah account enumeration.
   if (!usernameKey || !emailKey) {
-    return jsonOutput_({
-      success: false,
-      ok: false,
-      message: 'Username dan email wajib diisi'
-    });
+    return jsonOutput_({ success: true, ok: true, message: message });
   }
 
   for (var i = 0; i < users.length; i += 1) {
-    var user = users[i];
-    var dbUsernameKey = normalizeLoginKey_(user.username);
-    var dbEmailKey = normalizeLoginKey_(user.email);
+    var candidate = users[i];
+    if (normalizeLoginKey_(candidate.username) == usernameKey &&
+        normalizeLoginKey_(candidate.email) == emailKey &&
+        candidate.email && !isInactiveStatus_(candidate.status || 'Aktif')) {
+      user = candidate;
+      break;
+    }
+  }
 
-    if (dbUsernameKey == usernameKey) {
-      if (!user.email) {
-        return jsonOutput_({
-          success: false,
-          ok: false,
-          message: 'Email akun belum terisi di Google Sheet'
-        });
-      }
-
-      if (dbEmailKey != emailKey) {
-        return jsonOutput_({
-          success: false,
-          ok: false,
-          message: 'Email tidak sesuai dengan data akun di Google Sheet'
-        });
-      }
-
-      var resetUrl = buildResetPasswordUrl_(user.email);
-
+  if (user) {
+    try {
+      var token = createPasswordResetToken_(user);
       MailApp.sendEmail({
         to: user.email,
         subject: 'Reset Password - Indo Apotek',
         htmlBody: [
           '<p>Halo ' + escapeHtml_(user.username || user.email) + ',</p>',
-          '<p>Klik link berikut untuk membuka halaman reset password:</p>',
-          '<p><a href="' + resetUrl + '">Reset Password</a></p>',
+          '<p>Klik link berikut untuk membuat password baru:</p>',
+          '<p><a href="' + buildResetPasswordUrl_(token) + '">Reset Password</a></p>',
+          '<p>Link berlaku selama 60 menit dan hanya dapat digunakan satu kali.</p>',
           '<p>Jika Anda tidak meminta reset password, abaikan email ini.</p>',
           '<p>Indo Apotek</p>'
         ].join('')
       });
-
-      return jsonOutput_({
-        success: true,
-        ok: true,
-        message: 'Link reset password berhasil dikirim ke email terdaftar'
-      });
+    } catch (error) {
+      // Jangan bocorkan detail delivery/token lewat response public.
+      console.error('Password reset request failed: ' + String(error));
     }
   }
 
-  return jsonOutput_({
-    success: false,
-    ok: false,
-    message: 'Username tidak ditemukan'
-  });
+  return jsonOutput_({ success: true, ok: true, message: message });
 }
 
 function handleSaveResetPassword_(data, userSheet) {
   return jsonOutput_(saveResetPassword_(
-    pickRequestValue_(data, ['email', 'resetEmail']),
+    pickRequestValue_(data, ['token', 'resetToken']),
     pickRequestValue_(data, ['password', 'newPassword', 'passwordBaru', 'new_password']),
     pickRequestValue_(data, ['confirmPassword', 'confirm_password', 'ulangiPassword', 'konfirmasiPassword']),
     userSheet
   ));
 }
 
-function updateResetPassword(email, password, confirmPassword) {
+// Dipanggil halaman reset Apps Script; argumen pertama sekarang token, bukan email.
+function updateResetPassword(token, password, confirmPassword) {
   var userSheet = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
-
-  if (!userSheet) {
-    return {
-      success: false,
-      ok: false,
-      message: 'Sheet user tidak ditemukan'
-    };
-  }
-
-  return saveResetPassword_(email, password, confirmPassword, userSheet);
+  if (!userSheet) return { success: false, ok: false, message: 'Link reset password tidak valid atau sudah berakhir.' };
+  return saveResetPassword_(token, password, confirmPassword, userSheet);
 }
 
-function savePassword(email, password, confirmPassword) {
-  return updateResetPassword(email, password, confirmPassword);
-}
+function savePassword(token, password, confirmPassword) { return updateResetPassword(token, password, confirmPassword); }
+function saveNewPassword(token, password, confirmPassword) { return updateResetPassword(token, password, confirmPassword); }
+function simpanPasswordBaru(token, password, confirmPassword) { return updateResetPassword(token, password, confirmPassword); }
+function updatePassword(token, password, confirmPassword) { return updateResetPassword(token, password, confirmPassword); }
 
-function saveNewPassword(email, password, confirmPassword) {
-  return updateResetPassword(email, password, confirmPassword);
-}
-
-function simpanPasswordBaru(email, password, confirmPassword) {
-  return updateResetPassword(email, password, confirmPassword);
-}
-
-function updatePassword(email, password, confirmPassword) {
-  return updateResetPassword(email, password, confirmPassword);
-}
-
-function saveResetPassword_(email, password, confirmPassword, userSheet) {
-  var cleanEmail = normalizeLoginKey_(email || '');
+function saveResetPassword_(token, password, confirmPassword, userSheet) {
   var newPassword = String(password || '');
   var confirm = confirmPassword == null ? newPassword : String(confirmPassword || '');
   var passwordError = validateNewPassword_(newPassword, confirm);
+  var resetRecord = findValidPasswordResetToken_(token);
 
-  if (!cleanEmail) {
+  if (!resetRecord || passwordError) {
     return {
       success: false,
       ok: false,
-      message: 'Email reset password tidak ditemukan.'
-    };
-  }
-
-  if (passwordError) {
-    return {
-      success: false,
-      ok: false,
-      message: passwordError
+      message: passwordError || 'Link reset password tidak valid atau sudah berakhir.'
     };
   }
 
   var values = userSheet.getDataRange().getDisplayValues();
-
-  if (values.length < 2) {
-    return {
-      success: false,
-      ok: false,
-      message: 'Data user kosong.'
-    };
-  }
+  if (values.length < 2) return { success: false, ok: false, message: 'Link reset password tidak valid atau sudah berakhir.' };
 
   var headers = values[0].map(normalizeHeaderKey_);
   var emailColumn = findHeaderColumn_(headers, ['email', 'alamatemail', 'gmail']);
   var passwordColumn = findHeaderColumn_(headers, ['password', 'pass', 'kata_sandi', 'katasandi']);
-
-  if (emailColumn < 0) {
-    return {
-      success: false,
-      ok: false,
-      message: 'Kolom email tidak ditemukan di sheet user.'
-    };
-  }
-
-  if (passwordColumn < 0) {
-    return {
-      success: false,
-      ok: false,
-      message: 'Kolom password tidak ditemukan di sheet user.'
-    };
-  }
+  if (emailColumn < 0 || passwordColumn < 0) return { success: false, ok: false, message: 'Link reset password tidak valid atau sudah berakhir.' };
 
   for (var i = 1; i < values.length; i += 1) {
-    var rowEmail = normalizeLoginKey_(values[i][emailColumn] || '');
+    if (normalizeLoginKey_(values[i][emailColumn]) != resetRecord.email) continue;
 
-    if (rowEmail == cleanEmail) {
-      userSheet.getRange(i + 1, passwordColumn + 1).setValue(newPassword);
-      SpreadsheetApp.flush();
-
-      return {
-        success: true,
-        ok: true,
-        message: 'Password baru berhasil disimpan. Silakan login kembali.'
-      };
-    }
+    userSheet.getRange(i + 1, passwordColumn + 1).setValue(createPasswordHash_(newPassword));
+    consumePasswordResetToken_(resetRecord);
+    invalidateAllAuthSessionsForUser_(resetRecord.email);
+    SpreadsheetApp.flush();
+    return { success: true, ok: true, message: 'Password baru berhasil disimpan. Silakan login kembali.' };
   }
 
-  return {
-    success: false,
-    ok: false,
-    message: 'Email tidak ditemukan di sheet user.'
-  };
+  return { success: false, ok: false, message: 'Link reset password tidak valid atau sudah berakhir.' };
 }
 
 function validateNewPassword_(password, confirmPassword) {
@@ -2464,56 +2561,185 @@ function findLocalRecordRowIndex_(values, headers, config, criteria) {
   return -1;
 }
 
-function handleImportDataObat_(payload) {
+function handleImportDataObat_(payload, session) {
+  // Validate session
+  if (!session || !session.ok) {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Sesi tidak valid atau belum login.'
+    });
+  }
+
+  // Validate admin role
+  var userRole = String(session.role || '').toLowerCase().trim();
+  var username = String(session.username || '').toLowerCase().trim();
+  var isAdmin = userRole == 'owner' || userRole == 'admin' || userRole == 'administrator' || username == 'owner' || username == 'admin';
+  if (!isAdmin) {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Hanya Owner/Admin yang dapat mengimport data obat.'
+    });
+  }
+
   var sheetName = String(payload.sheet || DATA_OBAT_SHEET_NAME).trim();
-  var mode = String(payload.mode || 'replace').trim();
+  var mode = String(payload.mode || '').trim().toLowerCase();
   var headers = (payload.headers || []).map(function(header) {
     return String(header || '').trim();
   }).filter(Boolean);
   var rows = payload.rows || [];
 
   if (sheetName !== DATA_OBAT_SHEET_NAME) {
-    throw new Error('Import hanya diizinkan untuk sheet data_obat.');
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Import hanya diizinkan untuk sheet data_obat.'
+    });
+  }
+
+  if (mode != 'replace' && mode != 'append') {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Mode import tidak valid. Gunakan replace atau append.'
+    });
   }
 
   if (!rows.length) {
-    throw new Error('Data import kosong.');
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Data import kosong.'
+    });
+  }
+
+  if (!Array.isArray(rows[0])) {
+    if (!headers.length) {
+      headers = Object.keys(rows[0]);
+    }
+  }
+
+  if (!headers.length) {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Header kolom tidak ditemukan.'
+    });
+  }
+
+  var normalizedHeaders = headers.map(normalizeHeaderKey_);
+
+  // Validate required headers: kode and nama
+  if (normalizedHeaders.indexOf('kode') < 0 || normalizedHeaders.indexOf('nama') < 0) {
+    return jsonOutput_({
+      success: false,
+      ok: false,
+      message: 'Header wajib: kode dan nama.'
+    });
+  }
+
+  // Validate no duplicate normalized headers
+  var seenHeaders = {};
+  for (var hi = 0; hi < normalizedHeaders.length; hi += 1) {
+    if (seenHeaders[normalizedHeaders[hi]]) {
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: 'Header duplikat: ' + normalizedHeaders[hi]
+      });
+    }
+    seenHeaders[normalizedHeaders[hi]] = true;
+  }
+
+  // Validate rows and build values matrix
+  var kodeIndex = normalizedHeaders.indexOf('kode');
+  var namaIndex = normalizedHeaders.indexOf('nama');
+  var values = [];
+  var seenCodes = {};
+  for (var ri = 0; ri < rows.length; ri += 1) {
+    var row = rows[ri];
+    var rowValues = normalizedHeaders.map(function(key) {
+      var rawValue = pickDataObatRequestValue_(row, getDataObatHeaderAliases_(key));
+      return normalizeDataObatImportValue_(key, rawValue);
+    });
+    var kode = String(rowValues[kodeIndex] || '').trim();
+    var nama = String(rowValues[namaIndex] || '').trim();
+    if (!kode || !nama) {
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: 'Baris ' + (ri + 2) + ': kode dan nama wajib diisi.'
+      });
+    }
+    var kodeKey = normalizeLoginKey_(kode);
+    if (seenCodes[kodeKey]) {
+      return jsonOutput_({
+        success: false,
+        ok: false,
+        message: 'Kode duplikat dalam file import: ' + kode
+      });
+    }
+    seenCodes[kodeKey] = true;
+    values.push(rowValues);
   }
 
   var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
   var sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
 
-  if (!headers.length) {
-    headers = Object.keys(rows[0]);
-  }
-
-  if (!headers.length) {
-    throw new Error('Header kolom tidak ditemukan.');
-  }
-
-  var normalizedHeaders = headers.map(normalizeHeaderKey_);
-  var values = rows.map(function(row) {
-    return normalizedHeaders.map(function(key) {
-      return normalizeDataObatImportValue_(key, row[key] == null ? '' : row[key]);
-    });
-  });
-
   if (mode == 'append' && sheet.getLastRow() > 0) {
-    var existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    var existingKeys = existingHeaders.map(normalizeHeaderKey_);
+    // Validate no duplicate codes in existing data
+    var existingValues = sheet.getLastRow() > 1
+      ? sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues()
+      : [];
+    var existingHeaders2 = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var existingKodeCol = existingHeaders2.map(normalizeHeaderKey_).indexOf('kode');
+    if (existingKodeCol >= 0) {
+      for (var ei = 0; ei < existingValues.length; ei += 1) {
+        var existingKode = String(existingValues[ei][existingKodeCol] || '').trim();
+        if (existingKode && seenCodes[normalizeLoginKey_(existingKode)]) {
+          return jsonOutput_({
+            success: false,
+            ok: false,
+            message: 'Kode ' + existingKode + ' sudah ada di data. Gunakan mode replace untuk mengganti data.'
+          });
+        }
+      }
+    }
+
+    var existingKeys = existingHeaders2.map(normalizeHeaderKey_);
     var appendValues = rows.map(function(row) {
       return existingKeys.map(function(key) {
-        return normalizeDataObatImportValue_(key, row[key] == null ? '' : row[key]);
+        var rawValue = pickDataObatRequestValue_(row, getDataObatHeaderAliases_(key));
+        return normalizeDataObatImportValue_(key, rawValue);
       });
     });
 
-    sheet.getRange(sheet.getLastRow() + 1, 1, appendValues.length, existingHeaders.length).setValues(appendValues);
+    sheet.getRange(sheet.getLastRow() + 1, 1, appendValues.length, existingHeaders2.length).setValues(appendValues);
     formatDataObatPriceColumns_(sheet, existingKeys, sheet.getLastRow() - appendValues.length + 1, appendValues.length);
   } else {
-    sheet.clearContents();
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+    // Safer replace: write new data first, then clear stale cells.
+    var newRowCount = values.length + 1; // +1 for header
+    var newColCount = headers.length;
+    var oldLastRow = sheet.getLastRow();
+    var oldLastCol = sheet.getLastColumn();
+
+    // Write new data (header + rows)
+    var fullMatrix = [headers].concat(values);
+    sheet.getRange(1, 1, fullMatrix.length, newColCount).setValues(fullMatrix);
     formatDataObatPriceColumns_(sheet, normalizedHeaders, 2, values.length);
+
+    // Clear old rows below new data
+    if (oldLastRow > newRowCount) {
+      var clearRange = sheet.getRange(newRowCount + 1, 1, oldLastRow - newRowCount, Math.max(oldLastCol, newColCount));
+      clearRange.clearContent();
+    }
+
+    // Clear old columns to the right (only if new data has fewer columns)
+    if (oldLastCol > newColCount) {
+      var clearColRange = sheet.getRange(1, newColCount + 1, newRowCount, oldLastCol - newColCount);
+      clearColRange.clearContent();
+    }
   }
 
   SpreadsheetApp.flush();
@@ -2549,99 +2775,38 @@ function normalizeDataObatImportValue_(key, value) {
 }
 
 function normalizeDataObatPriceNumber_(value, key) {
-  var text = String(value == null ? '' : value).trim();
-  if (!text) return '';
-
-  text = text.replace(/[^\d.,-]/g, '');
-
-  if (!text || text == '-' || text == ',' || text == '.') return '';
-
-  var negative = text.charAt(0) == '-';
-  text = text.replace(/-/g, '');
-
-  if (key == 'hargabeli' && /^\d{7,}$/.test(text) && !/000$/.test(text)) {
-    text = text.slice(0, -3);
-  }
-
-  if (key == 'hargabeli' && /^\d{1,3}(\.\d{3}){2,}$/.test(text)) {
-    var priceDotParts = text.split('.');
-    var priceLastPart = priceDotParts[priceDotParts.length - 1] || '';
-    if (priceLastPart != '000') {
-      text = priceDotParts.slice(0, -1).join('.');
-    }
-  }
-
-  var hasComma = text.indexOf(',') >= 0;
-  var hasDot = text.indexOf('.') >= 0;
-  var normalized = text;
-
-  if (/^\d{1,3}(,\d{3})+$/.test(text)) {
-    normalized = text.replace(/,/g, '');
-  } else if (/^\d{4,},\d{3}$/.test(text)) {
-    normalized = text.replace(/,\d{3}$/, '');
-  } else if (hasComma && hasDot) {
-    var mixedParts = text.split(',');
-    var mixedTail = mixedParts[mixedParts.length - 1] || '';
-    normalized = mixedTail.length == 3
-      ? mixedParts[0].replace(/\./g, '')
-      : text.replace(/\./g, '').replace(',', '.');
-  } else if (hasComma) {
-    var commaParts = text.split(',');
-    var commaTail = commaParts[commaParts.length - 1] || '';
-    normalized = commaTail.length == 3
-      ? commaParts.slice(0, -1).join('')
-      : commaTail.length > 0 && commaTail.length < 3
-      ? commaParts.join('') + new Array(4 - commaTail.length).join('0')
-      : text.replace(/,/g, '');
-  } else if (hasDot) {
-    var dotParts = text.split('.');
-    var dotTail = dotParts[dotParts.length - 1] || '';
-    normalized = dotTail.length == 3 && dotParts[0].length >= 4
-      ? dotParts[0]
-      : dotTail.length > 0 && dotTail.length < 3 && dotParts[0].length >= 4
-      ? dotParts[0]
-      : dotTail.length > 0 && dotTail.length < 3
-      ? dotParts.join('') + new Array(4 - dotTail.length).join('0')
-      : text.replace(/\./g, '');
-  }
-
-  var number = Number(normalized);
-  if (!isFinite(number)) return value;
-
-  if (number > 0 && number < 500 && String(normalized).indexOf('.') < 0) {
-    number = number * 1000;
-  }
-
-  return negative ? -number : number;
+  return parseDataObatImportNumber_(value);
 }
 
 function normalizeDataObatQuantityNumber_(value) {
-  var text = String(value == null ? '' : value).trim();
+  return parseDataObatImportNumber_(value);
+}
+
+function parseDataObatImportNumber_(value) {
+  if (value == null || value === '') return '';
+  if (typeof value == 'number') return value;
+
+  var text = String(value).trim().replace(/^Rp\s*/i, '').replace(/\s+/g, '');
   if (!text) return '';
 
-  text = text.replace(/[^\d.,-]/g, '');
-
-  if (!text || text == '-' || text == ',' || text == '.') return '';
-
-  var negative = text.charAt(0) == '-';
-  text = text.replace(/-/g, '');
-
-  if (/^\d+,\d{3}$/.test(text)) {
-    text = text.replace(/,\d{3}$/, '');
-  } else if (/^\d+\.\d{3}$/.test(text)) {
-    var dotParts = text.split('.');
-    var dotTail = dotParts[dotParts.length - 1] || '';
-    if (dotTail != '000') {
-      text = dotParts.slice(0, -1).join('.');
-    }
+  var normalized = '';
+  if (/^-?\d+$/.test(text)) {
+    normalized = text;
+  } else if (/^-?\d{1,3}(?:\.\d{3})+$/.test(text)) {
+    normalized = text.replace(/\./g, '');
+  } else if (/^-?\d{1,3}(?:,\d{3})+$/.test(text)) {
+    normalized = text.replace(/,/g, '');
+  } else if (/^-?\d+(?:,\d{1,2})$/.test(text)) {
+    normalized = text.replace(',', '.');
+  } else if (/^-?\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(text)) {
+    normalized = text.replace(/\./g, '').replace(',', '.');
+  } else {
+    throw new Error('Format angka import tidak valid: ' + text);
   }
 
-  var normalized = text.replace(',', '.');
   var number = Number(normalized);
-
-  if (!isFinite(number)) return value;
-
-  return negative ? -number : number;
+  if (!isFinite(number)) throw new Error('Format angka import tidak valid: ' + text);
+  return number;
 }
 
 function formatDataObatPriceColumns_(sheet, normalizedHeaders, startRow, rowCount) {
@@ -2860,15 +3025,15 @@ function pickDataObatRequestValue_(row, keys) {
   return '';
 }
 
-function renderResetPasswordPage_(email) {
+function renderResetPasswordPage_(token) {
   return HtmlService
-    .createHtmlOutput(buildResetPasswordHtml_(email))
+    .createHtmlOutput(buildResetPasswordHtml_(token))
     .setTitle('Reset Password - Indo Apotek')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-function buildResetPasswordHtml_(email) {
-  var safeEmail = escapeHtml_(email || '');
+function buildResetPasswordHtml_(token) {
+  var safeToken = escapeHtml_(token || '');
   var eyeOffIcon = [
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">',
     '<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>',
@@ -2931,7 +3096,7 @@ function buildResetPasswordHtml_(email) {
     '<main class="card">',
     '<h1>Reset Password</h1>',
     '<form id="resetForm">',
-    '<input id="emailInput" type="hidden" value="' + safeEmail + '">',
+    '<input id="tokenInput" type="hidden" value="' + safeToken + '">',
     '<div class="field">',
     '<input id="passwordInput" type="password" placeholder="Password Baru" autocomplete="new-password" required>',
     '<button class="toggle" type="button" data-target="passwordInput" aria-label="Tampilkan password">' + eyeOffIcon + '</button>',
@@ -2962,7 +3127,7 @@ function buildResetPasswordHtml_(email) {
     '<script>',
     '(function(){',
     'var form=document.getElementById("resetForm");',
-    'var emailInput=document.getElementById("emailInput");',
+    'var tokenInput=document.getElementById("tokenInput");',
     'var passwordInput=document.getElementById("passwordInput");',
     'var confirmPasswordInput=document.getElementById("confirmPasswordInput");',
     'var passwordStatusIcon=document.getElementById("passwordStatusIcon");',
@@ -2978,12 +3143,12 @@ function buildResetPasswordHtml_(email) {
     'updateFieldIndicators();',
     'form.addEventListener("submit",function(event){',
     'event.preventDefault();',
-    'var email=String(emailInput.value||"").trim();',
+    'var token=String(tokenInput.value||"").trim();',
     'var password=passwordInput.value;',
     'var confirmPassword=confirmPasswordInput.value;',
     'var validationError=validatePassword(password,confirmPassword);',
     'updateFieldIndicators();',
-    'if(!email){setStatus("Email reset tidak ditemukan. Silakan ulangi dari halaman login.","error");return;}',
+    'if(!token){setStatus("Token reset tidak valid. Silakan ulangi dari halaman login.","error");return;}',
     'if(validationError){setStatus(validationError,"error");return;}',
     'setLoading(true);setStatus("Menyimpan password...","success");',
     'google.script.run.withSuccessHandler(function(result){',
@@ -2991,7 +3156,7 @@ function buildResetPasswordHtml_(email) {
     'if(!result||(result.success!==true&&result.ok!==true)){setStatus((result&&result.message)||"Password baru gagal disimpan.","error");return;}',
     'setStatus(result.message||"Password baru berhasil disimpan. Silakan login kembali.","success");',
     'showSuccessPopup(password);',
-    '}).withFailureHandler(function(error){setLoading(false);setStatus((error&&error.message)||"Password baru gagal disimpan.","error");}).updateResetPassword(email,password,confirmPassword);',
+    '}).withFailureHandler(function(error){setLoading(false);setStatus((error&&error.message)||"Password baru gagal disimpan.","error");}).updateResetPassword(token,password,confirmPassword);',
     '});',
     'successButton.addEventListener("click",function(){successModal.hidden=true;passwordInput.value="";confirmPasswordInput.value="";passwordInput.focus();});',
     'function updateFieldIndicators(){var password=passwordInput.value;var confirmPassword=confirmPasswordInput.value;var passwordValid=isPasswordStrong(password);setIndicator(passwordStatusIcon,passwordValid?"valid":"hidden");if(!confirmPassword){setIndicator(confirmPasswordStatusIcon,"hidden");return;}setIndicator(confirmPasswordStatusIcon,password&&confirmPassword===password?"valid":"invalid");}',
@@ -3181,6 +3346,10 @@ function hasRequestKey_(obj, keys) {
   return false;
 }
 
+function normalizeAccessMode_(value) {
+  return String(value || '').trim().toLowerCase() == 'override' ? 'override' : 'inherit';
+}
+
 function normalizeUserMenuValue_(value) {
   var values = Object.prototype.toString.call(value) == '[object Array]'
     ? value
@@ -3226,16 +3395,90 @@ function normalizeUserPreferencesValue_(value) {
   }
 }
 
-function normalizeSpecialUserRole_(role, username, name, email) {
-  var identity = [username, name, email]
-    .join(' ')
-    .replace(/_/g, ' ')
-    .toLowerCase();
-
-  if (identity.indexOf('ayu novalia') >= 0) {
-    return 'Asisten Apoteker';
+function handleListRolePolicies_() {
+  var stored = String(PropertiesService.getScriptProperties().getProperty(ROLE_POLICIES_PROPERTY) || '').trim();
+  if (!stored) {
+    return jsonOutput_({ success: true, ok: true, initialized: false, roles: [], updatedAt: '' });
   }
 
+  try {
+    var parsed = JSON.parse(stored) || {};
+    return jsonOutput_({
+      success: true,
+      ok: true,
+      initialized: true,
+      roles: sanitizeRolePolicies_(parsed.roles || []),
+      updatedAt: String(parsed.updatedAt || '')
+    });
+  } catch (error) {
+    return jsonOutput_({ success: false, ok: false, message: 'Kebijakan role tidak valid.' });
+  }
+}
+
+function handleSaveRolePolicies_(data) {
+  data = data || {};
+  var role = normalizeLoginKey_(data.role || '');
+  var username = normalizeLoginKey_(data.username || '');
+  if (role != 'owner' && username != 'owner') {
+    return jsonOutput_({ success: false, ok: false, message: 'Aksi ditolak. Hanya Owner yang diizinkan.' });
+  }
+
+  var roles = sanitizeRolePolicies_(data.roles || data.policies || []);
+  var record = {
+    roles: roles,
+    updatedAt: new Date().toISOString(),
+    updatedBy: String(data.username || data.actor || '').slice(0, 120)
+  };
+  // ponytail: PropertiesService cukup untuk kebijakan kecil; pindah ke Sheet saat butuh histori/audit query.
+  PropertiesService.getScriptProperties().setProperty(ROLE_POLICIES_PROPERTY, JSON.stringify(record));
+  return jsonOutput_({
+    success: true,
+    ok: true,
+    initialized: true,
+    roles: roles,
+    updatedAt: record.updatedAt,
+    message: 'Kebijakan role berhasil disimpan.'
+  });
+}
+
+function sanitizeRolePolicies_(records) {
+  if (Object.prototype.toString.call(records) != '[object Array]') records = [];
+  var allowed = {};
+  ROLE_POLICY_ALLOWED_ACCESS.forEach(function(key) { allowed[key] = true; });
+  var seenRoles = {};
+  var result = [];
+
+  records.slice(0, 32).forEach(function(record) {
+    record = record && typeof record == 'object' ? record : {};
+    var name = String(record.name || record.role || '').trim().slice(0, 60);
+    var roleKey = normalizeRolePolicyKey_(name);
+    if (!name || !roleKey || roleKey == 'owner' || seenRoles[roleKey]) return;
+    seenRoles[roleKey] = true;
+
+    var rawAccess = Object.prototype.toString.call(record.access) == '[object Array]'
+      ? record.access
+      : String(record.access || record.menu || '').split(/[,;|]/);
+    var seenAccess = {};
+    var access = rawAccess.map(function(value) {
+      return String(value || '').trim();
+    }).filter(function(key) {
+      if (!allowed[key] || seenAccess[key]) return false;
+      seenAccess[key] = true;
+      return true;
+    }).slice(0, ROLE_POLICY_ALLOWED_ACCESS.length);
+
+    result.push({ name: name, access: access });
+  });
+
+  return result;
+}
+
+function normalizeRolePolicyKey_(value) {
+  var key = String(value || '').trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+  return key == 'admin' ? 'administrator' : key;
+}
+
+function normalizeSpecialUserRole_(role, username, name, email) {
   return String(role || 'Operator').trim() || 'Operator';
 }
 
@@ -3329,6 +3572,7 @@ function readUserRows_(sheet) {
       role: normalizeSpecialUserRole_(pickDataValue_(raw, ['role', 'akses', 'level']), username, name, pickDataValue_(raw, ['email', 'alamatemail', 'gmail'])),
       email: pickDataValue_(raw, ['email', 'alamatemail', 'gmail']),
       menu: pickDataValue_(raw, ['menu', 'aksesmenu', 'menuakses']),
+      accessMode: pickDataValue_(raw, ['accessMode', 'access_mode']),
       status: pickDataValue_(raw, ['status', 'aktif', 'keterangan']),
       phone: normalizePhoneValue_(pickDataValue_(raw, ['phone', 'nohp', 'telepon', 'hp'])),
       address: pickDataValue_(raw, ['address', 'alamat']),
@@ -3381,14 +3625,14 @@ function normalizePhoneValue_(value) {
   return cleaned;
 }
 
-function buildResetPasswordUrl_(email) {
+function buildResetPasswordUrl_(token) {
   var serviceUrl = ScriptApp.getService().getUrl();
 
   if (!serviceUrl) {
     serviceUrl = 'https://script.google.com/macros/s/AKfycbzk3yqMIUTkodcmhAHDayVTzb7YGNfJT8jHC4Yeejekt_NBo2cs_oIvR1P82XWNq4Hu/exec';
   }
 
-  return serviceUrl + '?page=reset&email=' + encodeURIComponent(email);
+  return serviceUrl + '?page=reset&token=' + encodeURIComponent(token);
 }
 
 function escapeHtml_(value) {
@@ -3426,4 +3670,193 @@ function testSave() {
     ok: true,
     message: 'Apps Script aktif'
   });
+}
+
+// Story 3.1b: PBKDF2 Password Hashing & Token Reset implementation
+function isPasswordHash_(value) {
+  return String(value || '').indexOf(PASSWORD_HASH_VERSION + '$') === 0;
+}
+
+function verifyPassword_(password, stored) {
+  if (!stored) return false;
+  if (!isPasswordHash_(stored)) {
+    // Plaintext legacy fallback
+    return String(stored) === password;
+  }
+
+  var parts = String(stored).split('$');
+  if (parts.length < 4) return false;
+
+  var iterations = Number(parts[1]);
+  var salt = parts[2];
+  var hash = parts[3];
+
+  if (!iterations || !salt || !hash) return false;
+
+  var computed = pbkdf2HmacSha256_(password, salt, iterations);
+  return computed === hash;
+}
+
+function createPasswordHash_(password) {
+  var salt = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
+  var hash = pbkdf2HmacSha256_(password, salt, PASSWORD_PBKDF2_ITERATIONS);
+  return [PASSWORD_HASH_VERSION, PASSWORD_PBKDF2_ITERATIONS, salt, hash].join('$');
+}
+
+function upgradeLegacyPasswordAfterLogin_(user, password) {
+  try {
+    var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(USER_SHEET_NAME);
+    if (!sheet) return;
+
+    var values = sheet.getDataRange().getDisplayValues();
+    if (values.length < 2) return;
+
+    var headers = values[0].map(normalizeHeaderKey_);
+    var usernameColumn = findHeaderColumn_(headers, ['username', 'user', 'namauser', 'nama']);
+    var passwordColumn = findHeaderColumn_(headers, ['password', 'pass', 'kata_sandi', 'katasandi']);
+
+    if (usernameColumn < 0 || passwordColumn < 0) return;
+    var loginKey = normalizeLoginKey_(user.username);
+
+    for (var i = 1; i < values.length; i += 1) {
+      if (normalizeLoginKey_(values[i][usernameColumn]) == loginKey) {
+        sheet.getRange(i + 1, passwordColumn + 1).setValue(createPasswordHash_(password));
+        SpreadsheetApp.flush();
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Password lazy migration failed: ' + String(error));
+  }
+}
+
+// PBKDF2-HMAC-SHA256 standard implementation in native Apps Script JS
+function pbkdf2HmacSha256_(password, salt, iterations) {
+  // Simple HMAC-SHA256 wrapper
+  var hmac = function(keyBytes, textBytes) {
+    return Utilities.computeHmacSha256Signature(textBytes, keyBytes);
+  };
+
+  var passBytes = Utilities.newBlob(password).getBytes();
+  var saltBytes = Utilities.newBlob(salt).getBytes();
+
+  // DK = PBKDF2(PRFs, Password, Salt, c, dkLen)
+  // U_1 = PRF(Password, Salt || INT(i))
+  // U_c = PRF(Password, U_{c-1})
+  // F(Password, Salt, c, i) = U_1 \xor U_2 \xor ... \xor U_c
+
+  // block 1 (dkLen = 32 bytes/256 bits, INT(1) = [0, 0, 0, 1])
+  var blockIndexBytes = [0, 0, 0, 1];
+  var seedBytes = saltBytes.concat(blockIndexBytes);
+
+  var ui = hmac(passBytes, seedBytes);
+  var xorSum = ui.slice();
+
+  // Apps Script computeHmacSignature returns signed bytes.
+  // We chunk iteration inside a flat array.
+  for (var i = 1; i < iterations; i += 1) {
+    ui = hmac(passBytes, ui);
+    for (var j = 0; j < 32; j += 1) {
+      xorSum[j] ^= ui[j];
+    }
+  }
+
+  // Encode to base64url to avoid character mapping issues in Sheet cell string bounds
+  return Utilities.base64EncodeWebSafe(xorSum).replace(/=+$/, '');
+}
+
+function getPasswordResetTokenSheet_() {
+  var ss = SpreadsheetApp.openById(DATA_OBAT_SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(PASSWORD_RESET_TOKEN_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(PASSWORD_RESET_TOKEN_SHEET_NAME);
+  }
+  if (sheet.getLastRow() < 1) {
+    sheet.getRange(1, 1, 1, 6).setValues([['token_hash', 'user_key', 'email', 'expires_at', 'used_at', 'created_at']]);
+  }
+  return sheet;
+}
+
+function createPasswordResetToken_(user) {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  var tokenHash = Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token));
+  var sheet = getPasswordResetTokenSheet_();
+  var now = Date.now();
+
+  // Invalidate older unused tokens for same email
+  invalidateUnusedPasswordResetTokens_(user.email, sheet);
+
+  sheet.appendRow([
+    tokenHash,
+    user.username || '',
+    user.email || '',
+    now + PASSWORD_RESET_TOKEN_TTL_MS,
+    '', // used_at empty
+    now
+  ]);
+  SpreadsheetApp.flush();
+  return token;
+}
+
+function invalidateUnusedPasswordResetTokens_(email, sheet) {
+  if (sheet.getLastRow() < 2) return;
+  var emailKey = normalizeLoginKey_(email);
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (normalizeLoginKey_(values[i][2]) == emailKey && !values[i][4]) {
+      // Mark as expired immediately instead of hard deleting to preserve audit logs
+      sheet.getRange(i + 2, 4).setValue(Date.now() - 1000);
+      sheet.getRange(i + 2, 5).setValue('invalidated_' + Date.now());
+    }
+  }
+}
+
+function findValidPasswordResetToken_(token) {
+  if (!token) return null;
+  var sheet = getPasswordResetTokenSheet_();
+  if (sheet.getLastRow() < 2) return null;
+
+  var tokenHash = Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token));
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    if (values[i][0] !== tokenHash) continue;
+    var expiresAt = Number(values[i][3]);
+    var usedAt = values[i][4];
+
+    if (expiresAt > Date.now() && !usedAt) {
+      return {
+        rowIndex: i + 2,
+        email: normalizeLoginKey_(values[i][2]),
+        username: normalizeLoginKey_(values[i][1])
+      };
+    }
+  }
+  return null;
+}
+
+function consumePasswordResetToken_(resetRecord) {
+  try {
+    var sheet = getPasswordResetTokenSheet_();
+    sheet.getRange(resetRecord.rowIndex, 5).setValue(new Date().toISOString());
+
+    // Opportunistic cleanup of expired rows
+    cleanupExpiredResetTokens_(sheet);
+  } catch (error) {}
+}
+
+function cleanupExpiredResetTokens_(sheet) {
+  if (sheet.getLastRow() < 2) return;
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  var cutoff = Date.now() - PASSWORD_RESET_TOKEN_RETENTION_MS;
+
+  for (var i = values.length - 1; i >= 0; i -= 1) {
+    var expiresAt = Number(values[i][3]);
+    var usedAt = values[i][4];
+    // Delete only very old tokens to keep sheet size bounded
+    if (expiresAt < cutoff || (usedAt && new Date(usedAt).getTime() < cutoff)) {
+      sheet.deleteRow(i + 2);
+    }
+  }
 }

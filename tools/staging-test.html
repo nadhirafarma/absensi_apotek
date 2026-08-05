@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Indo Apotek Staging Boundary Test</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.5; color: #333; }
+    h1 { border-bottom: 2px solid #eaecef; padding-bottom: 10px; font-size: 24px; }
+    .card { background: #f6f8fa; border: 1px solid #d1d5db; border-radius: 6px; padding: 20px; margin: 20px 0; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+    .form-group input { width: 100%; max-width: 400px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .btn { background-color: #2da44e; color: white; border: 1px solid rgba(27,31,36,0.15); border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .btn:hover { background-color: #2c974b; }
+    .btn:disabled { background-color: #94d3a2; cursor: not-allowed; }
+    .btn-secondary { background-color: #f3f4f6; color: #24292f; border-color: rgba(27,31,36,0.15); margin-left: 10px; }
+    .btn-secondary:hover { background-color: #ebecf0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e4e8; }
+    th { background-color: #f6f8fa; }
+    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 2em; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .status-pass { background-color: #dafbe1; color: #1a7f37; }
+    .status-fail { background-color: #ffebe9; color: #cf222e; }
+    .status-pending { background-color: #fff8c5; color: #9a6700; }
+    #log { background: #24292f; color: #f6f8fa; padding: 15px; border-radius: 6px; font-family: monospace; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>Indo Apotek Staging Boundary Test</h1>
+  <p>Gunakan halaman ini untuk memverifikasi draf pengamanan boundary GAS A di lingkungan staging Anda. Halaman ini aman; credential tidak disimpan atau dikirim ke internet, hanya di-fetch ke URL staging Anda.</p>
+
+  <div class="card">
+    <div class="form-group">
+      <label for="stagingUrl">Staging URL (GAS Web App /exec)</label>
+      <input type="text" id="stagingUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbxrYE_t4s5e00mSo-l1Wt3B9acVuu3_o4sdmhx339yJKPE1FwrWSVeUC0bnEZx73CU_/exec">
+    </div>
+
+    <div class="form-group">
+      <label for="ownerPass">Password test-owner (dari Sheet user staging)</label>
+      <input type="password" id="ownerPass" placeholder="rahasia">
+    </div>
+
+    <div class="form-group">
+      <label for="adminPass">Password test-admin (dari Sheet user staging)</label>
+      <input type="password" id="adminPass" placeholder="rahasia">
+    </div>
+
+    <div class="form-group">
+      <label for="employeePass">Password test-karyawan (dari Sheet user staging)</label>
+      <input type="password" id="employeePass" placeholder="rahasia">
+    </div>
+
+    <div class="form-group">
+      <label for="employeeEmail">Email test-karyawan (untuk menerima link reset staging)</label>
+      <input type="email" id="employeeEmail" placeholder="email yang Anda kuasai; tidak disimpan halaman ini">
+    </div>
+
+    <div class="form-group">
+      <label for="resetToken">Token reset dari email staging (uji 3.1b, opsional)</label>
+      <input type="password" id="resetToken" placeholder="tempel token dari URL email, jangan kirim ke chat">
+    </div>
+
+    <div class="form-group">
+      <label for="resetPassword">Password baru test-karyawan (uji 3.1b, opsional)</label>
+      <input type="password" id="resetPassword" placeholder="minimal 6 karakter, huruf dan angka">
+    </div>
+
+    <button id="runBtn" class="btn">Jalankan Test</button>
+    <button id="copyBtn" class="btn btn-secondary" disabled>Salin Hasil</button>
+  </div>
+
+  <table id="resultsTable">
+    <thead>
+      <tr>
+        <th>Skenario</th>
+        <th>Expected</th>
+        <th>Actual Response</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr id="test1"><td>GET data_obat anonymous</td><td>ok: true</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test2"><td>GET user anonymous</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test3"><td>GET auth_sessions anonymous</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test4"><td>POST saveLoginUser anonymous</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test5"><td>POST saveLoginUser employee</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test6"><td>POST saveLoginUser admin</td><td>ok: true</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test7"><td>POST savePharmacyProfile admin</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test8"><td>POST savePharmacyProfile owner</td><td>ok: true</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test9"><td>POST add_data_obat employee</td><td>ok: false</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test10"><td>POST add_data_obat admin</td><td>ok: true</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test11"><td>Login legacy → auto-upgrade password hash</td><td>ok: true; Sheet password berubah hash</td><td class="actual">manual check</td><td><span class="status-badge status-pending">manual</span></td></tr>
+      <tr id="test12"><td>POST resetPassword known/unknown</td><td>envelope/message sama</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test13"><td>POST saveResetPassword valid token</td><td>ok: true (opsional)</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+      <tr id="test14"><td>POST saveResetPassword reused token</td><td>ok: false (opsional)</td><td class="actual">-</td><td><span class="status-badge status-pending">pending</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Detailed Log</h3>
+  <div id="log">Siap dijalankan...</div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const log = msg => el('log').textContent += '\n' + msg;
+
+    let testResultsReport = '';
+
+    el('runBtn').onclick = async () => {
+      const url = el('stagingUrl').value.trim();
+      const pOwner = el('ownerPass').value;
+      const pAdmin = el('adminPass').value;
+      const pEmp = el('employeePass').value;
+      const resetToken = el('resetToken').value.trim();
+      const newResetPassword = el('resetPassword').value;
+
+      if (!url) {
+        alert('Tolong isi Staging URL terlebih dahulu.');
+        return;
+      }
+
+      el('runBtn').disabled = true;
+      el('copyBtn').disabled = true;
+      el('log').textContent = 'Memulai pengujian...';
+
+      const updateRow = (id, actualText, isPass) => {
+        const row = el(id);
+        row.querySelector('.actual').textContent = actualText.slice(0, 80);
+        const badge = row.querySelector('.status-badge');
+        badge.className = 'status-badge ' + (isPass ? 'status-pass' : 'status-fail');
+        badge.textContent = isPass ? 'pass' : 'fail';
+      };
+
+      const parseJson = text => {
+        try { return JSON.parse(text); } catch(e) { return { error: text }; }
+      };
+
+      const apiCall = async (action, body = {}, token = null) => {
+        try {
+          const reqBody = { action, ...body };
+          if (token) {
+            reqBody.sessionToken = token;
+          }
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(reqBody)
+          });
+          const text = await res.text();
+          return parseJson(text);
+        } catch(e) {
+          return { ok: false, success: false, message: e.toString() };
+        }
+      };
+
+      const getCall = async (qs) => {
+        try {
+          const res = await fetch(url + '?' + qs, { cache: 'no-store' });
+          const text = await res.text();
+          return parseJson(text);
+        } catch(e) {
+          return { ok: false, success: false, message: e.toString() };
+        }
+      };
+
+      log('Menjalankan Test 1: GET data_obat anonymous...');
+      const r1 = await getCall('sheet=data_obat');
+      const pass1 = r1.ok === true || r1.success === true;
+      updateRow('test1', JSON.stringify(r1), pass1);
+      log(`Test 1: ok=${r1.ok} success=${r1.success} total=${r1.total || 0}`);
+
+      log('Menjalankan Test 2: GET user anonymous...');
+      const r2 = await getCall('sheet=user');
+      const pass2 = r2.ok === false || r2.success === false;
+      updateRow('test2', JSON.stringify(r2), pass2);
+      log(`Test 2: ok=${r2.ok} message=${r2.message || ''}`);
+
+      log('Menjalankan Test 3: GET auth_sessions anonymous...');
+      const r3 = await getCall('sheet=auth_sessions');
+      const pass3 = r3.ok === false || r3.success === false;
+      updateRow('test3', JSON.stringify(r3), pass3);
+      log(`Test 3: ok=${r3.ok} message=${r3.message || ''}`);
+
+      log('Menjalankan Test 4: POST saveLoginUser anonymous...');
+      const r4 = await apiCall('saveLoginUser', { username: 'test-forged', role: 'owner' });
+      const pass4 = r4.ok === false || r4.success === false;
+      updateRow('test4', JSON.stringify(r4), pass4);
+      log(`Test 4: ok=${r4.ok} message=${r4.message || ''}`);
+
+      log('\nMelakukan login test-karyawan untuk mendapatkan token...');
+      const lEmp = await apiCall('login', { username: 'test-karyawan', password: pEmp });
+      const tEmp = lEmp.sessionToken;
+      log(`Login test-karyawan: token=${tEmp ? 'ada' : 'tidak ada'} ok=${lEmp.ok} message=${lEmp.message || ''}`);
+
+      log('\nMelakukan login test-admin untuk mendapatkan token...');
+      const lAdmin = await apiCall('login', { username: 'test-admin', password: pAdmin });
+      const tAdmin = lAdmin.sessionToken;
+      log(`Login test-admin: token=${tAdmin ? 'ada' : 'tidak ada'} ok=${lAdmin.ok} message=${lAdmin.message || ''}`);
+
+      log('\nMelakukan login test-owner untuk mendapatkan token...');
+      const lOwner = await apiCall('login', { username: 'test-owner', password: pOwner });
+      const tOwner = lOwner.sessionToken;
+      log(`Login test-owner: token=${tOwner ? 'ada' : 'tidak ada'} ok=${lOwner.ok} message=${lOwner.message || ''}`);
+
+      log('\nMenjalankan Test 5: POST saveLoginUser employee...');
+      let r5 = { ok: false, message: 'Login failed' };
+      if (tEmp) {
+        r5 = await apiCall('saveLoginUser', { username: 'test-created', role: 'Operator' }, tEmp);
+      }
+      const pass5 = r5.ok === false || r5.success === false;
+      updateRow('test5', JSON.stringify(r5), pass5);
+      log(`Test 5: ok=${r5.ok} message=${r5.message || ''}`);
+
+      log('Menjalankan Test 6: POST saveLoginUser admin...');
+      let r6 = { ok: false, message: 'Login failed' };
+      if (tAdmin) {
+        r6 = await apiCall('saveLoginUser', {
+          username: 'test-created-admin',
+          name: 'Test Created Admin',
+          role: 'Operator',
+          status: 'Aktif',
+          originalUsername: 'test-created-admin'
+        }, tAdmin);
+      }
+      const pass6 = r6.ok === true || r6.success === true;
+      updateRow('test6', JSON.stringify(r6), pass6);
+      log(`Test 6: ok=${r6.ok} message=${r6.message || ''}`);
+
+      log('Menjalankan Test 7: POST savePharmacyProfile admin...');
+      let r7 = { ok: false, message: 'Login failed' };
+      if (tAdmin) {
+        r7 = await apiCall('savePharmacyProfile', { profile: { name: 'Maling Profil apotek' } }, tAdmin);
+      }
+      const pass7 = r7.ok === false || r7.success === false;
+      updateRow('test7', JSON.stringify(r7), pass7);
+      log(`Test 7: ok=${r7.ok} message=${r7.message || ''}`);
+
+      log('Menjalankan Test 8: POST savePharmacyProfile owner...');
+      let r8 = { ok: false, message: 'Login failed' };
+      if (tOwner) {
+        r8 = await apiCall('savePharmacyProfile', { profile: { name: 'Staging Apotek Baru' } }, tOwner);
+      }
+      const pass8 = r8.ok === true || r8.success === true;
+      updateRow('test8', JSON.stringify(r8), pass8);
+      log(`Test 8: ok=${r8.ok} message=${r8.message || ''}`);
+
+      log('Menjalankan Test 9: POST add_data_obat employee...');
+      let r9 = { ok: false, message: 'Login failed' };
+      if (tEmp) {
+        r9 = await apiCall('add_data_obat', { kode: 'TST001', nama: 'Obat Palsu' }, tEmp);
+      }
+      const pass9 = r9.ok === false || r9.success === false;
+      updateRow('test9', JSON.stringify(r9), pass9);
+      log(`Test 9: ok=${r9.ok} message=${r9.message || ''}`);
+
+      log('Menjalankan Test 10: POST add_data_obat admin...');
+      let r10 = { ok: false, message: 'Login failed' };
+      if (tAdmin) {
+        r10 = await apiCall('add_data_obat', { kode: 'TST001', nama: 'Obat Staging', originalUsername: 'TST001' }, tAdmin);
+      }
+      const pass10 = r10.ok === true || r10.success === true;
+      updateRow('test10', JSON.stringify(r10), pass10);
+      log(`Test 10: ok=${r10.ok} message=${r10.message || ''}`);
+
+      log('Menjalankan Test 12: reset request response netral...');
+      const r12a = await apiCall('resetPassword', { username: 'test-karyawan', email: 'test-karyawan@example.test' });
+      const r12b = await apiCall('resetPassword', { username: 'does-not-exist', email: 'missing@example.test' });
+      const pass12 = r12a.ok === true && r12b.ok === true && r12a.message === r12b.message;
+      updateRow('test12', `same=${r12a.message === r12b.message}`, pass12);
+      log(`Test 12: valid/unknown response sama=${r12a.message === r12b.message}`);
+
+      let pass13 = null;
+      let pass14 = null;
+      if (resetToken && newResetPassword) {
+        log('Menjalankan Test 13: consume token reset...');
+        const r13 = await apiCall('saveResetPassword', {
+          token: resetToken,
+          password: newResetPassword,
+          confirmPassword: newResetPassword
+        });
+        pass13 = r13.ok === true || r13.success === true;
+        updateRow('test13', JSON.stringify(r13), pass13);
+        log(`Test 13: ok=${r13.ok} message=${r13.message || ''}`);
+
+        log('Menjalankan Test 14: reuse token reset harus ditolak...');
+        const r14 = await apiCall('saveResetPassword', {
+          token: resetToken,
+          password: newResetPassword,
+          confirmPassword: newResetPassword
+        });
+        pass14 = r14.ok === false || r14.success === false;
+        updateRow('test14', JSON.stringify(r14), pass14);
+        log(`Test 14: ok=${r14.ok} message=${r14.message || ''}`);
+      } else {
+        el('test13').querySelector('.actual').textContent = 'lewati: isi token + password baru';
+        el('test14').querySelector('.actual').textContent = 'lewati: isi token + password baru';
+      }
+
+      log('\nPengujian selesai.');
+      el('runBtn').disabled = false;
+      el('copyBtn').disabled = false;
+
+      testResultsReport = `Environment: staging
+GAS A deployment: test-exec
+Timestamp: ${new Date().toLocaleString('id-ID')}
+
+GET data_obat anonymous: expected pass / actual ${pass1 ? 'pass' : 'fail'} (ok: ${r1.ok})
+GET user anonymous: expected reject / actual ${pass2 ? 'pass' : 'fail'} (ok: ${r2.ok})
+GET auth_sessions anonymous: expected reject / actual ${pass3 ? 'pass' : 'fail'} (ok: ${r3.ok})
+saveLoginUser anonymous: expected reject / actual ${pass4 ? 'pass' : 'fail'} (ok: ${r4.ok})
+saveLoginUser employee: expected reject / actual ${pass5 ? 'pass' : 'fail'} (ok: ${r5.ok})
+saveLoginUser admin: expected pass / actual ${pass6 ? 'pass' : 'fail'} (ok: ${r6.ok})
+savePharmacyProfile admin: expected reject / actual ${pass7 ? 'pass' : 'fail'} (ok: ${r7.ok})
+savePharmacyProfile owner: expected pass / actual ${pass8 ? 'pass' : 'fail'} (ok: ${r8.ok})
+add_data_obat employee: expected reject / actual ${pass9 ? 'pass' : 'fail'} (ok: ${r9.ok})
+add_data_obat admin: expected pass / actual ${pass10 ? 'pass' : 'fail'} (ok: ${r10.ok})
+resetPassword neutral response: expected pass / actual ${pass12 ? 'pass' : 'fail'} (same: ${pass12})
+saveResetPassword consume valid token: expected pass / actual ${pass13 === null ? 'skipped' : (pass13 ? 'pass' : 'fail')} (ok: ${pass13})
+saveResetPassword reuse token: expected reject / actual ${pass14 === null ? 'skipped' : (pass14 ? 'pass' : 'fail')} (ok: ${pass14})`;
+    };
+
+    el('copyBtn').onclick = () => {
+      navigator.clipboard.writeText(testResultsReport);
+      alert('Hasil test berhasil disalin ke clipboard.');
+    };
+  </script>
+</body>
+</html>
