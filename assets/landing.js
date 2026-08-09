@@ -110,9 +110,10 @@
     }
   };
 
+  const nextUrl = getSafeNext(new URLSearchParams(window.location.search).get("next"));
   const session = readSession();
   if (session) {
-    window.location.replace("index.html");
+    window.location.replace(nextUrl);
     return;
   }
 
@@ -166,9 +167,7 @@
 
   function updateLoginHref() {
     if (!loginLink) return;
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get("next") || "index.html";
-    loginLink.href = `login.html?next=${encodeURIComponent(getSafeNext(next))}`;
+    loginLink.href = `/login.html?next=${encodeURIComponent(nextUrl)}`;
   }
 
   function applyTheme(theme, options = {}) {
@@ -306,20 +305,25 @@
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
       const sessionValue = raw ? JSON.parse(raw) : null;
-      if (!sessionValue || !sessionValue.expiresAt || Date.now() > Number(sessionValue.expiresAt)) {
+      const expiresAt = Number(sessionValue?.expiresAt);
+      if (!sessionValue || !Number.isFinite(expiresAt) || Date.now() >= expiresAt) {
         sessionStorage.removeItem(SESSION_KEY);
         return null;
       }
       return sessionValue;
     } catch (error) {
-      sessionStorage.removeItem(SESSION_KEY);
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+      } catch (_) {
+        /* storage unavailable: fail closed */
+      }
       return null;
     }
   }
 
   function getSafeNext(value) {
-    const next = String(value || "index.html").trim() || "index.html";
-    if (/^https?:\/\//i.test(next) || next.startsWith("//")) return "index.html";
+    const next = String(value || "/");
+    if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || /[\x00-\x1f\x7f]/.test(next)) return "/";
     return next;
   }
 })();

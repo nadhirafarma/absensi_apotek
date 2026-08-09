@@ -1,6 +1,6 @@
 # Epic 1 Fase 2: Gerbang Session GAS A
 
-**Status:** Ready to implement
+**Status:** ~~Ready to implement~~ — **STALE.** Source dan `docs/prd/epics.md` mencatat implementasi Fase B sudah deployed 2026-07-27 (GAS A @120). Dokumen ini disimpan sebagai catatan desain historis; jangan dijadikan dasar status proyek terkini.
 **Tanggal:** 2026-07-26
 **Target:** `google-apps-script-api-search-box-final.gs`
 

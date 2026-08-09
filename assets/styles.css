@@ -30,7 +30,7 @@
   --yellow: #b87900;
   --red: #cc2f4a;
   --shadow: 0 18px 48px rgba(17, 69, 134, 0.12);
-}v1
+}
 
 /* 20260607 v52b: final compact medicine modal + realtime attendance page. */
 @media (min-width: 901px) {
@@ -3593,7 +3593,7 @@ body.dashboard-page {
   cursor: pointer;
 }
 
-.sidebar-link svg,
+.sidebar-link .sidebar-icon,
 .sidebar-logout svg {
   width: 19px;
   height: 19px;
@@ -4149,7 +4149,7 @@ body.dashboard-page {
   text-align: left;
 }
 
-.sidebar-link svg {
+.sidebar-link .sidebar-icon {
   width: 21px;
   height: 21px;
   flex: 0 0 21px;
@@ -4157,6 +4157,8 @@ body.dashboard-page {
 
 .sidebar-label {
   min-width: 0;
+  white-space: normal;
+  line-height: 1.15;
 }
 
 body.sidebar-collapsed .app-layout {
@@ -7010,7 +7012,7 @@ body.sidebar-collapsed .sidebar-link {
   overflow: hidden;
 }
 
-body.sidebar-collapsed .sidebar-link svg {
+body.sidebar-collapsed .sidebar-link .sidebar-icon {
   width: 21px;
   height: 21px;
   flex: 0 0 21px;
@@ -7156,8 +7158,8 @@ body.sidebar-collapsed .sidebar-link {
   overflow: visible;
 }
 
-.app-sidebar .sidebar-link svg,
-body.sidebar-collapsed .sidebar-link svg {
+.app-sidebar .sidebar-link .sidebar-icon,
+body.sidebar-collapsed .sidebar-link .sidebar-icon {
   width: 21px;
   height: 21px;
   flex: 0 0 21px;
@@ -7599,6 +7601,64 @@ body.sidebar-collapsed .dashboard-main {
   padding: 0;
   overflow: hidden;
   color: transparent;
+}
+
+#profileLargeAvatar.has-photo[role="button"] {
+  cursor: zoom-in;
+}
+
+#profileLargeAvatar.has-photo[role="button"]:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 5px;
+}
+
+.profile-photo-viewer {
+  width: fit-content;
+  max-width: 92vw;
+  max-height: 90dvh;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  overflow: visible;
+  background: transparent;
+}
+
+.profile-photo-viewer::backdrop {
+  background: rgba(3, 10, 24, 0.82);
+}
+
+.profile-photo-viewer img {
+  display: block;
+  max-width: 92vw;
+  max-height: 85dvh;
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+}
+
+.profile-photo-viewer-close {
+  position: absolute;
+  z-index: 1;
+  top: -18px;
+  right: -18px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #14264c;
+  font: 700 1.7rem/1 sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+
+.profile-photo-viewer-close:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
 }
 
 .profile-photo-picker {
@@ -8525,7 +8585,7 @@ body.sidebar-collapsed .dashboard-main {
     border-radius: 8px !important;
   }
 
-  body.sidebar-collapsed .sidebar-link svg {
+  body.sidebar-collapsed .sidebar-link .sidebar-icon {
     width: 21px !important;
     height: 21px !important;
     flex: 0 0 21px !important;
@@ -15666,127 +15726,28 @@ body.notification-open .mobile-bottom-nav {
   }
 }
 
-/* 20260610 sidebar icon refresh: colored modern app-menu accents. */
-.app-sidebar .sidebar-link,
-body.sidebar-collapsed .app-sidebar .sidebar-link {
-  --sidebar-icon-accent: #2368ff;
-  --sidebar-icon-bg: linear-gradient(145deg, rgba(35, 104, 255, 0.14), rgba(35, 104, 255, 0.03));
-}
-
-.app-sidebar .sidebar-link svg,
-body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-  width: 34px !important;
-  min-width: 34px;
-  height: 34px !important;
-  min-height: 34px;
-  padding: 7px;
-  border: 1px solid rgba(205, 220, 248, 0.74);
-  border-radius: 13px;
-  color: var(--sidebar-icon-accent);
-  background: var(--sidebar-icon-bg);
-  filter: drop-shadow(0 10px 18px rgba(22, 55, 124, 0.11));
-  transition: transform 180ms ease, color 180ms ease, background 180ms ease, border-color 180ms ease, filter 180ms ease;
-}
-
-.app-sidebar .sidebar-link:hover svg {
-  transform: translateY(-1px) scale(1.03);
-  filter: drop-shadow(0 14px 22px rgba(22, 55, 124, 0.17));
-}
-
-.app-sidebar .sidebar-link.is-active svg,
-body.sidebar-collapsed .app-sidebar .sidebar-link.is-active svg {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.68);
-  background: linear-gradient(135deg, var(--sidebar-icon-accent), #e81798);
-  filter: drop-shadow(0 15px 24px rgba(216, 35, 169, 0.28));
-}
-
-.app-sidebar .sidebar-link[data-view-target="dashboard"] { --sidebar-icon-accent: #2563eb; --sidebar-icon-bg: linear-gradient(145deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.04)); }
-.app-sidebar .sidebar-link[data-access-key="absensi"] { --sidebar-icon-accent: #8b5cf6; --sidebar-icon-bg: linear-gradient(145deg, rgba(139, 92, 246, 0.18), rgba(139, 92, 246, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="presensi"] { --sidebar-icon-accent: #0ea5e9; --sidebar-icon-bg: linear-gradient(145deg, rgba(14, 165, 233, 0.18), rgba(14, 165, 233, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="cari-data-obat"] { --sidebar-icon-accent: #06b6d4; --sidebar-icon-bg: linear-gradient(145deg, rgba(6, 182, 212, 0.18), rgba(6, 182, 212, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="data-obat"] { --sidebar-icon-accent: #22c55e; --sidebar-icon-bg: linear-gradient(145deg, rgba(34, 197, 94, 0.18), rgba(34, 197, 94, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="data-karyawan"] { --sidebar-icon-accent: #f43f5e; --sidebar-icon-bg: linear-gradient(145deg, rgba(244, 63, 94, 0.18), rgba(244, 63, 94, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="data-supplier"] { --sidebar-icon-accent: #f97316; --sidebar-icon-bg: linear-gradient(145deg, rgba(249, 115, 22, 0.18), rgba(249, 115, 22, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="surat-pesanan"] { --sidebar-icon-accent: #14b8a6; --sidebar-icon-bg: linear-gradient(145deg, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="restok-obat"] { --sidebar-icon-accent: #ec4899; --sidebar-icon-bg: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="import-data-obat"] { --sidebar-icon-accent: #3b82f6; --sidebar-icon-bg: linear-gradient(145deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="akun-profil"] { --sidebar-icon-accent: #7c3aed; --sidebar-icon-bg: linear-gradient(145deg, rgba(124, 58, 237, 0.18), rgba(124, 58, 237, 0.04)); }
-.app-sidebar .sidebar-link[data-view-target="manajemen-pengguna"] { --sidebar-icon-accent: #0f766e; --sidebar-icon-bg: linear-gradient(145deg, rgba(15, 118, 110, 0.18), rgba(15, 118, 110, 0.04)); }
-
-/* 20260720: Replace sidebar SVG icons with PNG images (matching mobile menu). */
-.app-sidebar .sidebar-link svg,
-body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-  display: none !important;
-}
-
-.app-sidebar .sidebar-link::before {
-  content: "";
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  min-height: 34px;
-  flex: 0 0 34px;
+/* 20260809 sidebar: canonical PNG icons use fixed menu metrics. */
+.app-sidebar .sidebar-icon {
   display: block;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid rgba(205, 220, 248, 0.74);
-  border-radius: 13px;
-  filter: drop-shadow(0 10px 18px rgba(22, 55, 124, 0.11));
-  transition: transform 180ms ease, border-color 180ms ease, filter 180ms ease;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  flex: 0 0 30px;
+  box-sizing: border-box;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
 }
 
-.app-sidebar .sidebar-link:hover::before {
-  transform: translateY(-1px) scale(1.03);
-  filter: drop-shadow(0 14px 22px rgba(22, 55, 124, 0.17));
+body.sidebar-collapsed .app-sidebar .sidebar-link {
+  justify-content: center !important;
+  gap: 0 !important;
+  padding-inline: 0 !important;
 }
 
-.app-sidebar .sidebar-link.is-active::before,
-body.sidebar-collapsed .app-sidebar .sidebar-link.is-active::before {
-  border-color: rgba(255, 255, 255, 0.68);
-  filter: drop-shadow(0 15px 24px rgba(216, 35, 169, 0.28));
-}
-
-.app-sidebar .sidebar-link[data-view-target="dashboard"]::before { background-image: url("mobile-menu/dashboard.png"); }
-.app-sidebar .sidebar-link[data-access-key="absensi"]::before { background-image: url("mobile-menu/presensi.png"); }
-.app-sidebar .sidebar-link[data-view-target="presensi"]::before { background-image: url("mobile-menu/presensi.png"); }
-.app-sidebar .sidebar-link[data-view-target="presensi-karyawan"]::before { background-image: url("mobile-menu/presensi.png"); }
-.app-sidebar .sidebar-link[data-view-target="monitoring-presensi"]::before { background-image: url("mobile-menu/presensi.png"); }
-.app-sidebar .sidebar-link[data-view-target="cari-data-obat"]::before { background-image: url("mobile-menu/data-obat.png"); }
-.app-sidebar .sidebar-link[data-view-target="data-obat"]::before { background-image: url("mobile-menu/data-obat.png"); }
-.app-sidebar .sidebar-link[data-view-target="data-karyawan"]::before { background-image: url("mobile-menu/data-karyawan.png"); }
-.app-sidebar .sidebar-link[data-view-target="data-supplier"]::before { background-image: url("mobile-menu/data-supplier.png"); }
-.app-sidebar .sidebar-link[data-view-target="surat-pesanan"]::before { background-image: url("mobile-menu/surat-pesanan.png"); }
-.app-sidebar .sidebar-link[data-view-target="restok-obat"]::before { background-image: url("mobile-menu/restok-obat.png"); }
-.app-sidebar .sidebar-link[data-view-target="import-data-obat"]::before { background-image: url("mobile-menu/import-data-obat.png"); }
-.app-sidebar .sidebar-link[data-view-target="akun-profil"]::before { background-image: url("mobile-menu/dashboard.png"); }
-.app-sidebar .sidebar-link[data-view-target="log-aktivitas"]::before { background-image: url("mobile-menu/dashboard.png"); }
-.app-sidebar .sidebar-link[data-view-target="manajemen-pengguna"]::before { background-image: url("mobile-menu/manajemen-pengguna.png"); }
-.app-sidebar .sidebar-link[data-view-target="data-role"]::before { background-image: url("mobile-menu/manajemen-pengguna.png"); }
-
-body.sidebar-collapsed .app-sidebar .sidebar-link::before {
-  width: 21px;
-  min-width: 21px;
-  height: 21px;
-  min-height: 21px;
-  flex: 0 0 21px;
-  border: 0;
-  filter: none;
-}
-
-body.sidebar-collapsed .app-sidebar .sidebar-link:hover::before {
-  transform: translateY(-1px) scale(1.03);
-}
-
-body.sidebar-collapsed .app-sidebar .sidebar-link.is-active::before {
-  filter: drop-shadow(0 10px 18px rgba(216, 35, 169, 0.22));
-}
-
-body.theme-dark .app-sidebar .sidebar-link svg,
-body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link svg {
-  border-color: rgba(148, 163, 184, 0.24);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03));
+body.sidebar-collapsed .app-sidebar .sidebar-label {
+  display: none !important;
 }
 
 @media (max-width: 760px) {
@@ -16804,6 +16765,79 @@ body.theme-dark .app-loading-card {
   gap: 14px;
 }
 
+#view-presensi .salary-history-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(82px, 112px)) auto auto;
+  justify-content: start;
+  gap: 8px;
+  align-items: end;
+  margin: 12px 0;
+}
+
+#view-presensi .salary-history-filters label {
+  display: grid;
+  gap: 6px;
+  color: #52698e;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+#view-presensi .salary-history-filters input,
+#view-presensi .salary-history-filters select,
+#view-presensi .salary-history-filters button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d6e3f2;
+  border-radius: 10px;
+  background: #fff;
+  color: #29446e;
+  font: 500 .78rem Poppins, sans-serif;
+}
+
+#view-presensi .salary-history-filters button {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+body.theme-dark #view-presensi .salary-history-filters label {
+  color: #b9cae3;
+}
+
+body.theme-dark #view-presensi .salary-history-filters input,
+body.theme-dark #view-presensi .salary-history-filters select {
+  background: #182c48;
+  border-color: #314967;
+  color: #d7e6f8;
+}
+
+#view-presensi .salary-history-result-count {
+  margin: 0 0 8px;
+  color: #52698e;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+#view-presensi .salary-history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  color: #52698e;
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  #view-presensi .salary-history-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #view-presensi .salary-history-filters button {
+    width: 100%;
+  }
+}
+
 .salary-history-list {
   display: grid;
   gap: 10px;
@@ -16856,7 +16890,7 @@ body.theme-dark .app-loading-card {
 
 .salary-history-copy strong {
   color: #071955;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .salary-history-copy small {
@@ -16874,6 +16908,16 @@ body.theme-dark .app-loading-card {
 .salary-history-actions {
   display: flex;
   gap: 6px;
+}
+
+#view-presensi .ess-salary-table td:last-child {
+  white-space: nowrap;
+}
+
+#view-presensi .ess-salary-table .table-action {
+  display: inline-grid;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .salary-history-empty {
@@ -20707,9 +20751,6 @@ body.sidebar-collapsed .global-sidebar-toggle {
     padding-top: 10px !important;
   }
 
-  #view-akun-profil .profile-avatar-large {
-    margin-top: -48px !important;
-  }
 
   body.theme-dark .mobile-hero-profile-popover {
     border-color: rgba(139, 158, 204, 0.24);
@@ -25754,44 +25795,10 @@ body.sidebar-open .profile-modern-layout.profile-panel-open::after {
   .app-sidebar .sidebar-link[data-view-target="manajemen-pengguna"] { --sidebar-icon-surface: linear-gradient(135deg, #8f5cff, #6d35e8); --sidebar-icon-shadow: rgba(109, 53, 232, 0.28); }
   .app-sidebar .sidebar-link[data-view-target="data-role"] { --sidebar-icon-surface: linear-gradient(135deg, #ff506d, #ff2f50); --sidebar-icon-shadow: rgba(255, 47, 80, 0.26); }
 
-  .app-sidebar .sidebar-link svg,
-  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-    display: block !important;
-    width: 30px !important;
-    height: 30px !important;
-    flex: 0 0 30px !important;
-    padding: 6px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.82);
-    background: var(--sidebar-icon-surface, linear-gradient(135deg, #3f82ff, #2157e4));
-    box-shadow: 0 14px 24px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.22));
-    color: #fff;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.85;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    overflow: visible;
-    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
-  }
-
-  .app-sidebar .sidebar-link:hover svg,
-  .app-sidebar .sidebar-link.is-active svg {
-    transform: translateY(-1px) scale(1.03);
-    box-shadow: 0 16px 28px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.28));
-  }
-
-  .app-sidebar .sidebar-link::before,
-  body.sidebar-collapsed .app-sidebar .sidebar-link::before {
-    content: none !important;
-    display: none !important;
-  }
-
-  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
-    width: 30px !important;
-    height: 30px !important;
-    flex-basis: 30px !important;
-    padding: 6px;
+  .app-sidebar .sidebar-link .sidebar-icon,
+  body.sidebar-collapsed .app-sidebar .sidebar-link .sidebar-icon,
+  body.sidebar-open .app-sidebar .sidebar-link .sidebar-icon {
+    display: grid !important;
   }
 }
 
@@ -25801,52 +25808,52 @@ body.sidebar-open .profile-modern-layout.profile-panel-open::after {
 }
 
 #view-data-role .role-access-table {
-  table-layout: auto !important;
-  width: max-content !important;
-  min-width: 920px !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  min-width: 760px !important;
 }
 
 #view-data-role .role-access-table thead th,
 #view-data-role .role-access-table tbody td {
-  white-space: nowrap !important;
   vertical-align: top !important;
 }
 
 #view-data-role .role-access-table th:nth-child(1),
 #view-data-role .role-access-table td:nth-child(1) {
-  min-width: 160px !important;
+  width: 22% !important;
+  white-space: normal !important;
 }
 
 #view-data-role .role-access-table th:nth-child(2),
-#view-data-role .role-access-table td:nth-child(2) {
-  min-width: 118px !important;
-}
-
+#view-data-role .role-access-table td:nth-child(2),
 #view-data-role .role-access-table th:nth-child(3),
 #view-data-role .role-access-table td:nth-child(3) {
-  min-width: 118px !important;
+  width: 13% !important;
 }
 
 #view-data-role .role-access-table th:nth-child(4),
 #view-data-role .role-access-table td:nth-child(4) {
-  min-width: 360px !important;
+  width: 42% !important;
   white-space: normal !important;
 }
 
 #view-data-role .role-access-table th:last-child,
 #view-data-role .role-access-table td:last-child {
   width: 72px !important;
-  min-width: 72px !important;
 }
 
 #view-data-role .role-access-table .pill-tag {
-  max-width: none !important;
-  white-space: nowrap !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.35;
+  text-align: left;
 }
 
 #view-data-role .role-access-summary {
   display: block !important;
-  min-width: 360px !important;
+  min-width: 0 !important;
   white-space: normal !important;
   overflow-wrap: anywhere !important;
   word-break: normal !important;
@@ -28680,7 +28687,9 @@ body.home-view-active .icon-role {
 body.sidebar-collapsed .app-sidebar .sidebar-section-toggle {
   width: 46px !important;
   min-height: 34px !important;
-  justify-content: center !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0 !important;
   padding: 7px 0 !important;
   margin: 4px auto !important;
   border-radius: 999px !important;
@@ -28692,9 +28701,12 @@ body.sidebar-collapsed .app-sidebar .sidebar-section-toggle .sidebar-section {
 }
 
 body.sidebar-collapsed .app-sidebar .sidebar-section-chevron {
+  box-sizing: border-box !important;
   width: 16px !important;
   height: 16px !important;
-  flex-basis: 16px !important;
+  flex: 0 0 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-shadow: none !important;
 }
 
@@ -29468,8 +29480,8 @@ body.theme-dark #view-data-supplier .simple-table thead th {
 }
 
 @media (min-width: 761px) {
-  .app-sidebar .sidebar-link svg,
-  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
+  .app-sidebar .sidebar-link .sidebar-icon,
+  body.sidebar-collapsed .app-sidebar .sidebar-link .sidebar-icon {
     width: 30px !important;
     height: 30px !important;
     flex-basis: 30px !important;
@@ -29477,12 +29489,12 @@ body.theme-dark #view-data-supplier .simple-table thead th {
     box-shadow: 0 10px 18px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.18)) !important;
   }
 
-  .app-sidebar .sidebar-link:hover svg,
-  .app-sidebar .sidebar-link.is-active svg {
+  .app-sidebar .sidebar-link:hover .sidebar-icon,
+  .app-sidebar .sidebar-link.is-active .sidebar-icon {
     box-shadow: 0 12px 20px var(--sidebar-icon-shadow, rgba(33, 87, 228, 0.2)) !important;
   }
 
-  body.sidebar-collapsed .app-sidebar .sidebar-link svg {
+  body.sidebar-collapsed .app-sidebar .sidebar-link .sidebar-icon {
     width: 30px !important;
     height: 30px !important;
     flex-basis: 30px !important;
@@ -29918,21 +29930,94 @@ body.theme-dark #view-data-role .role-access-table th:last-child {
 }
 
 @media (min-width: 761px) {
-  body.theme-dark .app-sidebar .sidebar-link svg,
-  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link svg {
+  body.theme-dark .app-sidebar .sidebar-link .sidebar-icon,
+  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link .sidebar-icon {
     border-color: rgba(84, 115, 162, 0.74) !important;
     background: linear-gradient(135deg, rgba(15, 27, 48, 0.96), rgba(24, 41, 69, 0.92)) !important;
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.34) !important;
     color: #dbe8fb !important;
   }
 
-  body.theme-dark .app-sidebar .sidebar-link:hover svg,
-  body.theme-dark .app-sidebar .sidebar-link.is-active svg,
-  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link.is-active svg {
+  body.theme-dark .app-sidebar .sidebar-link:hover .sidebar-icon,
+  body.theme-dark .app-sidebar .sidebar-link.is-active .sidebar-icon,
+  body.theme-dark.sidebar-collapsed .app-sidebar .sidebar-link.is-active .sidebar-icon {
     border-color: rgba(160, 191, 255, 0.78) !important;
     background: linear-gradient(135deg, rgba(50, 140, 255, 0.46), rgba(122, 92, 255, 0.4) 56%, rgba(229, 53, 173, 0.34)) !important;
     color: #ffffff !important;
   }
+}
+
+/* 20260801 Fix: logo & toggle sidebar mobile off-canvas statis, hanya padding yang bergeser smooth.
+   ponytail: logo/brand & toggle tidak lagi di-hide/slide; lebar kontainer tetap, gap+padding transisi.
+   add when: perlu ubah jarak animasi -> sesuaikan nilai transition/padding di blok ini. */
+body.sidebar-open .app-sidebar,
+body.sidebar-collapsed .app-sidebar,
+body:not(.sidebar-open) .app-sidebar,
+body:not(.sidebar-collapsed) .app-sidebar {
+  transition: transform 220ms ease, padding 240ms ease, gap 240ms ease;
+}
+
+@media (max-width: 900px) {
+  body.sidebar-open .sidebar-brand-row,
+  body.sidebar-collapsed .sidebar-brand-row {
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+
+  body.sidebar-open .sidebar-brand,
+  body.sidebar-collapsed .sidebar-brand {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+    transition: gap 240ms ease, padding 240ms ease;
+  }
+
+  body.sidebar-open .sidebar-brand img,
+  body.sidebar-collapsed .sidebar-brand img {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+  }
+
+  body.sidebar-open .sidebar-brand-text,
+  body.sidebar-collapsed .sidebar-brand-text {
+    display: block !important;
+    min-width: 0 !important;
+    transition: opacity 180ms ease;
+  }
+
+  body.sidebar-collapsed .sidebar-brand-text {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    width: 0 !important;
+  }
+
+  body.sidebar-open .sidebar-toggle,
+  body.sidebar-collapsed .sidebar-toggle {
+    position: static !important;
+    flex: 0 0 auto !important;
+    width: 38px !important;
+    height: 38px !important;
+    margin-left: auto !important;
+    transition: margin 240ms ease;
+  }
+
+body.sidebar-collapsed .sidebar-toggle {
+    margin-left: 0 !important;
+  }
+}
+
+/* Keep PNG icon size identical while sidebar opens and closes. */
+.app-sidebar .sidebar-link::before,
+body.sidebar-collapsed .app-sidebar .sidebar-link::before {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
 }
 
 /* 20260722 dark audit v5: finish purchase/restock/presensi contrast fixes. */

@@ -22,7 +22,7 @@ Bahasa output: Indonesia. Setiap entri di bawah dilacak ke nomor baris kode yang
 - **Epic 1 fase 1 (frontend, non-breaking):** `postToApi` di `assets/home-dashboard.js` otomatis menempelkan `sessionToken`, `username`, `email`, `role` dari `sessionStorage` ke setiap payload GAS A. Field eksplisit di payload pemanggil tetap menang (spread di akhir). GAS A saat ini mengabaikan field ini pada aksi unlocked, jadi perilaku runtime tidak berubah.
 - `assets/attendance.js` juga mengirim identitas sesi yang sama pada `getPharmacyProfile` dan `getAttendanceShiftSettings`.
 - Sebagian besar list/read menggunakan `cache: "no-store"`.
-- Beberapa aksi dikirim via GET query string (`action=...`), mis. `listLoginUsers`, `listAttendanceRecords` (ESS), `import_data_obat` fallback.
+- Beberapa aksi read dikirim via GET query string (`action=...`), mis. `listAttendanceRecords` (ESS). `import_data_obat` wajib POST authenticated via `postToApi`.
 
 
 ## 2. Format response (TIDAK identik antar backend)
@@ -35,21 +35,53 @@ Bahasa output: Indonesia. Setiap entri di bawah dilacak ke nomor baris kode yang
 ## 3. GAS A — dataObatAuth
 
 ### 3.1 doGet (`:154-230`)
-| Query | Fungsi | Auth |
-|---|---|---|
-| `page=reset` | render halaman reset password | publik |
-| `action=listLoginUsers` | daftar user login | ⚠ terbuka via GET |
-| `sheet=<nama>` | baca sheet generik sebagai objek | `sheet=user` diblokir (`:186`) |
-| `sheet=data_obat` | data obat + metadata upload | publik-read |
+| Query | Fungsi | Auth | Status |
+|---|---|---|---|
+| `page=reset` | render halaman reset password | publik | ⚠ reset tanpa token — perlu preflight |
+| `action=listLoginUsers` | daftar user login | wajib `validatePharmacySession_` | deployed 2026-07-27 |
+| `sheet=user` | ditolak eksplisit (`:186`) | — | OK |
+| `sheet=data_obat` | data obat + metadata upload | publik-read, allowlisted | OK |
+| `sheet=<lain>` | baca sheet generik | ⚠ hanya `user` diblokir; sheet internal lain (termasuk `auth_sessions`) dapat diekspos | **blocker — Story 3.1** |
 
-### 3.2 doPost — action dikenal (`:338-497`)
-Data obat & filter: `import_data_obat`, `getDataObatFilter`, `saveDataObatFilter`, `add_data_obat`, `update_data_obat`, `delete_data_obat`.
-Log: `saveActivityLog`, `listActivityLog`, `deleteActivityLog`.
-Shift & profil: `getAttendanceShiftSettings`, `saveAttendanceShiftSettings`, `getPharmacyProfile`, `savePharmacyProfile`.
-Restok & PO: `listRestockRequests`, `saveRestockRequests`, `clearRestockRequests`, `listPurchaseOrders`, `savePurchaseOrders`.
-Data lokal: `listLocalRecords`, `saveLocalRecord`, `deleteLocalRecord`.
-Auth & user: `login`, `listLoginUsers`, `saveLoginUser`/`updateLoginUser`, `deleteLoginUser`, `resetPassword`, `saveResetPassword`/`updatePassword`/`confirmResetPassword`/`savePassword`/`setPassword`.
-Fallback: `{ success:false, ok:false, message:'Action tidak ditemukan' }` (`:493`).
+### 3.2 doPost — Klasifikasi Aksi
+
+Semua request POST ke GAS A diklasifikasikan sebagai berikut. Aksi berstatus **Blocker** atau **Bypass UI** adalah prioritas pengamanan Story 3.1.
+
+| Action | Modul | Klasifikasi | Keamanan Backend | Status |
+|---|---|---|---|---|
+| `login` | Auth | Public POST | Memvalidasi user, menerbitkan session | OK |
+| `resetPassword` | Auth | Public POST | Mengirim email reset link | ⚠ reset tokenless — perlu preflight |
+| `saveResetPassword` | Auth | Public POST | Menyimpan password baru via email | ⚠ reset tokenless — perlu preflight |
+| `updatePassword`/`setPassword` | Auth | Public POST | Alias save reset password | idem |
+| `confirmResetPassword`/`savePassword` | Auth | Public POST | Alias save reset password | idem |
+| `getDataObatFilter` | Obat | Public read | Tanpa session, data obat non-sensitif | OK (Allowlisted) |
+| `getPharmacyProfile` | Profil | Public read | Profil apotek, GPS, logo | OK (Allowlisted) |
+| `getAttendanceShiftSettings` | Shift | Public read | Shift global | OK (Allowlisted) |
+| `listLoginUsers` | User | Sensitive read | Gated by `validatePharmacySession_` | Deployed 2026-07-27 |
+| `listActivityLog` | Log | Sensitive read | Gated by `validatePharmacySession_` | Deployed 2026-07-27 |
+| `listRestockRequests` | Restok | Sensitive read | Gated by `validatePharmacySession_` | Deployed 2026-07-27 |
+| `listPurchaseOrders` | PO | Sensitive read | Gated by `validatePharmacySession_` | Deployed 2026-07-27 |
+| `listLocalRecords` | Lokal | Sensitive read | Gated by `validatePharmacySession_` | Deployed 2026-07-27 |
+| `listRolePolicies` | Role | Sensitive read | Gated by `validatePharmacySession_`; response hanya policy tersanitasi | Implemented 2026-07-30 |
+| `saveActivityLog` | Log | Unauth write | ⚠ Write bebas; memanggil `syncAuthSession_` | **Blocker — Story 3.1** |
+| `saveLoginUser` | User | Admin write | Session + Owner/Admin gate | Implemented 2026-07-30 |
+| `updateLoginUser` | User | Admin write | Session + Owner/Admin gate | Implemented 2026-07-30 |
+| `saveRolePolicies` | Role | Owner write | Session wajib; identitas ditimpa dari session; Owner-only; payload disanitasi | Implemented 2026-07-30 |
+| `deleteLoginUser` | User | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `savePharmacyProfile` | Profil | Owner write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `saveAttendanceShiftSettings`| Shift | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `deleteActivityLog` | Log | Owner write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `add_data_obat` | Obat | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `update_data_obat` | Obat | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `delete_data_obat` | Obat | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `saveRestockRequests` | Restok | Write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `clearRestockRequests` | Restok | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `savePurchaseOrders` | PO | Admin write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `saveLocalRecord` | Lokal | Write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `deleteLocalRecord` | Lokal | Write | ⚠ Tidak ada validasi session & role backend | **Blocker — Story 3.1** |
+| `import_data_obat` | Obat | Admin write | Wajib `validatePharmacySession_`; Owner/Admin; mode `replace|append`; header `kode`+`nama`; kode unik | Implemented 2026-08-03 |
+
+> **Analisis:** Seluruh aksi POST selain 3 public read, login/reset, dan 5 sensitive read yang dideploy 2026-07-27, saat ini melompati LockService langsung menuju handler operasional tanpa pemeriksaan session token. Ini adalah celah write otorisasi yang harus ditutup di Story 3.1.
 
 ### 3.3 Aksi early-path (`handleUnlockedPostAction_`)
 Dijalankan sebelum `LockService`. **Epic 1 fase 2 (kode repo, 2026-07-26):**
@@ -57,9 +89,70 @@ Dijalankan sebelum `LockService`. **Epic 1 fase 2 (kode repo, 2026-07-26):**
 | Kelas | Action | Auth |
 |---|---|---|
 | Public read | `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings` | tanpa session |
-| Sensitive read | `listActivityLog`, `listLoginUsers`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords` | wajib `validatePharmacySession_` |
+| Sensitive read | `listActivityLog`, `listLoginUsers`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`, `listRolePolicies` | wajib `validatePharmacySession_` |
 
 `doGet action=listLoginUsers` juga melewati `validatePharmacySession_`.
+
+### 3.4 Role policy
+
+Persistence menggunakan Script Property `ROLE_POLICIES`. Batas penyimpanan saat ini sengaja kecil: maksimal 32 role, nama maksimal 60 karakter, dan access hanya boleh berasal dari `ROLE_POLICY_ALLOWED_ACCESS`. Role `owner`, duplikat nama ternormalisasi, access asing, dan access duplikat dibuang.
+
+#### `listRolePolicies`
+
+Request:
+
+```json
+{ "action": "listRolePolicies", "sessionToken": "..." }
+```
+
+Auth: session GAS A valid. Response saat belum pernah diinisialisasi:
+
+```json
+{
+  "ok": true,
+  "success": true,
+  "initialized": false,
+  "roles": [],
+  "updatedAt": ""
+}
+```
+
+Response setelah tersimpan memakai bentuk sama dengan `initialized: true`, `roles` tersanitasi, dan timestamp ISO `updatedAt`.
+
+#### `saveRolePolicies`
+
+Request:
+
+```json
+{
+  "action": "saveRolePolicies",
+  "sessionToken": "...",
+  "roles": [
+    { "name": "Apoteker", "access": ["dashboard", "data_obat"] }
+  ]
+}
+```
+
+Auth: Owner-only berdasarkan session server-side. Field identitas klien ditimpa oleh `applyPharmacySession_`. `policies` diterima sebagai alias legacy untuk `roles`.
+
+Response sukses:
+
+```json
+{
+  "ok": true,
+  "success": true,
+  "initialized": true,
+  "roles": [
+    { "name": "Apoteker", "access": ["dashboard", "data_obat"] }
+  ],
+  "updatedAt": "2026-07-30T00:00:00.000Z",
+  "message": "Kebijakan role berhasil disimpan."
+}
+```
+
+Policy role membatasi UI melalui effective access frontend. Policy ini tidak mengganti hard rule backend Owner/Admin dan belum menjadi permission engine granular untuk seluruh write action.
+
+### 3.5 Session server-side
 
 Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `expiresAt`, lalu `applyPharmacySession_` menimpa identitas dari session. **(2026-07-27)** Pencocokan `username`/`email` payload vs session **dihapus** — identitas selalu server-authoritative dari `sessionToken`; cek lama memicu tolakan palsu ("Identitas tidak sesuai dengan sesi login") saat identitas di browser drift setelah edit profil, karena `saveLoginUser` tidak menyegarkan baris sesi. Kini `handleSaveLoginUser_` juga memanggil `refreshAuthSessionAfterSave_` untuk menyegarkan **kolom identitas** (username/email/name — role/status/expiresAt tidak disentuh) pada baris `auth_sessions` milik token, hanya bila `originalUsername`/`originalEmail` user yang disimpan cocok dengan username/email pemilik baris sesi.
 
@@ -71,9 +164,12 @@ Validasi: lookup token di sheet `auth_sessions` (spreadsheet data obat), cek `ex
 - `login` → `createAuthSession_` menulis ke sheet `auth_sessions` (token, username, email, name, role, status, expiresAt=+12 jam). (`:255`)
 - `logout`/event via `syncAuthSession_` menghapus token. (`:232`)
 
-## 4. GAS A — import (`google-apps-script-import-data-obat.gs`)
-- `doPost` action `import_data_obat` (`:13-27`); action lain → `{ error:'Action tidak dikenal.' }`.
-- Endpoint pola `.../exec?sheet=data_obat&action=import_data_obat` (`:7`).
+## 4. GAS A — import data obat
+- Runtime canonical: `tools/gas-a/Kode.js`; root mirror: `google-apps-script-api-search-box-final.gs`. `google-apps-script-import-data-obat.gs` adalah legacy/orphan, bukan source deploy.
+- Frontend wajib POST melalui `postToApi`, sehingga `sessionToken` ikut terkirim. Backend membatasi action ke Owner/Admin berdasarkan session server-side.
+- Request: `{ action:"import_data_obat", sheet:"data_obat", mode:"replace|append", headers:[...], rows:[...] }`.
+- Validasi sebelum mutasi: mode whitelist, header ternormalisasi unik, header `kode` dan `nama`, kedua field wajib per baris, kode unik dalam file. Mode append juga menolak kode yang sudah ada.
+- Replace menulis matriks baru dahulu, lalu membersihkan sel lama yang tersisa. Jalankan replace live hanya di staging/spreadsheet disposable atau setelah backup production.
 
 ## 5. GAS B — attendanceAndPayroll
 
@@ -197,3 +293,40 @@ Frontend saat ini: 32 titik fallback ganda (`success`/`ok`), 8 success-only, 1 o
 Verifikasi tiap fase: `node tools/smoke_gas_a.js` + item regression checklist
 terkait (login, absensi, data obat, payroll). Jangan gabungkan Fase B dan C
 dalam satu deploy kecuali item #2 (perubahan bentuk `:221`).
+
+## 9. Kontrak target security Epic 3
+
+Bagian ini adalah kontrak **sebelum implementasi**, bukan claim source/live.
+Story terkait tidak boleh deploy sebelum preflight schema, deployment, data, dan
+akun uji tercatat di regression checklist.
+
+| Story | Action/transport target | Auth dan scope | Aturan utama |
+|---|---|---|---|
+| 3.1 | GAS A GET | Deny-by-default; hanya named public allowlist | Jangan expose `auth_sessions` atau sheet internal; error tidak bocorkan nama/data sheet |
+| 3.1 | GAS A write POST | Session, status aktif, role/permission server | Role/identity client diabaikan; action user/profile/global setting punya hard rule |
+| 3.1 | Reset request/reset confirm POST | Public response netral; token reset secret | Token random satu kali, simpan hash+expiry, no reuse; password hashed; invalidate active session |
+| 3.2 | `generateSalarySlip` POST | Admin/owner | GET selalu reject tanpa mutasi; POST memakai lock dan target unik |
+| 3.3 | Payroll save/delete/generate POST | Admin/owner | NIP normalized unik sebagai target mutasi; nama display only |
+| 3.4 | `deleteSalarySlipHistory` POST | Admin/owner | Server resolve tepat satu history dari stored ID; `rowNumber`/Drive ID client tidak authoritative |
+| 3.5 | `deleteAllSalarySlipHistory` POST | Admin/owner | `confirmation` eksplisit + `expectedCount`; re-read under lock; count mismatch fail closed |
+| 3.6 | Semua write teks untrusted | Sesuai action asal | Prefix literal untuk `=`, `+`, `-`, `@`; jangan ubah numeric/Date/formula template |
+| 3.7 | `downloadSalarySlip` POST | Employee self-only; admin scope terdokumentasi | Server resolve file dari record; PDF private; response bounded untuk Blob frontend |
+
+### Required action fields
+
+- Semua error mutasi: `{ ok:false, success:false, message }`, tanpa token,
+  password hash, URL Drive, atau data payroll mentah.
+- Delete single: stable `historyId`/stored file reference; server boleh menerima
+  ID sebagai selector, tetapi membaca ulang record dan Drive ID dari Sheet.
+- Delete all: `confirmation` dan `expectedCount`; server mengembalikan
+  `deleted`, `trashed`, `failed`, bukan sukses ambigu.
+- Download PDF: endpoint tidak menerima URL Drive authoritative dari client dan
+  tidak mengembalikan public `fileUrl` pada jalur employee.
+- Reset: token tidak masuk log, tidak disimpan plaintext, tidak diulang pada
+  response, dan tidak boleh dapat diturunkan dari email/username.
+
+### Contract gate
+
+Sebelum mengubah action di atas: update matriks role, checklist regression,
+source clasp kanonik, root mirror, dan deployment/rollback evidence. Alias
+`success` tetap ada sampai Fase D post-regression.

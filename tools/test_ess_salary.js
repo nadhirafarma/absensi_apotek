@@ -49,20 +49,34 @@ async function renderSalary(role, history, monitoring) {
   assert.match(employee.html, /Juli &lt;script&gt;/);
   assert.doesNotMatch(employee.html, /javascript:/);
   assert.match(employee.html, /PDF tidak tersedia/);
+  assert.match(employee.html, />Bulan<\/span>[\s\S]*>Tahun<\/span>[\s\S]*>Dari<\/span>[\s\S]*>Sampai<\/span>/);
+  assert.doesNotMatch(employee.html, /essSalaryDate/);
   assert.strictEqual(employee.requests[0].searchParams.get("action"), "listSalarySlipHistory");
   assert.strictEqual(employee.requests[0].searchParams.get("sessionToken"), "token-test");
   assert.strictEqual(employee.requests[0].searchParams.has("role"), false);
   assert.strictEqual(employee.requests[0].searchParams.has("name"), false);
 
   const admin = await renderSalary("owner", [
-    { name: "Ayu Novalia", nip: "K-01", period: "Juli 2026", netSalary: 600000, fileUrl: "https://drive.google.com/file/d/ayu" },
-    { name: "Budi", nip: "K-02", period: "Juli 2026", netSalary: 700000, fileUrl: "https://drive.google.com/file/d/budi" }
+    { name: "Ayu Novalia", nip: "K-01", period: "Juli 2026", netSalary: 600000, fileId: "ayu", fileUrl: "https://drive.google.com/file/d/ayu" },
+    { name: "Nol", nip: "K-02", period: "Juli 2026", netSalary: 0, fileId: "nol", fileUrl: "https://drive.google.com/file/d/nol" },
+    { name: "Negatif", nip: "K-03", period: "Juli 2026", netSalary: -25000, fileId: "negatif", fileUrl: "https://drive.google.com/file/d/negatif" },
+    { name: "Duplikat Ayu", nip: "K-01", period: "Juli 2026", netSalary: 600000, fileId: "ayu", fileUrl: "https://drive.google.com/file/d/ayu" }
   ], true);
   assert.match(admin.html, /Monitoring Slip Gaji/);
   assert.match(admin.html, /Ayu Novalia/);
-  assert.match(admin.html, /Budi/);
+  assert.match(admin.html, /Nol/);
+  assert.match(admin.html, /Negatif/);
+  assert.doesNotMatch(admin.html, /Duplikat Ayu/);
+  assert.match(admin.html, /Rp 0/);
+  assert.match(admin.html, /Rp -25\.000/);
   assert.match(admin.html, /Buka PDF/);
   assert.match(admin.html, /https:\/\/drive\.google\.com/);
+  const current = new Date();
+  assert.strictEqual(admin.requests[0].searchParams.get("month"), String(current.getMonth() + 1).padStart(2, "0"));
+  assert.strictEqual(admin.requests[0].searchParams.get("year"), String(current.getFullYear()));
+  assert.strictEqual(admin.requests[0].searchParams.get("page"), "1");
+  assert.strictEqual(admin.requests[0].searchParams.get("limit"), "10");
+  assert.strictEqual(admin.requests[0].searchParams.has("employeeId"), false);
 
   const ownerEmployeeView = await renderSalary("owner", [], false);
   assert.match(ownerEmployeeView.html, /Gunakan Monitoring Slip Gaji/);

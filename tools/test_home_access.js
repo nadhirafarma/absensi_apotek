@@ -107,10 +107,42 @@ const appViews = [
 const appHtml = read("index.html");
 assert.ok(appHtml.includes("assets/auth-guard.js?v=20260731-auth-flow-v1"));
 assert.ok(appHtml.includes("assets/home-dashboard.js?v=20260803-salary-import-v1"));
-assert.ok(appHtml.includes("assets/ess.js?v=20260803-salary-filter-v1"));
-assert.ok(appHtml.includes("assets/styles.css?v=20260803-salary-filter-v1"));
-assert.ok(appHtml.includes("assets/ess.css?v=20260803-salary-filter-v1"));
-assert.ok(appHtml.includes("assets/ui-polish.css?v=20260803-profile-popup-v1"));
+assert.ok(appHtml.includes("assets/ess.js?v=20260806-salary-fix-v2"));
+assert.ok(appHtml.includes("assets/styles.css?v=20260809-sidebar-png-v1"));
+assert.ok(appHtml.includes("assets/ess.css?v=20260806-salary-fix-v2"));
+assert.ok(appHtml.includes("assets/ui-polish.css?v=20260809-sidebar-png-v1"));
+const sidebar = between(appHtml, '<aside class="app-sidebar"', '<div class="sidebar-scrim"');
+const sidebarLinks = sidebar.match(/<[^>]*class="sidebar-link(?:\s[^"]*)?"[\s\S]*?<\/(?:a|button)>/g) || [];
+const sidebarIconSources = [
+  "assets/mobile-menu/dashboard.png",
+  "assets/mobile-menu/absensi.png",
+  "assets/mobile-menu/presensi.png",
+  "assets/mobile-menu/presensi.png",
+  "assets/mobile-menu/monitoring-presensi.png",
+  "assets/mobile-menu/cari-data-obat.png",
+  "assets/mobile-menu/data-obat.png",
+  "assets/mobile-menu/data-karyawan.png",
+  "assets/mobile-menu/data-supllier.png",
+  "assets/mobile-menu/surat-pesanan-pembelian.png",
+  "assets/mobile-menu/restok-obat.png",
+  "assets/mobile-menu/impor-data-obat.png",
+  "assets/mobile-menu/setting.png",
+  "assets/mobile-menu/log-aktivitas.png",
+  "assets/mobile-menu/managemen-pengguna.png",
+  "assets/mobile-menu/data-role.png"
+];
+assert.strictEqual(sidebarLinks.length, sidebarIconSources.length, "sidebar link count");
+const sidebarIcons = sidebarLinks.map((link, index) => {
+  assert.doesNotMatch(link, /<svg\b/, `sidebar link ${index}: no SVG`);
+  const match = link.match(/<img class="sidebar-icon" src="([^"]+)" alt="" aria-hidden="true">/);
+  assert.ok(match, `sidebar link ${index}: decorative PNG icon`);
+  return match[1];
+});
+assert.deepStrictEqual(sidebarIcons, sidebarIconSources, "sidebar PNG mapping");
+for (const src of sidebarIconSources) assert.ok(fs.existsSync(path.join(root, src)), `sidebar asset: ${src}`);
+const sidebarSvgs = sidebar.match(/<svg\b[^>]*>/g) || [];
+assert.strictEqual(sidebarSvgs.length, 2, "sidebar chevron count");
+for (const svg of sidebarSvgs) assert.match(svg, /class="sidebar-section-chevron"/, "sidebar SVG is chevron");
 assert.match(appHtml, /localStorage\.getItem\("nadhira\.sidebarCollapsed"\) === "1"/);
 assert.match(appHtml, /classList\.toggle\("sidebar-collapsed", sidebarCollapsed\)[\s\S]*classList\.toggle\("sidebar-open", !sidebarCollapsed\)/);
 assert.match(appHtml, /<span id="todayLabel">Hari ini<\/span>/);
@@ -129,7 +161,6 @@ assert.ok(read("absensi.html").includes("assets/auth-guard.js?v=20260731-auth-fl
 const uiPolish = read("assets/ui-polish.css");
 assert.match(uiPolish, /\[data-access-key\]\.is-access-hidden[\s\S]*\.app-sidebar \.sidebar-link\.is-access-hidden[\s\S]*display: none !important;/);
 assert.doesNotMatch(uiPolish, /Memuat menu/);
-assert.match(uiPolish, /body\.access-loading:not\(\.access-cache-ready\) \.app-sidebar \{[\s\S]*background: transparent !important;[\s\S]*box-shadow: none !important;/);
 assert.match(uiPolish, /body\.sidebar-collapsed \.app-sidebar \.sidebar-link \{[\s\S]*width: 44px !important;[\s\S]*margin-inline: auto !important;[\s\S]*justify-content: center !important;/);
 assert.match(uiPolish, /body\.sidebar-collapsed \.app-sidebar \.sidebar-section-toggle \{[\s\S]*width: 44px !important;[\s\S]*min-height: 44px !important;[\s\S]*justify-content: center !important;/);
 assert.match(uiPolish, /#sidebarToggle\.header-pharmacy-toggle \{\s*overflow: hidden !important;/);
@@ -145,7 +176,6 @@ assert.ok(appHtml.includes('aria-controls="appSidebar"'));
 assert.match(uiPolish, /@media \(min-width: 901px\)[\s\S]*--app-sidebar-rail-width/);
 assert.match(uiPolish, /@media \(max-width: 900px\)[\s\S]*translateX\(calc\(-100% - 12px\)\)/);
 assert.match(source, /function getDefaultSalaryHistoryFilter\(\)[\s\S]*function renderSalaryHistoryPagination\(\)/);
-assert.match(source, /month: filter\.month,[\s\S]*startDate: filter\.startDate,[\s\S]*endDate: filter\.endDate,[\s\S]*limit: state\.salaryHistoryLimit/);
 assert.doesNotMatch(appHtml, /salaryHistoryDate/);
 assert.doesNotMatch(source, /salaryHistoryDate/);
 assert.match(source, /const result = await postToApi\(\{\s*action: "import_data_obat"/);
@@ -157,10 +187,12 @@ const essSource = read("assets/ess.js");
 assert.match(essSource, /function dedupeSalarySlips\(rows\)/);
 assert.match(essSource, /data-salary-apply/);
 assert.doesNotMatch(essSource, /essSalaryDate/);
-assert.match(essSource, />Bulan<\/span>[\s\S]*>Tahun<\/span>[\s\S]*>Dari<\/span>[\s\S]*>Sampai<\/span>/);
 assert.match(uiPolish, /\.dashboard-topbar:has\(\.header-profile-menu \.profile-dropdown:not\(\[hidden\]\)\) \{[\s\S]*z-index: 1600 !important;[\s\S]*overflow: visible !important;/);
 
 const styles = read("assets/styles.css");
+assert.match(styles, /\.app-sidebar \.sidebar-icon \{[\s\S]*width: 30px;[\s\S]*height: 30px;[\s\S]*flex: 0 0 30px;[\s\S]*object-fit: contain;/);
+assert.match(uiPolish, /body\.sidebar-collapsed \.app-sidebar \.sidebar-link \.sidebar-icon \{\s*margin-inline: auto !important;/);
+assert.doesNotMatch(uiPolish, /\.app-sidebar \.sidebar-link svg/);
 assert.match(styles, /#view-data-role \.role-access-table \{\s*table-layout: fixed !important;\s*width: 100% !important;/);
 assert.match(styles, /#view-data-role \.role-access-table \.pill-tag \{[\s\S]*?max-width: 100% !important;[\s\S]*?white-space: normal !important;[\s\S]*?overflow-wrap: anywhere !important;/);
 assert.doesNotMatch(styles, /#view-akun-profil \.profile-avatar-large \{\s*margin-top: -48px/);

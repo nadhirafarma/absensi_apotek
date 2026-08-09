@@ -1,74 +1,148 @@
 # PRD Induk — Indo Apotek Digital
 
-Status: draft v0.1. Menyatukan `PRD_Presensi_Owner_Admin_Monitoring_v1.0.txt`
-dan `PRD_Employee_Self_Service_(ESS)_Presensi_Karyawan_v1.0.txt` (Downloads)
-sebagai input, direkonsiliasi dengan current-state code (`docs/api/gas-contracts.md`,
-`docs/architecture/`, `docs/security/role-permission-matrix.md`).
+Status: **baseline v0.2 (2026-07-28)**. Menyatukan
+`PRD_Presensi_Owner_Admin_Monitoring_v1.0.txt` dan
+`PRD_Employee_Self_Service_(ESS)_Presensi_Karyawan_v1.0.txt` sebagai product
+input, lalu direkonsiliasi dengan source, audit security, dan status deploy.
+BMM/BMAD terpasang lokal di `_bmad/`; tidak menjadi bagian runtime/deploy.
 
-> Dua PRD sumber mendeskripsikan target-state yang lebih luas dari yang saat
-> ini terimplementasi. PRD ini TIDAK membuat ulang tanpa alasan — bagian yang
-> sudah baik dari PRD sumber dipertahankan, gap terhadap kode nyata ditandai
-> eksplisit di §4.
+> Dua PRD sumber mendeskripsikan target yang lebih luas dari current-state.
+> Fitur yang belum ada diperlakukan sebagai greenfield, bukan diasumsikan aktif.
+> Patch security tidak boleh membawa fitur baru tanpa story terpisah.
 
 ## 1. Tujuan produk
-Platform internal apotek untuk: autentikasi berbasis role, presensi karyawan
-(GPS+foto), monitoring & approval oleh owner/admin, payroll & slip gaji,
-manajemen data obat/stok/supplier, dan employee self-service (ESS).
 
-## 2. Pengguna & role
+Platform internal apotek untuk autentikasi berbasis role, presensi GPS+foto,
+monitoring dan koreksi oleh owner/admin, payroll serta slip gaji, manajemen
+data obat/stok/supplier, dan Employee Self-Service (ESS).
+
+## 2. Pengguna dan role
+
 | Role | Sumber kebenaran | Ringkas |
 |---|---|---|
-| Owner | `docs/security/role-permission-matrix.md` | Akses penuh semua modul |
-| Admin | idem | Operasional, tunduk gerbang `isAbsensiAdmin_` untuk absensi/payroll |
-| Karyawan | idem | ESS: hanya data milik sendiri |
+| Owner | `docs/security/role-permission-matrix.md` | Akses penuh dan owner-only rule |
+| Admin | idem | Operasional; payroll/absensi sesuai server gate |
+| Karyawan | idem | ESS hanya data milik sendiri |
 
-## 3. Modul (dari PRD sumber, dipertahankan sebagai target)
-- **Owner/Admin — Monitoring**: Dashboard, Monitoring Presensi/Jadwal/Cuti/
-  Lembur/Slip Gaji/Dokumen/Pengumuman, Rekap, Pengaturan.
-- **Karyawan — ESS**: Dashboard Presensi, Presensi Saya, Jadwal Kerja,
-  Cuti & Izin, Lembur, Slip Gaji, Dokumen Saya, Pengumuman.
-- **Data Obat & Operasional** (dari kode, tidak ada di PRD sumber):
-  data obat, cari obat, restok, purchase order, data supplier, import data
-  obat, manajemen pengguna, data role, log aktivitas, akun profil.
+Role efektif ditentukan backend dari session aktif. Frontend `ACCESS_MENUS`
+hanya mengatur visibility dan tidak memberikan otorisasi.
 
-## 4. Gap target vs current-state (⚠ prioritas produk)
-| Fitur PRD sumber | Status kode saat ini |
+## 3. Modul target
+
+- **Owner/Admin — Monitoring**: dashboard, monitoring presensi, payroll/slip,
+  data operasional, user/role, log, dan pengaturan.
+- **Karyawan — ESS**: dashboard presensi, histori presensi, slip gaji sendiri.
+- **Target greenfield sesuai PRD sumber**: jadwal per-karyawan, cuti/izin,
+  approval lembur, dokumen, dan pengumuman. Semuanya tertunda setelah baseline
+  security dan regression stabil.
+- **Data obat/operasional**: data obat, cari obat, restok, purchase order,
+  supplier, import, user, role, log, dan profil akun.
+
+## 4. Gap current-state
+
+| Area | Status |
 |---|---|
-| Presensi submit (DATANG/PULANG/LEMBUR), GPS+foto | ✅ Ada (`google-apps-script-absensi-api.gs`) |
-| Payroll & slip gaji, generate massal/per-karyawan | ✅ Ada |
-| Monitoring presensi (lihat, filter, koreksi, export) | ⚠ Sebagian: `listAttendanceRecords`/`updateAttendanceRecord` ada; export PDF/Excel belum teridentifikasi di kontrak |
-| Jadwal kerja (CRUD, assign shift, kalender) | ❌ Tidak ditemukan action GAS terkait "jadwal"/"shift" selain `AttendanceShiftSettings` (pengaturan shift global, bukan kalender per-karyawan) |
-| Cuti & Izin (ajukan, approval, riwayat) | ❌ Tidak ada action `cuti`/`izin`/`leave` di kontrak API manapun |
-| Lembur (ajukan, approval terpisah dari submit LEMBUR presensi) | ⚠ Submit LEMBUR ada sebagai tipe presensi; workflow approval lembur terpisah tidak ditemukan |
-| Dokumen (upload, kategori, arsip: BPJS, NPWP, kontrak) | ❌ Tidak ada action terkait di kontrak API |
-| Pengumuman (buat, publish, pin, jadwalkan) | ❌ Tidak ada action terkait |
-| Audit log semua perubahan | ⚠ Ada `saveActivityLog`/`listActivityLog` (GAS A) — cakupan penuh belum diverifikasi |
-| RBAC ketat | ⚠ Ada untuk absensi/payroll (GAS B); GAS A punya endpoint read tanpa gerbang session — lihat regression checklist §1 |
+| Presensi submit DATANG/PULANG/LEMBUR | Ada, dengan validasi foto/GPS/waktu |
+| Payroll dan slip gaji | Ada; hardening masih berjalan |
+| Monitoring presensi | List/koreksi ada; export PDF/Excel belum |
+| Export payroll/presensi | Belum tervalidasi |
+| Jadwal kerja per-karyawan | Belum ada; greenfield |
+| Cuti/izin | Belum ada; greenfield |
+| Approval lembur formal | Belum ada; greenfield |
+| Dokumen karyawan | Belum ada; greenfield |
+| Pengumuman | Belum ada; greenfield |
+| Audit log | Ada, tetapi coverage/action belum terbukti penuh |
+| RBAC backend GAS B | Dasar session/admin gate ada; hardening lanjutan open |
+| RBAC backend GAS A | Sensitive read gated; write authorization belum setara |
+| Credential dan reset password | Source menunjukkan gap; wajib preflight |
 
-**Implikasi:** modul Cuti/Izin, Jadwal Kerja (kalender), Dokumen, dan
-Pengumuman adalah **fitur baru**, bukan hardening dari yang sudah ada.
-Modul ini harus diperlakukan sebagai epic greenfield dengan schema Sheet dan
-action GAS baru — bukan diasumsikan sudah berjalan.
+## 5. Requirement security non-negotiable
 
-## 5. Non-functional requirements
-- Responsif desktop/mobile/tablet/laptop (disyaratkan kedua PRD sumber).
-- Validasi form + audit log setiap pengajuan (cuti/izin/lembur) — begitu
-  modul tsb dibangun.
-- Keamanan: session GAS B wajib untuk semua aksi; GAS A read-sensitif harus
-  ditutup dari akses tanpa auth (lihat gas-contracts.md §3.3).
-- Foto absensi ≤3MB, GPS radius ≤160m/akurasi ≤200m, drift waktu ≤10 menit
-  (sudah terimplementasi, jadi jadi baseline regression, bukan requirement baru).
+1. **Backend authority** — Semua keputusan sensitif dibuat backend dari session
+   server-side. Field `username`, `email`, `role`, `actor`, `nama`, `rowNumber`,
+   atau `fileId` dari klien tidak boleh menjadi privilege atau target
+   authoritative.
+2. **Write protection** — Semua write sensitif wajib session valid, role
+   sesuai, ownership check, dan re-check state under lock bila berpotensi race.
+3. **Stable identifiers** — Mutation/deletion memakai ID tersimpan server dan
+   resolve unik; positional row client tidak authoritative.
+4. **HTTP safety** — GET tidak boleh mengubah Sheet, Drive, session, user,
+   atau PDF. Mutasi harus POST dan memakai lock sesuai risiko.
+5. **Public GET allowlist** — Endpoint hanya melayani resource yang sudah
+   diklasifikasikan public. Deny-by-default untuk sheet internal termasuk
+   `auth_sessions`.
+6. **Credential security** — Password disimpan hashed dengan salt. Reset wajib
+   secret token random, hash token tersimpan, expiry, single-use, response
+   anti-enumeration, dan invalidasi session setelah ganti password.
+7. **Injection defense** — Teks tak tepercaya yang diawali `=`, `+`, `-`, `@`
+   harus tersimpan sebagai literal; numeric, Date, enum terkendali, dan formula
+   template tidak diubah.
+8. **Payroll PDF** — File baru private. Delivery melalui endpoint
+   session+ownership check. Direct public link tidak boleh menjadi satu-satunya
+   jalan akses ESS.
+9. **Evidence** — Claim “lulus” wajib memiliki deployment/version, akun-role,
+   timestamp, dan hasil redacted.
+10. **Privacy** — Token, email, URL file, data gaji, foto, dan PDF tidak dicatat
+    mentah ke log/repository.
 
-## 6. Batasan teknis
-- Backend: 2 Google Apps Script Web App terpisah (GAS A data/auth, GAS B
-  absensi/payroll), keduanya membaca/menulis Google Sheets sebagai data
-  store — tidak ada database relasional.
-- Frontend: HTML statis multi-halaman di GitHub Pages, tanpa build step,
-  tanpa framework SPA.
-- Deploy: manual per-part (lihat `docs/ops/deploy-sop.md`); tidak ada CI/CD
-  otomatis yang teridentifikasi.
+## 6. Batas teknis
 
-## 7. Keluar dari cakupan v1 (tunda)
-- TEA/pengujian otomatis penuh (ditambahkan setelah baseline regression
-  stabil — lihat §8 rencana workflow).
-- Modul BMB/BMAD lain di luar BMM inti.
+- Dua GAS Web App terpisah: GAS A data/auth dan GAS B attendance/payroll.
+- Persistensi memakai Google Sheets dan Drive; tidak ada database relasional.
+- Frontend statis multi-page di GitHub Pages; tidak ada build/framework SPA.
+- Deploy manual. Canonical source ada di folder clasp, root `.gs` mirror.
+- Tidak ada CI/CD. Mirror checker dan smoke dijalankan eksplisit sesuai SOP.
+
+## 7. Milestone dan release gate
+
+### M0 — Documentation/security baseline
+- PRD, epics/story, API contract, role matrix, SOP, dan QA konsisten.
+- Tidak ada status stale yang disalahpahami sebagai pekerjaan baru.
+
+### M1 — Security preflight
+- Deployment ID/version dan source commit diverifikasi.
+- Schema/header live dan data-quality issue dicatat read-only.
+- Drive policy, ukuran PDF, duplicate ID, serta akun owner/admin/karyawan uji
+  diketahui.
+- Temuan GAS A/GAS B diklasifikasikan: confirmed live, confirmed source-only,
+  atau refuted.
+
+**Gate:** tidak ada patch/deploy runtime sebelum M1.
+
+### M2 — Boundary closure
+- Public GET allowlist, write authorization, credential/reset, dan payroll
+  mutation/deletion terlindungi. Perubahan besar dibagi deploy terpisah.
+
+**Gate:** local checks, mirror integrity, authenticated smoke, dan browser ESS
+lulus dengan bukti redacted.
+
+### M3 — Payroll PDF privacy
+- New PDF private, endpoint delivery, frontend Blob, dan migrasi legacy
+  idempotent.
+
+**Gate:** rollback plan dan approval operator eksplisit.
+
+### M4 — Regression baseline
+- Owner/admin/employee smoke dan full manual checklist lulus.
+- Fase D response alias cleanup baru dapat dipertimbangkan.
+
+### M5 — Product epics
+- Epic 4–9 dimulai hanya setelah M4, satu epic per workflow dengan schema/API
+  contract baru.
+
+## 8. Traceability
+
+Setiap fitur/perubahan wajib dapat dilacak:
+
+`PRD requirement → Epic → Story → kontrak/action → test/checklist → deployment
+version → bukti redacted`.
+
+Jika salah satu tautan belum ada, status pekerjaan maksimal **draft** atau
+**ready with gaps**, bukan **done**.
+
+## 9. Keluar dari cakupan security hardening
+
+- Epic 4–9 (fitur greenfield atau expansion).
+- Framework migration, redesign frontend, atau CI/CD besar.
+- Reinstall/reconfigure BMM; instalasi lokal sudah ada.
+- Penghapusan alias response `success` sebelum full regression.

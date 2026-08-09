@@ -1,18 +1,19 @@
 # Matriks Role & Permission
 
-Status: draft current-state dari `assets/home-dashboard.js` + aturan backend absensi  
-Tanggal: 2026-07-25
+Status: baseline v0.2; current-state + target enforcement
+Tanggal rekonsiliasi: 2026-07-30
 
 ## Model akses
 
 1. **Menu access keys** didefinisikan di `ACCESS_MENUS`.
 2. **Default role map** di `ROLE_ACCESS`.
-3. **Custom role** bisa disimpan di `nadhira.roleRecords` + data user.
-4. Runtime cek:
+3. **Custom role policy** disimpan authoritative di GAS A Script Property `ROLE_POLICIES`; `nadhira.roleRecords` hanya cache frontend.
+4. Runtime effective access non-Owner menunggu role policy dan user list authoritative, lalu memakai role access atau irisan user access dengan role access.
+5. Runtime cek:
    - `canAccess(key)` di frontend
    - `data-access-key` pada menu/tombol
    - backend absensi: `isAbsensiAdmin_(role/username)`
-5. Akun nonaktif → session dibuang + redirect login.
+6. Akun nonaktif → session dibuang + redirect login.
 
 ## Access keys
 
@@ -71,34 +72,62 @@ Catatan: string role dinormalisasi (lowercase/search-normalized). Alias `adminis
 | Buat draft PO dari restok | Ya | Ya | Tidak |
 | Log aktivitas full | Ya/Admin limit lebih besar | Ya | Hanya milik sendiri |
 
-## Backend enforcement (saat ini)
+## UI visibility bukan backend enforcement
+
+`canAccess()` dan `data-access-key` menyembunyikan/menampilkan UI. Keduanya
+bukan security boundary: request HTTP dapat dibuat tanpa halaman/tombol. Setiap
+backend action di bawah harus validasi token, status aktif, role, dan ownership
+berdasarkan session server-side.
+
+## Backend enforcement — current-state
 
 ### GAS A (auth/data)
 
-- Login, save user, password, CRUD data bergantung action handler.
-- Beberapa list/read dibuka lewat `handleUnlockedPostAction_` / GET tertentu.
-- **Belum ada matriks permission setara frontend untuk semua write action.**
+| Kelas | Action | Target role/ownership | Current source |
+|---|---|---|---|
+| Public allowlist | `getDataObatFilter`, `getPharmacyProfile`, `getAttendanceShiftSettings` | Public read, data diklasifikasikan non-sensitif | Tidak pakai session — keputusan sadar |
+| Authenticated read | `listLoginUsers`, `listActivityLog`, `listRestockRequests`, `listPurchaseOrders`, `listLocalRecords`, `listRolePolicies` | Session valid; row scope sesuai role | `validatePharmacySession_` enforced |
+| Role policy | `saveRolePolicies` | Owner-only; policy tersanitasi; identity dari session | Enforced; persistence `ROLE_POLICIES` |
+| User management | save/update/delete user | Owner/Admin | Enforced hard role gate; belum memakai custom permission key |
+| Pharmacy/global settings | profil apotek, GPS, shift | Owner untuk identitas apotek; admin/owner untuk shift sesuai approval | Enforced hard role gate |
+| Obat/restok/PO/local | add/update/delete/import/save/clear | Session + hard role gate sesuai kelas action | Session enforced; permission key granular belum diterapkan |
+| Activity log | save/delete | Server menulis actor dari session; delete Owner-only | Session dan hard role gate enforced |
+| Credential/reset | login/reset/save password | Public request netral; reset token one-time; password hash; invalidate session | Enforced source; live validation tetap wajib |
+| Generic GET sheet | `sheet=<nama>` | Deny-by-default; hanya allowlist public | Enforced allowlist `data_obat` dan `pharmacy_profile` |
 
 ### GAS B (absensi/payroll)
 
-- Wajib session token valid di `auth_sessions`.
-- `isAbsensiAdmin_` true jika role `owner|admin|administrator` atau username `owner|admin`.
-- Admin-only: update attendance, payroll CRUD, generate/delete slip.
-- Karyawan aktif boleh submit absensi sendiri; nonaktif ditolak.
+| Kelas | Action | Target role/ownership | Current source |
+|---|---|---|---|
+| Semua request | doGet/doPost | Session valid; identity overwrite | `validateAbsensiSession_` + `applyAbsensiSession_` |
+| Presensi sendiri | submit DATANG/PULANG/LEMBUR | Karyawan aktif; self-only | Enforced |
+| Monitoring/koreksi | list/update attendance | Non-admin self-only; update admin/owner | Enforced, ESS smoke pending |
+| Payroll CRUD/generate | list/save/delete employee, generate | Admin/owner only | Enforced role gate; GET generate hardening open |
+| Slip history | list | Non-admin self-only; admin all | Enforced source, live ESS pending |
+| Slip delete | one/all | Admin/owner; server-record binding + confirmation | **Gap:** row/file client target, bulk no server confirmation |
+| PDF slip | download/open | Employee self-only; admin documented target | **Gap:** Drive `ANYONE_WITH_LINK` |
 
-## Target matriks yang harus dijaga ke depan
+## Target rules yang wajib dijaga
 
-1. Setiap write endpoint GAS wajib cek role/session, tidak hanya UI hide.
-2. Permission key frontend = permission key backend (satu sumber kebenaran).
-3. Custom role tidak boleh melewati hard rule owner-only (identitas apotek, force unlock status done, akses semua data).
-4. Owner tidak perlu ESS pribadi; admin & karyawan butuh ESS.
-5. Akun nonaktif tidak boleh login/absen/write.
+1. Setiap write endpoint GAS cek session, status aktif, role, dan ownership di
+   backend. UI hide tidak cukup.
+2. Client `role`, `username`, `actor`, `nama`, `rowNumber`, atau `fileId` tidak
+   menjadi authority; backend overwrite/resolve dari session dan record server.
+3. Permission key frontend harus memiliki mapping backend eksplisit; custom role
+   tidak melewati owner-only rule.
+4. `auth_sessions` dan credential/reset adalah boundary sensitif, tidak dapat
+   diakses lewat generic GET atau public write.
+5. Owner tidak perlu ESS pribadi; admin/karyawan butuh ESS sesuai scope.
+6. Akun nonaktif tidak boleh login, absen, atau melakukan write.
+7. Public profile dan shift global hanya tetap public bila owner menyetujui
+   klasifikasi data; action selain allowlist harus deny-by-default.
 
-## Checklist verifikasi role (manual)
+## Checklist verifikasi role
 
-1. Login sebagai owner → semua menu admin muncul; ESS karyawan tidak.
-2. Login sebagai admin → monitoring + payroll + user management muncul.
-3. Login sebagai kasir → tidak bisa buka manajemen pengguna/data role/monitoring.
-4. Nonaktifkan user → session ditolak.
-5. Coba endpoint absensi update tanpa role admin → ditolak backend.
-6. Custom role tanpa `edit_obat` → tombol edit obat hilang dan aksi ditolak UI.
+1. Owner: semua menu dan server action owner-only valid.
+2. Admin: monitoring/payroll/user management sesuai batas server.
+3. Role terbatas: request manual ke write GAS A dengan role/actor palsu ditolak.
+4. Karyawan: ESS hanya record sendiri; request employee-A ke employee-B ditolak.
+5. Akun nonaktif/session expired: semua write ditolak.
+6. Generic GET sheet internal dan `auth_sessions`: ditolak tanpa membocorkan data.
+7. Custom role tanpa `edit_obat`: UI hilang **dan** backend action ditolak.

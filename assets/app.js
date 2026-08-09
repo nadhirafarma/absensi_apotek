@@ -173,14 +173,14 @@
   }
 
   function openSidebarForProfileMenu() {
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    if (sidebarToggle) {
+      sidebarToggle.click();
+      return;
+    }
+
     document.body.classList.remove("sidebar-collapsed");
     document.body.classList.add("sidebar-open");
-    localStorage.setItem("nadhira.sidebarCollapsed", "0");
-
-    const sidebarScrim = document.getElementById("sidebarScrim");
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    if (sidebarScrim) sidebarScrim.hidden = false;
-    if (sidebarToggle) sidebarToggle.setAttribute("aria-label", "Tutup sidebar");
   }
 
   function closeProfileMenu() {
@@ -377,16 +377,19 @@
     toggles.forEach(function (toggle) {
       const section = toggle.dataset.section || "";
       const group = document.getElementById(`section-${section}`);
+      const applyState = function (expanded) {
+        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        if (!group) return;
+        group.classList.toggle("is-collapsed", !expanded);
+        group.setAttribute("aria-hidden", expanded ? "false" : "true");
+        group.inert = !expanded;
+      };
       const saved = localStorage.getItem(`nadhira.sidebarSection.${section}`);
-      const expanded = saved !== "0";
-
-      toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-      if (group) group.classList.toggle("is-collapsed", !expanded);
+      applyState(saved !== "0");
 
       toggle.addEventListener("click", function () {
         const nextExpanded = toggle.getAttribute("aria-expanded") !== "true";
-        toggle.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
-        if (group) group.classList.toggle("is-collapsed", !nextExpanded);
+        applyState(nextExpanded);
         localStorage.setItem(`nadhira.sidebarSection.${section}`, nextExpanded ? "1" : "0");
       });
     });

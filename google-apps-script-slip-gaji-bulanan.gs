@@ -373,14 +373,14 @@ var SlipGajiBulanan = (function() {
     var email = String(options.forceEmail || contact.email || '').trim();
     var whatsapp = normalizePhone(options.forceWhatsapp || contact.whatsapp || '');
 
-    var emailResult = sendEmail(email, pdfFile, name, period, config);
-    var whatsappResult = sendWhatsapp(whatsapp, pdfFile, name, period, config, options);
-
     writePayrollHistoryEntry_(spreadsheet, slip, period, {
       actor: 'trigger-otomatis',
       username: 'trigger-otomatis',
       timestamp: new Date()
     });
+
+    var emailResult = sendEmail(email, pdfFile, name, period, config);
+    var whatsappResult = sendWhatsapp(whatsapp, pdfFile, name, period, config, options);
 
     writeLog(spreadsheet, config, {
       period: period.label,

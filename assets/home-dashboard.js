@@ -3,6 +3,7 @@
   const API_URL = `${API_BASE}?sheet=data_obat`;
   const ABSENSI_API_URL = "https://script.google.com/macros/s/AKfycbx7fkoLgH6igHP17przjmxWaP8bQNG_6OcoQ3-Ug79A_vmZxK6_ibCdLC0u-W-JLtw3/exec";
   const SESSION_KEY = "nadhira.authSession";
+  const ACCESS_SNAPSHOT_KEY = "nadhira.accessSnapshot";
 
   // Standar envelope Epic 1 (docs/api/gas-contracts.md §8): sukses = ok ATAU success.
   function isApiOk(res) {
@@ -22,6 +23,8 @@
   const USER_SYNC_AT_KEY = "nadhira.userRecordsSyncedAt";
   const LOCAL_RECORDS_SYNC_AT_KEY = "nadhira.localRecordsSyncedAt";
   const ROLE_KEY = "nadhira.roleRecords";
+  const ROLE_SYNC_AT_KEY = "nadhira.roleRecordsSyncedAt";
+  const OWNER_ACTIVITY_CACHE_KEY = "nadhira.ownerActivityCache";
   const PO_KEY = "nadhira.purchaseOrders";
   const PO_SYNC_AT_KEY = "nadhira.purchaseOrdersSyncedAt";
   const RESTOCK_KEY = "nadhira.restockRequests";
@@ -36,6 +39,9 @@
   const PROFILE_PREFS_KEY = "nadhira.profilePreferences";
   const PHARMACY_PROFILE_KEY = "nadhira.pharmacyIdentity";
   const ATTENDANCE_SHIFT_RULES_KEY = "nadhira.attendanceShiftRules";
+  const ATTENDANCE_SHIFT_SYNC_AT_KEY = "nadhira.attendanceShiftRulesSyncedAt";
+  const PHARMACY_PROFILE_SYNC_AT_KEY = "nadhira.pharmacyIdentitySyncedAt";
+  const OWNER_ACTIVITY_SYNC_AT_KEY = "nadhira.ownerActivitySyncedAt";
   const NOTIFICATION_DISMISS_KEY = "nadhira.dismissedNotifications";
   const NOTIFICATION_SEEN_KEY = "nadhira.seenNotifications";
   const HOME_PRAYER_REMINDER_KEY = "nadhira.homePrayerReminderShown";
@@ -50,7 +56,13 @@
   const MENU_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
   const PURCHASE_CACHE_TTL_MS = MENU_CACHE_TTL_MS;
   const RESTOCK_CACHE_TTL_MS = MENU_CACHE_TTL_MS;
-  const USER_SYNC_MIN_GAP_MS = MENU_CACHE_TTL_MS;
+  const USER_SYNC_MIN_GAP_MS = 60 * 1000;
+  const ROLE_FETCH_TTL_MS = 60000;
+  const USER_FETCH_TTL_MS = 60000;
+  const ACCESS_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+  const PHARMACY_PROFILE_CACHE_TTL_MS = 60 * 60 * 1000;
+  const OWNER_ACTIVITY_CACHE_TTL_MS = 5 * 60 * 1000;
+  const ATTENDANCE_SHIFT_CACHE_TTL_MS = 60 * 60 * 1000;
   const SALARY_HISTORY_SYNC_MIN_GAP_MS = 180000;
   const SALARY_HISTORY_REQUEST_TIMEOUT_MS = 25000;
   const SALARY_BULK_EXPORT_PAUSE_MS = 180;
@@ -192,7 +204,6 @@
   const QUANTITY_COLUMNS = new Set([
     "stok",
     "stok_min",
-    "satuan_stok_min",
     "stok_konversi_1",
     "stok_konversi_2",
     "stok_konversi_3",
@@ -242,13 +253,13 @@
   ];
 
   const ROLE_ACCESS = {
-    owner: ACCESS_MENUS.map((item) => item.key),
+    owner: ACCESS_MENUS.map((item) => item.key).filter((k) => k !== "presensi_karyawan"),
     administrator: ["dashboard", "absensi", "presensi", "presensi_karyawan", "monitoring_presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
     admin: ["dashboard", "absensi", "presensi", "presensi_karyawan", "monitoring_presensi", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "hapus_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas", "manajemen_pengguna", "data_role"],
-    apoteker: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    apoteker: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_karyawan", "data_supplier", "restok_obat", "surat_pesanan", "akun_profil", "log_aktivitas"],
     kasir: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
     "asisten apoteker": ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"],
-    "staf gudang": ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "import_data_obat", "akun_profil", "log_aktivitas"],
+    "staf gudang": ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "filter_data_obat", "edit_obat", "data_supplier", "restok_obat", "surat_pesanan", "akun_profil", "log_aktivitas"],
     operator: ["dashboard", "absensi", "presensi", "presensi_karyawan", "cari_data_obat", "data_obat", "restok_obat", "akun_profil", "log_aktivitas"]
   };
 
@@ -287,6 +298,10 @@
         { key: "role", label: "Role", type: "select", options: ["Owner", "Administrator", "Apoteker", "Kasir", "Asisten Apoteker", "Staf Gudang", "Operator"] },
         { key: "status", label: "Status", type: "select", options: ["Aktif", "Non Aktif"] },
         { key: "email", label: "Email", type: "email" },
+        { key: "accessMode", label: "Sumber Hak Akses", type: "select", options: [
+          { value: "inherit", label: "Ikuti Data Role" },
+          { value: "override", label: "Override Pengguna (Owner)" }
+        ] },
         { key: "access", label: "Akses Menu & Fungsi", type: "access", wide: true }
       ]
     }
@@ -303,6 +318,12 @@
     filterSaveTimer: null,
     users: [],
     roles: [],
+    rolesFetchPromise: null,
+    rolesFetchedAt: 0,
+    rolePoliciesReady: false,
+    userAccessReady: false,
+    accessSnapshot: null,
+    pendingInitialView: "",
     employees: [],
     suppliers: [],
     localRecordBootstrapRunning: false,
@@ -382,6 +403,14 @@
     salaryHistoryEndpointReady: false,
     salaryHistoryFetchPromise: null,
     lastSalaryHistorySyncAt: 0,
+    salaryHistoryFilter: getDefaultSalaryHistoryFilter(),
+    salaryHistoryPage: 1,
+    salaryHistoryLimit: 10,
+    salaryHistoryTotal: 0,
+    salaryHistoryHasMore: false,
+    salaryHistoryServerPaged: false,
+    salaryHistoryUsingCache: false,
+    salaryHistoryError: "",
     quickFilter: { type: "all", days: EXPIRING_DAYS },
     quickReport: null,
     quickPage: 1,
@@ -403,15 +432,21 @@
     homeMenuLongPressed: false,
     homeMenuSuppressClickUntil: 0,
     usersFetchPromise: null,
+    usersFetchedAt: 0,
+    localRecordsFetchPromise: null,
+    ownerActivityFetchPromise: null,
     purchaseFetchPromise: null,
     restockFetchPromise: null,
     lastUserSyncAt: 0,
     backgroundSyncPromise: null,
     lastBackgroundSyncAt: 0,
     reportSignature: "",
+    restockRenderSignature: "",
+    poRenderSignature: "",
     appLoadingSuccessTimer: null,
     actionToastTimer: null,
-    viewportIsMobile: isHomeMobileViewport()
+    viewportIsMobile: isHomeMobileViewport(),
+    sidebarViewportIsMobile: isMobileViewport()
   };
 
   const els = {};
@@ -421,6 +456,10 @@
 
   function init() {
     if (document.body.dataset.page !== "home") return;
+    if (!readSession()) {
+      redirectToLanding();
+      return;
+    }
 
     bindElements();
     if (!els.tableHead || !els.tableBody) return;
@@ -430,7 +469,8 @@
     hydrateProfileName();
     bindEvents();
     setupHomeMenuReorder();
-    loadStoredModules();
+    const accessRestored = showCachedAccessWhileLoading();
+    loadStoredModules({ applyAccess: !accessRestored });
     applyProfilePreferences();
     if (!routeInitialViewFromQuery()) {
       switchView(isHomeMobileViewport() ? "home" : "dashboard", { skipHistory: true, skipCleanUrl: true });
@@ -444,7 +484,8 @@
     renderAttendanceShiftSettings();
     loadAttendanceShiftSettingsFromBackend({ silent: true });
     fetchDataObat();
-    fetchUsers();
+    loadCurrentUserAccess();
+    window.setTimeout(finishAccessLoading, 2500);
     fetchPharmacyProfile({ silent: true });
     fetchOwnerActivityLog({ silent: true });
     bindUserAccessSync();
@@ -487,6 +528,10 @@
   function routeInitialViewFromQuery() {
     const requested = readInitialViewRequest();
     if (!requested || !VIEW_TITLES[requested]) return false;
+    if (!isAccessReady()) {
+      state.pendingInitialView = requested;
+      return true;
+    }
 
     switchView(requested, { skipHistory: true, skipCleanUrl: true });
     return true;
@@ -890,6 +935,12 @@
       salarySlipSummary: document.getElementById("salarySlipSummary"),
       salarySlipHistoryCard: document.getElementById("salarySlipHistoryCard"),
       salarySlipHistoryStatus: document.getElementById("salarySlipHistoryStatus"),
+      salaryHistoryFilters: document.getElementById("salarySlipHistoryFilters"),
+      salaryHistoryMonth: document.getElementById("salaryHistoryMonth"),
+      salaryHistoryYear: document.getElementById("salaryHistoryYear"),
+      resetSalaryHistoryFilter: document.getElementById("resetSalaryHistoryFilter"),
+      salaryHistoryResultCount: document.getElementById("salaryHistoryResultCount"),
+      salaryHistoryPagination: document.getElementById("salaryHistoryPagination"),
       deleteAllSalarySlipHistoryButton: document.getElementById("deleteAllSalarySlipHistoryButton"),
       salarySlipHistoryList: document.getElementById("salarySlipHistoryList"),
       userTableBody: document.getElementById("userTableBody"),
@@ -1241,6 +1292,14 @@
     });
     if (els.profilePhotoInput) els.profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
     if (els.profileRemovePhotoButton) els.profileRemovePhotoButton.addEventListener("click", removeProfilePhoto);
+    if (els.profileLargeAvatar) {
+      els.profileLargeAvatar.addEventListener("click", openProfilePhotoViewer);
+      els.profileLargeAvatar.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openProfilePhotoViewer();
+      });
+    }
     if (els.profilePasswordForm) els.profilePasswordForm.addEventListener("submit", saveProfilePassword);
     [els.profileNewPasswordInput, els.profileConfirmPasswordInput].forEach((input) => {
       if (input) input.addEventListener("input", updateProfilePasswordIndicators);
@@ -1329,6 +1388,9 @@
       });
     });
     if (els.generateSalarySlipButton) els.generateSalarySlipButton.addEventListener("click", generateSalarySlipPdf);
+    if (els.salaryHistoryFilters) els.salaryHistoryFilters.addEventListener("submit", applySalaryHistoryFilter);
+    if (els.resetSalaryHistoryFilter) els.resetSalaryHistoryFilter.addEventListener("click", resetSalaryHistoryFilter);
+    if (els.salaryHistoryPagination) els.salaryHistoryPagination.addEventListener("click", handleSalaryHistoryPagination);
     if (els.salarySlipHistoryList) els.salarySlipHistoryList.addEventListener("click", handleSalarySlipHistoryAction);
     if (els.deleteAllSalarySlipHistoryButton) els.deleteAllSalarySlipHistoryButton.addEventListener("click", deleteAllSalarySlipHistory);
     if (els.openSalarySlipButton) els.openSalarySlipButton.addEventListener("click", () => {
@@ -1375,6 +1437,7 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        if (closeProfilePhotoViewer()) return;
         if (state.restockSelectionMode) exitRestockSelectionMode();
         closeNotification();
         setSidebarCollapsed(true);
@@ -1435,6 +1498,8 @@
         parsed.meta.updatedAt ||
         ""
       );
+      const previousMeta = readObject(META_KEY);
+      const rowsUnchanged = state.uploadedAt !== "" && state.uploadedAt === normalizeTimestamp(previousMeta.uploadedAt || "");
 
       try {
         localStorage.setItem(DATA_OBAT_ROWS_CACHE_KEY, JSON.stringify(state.rows));
@@ -1443,6 +1508,10 @@
         console.warn("Cache data obat tidak bisa disimpan:", cacheError);
       }
       persistMeta();
+      if (rowsUnchanged && !options.manual) {
+        setLoading(false, `${state.rows.length} data obat masih terbaru, ditampilkan dari cache.`);
+        return;
+      }
       syncSupplierSeed();
       populateFilterOptions();
       await loadDataObatFilterState();
@@ -1501,10 +1570,95 @@
     return true;
   }
 
+  function showCachedAccessWhileLoading() {
+    if (restoreAccessSnapshot() || restoreSessionAccessSnapshot()) {
+      applyCurrentUserAccess();
+      renderUsers();
+      return true;
+    }
+    const now = Date.now();
+    if (!state.roles.length || !state.users.length) return false;
+    if (now - state.rolesFetchedAt >= ROLE_FETCH_TTL_MS || now - state.usersFetchedAt >= USER_FETCH_TTL_MS) return false;
+    const user = findSessionUser(state.users);
+    if (!user) return false;
+    user.authoritative = true;
+    state.rolePoliciesReady = true;
+    state.userAccessReady = true;
+    applyCurrentUserAccess();
+    renderUsers();
+    document.body.classList.add("access-cache-ready");
+    return true;
+  }
+
+  function restoreSessionAccessSnapshot() {
+    const session = readSession();
+    if (!session) return false;
+    const isOwner = normalizeSearch(session.role) === "owner" || normalizeSearch(session.username) === "owner";
+    const rawAccess = session.access ?? session.menu;
+    const access = isOwner ? ROLE_ACCESS.owner.slice() : normalizeAccessList(rawAccess);
+    if (!isOwner && (rawAccess === undefined || rawAccess === null || String(rawAccess).trim() === "" || !access.length)) return false;
+    state.accessSnapshot = access;
+    if (session.sessionToken) storeAccessSnapshot(access);
+    document.body.classList.add("access-cache-ready");
+    return true;
+  }
+
+  function isAccessReady() {
+    const user = getCurrentUserRecord();
+    return Boolean(state.accessSnapshot || (state.rolePoliciesReady && state.userAccessReady && user.authoritative === true));
+  }
+
+  function findSessionUser(users = state.users) {
+    const session = readSession() || {};
+    const sessionKeys = [session.username, session.email, session.name].map(normalizeSearch).filter(Boolean);
+    return (users || []).find((user) => {
+      return [user.username, user.email, user.name]
+        .map(normalizeSearch)
+        .some((value) => value && sessionKeys.includes(value));
+    }) || null;
+  }
+
+  function restoreAccessSnapshot() {
+    const session = readSession();
+    if (!session?.sessionToken) return false;
+    try {
+      const snapshot = JSON.parse(sessionStorage.getItem(ACCESS_SNAPSHOT_KEY) || "null");
+      const access = normalizeAccessList(snapshot?.access);
+      const identity = normalizeSearch(snapshot?.identity);
+      const sessionIdentity = normalizeSearch(session.username || session.email || session.name);
+      if (!snapshot || snapshot.token !== session.sessionToken || !identity || identity !== sessionIdentity || Date.now() >= Number(snapshot.expiresAt) || access.length !== (snapshot.access || []).length) return false;
+      state.accessSnapshot = access;
+      document.body.classList.add("access-cache-ready");
+      return true;
+    } catch (_) {
+      sessionStorage.removeItem(ACCESS_SNAPSHOT_KEY);
+      return false;
+    }
+  }
+
+  function storeAccessSnapshot(access) {
+    const session = readSession();
+    if (!session?.sessionToken) return;
+    const normalized = normalizeAccessList(access);
+    const sessionIdentity = normalizeSearch(session.username || session.email || session.name);
+    if (!sessionIdentity) return;
+    const expiresAt = Math.min(Number(session.expiresAt) || 0, Date.now() + ACCESS_SNAPSHOT_TTL_MS);
+    if (expiresAt <= Date.now()) return;
+    sessionStorage.setItem(ACCESS_SNAPSHOT_KEY, JSON.stringify({
+      token: session.sessionToken,
+      identity: sessionIdentity,
+      access: normalized,
+      expiresAt
+    }));
+  }
+
   function bindUserAccessSync() {
-    // ponytail: polling dimatikan agar perpindahan menu tetap ringan.
-    // Tambah lagi saat backend punya updatedAt/version per modul.
-    return;
+    // Sinkronisasi berkala yang ringan: tiap modul punya guard TTL sendiri,
+    // jadi interval ini hanya menyegarkan data yang memang sudah kedaluwarsa.
+    window.setInterval(() => syncBackgroundModules(), BACKGROUND_SYNC_INTERVAL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) syncBackgroundModules({ force: true });
+    });
   }
 
   async function syncBackgroundModules(options = {}) {
@@ -1532,18 +1686,106 @@
     }
   }
 
+  function finishAccessLoading() {
+    if (!readSession()) {
+      redirectToLanding();
+      return;
+    }
+    document.body.classList.remove("access-loading", "access-cache-ready");
+  }
+
+  function applyPendingInitialView() {
+    const requested = state.pendingInitialView;
+    state.pendingInitialView = "";
+    if (!requested || !VIEW_TITLES[requested]) return;
+    if (canView(requested)) switchView(requested, { skipHistory: true, skipCleanUrl: true });
+  }
+
+  async function loadCurrentUserAccess() {
+    const now = Date.now();
+    const roleFresh = state.rolePoliciesReady && state.rolesFetchedAt > 0 && now - state.rolesFetchedAt < ROLE_FETCH_TTL_MS;
+    const userFresh = state.userAccessReady && state.usersFetchedAt > 0 && now - state.usersFetchedAt < USER_FETCH_TTL_MS;
+    if (!roleFresh || !userFresh) {
+      await Promise.allSettled([
+        roleFresh ? Promise.resolve() : fetchRolePolicies({ deferAccessApply: true }),
+        userFresh ? Promise.resolve() : fetchUsers({ force: false, deferAccessApply: true })
+      ]);
+    }
+    applyCurrentUserAccess();
+    renderUsers();
+    if (state.rolePoliciesReady && state.userAccessReady && findSessionUser()?.authoritative === true) {
+      state.accessSnapshot = getEffectiveAccessForUser(findSessionUser());
+      storeAccessSnapshot(state.accessSnapshot);
+    }
+    applyPendingInitialView();
+    finishAccessLoading();
+  }
+
+  async function fetchRolePolicies(options = {}) {
+    const now = Date.now();
+    if (state.rolesFetchPromise) return state.rolesFetchPromise;
+    if (!options.force && state.rolePoliciesReady && state.roles.length && now - state.rolesFetchedAt < ROLE_FETCH_TTL_MS) return state.roles;
+
+    state.rolesFetchPromise = (async () => {
+      try {
+        let payload = await postToApi({ action: "listRolePolicies" });
+        if (!isApiOk(payload)) throw new Error(payload?.message || "Kebijakan role gagal dimuat.");
+
+        if (payload.initialized !== true) {
+          const session = readSession() || {};
+          const isOwner = normalizeSearch(session.role) === "owner" || normalizeSearch(session.username) === "owner";
+          if (!isOwner) return [];
+          const seed = state.roles.length
+            ? state.roles
+            : Object.keys(ROLE_ACCESS)
+              .filter((key) => key !== "owner" && key !== "admin")
+              .map((key) => ({ name: formatRoleLabel(key), access: ROLE_ACCESS[key].filter((item) => item !== "akses_semua_data") }));
+          payload = await postToApi({ action: "saveRolePolicies", roles: seed });
+          if (!isApiOk(payload)) throw new Error(payload?.message || "Kebijakan role gagal diinisialisasi.");
+        }
+
+        state.roles = (payload.roles || []).map(normalizeRoleRecord).filter((item) => item.name);
+        writeStoredArray(ROLE_KEY, state.roles);
+        state.rolePoliciesReady = true;
+        state.rolesFetchedAt = Date.now();
+        writeStoredNumber(ROLE_SYNC_AT_KEY, state.rolesFetchedAt);
+        renderRoleDataPage();
+        renderUserRoleOptions();
+        renderUsers();
+        if (options.deferAccessApply !== true) applyCurrentUserAccess();
+        return state.roles;
+      } catch (error) {
+        state.rolePoliciesReady = false;
+        if (options.deferAccessApply !== true) applyCurrentUserAccess();
+        console.warn("Gagal menyinkronkan kebijakan role:", error);
+        return [];
+      }
+    })();
+
+    try {
+      return await state.rolesFetchPromise;
+    } finally {
+      state.rolesFetchPromise = null;
+    }
+  }
+
   async function fetchUsers(options = {}) {
     const now = Date.now();
     const lastSyncAt = readStoredNumber(USER_SYNC_AT_KEY);
     const hasCachedUsers = state.users.length || localStorage.getItem(USER_KEY) !== null;
     if (state.usersFetchPromise) return state.usersFetchPromise;
-    if (!options.force && hasCachedUsers && now - Math.max(state.lastUserSyncAt, lastSyncAt) < USER_SYNC_MIN_GAP_MS) return state.users;
+    if (!options.force && state.userAccessReady && hasCachedUsers && now - Math.max(state.usersFetchedAt, state.lastUserSyncAt, lastSyncAt) < USER_FETCH_TTL_MS) return state.users;
 
     state.usersFetchPromise = (async () => {
       try {
         const payload = await postToApi({ action: "listLoginUsers" });
-        if (!isApiOk(payload) || !Array.isArray(payload.users)) return;
+        if (!isApiOk(payload) || !Array.isArray(payload.users)) {
+          state.userAccessReady = false;
+          if (options.deferAccessApply !== true && !state.accessSnapshot) applyCurrentUserAccess();
+          return state.users;
+        }
 
+        state.userAccessReady = true;
         const nextUsers = payload.users.map((user, index) => ({
           id: `sheet-user-${index}`,
           name: String(user.name || user.username || user.email || "").trim(),
@@ -1554,18 +1796,41 @@
           phone: normalizePhoneNumber(user.phone || user.noHp || ""),
           address: String(user.address || user.alamat || "").trim(),
           photo: String(user.profilePhoto || user.photo || "").trim(),
-          access: normalizeAccessList(user.access || user.menu, user.role || "Operator"),
+          access: normalizeAccessList(user.access || user.menu),
+          accessMode: normalizeAccessMode(user.accessMode || user.access_mode),
+          authoritative: true,
           preferences: normalizeProfilePreferences(user.preferences || user.profilePreferences || user.profile_preferences)
         })).filter((user) => user.name || user.username);
 
         const nextUserSignature = getUserListSignature(nextUsers);
         const currentUserSignature = getUserListSignature(state.users);
         state.lastUserSyncAt = Date.now();
+        state.usersFetchedAt = state.lastUserSyncAt;
         writeStoredNumber(USER_SYNC_AT_KEY, state.lastUserSyncAt);
         writeStoredArray(USER_KEY, nextUsers);
+
+        // Sync session with the latest user access list to bypass stale sessionStorage
+        const session = readSession();
+        if (session) {
+          const sessionKeys = [session.username, session.email, session.name].map(normalizeSearch).filter(Boolean);
+          const current = nextUsers.find((u) => {
+            return [u.username, u.email, u.name].map(normalizeSearch).some((val) => val && sessionKeys.includes(val));
+          });
+          if (current) {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+              ...session,
+              role: current.role || session.role,
+              menu: (current.access || []).join(","),
+              accessMode: current.accessMode || "inherit"
+            }));
+          }
+        }
+
         if (nextUserSignature === currentUserSignature) {
+          state.users = nextUsers;
+          renderUsers();
           renderProfile();
-          applyCurrentUserAccess();
+          if (options.deferAccessApply !== true) applyCurrentUserAccess();
           return state.users;
         }
         state.users = nextUsers;
@@ -1575,8 +1840,9 @@
         renderEmployees();
         renderUsers();
         renderProfile();
-        applyCurrentUserAccess();
+        if (options.deferAccessApply !== true) applyCurrentUserAccess();
       } catch (error) {
+        state.userAccessReady = false;
         state.lastUserSyncAt = Date.now();
         if (hasCachedUsers) writeStoredNumber(USER_SYNC_AT_KEY, state.lastUserSyncAt);
         if (!options.silent) {
@@ -1586,7 +1852,7 @@
         syncUserSeed();
         renderEmployees();
         renderUsers();
-        applyCurrentUserAccess();
+        if (options.deferAccessApply !== true && !state.accessSnapshot) applyCurrentUserAccess();
       }
     })();
 
@@ -1607,72 +1873,76 @@
       user.phone,
       user.photo,
       (user.access || []).join(","),
+      user.accessMode || "inherit",
       JSON.stringify(user.preferences || {})
     ]));
   }
 
   async function fetchLocalRecords(options = {}) {
+    if (state.localRecordsFetchPromise) return state.localRecordsFetchPromise;
     const now = Date.now();
     const lastSyncAt = readStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY);
     const hasCachedLocalRecords = state.employees.length || state.suppliers.length || localStorage.getItem(EMPLOYEE_KEY) !== null || localStorage.getItem(SUPPLIER_KEY) !== null;
-    if (!options.force && hasCachedLocalRecords && now - lastSyncAt < MENU_CACHE_TTL_MS) {
-      renderEmployees();
-      renderSuppliers();
-      populateMedicineOptions();
-      renderAttendanceDashboard();
-      return;
-    }
+    if (!options.force && hasCachedLocalRecords && now - lastSyncAt < MENU_CACHE_TTL_MS) return;
+
+    state.localRecordsFetchPromise = (async () => {
+      try {
+        const payload = await postToApi({ action: "listLocalRecords" });
+        if (!payload || (payload.success !== true && payload.ok !== true)) return;
+        const localEmployees = state.employees.slice();
+        const localSuppliers = state.suppliers.slice();
+        let shouldPushEmployees = false;
+        let shouldPushSuppliers = false;
+
+        if (Array.isArray(payload.employees)) {
+          const employees = payload.employees
+            .map(normalizeEmployeeRecord)
+            .filter((item) => item.name || item.email || item.phone);
+
+          if (employees.length || !state.employees.length || options.allowEmpty === true) {
+            state.employees = employees;
+            writeStoredArray(EMPLOYEE_KEY, state.employees);
+          } else if (!employees.length && localEmployees.length) {
+            shouldPushEmployees = true;
+          }
+        }
+
+        if (Array.isArray(payload.suppliers)) {
+          const suppliers = payload.suppliers
+            .map(normalizeSupplierRecord)
+            .filter((item) => item.name || item.phone || item.pic);
+
+          if (suppliers.length || !state.suppliers.length || options.allowEmpty === true) {
+            state.suppliers = suppliers;
+            writeStoredArray(SUPPLIER_KEY, state.suppliers);
+          } else if (!suppliers.length && localSuppliers.length) {
+            shouldPushSuppliers = true;
+          }
+        }
+
+        if (shouldPushEmployees || shouldPushSuppliers) {
+          await pushLocalRecordsToBackend({
+            employees: shouldPushEmployees ? localEmployees : [],
+            suppliers: shouldPushSuppliers ? localSuppliers : []
+          });
+        }
+
+        writeStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY, Date.now());
+        renderEmployees();
+        renderSuppliers();
+        populateMedicineOptions();
+        renderAttendanceDashboard();
+      } catch (error) {
+        if (!options.silent) {
+          console.warn("Gagal menyinkronkan data karyawan/supplier:", error);
+        }
+      }
+    })();
 
     try {
-      const payload = await postToApi({ action: "listLocalRecords" });
-      if (!payload || (payload.success !== true && payload.ok !== true)) return;
-      const localEmployees = state.employees.slice();
-      const localSuppliers = state.suppliers.slice();
-      let shouldPushEmployees = false;
-      let shouldPushSuppliers = false;
-
-      if (Array.isArray(payload.employees)) {
-        const employees = payload.employees
-          .map(normalizeEmployeeRecord)
-          .filter((item) => item.name || item.email || item.phone);
-
-        if (employees.length || !state.employees.length || options.allowEmpty === true) {
-          state.employees = employees;
-          writeStoredArray(EMPLOYEE_KEY, state.employees);
-        } else if (!employees.length && localEmployees.length) {
-          shouldPushEmployees = true;
-        }
-      }
-
-      if (Array.isArray(payload.suppliers)) {
-        const suppliers = payload.suppliers
-          .map(normalizeSupplierRecord)
-          .filter((item) => item.name || item.phone || item.pic);
-
-        if (suppliers.length || !state.suppliers.length || options.allowEmpty === true) {
-          state.suppliers = suppliers;
-          writeStoredArray(SUPPLIER_KEY, state.suppliers);
-        } else if (!suppliers.length && localSuppliers.length) {
-          shouldPushSuppliers = true;
-        }
-      }
-
-      if (!options.skipBootstrap && (shouldPushEmployees || shouldPushSuppliers)) {
-        await pushLocalRecordsToBackend({
-          employees: shouldPushEmployees ? localEmployees : [],
-          suppliers: shouldPushSuppliers ? localSuppliers : []
-        });
-      }
-
-      writeStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY, Date.now());
-      renderEmployees();
-      renderSuppliers();
-      populateMedicineOptions();
-      renderAttendanceDashboard();
-    } catch (error) {
-      if (!options.silent) {
-        console.warn("Gagal menyinkronkan data karyawan/supplier:", error);
-      }
+      return await state.localRecordsFetchPromise;
+    } finally {
+      state.localRecordsFetchPromise = null;
     }
   }
 
@@ -1691,7 +1961,6 @@
       for (const supplier of cleanSuppliers) {
         await saveRemoteLocalRecord("supplier", supplier, supplier);
       }
-      await fetchLocalRecords({ silent: true, skipBootstrap: true });
     } catch (error) {
       console.warn("Gagal mengunggah data lokal ke Google Sheet:", error);
     } finally {
@@ -2966,6 +3235,15 @@
         throw new Error("File tidak memiliki baris data yang bisa diimport.");
       }
 
+      // Validate required columns
+      const normalizedHeaders = parsed.headers.map(h => String(h || "").toLowerCase().replace(/[\s_]/g, ""));
+      const hasKode = normalizedHeaders.some(h => h.includes("kode") || h === "barcode");
+      const hasNama = normalizedHeaders.some(h => h.includes("nama"));
+
+      if (!hasKode || !hasNama) {
+        throw new Error("File harus memiliki kolom 'kode' dan 'nama'.");
+      }
+
       state.importHeaders = parsed.headers;
       state.importRows = rows;
       if (els.importSummary) els.importSummary.textContent = `${formatNumber(rows.length)} data siap import`;
@@ -3004,14 +3282,36 @@
 
     const matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
       header: 1,
-      raw: false,
+      raw: true,
       defval: ""
     });
 
     return matrixToImportRows(matrix);
   }
 
+  function detectCsvDelimiter(text) {
+    const counts = { ",": 0, ";": 0, "\t": 0 };
+    let insideQuote = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
+      const nextChar = text[index + 1];
+      if (char === '"' && insideQuote && nextChar === '"') {
+        index += 1;
+      } else if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (!insideQuote && (char === "\n" || char === "\r")) {
+        break;
+      } else if (!insideQuote && Object.prototype.hasOwnProperty.call(counts, char)) {
+        counts[char] += 1;
+      }
+    }
+
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || ",";
+  }
+
   function parseCsvMatrix(text) {
+    const delimiter = detectCsvDelimiter(String(text || "").replace(/^﻿/, ""));
     const rows = [];
     let row = [];
     let cell = "";
@@ -3026,7 +3326,7 @@
         index += 1;
       } else if (char === '"') {
         insideQuote = !insideQuote;
-      } else if (char === "," && !insideQuote) {
+      } else if (char === delimiter && !insideQuote) {
         row.push(cell);
         cell = "";
       } else if ((char === "\n" || char === "\r") && !insideQuote) {
@@ -3045,6 +3345,12 @@
     return rows.filter((item) => item.some((value) => String(value || "").trim()));
   }
 
+  function normalizeImportHeaderKey(value) {
+    const normalized = normalizeKey(value);
+    const column = DATA_COLUMNS.find((item) => normalizeKey(item.key) === normalized);
+    return column ? column.key : normalized;
+  }
+
   function matrixToImportRows(matrix) {
     if (!Array.isArray(matrix) || !matrix.length) {
       throw new Error("File kosong.");
@@ -3057,22 +3363,73 @@
       throw new Error("Header kolom tidak ditemukan.");
     }
 
-    const normalizedHeaders = rawHeaders.map(normalizeKey);
-    const rows = matrix.slice(1).map((row) => {
+    const normalizedHeaders = rawHeaders.map(normalizeImportHeaderKey);
+    const seenHeaders = new Set();
+    const duplicateHeaders = [];
+    normalizedHeaders.forEach((header) => {
+      if (!header) return;
+      if (seenHeaders.has(header)) duplicateHeaders.push(header);
+      seenHeaders.add(header);
+    });
+
+    if (duplicateHeaders.length) {
+      throw new Error(`Header duplikat: ${duplicateHeaders.slice(0, 3).join(", ")}. Pastikan header unik.`);
+    }
+
+    if (!seenHeaders.has("kode") || !seenHeaders.has("nama")) {
+      throw new Error("Header wajib: kode dan nama. Pastikan file memiliki kedua kolom ini.");
+    }
+
+    const rows = matrix.slice(1).map((row, rowIndex) => {
       const item = {};
       normalizedHeaders.forEach((header, index) => {
-        if (header) item[header] = normalizeImportValue(header, row[index] || "");
+        if (header) item[header] = normalizeImportValue(header, row[index] ?? "", rowIndex + 2);
       });
+
+      const kode = String(item.kode || "").trim();
+      const nama = String(item.nama || "").trim();
+      if (!kode || !nama) {
+        throw new Error(`Baris ${rowIndex + 2}: kode dan nama wajib diisi.`);
+      }
+
       return item;
     });
+
+    const seenCodes = new Set();
+    const duplicateCodes = [];
+    rows.forEach((row) => {
+      const kode = String(row.kode || "").trim();
+      const kodeKey = kode.toLowerCase();
+      if (seenCodes.has(kodeKey)) duplicateCodes.push(kode);
+      seenCodes.add(kodeKey);
+    });
+
+    if (duplicateCodes.length) {
+      throw new Error(`Kode duplikat: ${duplicateCodes.slice(0, 3).join(", ")}. Pastikan kode unik.`);
+    }
 
     return { headers, rows };
   }
 
-  function normalizeImportValue(header, value) {
-    if (PRICE_COLUMNS.has(header)) return normalizePriceValue(value, header);
-    if (QUANTITY_COLUMNS.has(header)) return normalizeQuantityValue(value);
-    return value;
+  function normalizeImportValue(header, value, rowNumber) {
+    if (!PRICE_COLUMNS.has(header) && !QUANTITY_COLUMNS.has(header)) return value;
+    if (typeof value === "number") return value;
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    const parsed = parseImportNumber(text);
+    if (parsed === null) throw new Error(`Baris ${rowNumber}, kolom ${header}: angka tidak valid.`);
+    return parsed;
+  }
+
+  function parseImportNumber(value) {
+    const text = String(value ?? "").trim().replace(/^Rp\s*/i, "").replace(/\s+/g, "");
+    if (!text) return null;
+    if (/^-?\d+$/.test(text)) return Number(text);
+    if (/^-?\d{1,3}(?:\.\d{3})+$/.test(text)) return Number(text.replace(/\./g, ""));
+    if (/^-?\d{1,3}(?:,\d{3})+$/.test(text)) return Number(text.replace(/,/g, ""));
+    if (/^-?\d+(?:,\d{1,2})$/.test(text)) return Number(text.replace(",", "."));
+    if (/^-?\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(text)) return Number(text.replace(/\./g, "").replace(",", "."));
+    return null;
   }
 
   async function importExcelToGoogleSheet() {
@@ -3081,26 +3438,32 @@
       return;
     }
 
+    const mode = els.importMode?.value || "";
+    if (!/^(replace|append)$/.test(mode)) {
+      setImportStatus("Mode import tidak valid.", "error");
+      return;
+    }
+
+    if (mode === "replace") {
+      const confirmed = await showConfirmDialog(
+        `Ganti seluruh data obat dengan ${formatNumber(state.importRows.length)} baris dari file import? Data lama akan dihapus.`
+      );
+      if (!confirmed) return;
+    }
+
     if (els.importButton) els.importButton.disabled = true;
     const loadingToken = startAppLoading("Mengupload data obat...");
     setImportStatus("Mengupload data obat ke Google Sheet...", "info");
 
     try {
-      const response = await fetch(getImportApiUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "import_data_obat",
-          sheet: "data_obat",
-          mode: els.importMode?.value || "replace",
-          headers: state.importHeaders,
-          rows: state.importRows
-        })
+      const result = await postToApi({
+        action: "import_data_obat",
+        sheet: "data_obat",
+        mode,
+        headers: state.importHeaders,
+        rows: state.importRows
       });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = parseImportResponse(await response.text());
       if (!result || (result.ok !== true && result.success !== true)) {
         throw new Error(result?.message || result?.error || "API belum mengonfirmasi import data obat.");
       }
@@ -3119,23 +3482,6 @@
     }
   }
 
-  function getImportApiUrl() {
-    const url = new URL(API_BASE, window.location.href);
-    url.searchParams.set("sheet", "data_obat");
-    url.searchParams.set("action", "import_data_obat");
-    return url.toString();
-  }
-
-  function parseImportResponse(text) {
-    const value = String(text || "").trim();
-    if (!value) return {};
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      throw new Error("Response API bukan JSON valid. Cek deployment Apps Script.");
-    }
-  }
-
   function setImportStatus(message, type) {
     if (!els.importStatus) return;
     els.importStatus.textContent = message || "";
@@ -3143,23 +3489,40 @@
   }
 
   async function fetchOwnerActivityLog(options = {}) {
+    if (state.ownerActivityFetchPromise) return state.ownerActivityFetchPromise;
     const user = getCurrentUserRecord() || {};
-
-    try {
-      const result = await postToApi({
-        action: "listActivityLog",
-        limit: isOwnerUser(user) || isAdminUser(user) ? 500 : 120,
-        role: isOwnerUser(user) || isAdminUser(user) ? "" : (user.role || ""),
-        username: isOwnerUser(user) || isAdminUser(user) ? "" : (user.username || ""),
-        email: isOwnerUser(user) || isAdminUser(user) ? "" : (user.email || ""),
-        actor: isOwnerUser(user) || isAdminUser(user) ? "" : (user.name || "")
-      });
-      if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
-      state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
+    const lastSyncAt = readStoredNumber(OWNER_ACTIVITY_SYNC_AT_KEY);
+    if (!options.force && lastSyncAt && Date.now() - lastSyncAt < OWNER_ACTIVITY_CACHE_TTL_MS) {
       renderActivityLogPage();
       updateNotificationState();
-    } catch (error) {
-      if (!options.silent) console.warn("Gagal membaca aktivitas owner:", error);
+      return;
+    }
+
+    state.ownerActivityFetchPromise = (async () => {
+      try {
+        const result = await postToApi({
+          action: "listActivityLog",
+          limit: isOwnerUser(user) || isAdminUser(user) ? 500 : 120,
+          role: isOwnerUser(user) || isAdminUser(user) ? "" : (user.role || ""),
+          username: isOwnerUser(user) || isAdminUser(user) ? "" : (user.username || ""),
+          email: isOwnerUser(user) || isAdminUser(user) ? "" : (user.email || ""),
+          actor: isOwnerUser(user) || isAdminUser(user) ? "" : (user.name || "")
+        });
+        if (!result || (result.success !== true && result.ok !== true) || !Array.isArray(result.activities)) return;
+        state.ownerActivities = result.activities.map(normalizeActivityRecord).filter((item) => item.title || item.detail);
+        writeStoredArray(OWNER_ACTIVITY_CACHE_KEY, state.ownerActivities);
+        writeStoredNumber(OWNER_ACTIVITY_SYNC_AT_KEY, Date.now());
+        renderActivityLogPage();
+        updateNotificationState();
+      } catch (error) {
+        if (!options.silent) console.warn("Gagal membaca aktivitas owner:", error);
+      }
+    })();
+
+    try {
+      return await state.ownerActivityFetchPromise;
+    } finally {
+      state.ownerActivityFetchPromise = null;
     }
   }
 
@@ -4494,12 +4857,17 @@
     closeDeleteModal();
   }
 
-  function loadStoredModules() {
+  function loadStoredModules(options = {}) {
     resetLegacyRestockRequests();
     state.employees = readStoredArray(EMPLOYEE_KEY).map(normalizeEmployeeRecord);
     state.suppliers = readStoredArray(SUPPLIER_KEY).map(normalizeSupplierRecord);
-    state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
     state.roles = readStoredArray(ROLE_KEY).map(normalizeRoleRecord).filter((item) => item.name);
+    state.users = readStoredArray(USER_KEY).map(normalizeUserRecord);
+    state.ownerActivities = readStoredArray(OWNER_ACTIVITY_CACHE_KEY).map(normalizeActivityRecord).filter((item) => item.title || item.detail);
+    state.rolesFetchedAt = state.roles.length ? readStoredNumber(ROLE_SYNC_AT_KEY) : 0;
+    state.usersFetchedAt = state.users.length ? readStoredNumber(USER_SYNC_AT_KEY) : 0;
+    state.rolePoliciesReady = false;
+    state.userAccessReady = false;
     state.purchaseOrders = readStoredArray(PO_KEY).map(normalizePurchaseOrder).filter((order) => order.number);
     state.restockRequests = readStoredArray(RESTOCK_KEY).map(normalizeRestockRequest).filter((item) => item.id);
     const now = Date.now();
@@ -4515,7 +4883,7 @@
     renderPurchaseOrders();
     renderRestockPage();
     renderReportsFromCache();
-    applyCurrentUserAccess();
+    if (options.applyAccess !== false) applyCurrentUserAccess();
   }
 
   function resetLegacyRestockRequests() {
@@ -4617,10 +4985,12 @@
     return nextRecord;
   }
 
+  function normalizeAccessMode(value) {
+    return normalizeSearch(value) === "override" ? "override" : "inherit";
+  }
+
   function normalizeUserRecord(user) {
-    const role = isAyuNovaliaUser(user)
-      ? "Asisten Apoteker"
-      : (String(user?.role || "Operator").trim() || "Operator");
+    const role = String(user?.role || "Operator").trim() || "Operator";
     return {
       name: String(user?.name || user?.username || "").trim(),
       username: String(user?.username || user?.name || "").trim(),
@@ -4630,7 +5000,9 @@
       phone: normalizePhoneNumber(user?.phone || user?.noHp || ""),
       address: String(user?.address || user?.alamat || "").trim(),
       photo: String(user?.photo || user?.profilePhoto || "").trim(),
-      access: normalizeAccessList(user?.access || user?.menu, role),
+      access: normalizeAccessList(user?.access || user?.menu),
+      accessMode: normalizeAccessMode(user?.accessMode || user?.access_mode),
+      authoritative: user?.authoritative === true,
       preferences: normalizeProfilePreferences(user?.preferences || user?.profilePreferences || user?.profile_preferences)
     };
   }
@@ -4657,11 +5029,6 @@
       contact: String(record?.contact || record?.kontak || record?.pic || record?.sales || "").trim(),
       city: String(record?.city || record?.kota || record?.kabupaten || record?.domisili || "").trim()
     };
-  }
-
-  function isAyuNovaliaUser(user) {
-    const identity = normalizeSearch(`${user?.name || ""} ${user?.username || ""} ${user?.email || ""}`);
-    return identity.includes("ayu novalia");
   }
 
   function normalizeRecordStatus(value) {
@@ -4698,7 +5065,7 @@
     };
   }
 
-  function normalizeAccessList(access, role) {
+  function normalizeAccessList(access) {
     const allowed = new Set(ACCESS_MENUS.map((item) => item.key));
     const alias = new Map();
     ACCESS_MENUS.forEach((item) => {
@@ -4713,17 +5080,33 @@
     const normalized = values
       .map((item) => alias.get(normalizeSearch(item)) || String(item || "").trim())
       .filter((item) => allowed.has(item));
-    const result = normalized.length ? normalized : getDefaultAccessForRole(role);
-    return normalizeSearch(role) === "owner"
-      ? result
-      : result.filter((item) => item !== "akses_semua_data");
+    // Pure list parser: do not automatically fallback to default role
+    return normalized.filter((item, index) => item !== "akses_semua_data" && normalized.indexOf(item) === index);
+  }
+
+  function getEffectiveAccessForUser(user) {
+    if (!user || !isActiveRecord(user)) return [];
+    if (isOwnerUser(user)) return ROLE_ACCESS.owner.slice();
+
+    let access;
+    if (state.accessSnapshot && (!state.rolePoliciesReady || !state.userAccessReady)) {
+      access = state.accessSnapshot.slice();
+    } else if (!state.rolePoliciesReady || !state.userAccessReady || user.authoritative !== true) {
+      access = [];
+    } else {
+      access = normalizeAccessMode(user.accessMode) === "override"
+        ? normalizeAccessList(user.access)
+        : getDefaultAccessForRole(user.role || "Operator");
+    }
+
+    return isAdminUser(user) ? access : access.filter((key) => key !== "import_data_obat");
   }
 
   function getDefaultAccessForRole(role) {
     const key = getRoleIdentityKey(role || "operator");
     const custom = state.roles.find((item) => getRoleIdentityKey(item.name) === key);
-    if (custom && Array.isArray(custom.access) && custom.access.length) return normalizeAccessList(custom.access, custom.name);
-    return (ROLE_ACCESS[key] || ROLE_ACCESS.operator).slice();
+    if (custom && Array.isArray(custom.access)) return normalizeAccessList(custom.access);
+    return (ROLE_ACCESS[key] || []).slice();
   }
 
   function getManagedRoleNames() {
@@ -4745,7 +5128,7 @@
 
   function normalizeRoleRecord(record = {}) {
     const name = String(record.name || record.role || "").trim();
-    const access = normalizeAccessList(record.access || record.menu || "", name || "Operator");
+    const access = normalizeAccessList(record.access || record.menu || "");
     return {
       id: String(record.id || normalizeSearch(name) || Date.now()).trim(),
       name,
@@ -4754,9 +5137,14 @@
     };
   }
 
-  function persistRoles() {
-    state.roles = state.roles.map(normalizeRoleRecord).filter((item) => item.name);
+  async function persistRoles(nextRoles = state.roles) {
+    const normalized = nextRoles.map(normalizeRoleRecord).filter((item) => item.name);
+    const result = await postToApi({ action: "saveRolePolicies", roles: normalized });
+    if (!isApiOk(result)) throw new Error(result?.message || "Kebijakan role gagal disimpan.");
+    state.roles = (result.roles || normalized).map(normalizeRoleRecord).filter((item) => item.name);
     writeStoredArray(ROLE_KEY, state.roles);
+    state.rolePoliciesReady = true;
+    return state.roles;
   }
 
   function getCurrentUserRecord() {
@@ -4780,34 +5168,23 @@
         address: session.address || "",
         photo: session.profilePhoto || session.photo || "",
         status: session.status || "Aktif",
-        access: session.menu || ""
+        access: []
       });
     }
-
-    const sessionRole = String(session.role || "").trim();
-    const role = found.role || sessionRole || "Operator";
-    const sessionMenu = session.menu || "";
 
     return normalizeUserRecord({
       ...found,
       name: found.name || session.name || session.username || "Akun",
       username: found.username || session.username || "",
-      role,
+      role: found.role || session.role || "Operator",
       email: found.email || session.email || "",
       status: found.status || session.status || "Aktif",
-      access: found.access && found.access.length
-        ? found.access
-        : (sessionMenu || getDefaultAccessForRole(role))
+      access: found.access || []
     });
   }
 
   function canAccess(key) {
-    const user = getCurrentUserRecord();
-    if (!isActiveRecord(user)) return false;
-    if (key === "monitoring_presensi") return isAdminUser(user);
-    if (key === "presensi_karyawan") return !isOwnerUser(user);
-    if (isOwnerUser(user)) return true;
-    return user.access.includes(key);
+    return getEffectiveAccessForUser(getCurrentUserRecord()).includes(key);
   }
 
   function applyCurrentUserAccess() {
@@ -4820,21 +5197,31 @@
       }, 900);
       return;
     }
-    const access = new Set(user.access);
-    if (!isActiveRecord(user)) {
-      access.clear();
-    } else if (isOwnerUser(user)) {
-      ACCESS_MENUS.forEach((item) => access.add(item.key));
+    const access = new Set(getEffectiveAccessForUser(user));
+    if (state.rolePoliciesReady && state.userAccessReady && user.authoritative === true) {
+      state.accessSnapshot = null;
+      storeAccessSnapshot(Array.from(access));
     }
-    if (isActiveRecord(user) && !isOwnerUser(user)) access.add("presensi_karyawan");
-    if (isActiveRecord(user) && isAdminUser(user)) access.add("monitoring_presensi");
-    if (!isAdminUser(user)) access.delete("monitoring_presensi");
-    if (isOwnerUser(user)) access.delete("presensi_karyawan");
 
     document.querySelectorAll("[data-access-key]").forEach((element) => {
       const allowed = access.has(element.dataset.accessKey);
       element.hidden = !allowed;
+      element.classList.toggle("is-access-hidden", !allowed);
+      if (allowed) element.style.removeProperty("display");
+      else element.style.setProperty("display", "none", "important");
       element.toggleAttribute("aria-disabled", !allowed);
+    });
+
+    // Hide empty section groups & toggles
+    document.querySelectorAll(".sidebar-section-group").forEach((group) => {
+      const items = Array.from(group.querySelectorAll("[data-access-key]"));
+      const allHidden = items.every((item) => {
+        const key = item.dataset.accessKey;
+        return !access.has(key);
+      });
+      group.hidden = allHidden;
+      const toggle = document.querySelector(`[aria-controls="${group.id}"]`);
+      if (toggle) toggle.hidden = allHidden;
     });
 
     syncMobileHomeMenuAccess(access);
@@ -4869,13 +5256,7 @@
     if (viewName === "home") return true;
     const currentUser = getCurrentUserRecord();
     if (!isActiveRecord(currentUser)) return false;
-    if (viewName === "monitoring-presensi") return isAdminUser(currentUser);
-    if (viewName === "presensi-karyawan") return !isOwnerUser(currentUser);
-    if (!access) {
-      const user = currentUser;
-      access = new Set(user.access || []);
-      if (isOwnerUser(user)) ACCESS_MENUS.forEach((item) => access.add(item.key));
-    }
+    if (!access) access = new Set(getEffectiveAccessForUser(currentUser));
     const map = {
       dashboard: "dashboard",
       presensi: "presensi",
@@ -5036,7 +5417,7 @@
     state.roleEditingName = "";
   }
 
-  function saveRoleFromModal(event) {
+  async function saveRoleFromModal(event) {
     event.preventDefault();
     const cleanName = String(els.roleEditorName?.value || "").trim();
     if (!cleanName) {
@@ -5044,29 +5425,50 @@
       return;
     }
     const access = Array.from(els.roleEditorAccess?.querySelectorAll("input:checked") || []).map((input) => input.value);
-    const finalAccess = normalizeAccessList(access, cleanName).filter((item) => item !== "akses_semua_data");
+    const finalAccess = normalizeAccessList(access).filter((item) => item !== "akses_semua_data");
     const existingIndex = state.roles.findIndex((item) => getRoleIdentityKey(item.name) === getRoleIdentityKey(cleanName) || getRoleIdentityKey(item.name) === getRoleIdentityKey(state.roleEditingName));
     const record = normalizeRoleRecord({ name: cleanName, access: finalAccess, updatedAt: new Date().toISOString() });
-    if (existingIndex >= 0) state.roles[existingIndex] = record;
-    else state.roles.push(record);
-    persistRoles();
-    closeRoleEditor();
-    renderRoleDataPage();
-    renderUserRoleOptions();
-    showActionToast("Data role berhasil disimpan.");
+
+    const nextRoles = state.roles.slice();
+    if (existingIndex >= 0) nextRoles[existingIndex] = record;
+    else nextRoles.push(record);
+
+    const token = startAppLoading("Menyimpan kebijakan role...", 0);
+    try {
+      await persistRoles(nextRoles);
+      closeRoleEditor();
+      renderRoleDataPage();
+      renderUserRoleOptions();
+      renderUsers();
+      applyCurrentUserAccess();
+      showActionToast("Data role berhasil disimpan.");
+    } catch (error) {
+      showActionToast(error.message || "Kebijakan role gagal disimpan.", "error");
+    } finally {
+      endAppLoading(token);
+    }
   }
 
-  function deleteRoleRecord(roleName, isDefaultRole) {
+  async function deleteRoleRecord(roleName, isDefaultRole) {
     if (isDefaultRole) {
       showActionToast("Role bawaan tidak bisa dihapus. Gunakan Edit untuk menyesuaikan aksesnya.", "error");
       return;
     }
     if (!window.confirm(`Hapus role ${roleName}?`)) return;
-    state.roles = state.roles.filter((item) => getRoleIdentityKey(item.name) !== getRoleIdentityKey(roleName));
-    persistRoles();
-    renderRoleDataPage();
-    renderUserRoleOptions();
-    showActionToast("Data role berhasil dihapus.");
+    const nextRoles = state.roles.filter((item) => getRoleIdentityKey(item.name) !== getRoleIdentityKey(roleName));
+
+    const token = startAppLoading("Menghapus kebijakan role...", 0);
+    try {
+      await persistRoles(nextRoles);
+      renderRoleDataPage();
+      renderUserRoleOptions();
+      applyCurrentUserAccess();
+      showActionToast("Data role berhasil dihapus.");
+    } catch (error) {
+      showActionToast(error.message || "Kebijakan role gagal dihapus.", "error");
+    } finally {
+      endAppLoading(token);
+    }
   }
 
   function renderUsers() {
@@ -5109,9 +5511,11 @@
 
   function formatAccessSummary(user) {
     if (isOwnerUser(user)) return "Semua akses";
-    const list = normalizeAccessList(user?.access, user?.role || "Operator");
-    if (!list.length) return "Tanpa akses";
-    return `${list.length} akses: ${list.map((key) => ACCESS_MENUS.find((item) => item.key === key)?.label || key).join(", ")}`;
+    if (!state.rolePoliciesReady || !state.userAccessReady || user.authoritative !== true) return "Memuat akses...";
+    const list = getEffectiveAccessForUser(user);
+    const source = normalizeAccessMode(user.accessMode) === "override" ? "Override Owner" : `Ikuti ${formatRoleLabel(user.role)}`;
+    if (!list.length) return `${source}: Tanpa akses`;
+    return `${source}: ${list.length} akses`;
   }
 
   function renderUserRoleOptions() {
@@ -5156,7 +5560,9 @@
     els.recordFormFields.innerHTML = schema.fields.map((field) => {
       const value = field.type === "access"
         ? getInitialAccessValue(record, userRole)
-        : (field.key === "role" && type === "user" ? userRole : record[field.key] || "");
+        : field.key === "accessMode" && type === "user"
+          ? normalizeAccessMode(record.accessMode)
+          : (field.key === "role" && type === "user" ? userRole : record[field.key] || "");
       if (field.type === "access") {
         return `
           <div class="span-2 record-access-field">
@@ -5176,9 +5582,19 @@
 
     if (type === "user") {
       const roleSelect = els.recordFormFields.querySelector('select[name="role"]');
-      if (roleSelect) {
-        roleSelect.addEventListener("change", () => setAccessCheckboxes(getDefaultAccessForRole(roleSelect.value)));
+      const modeSelect = els.recordFormFields.querySelector('select[name="accessMode"]');
+      const canOverride = isOwnerUser(getCurrentUserRecord());
+      if (modeSelect) {
+        modeSelect.disabled = !canOverride;
+        modeSelect.addEventListener("change", () => {
+          if (modeSelect.value === "override") setAccessCheckboxes(getDefaultAccessForRole(roleSelect?.value || userRole));
+          syncUserAccessEditor();
+        });
       }
+      if (roleSelect) roleSelect.addEventListener("change", () => {
+        if (modeSelect?.value !== "override") setAccessCheckboxes(getDefaultAccessForRole(roleSelect.value));
+      });
+      syncUserAccessEditor();
     }
 
     showModal(els.recordModal);
@@ -5187,21 +5603,24 @@
   function getInitialAccessValue(record, role) {
     const username = normalizeSearch(record.username || record.name || "");
     const roleKey = normalizeSearch(role);
-
-    if (username === "owner" || roleKey === "owner") {
-      return ACCESS_MENUS.map((item) => item.key);
-    }
-
-    return Array.isArray(record.access) && record.access.length
-      ? record.access
+    if (username === "owner" || roleKey === "owner") return ACCESS_MENUS.map((item) => item.key);
+    return normalizeAccessMode(record.accessMode) === "override"
+      ? normalizeAccessList(record.access)
       : getDefaultAccessForRole(role);
+  }
+
+  function syncUserAccessEditor() {
+    const mode = normalizeAccessMode(els.recordFormFields?.querySelector('select[name="accessMode"]')?.value);
+    els.recordFormFields?.querySelectorAll('input[name="access"]').forEach((input) => {
+      input.disabled = mode !== "override";
+    });
   }
 
   function renderRecordControl(field, value, role = "Operator") {
     if (field.key === "phone") value = normalizePhoneNumber(value);
 
     if (field.type === "access") {
-      const selected = new Set(normalizeAccessList(value, role));
+      const selected = new Set(normalizeAccessList(value));
       return `
         <div class="access-picker">
           ${ACCESS_MENUS.map((item) => `
@@ -5218,7 +5637,11 @@
       const options = field.key === "role" ? getManagedRoleNames() : field.options;
       return `
         <select name="${escapeHtml(field.key)}" ${field.required ? "required" : ""}>
-          ${options.map((option) => `<option value="${escapeHtml(option)}" ${String(option) === String(value) ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+          ${options.map((option) => {
+            const optionValue = typeof option === "object" ? option.value : option;
+            const optionLabel = typeof option === "object" ? option.label : option;
+            return `<option value="${escapeHtml(optionValue)}" ${String(optionValue) === String(value) ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`;
+          }).join("")}
         </select>
       `;
     }
@@ -5229,7 +5652,7 @@
   }
 
   function setAccessCheckboxes(access) {
-    const selected = new Set(normalizeAccessList(access, "Operator"));
+    const selected = new Set(normalizeAccessList(access));
     els.recordFormFields.querySelectorAll('input[name="access"]').forEach((input) => {
       input.checked = selected.has(input.value);
     });
@@ -5262,10 +5685,19 @@
 
     if (state.recordType === "user") {
       const roleKey = normalizeSearch(record.role || "");
-      record.access = roleKey === "owner"
-        ? ACCESS_MENUS.map((item) => item.key)
-        : normalizeAccessList(record.access, record.role).filter((key) => key !== "akses_semua_data");
-      Object.assign(record, normalizeUserRecord(record));
+      const canOverride = isOwnerUser(getCurrentUserRecord());
+      if (canOverride) {
+        record.accessMode = roleKey === "owner" ? "override" : normalizeAccessMode(record.accessMode);
+        record.access = roleKey === "owner"
+          ? ACCESS_MENUS.map((item) => item.key)
+          : record.accessMode === "override"
+            ? normalizeAccessList(record.access).filter((key) => key !== "akses_semua_data")
+            : [];
+      } else {
+        delete record.accessMode;
+        delete record.access;
+      }
+      record = { ...normalizeUserRecord({ ...previousRecord, ...record }), ...record };
     }
 
     if (state.recordType === "employee") {
@@ -9019,6 +9451,9 @@
   async function fetchPharmacyProfile(options = {}) {
     hydratePharmacyBrand();
     renderPharmacyIdentity();
+    const cachedProfile = localStorage.getItem(PHARMACY_PROFILE_KEY);
+    const lastSyncAt = readStoredNumber(PHARMACY_PROFILE_SYNC_AT_KEY);
+    if (!options.force && cachedProfile && lastSyncAt && Date.now() - lastSyncAt < PHARMACY_PROFILE_CACHE_TTL_MS) return;
 
     try {
       const payload = await postToApi({ action: "getPharmacyProfile" });
@@ -9026,6 +9461,7 @@
 
       const profile = normalizePharmacyProfile(payload.profile);
       localStorage.setItem(PHARMACY_PROFILE_KEY, JSON.stringify(profile));
+      writeStoredNumber(PHARMACY_PROFILE_SYNC_AT_KEY, Date.now());
       hydratePharmacyBrand(profile);
       renderPharmacyIdentity(profile);
     } catch (error) {
@@ -9574,15 +10010,74 @@
   function setAvatarContent(element, profile) {
     if (!element) return;
     const photo = String(profile.photo || "").trim();
+    const isLargeAvatar = element === els.profileLargeAvatar;
 
     if (/^data:image\//.test(photo)) {
       element.innerHTML = `<img src="${escapeHtml(photo)}" alt="">`;
       element.classList.add("has-photo");
+      if (isLargeAvatar) {
+        element.setAttribute("role", "button");
+        element.setAttribute("tabindex", "0");
+        element.setAttribute("aria-label", `Lihat foto profil ${profile.name || "akun"}`);
+        element.setAttribute("title", "Lihat foto profil");
+      }
       return;
     }
 
     element.classList.remove("has-photo");
     element.textContent = getInitials(profile.name);
+    if (isLargeAvatar) {
+      ["role", "tabindex", "aria-label", "title"].forEach((name) => element.removeAttribute(name));
+    }
+  }
+
+  function ensureProfilePhotoViewer() {
+    if (els.profilePhotoViewer) return els.profilePhotoViewer;
+
+    const viewer = document.createElement("dialog");
+    viewer.className = "profile-photo-viewer";
+    viewer.setAttribute("aria-label", "Foto profil");
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "profile-photo-viewer-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Tutup foto profil");
+    closeButton.textContent = "×";
+
+    const image = document.createElement("img");
+    viewer.append(closeButton, image);
+    document.body.appendChild(viewer);
+
+    closeButton.addEventListener("click", closeProfilePhotoViewer);
+    viewer.addEventListener("click", (event) => {
+      if (event.target === viewer) closeProfilePhotoViewer();
+    });
+    viewer.addEventListener("close", () => {
+      image.removeAttribute("src");
+      els.profileLargeAvatar?.focus();
+    });
+
+    els.profilePhotoViewer = viewer;
+    els.profilePhotoViewerImage = image;
+    return viewer;
+  }
+
+  function openProfilePhotoViewer() {
+    const image = els.profileLargeAvatar?.querySelector("img");
+    const src = String(image?.getAttribute("src") || "").trim();
+    if (!els.profileLargeAvatar?.classList.contains("has-photo") || !/^data:image\//.test(src)) return;
+
+    const viewer = ensureProfilePhotoViewer();
+    els.profilePhotoViewerImage.src = src;
+    els.profilePhotoViewerImage.alt = `Foto profil ${getProfileData().name || "akun"}`;
+    if (!viewer.open) viewer.showModal();
+  }
+
+  function closeProfilePhotoViewer() {
+    const viewer = els.profilePhotoViewer;
+    if (!viewer?.open) return false;
+    viewer.close();
+    return true;
   }
 
   async function saveProfilePassword(event) {
@@ -10159,12 +10654,16 @@
   }
 
   async function loadAttendanceShiftSettingsFromBackend(options = {}) {
+    const cachedRules = localStorage.getItem(ATTENDANCE_SHIFT_RULES_KEY);
+    const lastSyncAt = readStoredNumber(ATTENDANCE_SHIFT_SYNC_AT_KEY);
+    if (!options.force && cachedRules && lastSyncAt && Date.now() - lastSyncAt < ATTENDANCE_SHIFT_CACHE_TTL_MS) return;
     try {
       const result = await postToApi({ action: "getAttendanceShiftSettings" });
       const remoteRules = result?.settings || result?.rules;
       if (result && (result.success === true || result.ok === true) && remoteRules) {
         const rules = normalizeAttendanceShiftRules(remoteRules);
         localStorage.setItem(ATTENDANCE_SHIFT_RULES_KEY, JSON.stringify(rules));
+        writeStoredNumber(ATTENDANCE_SHIFT_SYNC_AT_KEY, Date.now());
         renderAttendanceShiftSettings();
       }
     } catch (error) {
@@ -11264,6 +11763,12 @@
           });
 
           if (!result || (result.ok !== true && result.success !== true)) {
+            if (result?.partial && result?.fileCreated) {
+              const partialUrl = result.fileUrl || result.printUrl || "";
+              if (partialUrl && !state.salarySlipUrl) state.salarySlipUrl = partialUrl;
+              failures.push(`${employee.name || employee.nip || "Karyawan"}: PDF dibuat, histori gagal dicatat (${result.message || "sinkronisasi gagal"})`);
+              continue;
+            }
             throw new Error(result?.message || result?.error || "PDF slip gaji gagal dibuat.");
           }
 
@@ -11283,6 +11788,12 @@
       }
 
       if (!created.length) {
+        if (state.salarySlipUrl && failures.length) {
+          if (els.openSalarySlipButton) els.openSalarySlipButton.disabled = false;
+          if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = failures.join("; ");
+          showActionToast("PDF dibuat, tetapi histori gagal dicatat.", "error");
+          return;
+        }
         throw new Error(failures[0] || "PDF slip gaji gagal dibuat.");
       }
 
@@ -11294,7 +11805,7 @@
       await fetchSalarySlipHistory({ silent: true, force: true });
       showActionToast(isBulk ? `${formatNumber(created.length)} PDF slip gaji berhasil dibuat.` : "PDF slip gaji berhasil dibuat.");
       if (failures.length && els.salarySlipStatusText) {
-        els.salarySlipStatusText.textContent = `${els.salarySlipStatusText.textContent} Gagal: ${failures.slice(0, 3).join("; ")}${failures.length > 3 ? "..." : ""}`;
+        els.salarySlipStatusText.textContent = `${els.salarySlipStatusText.textContent} Gagal: ${failures.join("; ")}`;
       }
     } catch (error) {
       if (els.salarySlipStatusText) els.salarySlipStatusText.textContent = `${error.message || "PDF slip gaji gagal dibuat."} Pastikan Apps Script absensi terbaru sudah di-deploy.`;
@@ -11326,10 +11837,14 @@
 
     state.salaryHistoryFetchPromise = (async () => {
       try {
+        const filter = state.salaryHistoryFilter;
         const payload = await withTimeout(getAbsensiRecords({
           action: "listSalarySlipHistory",
           role: user.role || "",
-          name: user.name || user.username || ""
+          month: filter.month,
+          year: filter.year,
+          page: state.salaryHistoryPage,
+          limit: state.salaryHistoryLimit
         }), SALARY_HISTORY_REQUEST_TIMEOUT_MS, "Histori slip gaji belum merespons. Coba sinkron ulang sebentar lagi.");
 
         if (!payload || (payload.ok !== true && payload.success !== true) || !Array.isArray(payload.history)) {
@@ -11337,12 +11852,31 @@
         }
 
         state.salaryHistoryEndpointReady = true;
+        state.salaryHistoryUsingCache = false;
+        state.salaryHistoryError = "";
         state.lastSalaryHistorySyncAt = Date.now();
-        state.salarySlipHistory = mergeSalarySlipHistory(payload.history, localHistory);
-        writeStoredArray(getSalarySlipHistoryKey(), state.salarySlipHistory.slice(0, 120));
+        state.salaryHistoryServerPaged = Object.prototype.hasOwnProperty.call(payload, "hasMore") || Object.prototype.hasOwnProperty.call(payload, "filteredTotal");
+        const remoteHistory = mergeSalarySlipHistory(payload.history);
+        if (state.salaryHistoryServerPaged) {
+          state.salarySlipHistory = remoteHistory;
+          state.salaryHistoryTotal = Number(payload.filteredTotal ?? payload.total ?? remoteHistory.length);
+          state.salaryHistoryPage = Number(payload.page || state.salaryHistoryPage || 1);
+          state.salaryHistoryHasMore = payload.hasMore === true;
+        } else {
+          const filteredHistory = getFilteredSalaryHistory(remoteHistory);
+          state.salaryHistoryTotal = filteredHistory.length;
+          const start = (state.salaryHistoryPage - 1) * state.salaryHistoryLimit;
+          state.salarySlipHistory = filteredHistory.slice(start, start + state.salaryHistoryLimit);
+          state.salaryHistoryHasMore = start + state.salaryHistoryLimit < filteredHistory.length;
+        }
+        writeStoredArray(getSalarySlipHistoryKey(), mergeSalarySlipHistory(payload.history, localHistory).slice(0, 120));
       } catch (error) {
         state.salaryHistoryEndpointReady = false;
-        state.salarySlipHistory = mergeSalarySlipHistory(localHistory, state.salarySlipHistory);
+        state.salaryHistoryUsingCache = true;
+        state.salaryHistoryError = error.message || "Histori slip gaji belum bisa disinkronkan.";
+        state.salarySlipHistory = getFilteredSalaryHistory(mergeSalarySlipHistory(localHistory));
+        state.salaryHistoryTotal = state.salarySlipHistory.length;
+        state.salaryHistoryHasMore = false;
         if (!options.silent) console.warn("Gagal memuat histori slip gaji:", error);
         if (els.salarySlipHistoryStatus && !options.silent) {
           els.salarySlipHistoryStatus.textContent = error.message || "Histori slip gaji belum bisa disinkronkan.";
@@ -11356,6 +11890,67 @@
     return state.salaryHistoryFetchPromise;
   }
 
+  function getDefaultSalaryHistoryFilter() {
+    const now = new Date();
+    return { month: String(now.getMonth() + 1).padStart(2, "0"), year: String(now.getFullYear()) };
+  }
+
+  function syncSalaryHistoryFilterControls() {
+    const filter = state.salaryHistoryFilter;
+    if (els.salaryHistoryYear && !els.salaryHistoryYear.options.length) {
+      const currentYear = new Date().getFullYear();
+      els.salaryHistoryYear.innerHTML = Array.from({ length: 5 }, (_, index) => {
+        const year = currentYear - 2 + index;
+        return `<option value="${year}">${year}</option>`;
+      }).join("");
+    }
+    if (els.salaryHistoryMonth) els.salaryHistoryMonth.value = filter.month;
+    if (els.salaryHistoryYear) els.salaryHistoryYear.value = filter.year;
+  }
+
+  function applySalaryHistoryFilter(event) {
+    event.preventDefault();
+    state.salaryHistoryFilter = {
+      month: els.salaryHistoryMonth?.value || getCurrentMonthValue(),
+      year: els.salaryHistoryYear?.value || String(new Date().getFullYear())
+    };
+    state.salaryHistoryPage = 1;
+    fetchSalarySlipHistory({ force: true });
+  }
+
+  function resetSalaryHistoryFilter() {
+    state.salaryHistoryFilter = getDefaultSalaryHistoryFilter();
+    state.salaryHistoryPage = 1;
+    syncSalaryHistoryFilterControls();
+    fetchSalarySlipHistory({ force: true });
+  }
+
+  function handleSalaryHistoryPagination(event) {
+    const button = event.target.closest("[data-salary-history-page]");
+    if (!button || button.disabled) return;
+    const page = Number(button.dataset.salaryHistoryPage || 0);
+    if (!Number.isInteger(page) || page < 1 || page === state.salaryHistoryPage) return;
+    state.salaryHistoryPage = page;
+    fetchSalarySlipHistory({ force: true, silent: true });
+  }
+
+  function getFilteredSalaryHistory(history) {
+    const filter = state.salaryHistoryFilter;
+    return (history || []).filter((item) => {
+      const period = normalizeSearch(item.period);
+      const issuedDate = normalizeSalaryHistoryDateKey(item.issuedAt);
+      const monthName = normalizeSearch(getMonthName(filter.month));
+      if (filter.month && !period.includes(monthName) && !String(item.period || "").includes(`-${filter.month}`)) return false;
+      if (filter.year && !period.includes(filter.year) && !issuedDate.startsWith(filter.year)) return false;
+      return true;
+    });
+  }
+
+  function normalizeSalaryHistoryDateKey(value) {
+    const date = new Date(value || "");
+    return Number.isNaN(date.getTime()) ? "" : formatDateKey(date);
+  }
+
   function renderSalarySlipHistory() {
     if (!els.salarySlipHistoryList) return;
     const user = getCurrentUserRecord();
@@ -11363,11 +11958,19 @@
     const history = state.salarySlipHistory
       .slice()
       .sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0));
+    syncSalaryHistoryFilterControls();
 
     if (els.salarySlipHistoryStatus) {
-      els.salarySlipHistoryStatus.textContent = history.length
-        ? `${formatNumber(history.length)} slip gaji tersimpan. Setiap periode disimpan sebagai histori terpisah.`
-        : "Belum ada slip gaji PDF yang diterbitkan.";
+      els.salarySlipHistoryStatus.textContent = state.salaryHistoryError
+        ? `${state.salaryHistoryError} Menampilkan cache lokal yang mungkin tidak lengkap.`
+        : history.length
+          ? `${formatNumber(state.salaryHistoryTotal)} slip gaji sesuai filter.`
+          : "Belum ada slip gaji sesuai filter.";
+    }
+    if (els.salaryHistoryResultCount) {
+      const start = history.length ? (state.salaryHistoryPage - 1) * state.salaryHistoryLimit + 1 : 0;
+      const end = start ? start + history.length - 1 : 0;
+      els.salaryHistoryResultCount.textContent = `Menampilkan ${formatNumber(start)}-${formatNumber(end)} dari ${formatNumber(state.salaryHistoryTotal)} hasil.`;
     }
     if (els.deleteAllSalarySlipHistoryButton) {
       els.deleteAllSalarySlipHistoryButton.hidden = !canDelete;
@@ -11375,39 +11978,57 @@
     }
 
     if (!history.length) {
+      const message = state.salaryHistoryError
+        ? "Histori belum dapat dimuat. Coba sinkron ulang saat koneksi tersedia."
+        : "Tidak ada slip yang cocok dengan filter ini.";
       els.salarySlipHistoryList.innerHTML = `
         <div class="salary-history-empty">
-          <strong>Belum ada histori PDF</strong>
-          <span>Slip yang dibuat akan tampil di sini tanpa menimpa periode sebelumnya.</span>
+          <strong>Histori PDF kosong</strong>
+          <span>${escapeHtml(message)}</span>
         </div>
       `;
+      renderSalaryHistoryPagination();
       return;
     }
 
-    els.salarySlipHistoryList.innerHTML = history.map((item, index) => `
-      <article class="salary-history-item">
-        <span class="salary-history-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 14h8"></path><path d="M8 18h5"></path></svg>
-        </span>
-        <span class="salary-history-copy">
-          <strong>${escapeHtml(item.name || item.fileName || "Slip Gaji")}</strong>
-          <small>${escapeHtml(item.period || "Periode tidak tersedia")} - ${escapeHtml(formatSalaryHistoryDate(item.issuedAt))}</small>
-          <em>${formatPayrollMoney(item.netSalary)}</em>
-        </span>
-        <span class="salary-history-actions">
-          ${item.fileUrl ? `
-            <a class="table-action salary-history-open" href="${escapeHtml(item.fileUrl)}" target="_blank" rel="noopener" aria-label="Buka PDF slip gaji" title="Buka PDF">
-              <svg viewBox="0 0 24 24"><path d="M14 3h7v7"></path><path d="m10 14 11-11"></path><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path></svg>
-            </a>
-          ` : ""}
-          ${canDelete ? `
-            <button class="table-action table-action-delete" type="button" data-salary-history-delete="${index}" aria-label="Hapus histori slip gaji" title="Hapus histori">
-              <svg viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
-            </button>
-          ` : ""}
-        </span>
-      </article>
-    `).join("");
+    // Match portal karyawan table: kolom "Nama File PDF" + "Aksi", baris "Nama - Periode" + tombol "Buka PDF".
+    els.salarySlipHistoryList.innerHTML = `
+      <div class="ess-table-wrap">
+        <table class="ess-table ess-salary-table">
+          <thead><tr><th>Nama File PDF</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${history.map((item, index) => `
+              <tr>
+                <td class="ess-salary-period" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px">
+                  <strong>${escapeHtml(item.name && item.period ? `${item.name} - ${item.period}` : (item.period || "Periode tidak tersedia"))}</strong>
+                </td>
+                <td>
+                  ${item.fileUrl
+                    ? `<a class="ess-tool-button is-primary" href="${escapeHtml(item.fileUrl)}" target="_blank" rel="noopener noreferrer">Buka PDF</a>`
+                    : `<span class="ess-badge is-info">PDF tidak tersedia</span>`}
+                  ${canDelete ? `
+                    <button class="table-action table-action-delete" type="button" data-salary-history-delete="${index}" aria-label="Hapus histori slip gaji" title="Hapus histori">
+                      <svg viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 15H6L5 6"></path></svg>
+                    </button>
+                  ` : ""}
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>`;
+    renderSalaryHistoryPagination();
+  }
+
+  function renderSalaryHistoryPagination() {
+    if (!els.salaryHistoryPagination) return;
+    const totalPages = Math.max(1, Math.ceil(state.salaryHistoryTotal / state.salaryHistoryLimit));
+    if (totalPages <= 1) {
+      els.salaryHistoryPagination.innerHTML = "";
+      return;
+    }
+    const page = state.salaryHistoryPage;
+    els.salaryHistoryPagination.innerHTML = `<button type="button" class="filter-action" data-salary-history-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>Sebelumnya</button><span>Halaman ${formatNumber(page)} dari ${formatNumber(totalPages)}</span><button type="button" class="filter-action" data-salary-history-page="${page + 1}" ${page >= totalPages && !state.salaryHistoryHasMore ? "disabled" : ""}>Berikutnya</button>`;
   }
 
   async function handleSalarySlipHistoryAction(event) {
@@ -11516,6 +12137,7 @@
       nip: String(value?.nip || "").trim(),
       name: String(value?.name || value?.nama || "").trim(),
       netSalary: parsePayrollNumber(value?.netSalary ?? value?.gajiBersih),
+      netSalaryAvailable: value?.netSalaryAvailable !== false && String(value?.netSalary ?? value?.gajiBersih ?? "").trim() !== "",
       fileId: String(value?.fileId || "").trim(),
       fileName: String(value?.fileName || "").trim(),
       fileUrl: String(value?.fileUrl || value?.url || "").trim()
@@ -11524,8 +12146,7 @@
 
   function isValidSalarySlipHistoryItem(item) {
     if (!item) return false;
-    if (Number(item.netSalary || 0) <= 0) return false;
-    return Boolean(item.fileUrl || item.fileId || item.fileName);
+    return Boolean(item.fileUrl || item.fileId || item.fileName || item.name || item.nip);
   }
 
   function getSalarySlipHistoryKey() {
@@ -12136,24 +12757,39 @@
     }
     if (viewName === "surat-pesanan") {
       renderPurchaseOrders();
-      fetchPurchaseOrders({ silent: true });
+      if (Date.now() - readStoredNumber(PO_SYNC_AT_KEY) >= PURCHASE_CACHE_TTL_MS) {
+        fetchPurchaseOrders({ silent: true });
+      }
     }
     if (viewName === "presensi-karyawan" || viewName === "monitoring-presensi") {
       document.dispatchEvent(new CustomEvent("ess:view", { detail: { view: viewName } }));
     }
     if (viewName === "restok-obat") {
       renderRestockPage();
-      fetchRestockRequests({ silent: true });
+      if (Date.now() - readStoredNumber(RESTOCK_SYNC_AT_KEY) >= RESTOCK_CACHE_TTL_MS) {
+        fetchRestockRequests({ silent: true });
+      }
     }
-    if (viewName === "data-karyawan" || viewName === "data-supplier") {
-      fetchLocalRecords({ silent: true });
+    if (viewName === "data-karyawan") {
+      renderEmployees();
+      if (Date.now() - readStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY) >= MENU_CACHE_TTL_MS) {
+        fetchLocalRecords({ silent: true });
+      }
+    }
+    if (viewName === "data-supplier") {
+      renderSuppliers();
+      if (Date.now() - readStoredNumber(LOCAL_RECORDS_SYNC_AT_KEY) >= MENU_CACHE_TTL_MS) {
+        fetchLocalRecords({ silent: true });
+      }
     }
     if (viewName === "manajemen-pengguna") {
       fetchUsers({ silent: true });
     }
     if (viewName === "log-aktivitas") {
-      fetchOwnerActivityLog({ silent: true });
       renderActivityLogPage();
+      if (Date.now() - readStoredNumber(OWNER_ACTIVITY_SYNC_AT_KEY) >= OWNER_ACTIVITY_CACHE_TTL_MS) {
+        fetchOwnerActivityLog({ silent: true });
+      }
     }
     if (viewName === "data-role") renderRoleDataPage();
     if (viewName === "home") maybeShowHomePrayerReminder();
@@ -12164,12 +12800,7 @@
 
   function maybeLogViewActivity(viewName, previousView, options = {}) {
     if (!previousView || previousView === viewName || options.skipHistory || options.fromHistory || options.fromBack) return;
-    if (viewName === "home") return;
-    const now = Date.now();
-    const last = Number(state.activityViewLogAt[viewName] || 0);
-    if (now - last < 5 * 60 * 1000) return;
-    state.activityViewLogAt[viewName] = now;
-    addProfileActivity(`Buka menu ${VIEW_TITLES[viewName] || viewName}`, `Pengguna membuka modul ${VIEW_TITLES[viewName] || viewName}`);
+    state.activityViewLogAt[viewName] = Date.now();
   }
 
   function maybeShowHomePrayerReminder() {
@@ -12372,15 +13003,16 @@
 
   function handleViewportRoute() {
     handleTableActionMenuViewportChange();
+    const sidebarViewportIsMobile = isMobileViewport();
     const viewportIsMobile = isHomeMobileViewport();
+
+    if (sidebarViewportIsMobile !== state.sidebarViewportIsMobile) {
+      state.sidebarViewportIsMobile = sidebarViewportIsMobile;
+      setSidebarCollapsed(sidebarViewportIsMobile ? true : readSavedSidebarCollapsed(), { persist: false });
+    }
 
     if (viewportIsMobile === state.viewportIsMobile) return;
     state.viewportIsMobile = viewportIsMobile;
-
-    /* Always collapse sidebar on mobile so search toolbar is visible */
-    if (viewportIsMobile) {
-      setSidebarCollapsed(true, { persist: false });
-    }
 
     if (viewportIsMobile && state.activeView === "dashboard") {
       switchView("home", { skipHistory: true });
@@ -12392,8 +13024,16 @@
     }
   }
 
+  function readSavedSidebarCollapsed() {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
   function applySavedSidebarState() {
-    setSidebarCollapsed(isMobileViewport(), { persist: false });
+    setSidebarCollapsed(isMobileViewport() ? true : readSavedSidebarCollapsed(), { persist: false });
   }
 
   function toggleSidebar() {
@@ -12407,24 +13047,13 @@
     document.body.classList.toggle("sidebar-open", !collapsed);
     if (collapsed) closeSidebarProfileDropdown();
     if (els.sidebarScrim) els.sidebarScrim.hidden = collapsed;
-    if (options.persist !== false) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    if (options.persist !== false && !isMobileViewport()) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
     if (els.sidebarToggle) {
       const label = collapsed ? "Buka sidebar" : "Tutup sidebar";
       els.sidebarToggle.setAttribute("aria-label", label);
       els.sidebarToggle.setAttribute("title", label);
+      els.sidebarToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
     }
-    updateSidebarToggleIcon(collapsed);
-  }
-
-  function updateSidebarToggleIcon(collapsed) {
-    if (!els.sidebarToggle) return;
-
-    const paths = Array.from(els.sidebarToggle.querySelectorAll("svg path"));
-    const lines = ["M4 7h16", "M4 12h16", "M4 17h16"];
-
-    paths.forEach((path, index) => {
-      if (lines[index]) path.setAttribute("d", lines[index]);
-    });
   }
 
   function closeSidebarProfileDropdown() {
@@ -13004,10 +13633,26 @@
 
   function readSession() {
     try {
-      return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+      const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+      const expiresAt = Number(session?.expiresAt);
+      if (!session || !Number.isFinite(expiresAt) || Date.now() >= expiresAt) {
+        sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return session;
     } catch (error) {
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+      } catch (_) {
+        /* storage unavailable: fail closed */
+      }
       return null;
     }
+  }
+
+  function redirectToLanding() {
+    const next = `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`;
+    window.location.replace(`/beranda.html?next=${encodeURIComponent(next)}`);
   }
 
   function hydrateProfileName() {

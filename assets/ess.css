@@ -45,11 +45,21 @@
 .ess-control,.ess-tool-button { min-height:36px; border:1px solid #d6e3f2; border-radius:10px; background:#fff; color:#29446e; font:500 .66rem Poppins,sans-serif; }
 .ess-control { min-width:135px; padding:0 10px; }
 .ess-tool-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 11px; cursor:pointer; font-weight:600; }
-.ess-tool-button:hover { border-color:#7ab5ef; background:#f4f9ff; }.ess-tool-button.is-primary{border-color:transparent;color:#fff;background:#1678e5}.ess-tool-button.is-danger{color:#c72f4c;background:#fff3f5;border-color:#ffd0d8}
+.ess-salary-filters { display:grid; grid-template-columns:repeat(2,minmax(82px,112px)) auto; gap:8px 10px; align-items:end; }
+.ess-salary-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.ess-salary-field > span { font-size:.62rem; font-weight:600; color:#7184a1; }
+.ess-salary-field .ess-control { width:100%; min-width:0; }
+.ess-salary-field .ess-control { font-size:.68rem; }
+.ess-salary-search { grid-column:span 2; }
+.ess-salary-actions { display:flex; gap:8px; align-items:end; }
+.ess-tool-button.is-primary{border-color:transparent;color:#fff;background:linear-gradient(120deg,#2769ff 0%,#6a4df4 52%,#c927c9 100%)}.ess-tool-button.is-danger{color:#c72f4c;background:#fff3f5;border-color:#ffd0d8}
 .ess-table-wrap { box-sizing:border-box; width:100%; max-width:100%; min-width:0; overflow-x:auto; overflow-y:auto; border:1px solid #e0e9f4; border-radius:13px; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
-.ess-table { width:100%; min-width:720px; border-collapse:collapse; font-size:.64rem; }
+.ess-table { width:100%; min-width:360px; border-collapse:collapse; font-size:.64rem; }
 .ess-table th { position:sticky; top:0; z-index:1; padding:10px 11px; background:#f3f7fd; color:#516987; text-align:left; white-space:nowrap; }
 .ess-table td { padding:10px 11px; border-top:1px solid #e7eef7; color:#304a70; white-space:nowrap; }.ess-table td strong{color:#132d5d}.ess-table tr:hover td{background:#fbfdff}
+.ess-salary-period strong { font-size:.72rem; color:#102755; }
+.salary-history-item-compact { justify-content: space-between; align-items: center; }
+.salary-history-item-compact .salary-history-copy strong { font-size:.86rem; color:#102755; }
 .ess-empty { display:grid; place-items:center; gap:9px; min-height:220px; padding:30px; text-align:center; border:2px dashed #d8e5f4; border-radius:17px; background:#f9fbfe; }
 .ess-empty .ess-icon { width:52px;height:52px;border-radius:16px; }.ess-empty h3{margin:0;color:#173367;font-size:.95rem}.ess-empty p{max-width:460px;margin:0;color:#778aa6;font-size:.68rem;line-height:1.6}
 .ess-chart { display:flex; align-items:flex-end; gap:7px; height:130px; padding:15px 4px 2px; }
@@ -81,6 +91,7 @@ body.theme-dark .ess-shortcut-card .ess-icon,
 body.theme-dark .ess-stat-card strong { color:#f7fbff !important; }
 
 body.theme-dark .ess-head p,
+body.theme-dark .ess-salary-field > span,
 body.theme-dark .ess-stat-card small,
 body.theme-dark .ess-stat-card em,
 body.theme-dark .ess-panel-head p,

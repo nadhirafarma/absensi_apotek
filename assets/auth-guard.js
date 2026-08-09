@@ -1,42 +1,40 @@
 (function () {
   const SESSION_KEY = "nadhira.authSession";
-  const LOGIN_PAGE = "login.html";
-  const LANDING_PAGE = "beranda.html";
 
-  const currentPage = getCurrentPageName();
-  const currentFile = currentPage.split("?")[0].split("#")[0];
+  if (isAuthPage()) return;
+  if (readSession()) return;
 
-  if (currentFile === LOGIN_PAGE || currentFile === LANDING_PAGE) return;
-
-  const session = readSession();
-
-  if (session) return;
-
-  const next = encodeURIComponent(currentPage || "index.html");
-  window.location.replace(`${LANDING_PAGE}?next=${next}`);
+  const next = `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`;
+  window.location.replace(`/beranda.html?next=${encodeURIComponent(next)}`);
 
   function readSession() {
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
       const session = raw ? JSON.parse(raw) : null;
+      const expiresAt = Number(session?.expiresAt);
 
-      if (!session || !session.expiresAt || Date.now() > Number(session.expiresAt)) {
+      if (!session || !Number.isFinite(expiresAt) || Date.now() >= expiresAt) {
         sessionStorage.removeItem(SESSION_KEY);
         return null;
       }
 
       return session;
     } catch (error) {
-      sessionStorage.removeItem(SESSION_KEY);
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+      } catch (_) {
+        /* storage unavailable: fail closed */
+      }
       return null;
     }
   }
 
-  function getCurrentPageName() {
-    const pathname = window.location.pathname || "";
-    const fileName = pathname.split("/").filter(Boolean).pop() || "index.html";
-    const page = fileName.includes(".") ? fileName : "index.html";
-
-    return `${page}${window.location.search || ""}${window.location.hash || ""}`;
+  function isAuthPage() {
+    const page = String(window.location.pathname || "")
+      .split("/")
+      .filter(Boolean)
+      .pop()
+      ?.toLowerCase();
+    return page === "login" || page === "login.html" || page === "beranda" || page === "beranda.html";
   }
 })();

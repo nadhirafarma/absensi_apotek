@@ -933,6 +933,26 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     });
   }
 
+  var logSheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME);
+  var existingRow = logSheet ? findPayrollHistoryRow_(logSheet, ensurePayrollLogHeaders_(logSheet), employee, period, null) : 0;
+  if (existingRow > 0) {
+    var existingHistory = getSalaryHistoryRow_(logSheet, existingRow);
+    return jsonAbsensi_({
+      ok: true,
+      success: true,
+      reused: true,
+      historySaved: true,
+      message: 'Slip gaji periode ini sudah tersedia.',
+      employee: employee,
+      period: period,
+      rowNumber: existingRow,
+      fileId: existingHistory.fileId,
+      fileName: existingHistory.fileName,
+      fileUrl: existingHistory.fileUrl,
+      printUrl: existingHistory.fileUrl
+    });
+  }
+
   var templateSheet = spreadsheet.getSheetByName(PAYROLL_TEMPLATE_SHEET_NAME);
 
   if (!templateSheet) {
@@ -961,7 +981,22 @@ function handleGenerateSalarySlip_(payload, spreadsheet) {
     spreadsheet.deleteSheet(exportSheet);
   }
 
-  var rowNumber = writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload);
+  var rowNumber;
+  try {
+    rowNumber = writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload);
+  } catch (error) {
+    return jsonAbsensi_({
+      ok: false,
+      success: false,
+      partial: true,
+      fileCreated: true,
+      historySaved: false,
+      fileId: file.getId(),
+      fileName: file.getName(),
+      fileUrl: file.getUrl(),
+      message: 'PDF slip gaji berhasil dibuat, tetapi histori gagal dicatat: ' + String(error && error.message || error)
+    });
+  }
 
   return jsonAbsensi_({
     ok: true,
@@ -991,14 +1026,7 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
     });
   }
 
-  if (isAbsensiAdmin_(params)) {
-    migrateLegacyPayrollLogRows_(sheet);
-    cleanupZeroSalarySlipHistory_(sheet);
-    if (isPayrollHistoryMaintenanceRequested_(params)) {
-      restorePayrollLogFromPdfFiles_(spreadsheet, sheet);
-    }
-  }
-
+  // Read-only list: migration, cleanup, and Drive repair stay explicit admin operations.
   var values = sheet.getDataRange().getValues();
   var displayValues = sheet.getDataRange().getDisplayValues();
   var headerInfo = ensurePayrollLogHeaders_(sheet);
@@ -1064,10 +1092,6 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
       : String(timestampColumn >= 0 ? displayRow[timestampColumn] || '' : '').trim();
     var netSalary = netSalaryColumn >= 0 ? parsePayrollMoney_(displayRow[netSalaryColumn] || row[netSalaryColumn] || 0) : 0;
 
-    if (netSalary <= 0) {
-      continue;
-    }
-
     history.push({
       id: fileId || ('row-' + (rowIndex + 1)),
       rowNumber: rowIndex + 1,
@@ -1076,6 +1100,7 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
       nip: nip,
       name: name,
       netSalary: netSalary,
+      netSalaryAvailable: netSalaryColumn >= 0 && String(displayRow[netSalaryColumn] == null ? '' : displayRow[netSalaryColumn]).trim() !== '',
       fileId: fileId,
       fileName: fileName,
       fileUrl: fileUrl
@@ -1083,16 +1108,124 @@ function handleListSalarySlipHistory_(params, spreadsheet) {
   }
 
   history.sort(function(a, b) {
-    return new Date(b.issuedAt || 0).getTime() - new Date(a.issuedAt || 0).getTime();
+    var timeDiff = getSalaryHistoryTime_(b.issuedAt) - getSalaryHistoryTime_(a.issuedAt);
+    return timeDiff || b.rowNumber - a.rowNumber;
   });
+  history = dedupeSalarySlipHistory_(history);
+
+  var query = parseSalaryHistoryQuery_(params);
+  if (!query.ok) return jsonAbsensi_({ ok: false, success: false, message: query.message });
+
+  history = history.filter(function(item) {
+    return matchesSalaryHistoryQuery_(item, query, isAdmin);
+  });
+
+  var filteredTotal = history.length;
+  var pagedHistory = query.paginate
+    ? history.slice((query.page - 1) * query.limit, query.page * query.limit)
+    : history;
 
   return jsonAbsensi_({
     ok: true,
     success: true,
-    history: history,
-    total: history.length,
+    history: pagedHistory,
+    total: filteredTotal,
+    filteredTotal: filteredTotal,
+    page: query.paginate ? query.page : 1,
+    limit: query.paginate ? query.limit : filteredTotal,
+    hasMore: query.paginate && query.page * query.limit < filteredTotal,
     canDelete: isAdmin
   });
+}
+
+function getSalaryHistoryRow_(sheet, rowNumber) {
+  if (!sheet || rowNumber < 2 || rowNumber > sheet.getLastRow()) return {};
+  var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var row = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  var get = function(aliases) {
+    var column = findHeaderIndex_(headerInfo.normalized, aliases);
+    return column >= 0 ? String(row[column] || '').trim() : '';
+  };
+  var fileUrl = get(['fileurl', 'url']);
+  return {
+    fileId: get(['fileid']) || extractDriveFileId_(fileUrl),
+    fileName: get(['file']).split('|')[0].trim(),
+    fileUrl: fileUrl || get(['file']).split('|').slice(1).join('|').trim()
+  };
+}
+
+function getSalaryHistoryTime_(value) {
+  var time = new Date(value || 0).getTime();
+  return isNaN(time) ? 0 : time;
+}
+
+function dedupeSalarySlipHistory_(history) {
+  var seen = {};
+  return (history || []).filter(function(item) {
+    var key = String(item.fileId || '').trim()
+      || String(item.fileUrl || '').trim()
+      || [item.nip || item.name || '', item.period || '', item.fileName || '', item.issuedAt || ''].join('|');
+    if (!key || seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
+function parseSalaryHistoryQuery_(params) {
+  var month = String(params.month || '').trim();
+  var year = String(params.year || '').trim();
+  var startDate = String(params.startDate || '').trim();
+  var endDate = String(params.endDate || '').trim();
+  var employeeId = String(params.employeeId || '').trim();
+  var hasPage = params.page !== undefined && String(params.page).trim() !== '';
+  var hasLimit = params.limit !== undefined && String(params.limit).trim() !== '';
+  var page = Number(params.page || 1);
+  var limit = Number(params.limit || 0);
+
+  if (month && !/^(0[1-9]|1[0-2])$/.test(month)) return { ok: false, message: 'Filter bulan tidak valid.' };
+  if (year && !/^\d{4}$/.test(year)) return { ok: false, message: 'Filter tahun tidak valid.' };
+  if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return { ok: false, message: 'Tanggal awal tidak valid.' };
+  if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return { ok: false, message: 'Tanggal akhir tidak valid.' };
+  if (startDate && endDate && startDate > endDate) return { ok: false, message: 'Rentang tanggal tidak valid.' };
+  if ((hasPage || hasLimit) && (!isFinite(page) || page < 1 || !isFinite(limit) || limit < 1 || limit > 100)) {
+    return { ok: false, message: 'Halaman atau jumlah data tidak valid.' };
+  }
+
+  return {
+    ok: true,
+    month: month,
+    year: year,
+    startDate: startDate,
+    endDate: endDate,
+    employeeId: employeeId,
+    page: hasPage || hasLimit ? Math.floor(page) : 1,
+    limit: hasPage || hasLimit ? Math.floor(limit) : 0,
+    paginate: hasPage || hasLimit
+  };
+}
+
+function matchesSalaryHistoryQuery_(item, query, isAdmin) {
+  var period = String(item.period || '').toLowerCase();
+  var issuedDate = getSalaryHistoryIssuedDate_(item.issuedAt);
+  var employeeId = normalizeAbsensiKey_(query.employeeId || '');
+
+  if (query.month && !salaryHistoryPeriodMatchesMonth_(period, query.month)) return false;
+  if (query.year && period.indexOf(query.year) < 0 && issuedDate.slice(0, 4) !== query.year) return false;
+  if (query.startDate && (!issuedDate || issuedDate < query.startDate)) return false;
+  if (query.endDate && (!issuedDate || issuedDate > query.endDate)) return false;
+  if (isAdmin && employeeId && normalizeAbsensiKey_(item.nip || '') !== employeeId) return false;
+  return true;
+}
+
+function getSalaryHistoryIssuedDate_(value) {
+  var date = new Date(value || '');
+  if (isNaN(date.getTime())) return '';
+  return Utilities.formatDate(date, ABSENSI_TIMEZONE, 'yyyy-MM-dd');
+}
+
+function salaryHistoryPeriodMatchesMonth_(period, month) {
+  var monthName = String(PAYROLL_MONTHS_ID[Number(month) - 1] || '').toLowerCase();
+  return period.indexOf(monthName) >= 0 || new RegExp('(?:^|[^0-9])' + month + '(?:[^0-9]|$)').test(period);
 }
 
 function handleDeleteSalarySlipHistory_(payload, spreadsheet) {
@@ -1738,6 +1871,9 @@ function exportPayrollSlipPdf_(spreadsheet, templateSheet, folder, employee, per
 function writePayrollLog_(spreadsheet, employee, period, summary, salary, file, payload) {
   var sheet = spreadsheet.getSheetByName(PAYROLL_LOG_SHEET_NAME) || spreadsheet.insertSheet(PAYROLL_LOG_SHEET_NAME);
   var headerInfo = ensurePayrollLogHeaders_(sheet);
+  var existingRow = findPayrollHistoryRow_(sheet, headerInfo, employee, period, file);
+  if (existingRow > 0) return existingRow;
+
   var rowNumber = sheet.getLastRow() + 1;
   var actor = String((payload && (payload.username || payload.actor)) || '').trim();
   var map = {
@@ -1767,6 +1903,26 @@ function writePayrollLog_(spreadsheet, employee, period, summary, salary, file, 
 
   SpreadsheetApp.flush();
   return rowNumber;
+}
+
+function findPayrollHistoryRow_(sheet, headerInfo, employee, period, file) {
+  if (!sheet || sheet.getLastRow() < 2) return 0;
+  var values = sheet.getDataRange().getDisplayValues();
+  var nipColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('nip'));
+  var periodColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('periode'));
+  var fileIdColumn = findHeaderIndex_(headerInfo.normalized, getPayrollLogHeaderAliases_('fileid'));
+  var fileId = file && typeof file.getId == 'function' ? String(file.getId() || '').trim() : '';
+  var nip = normalizeAbsensiKey_(employee && employee.nip || '');
+  var periodKey = normalizeAbsensiKey_(period && period.label || '');
+
+  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    var row = values[rowIndex];
+    var rowFileId = fileIdColumn >= 0 ? String(row[fileIdColumn] || '').trim() : '';
+    var rowNip = nipColumn >= 0 ? normalizeAbsensiKey_(row[nipColumn]) : '';
+    var rowPeriod = periodColumn >= 0 ? normalizeAbsensiKey_(row[periodColumn]) : '';
+    if ((fileId && rowFileId === fileId) || (nip && rowNip === nip && periodKey && rowPeriod.indexOf(periodKey) >= 0)) return rowIndex + 1;
+  }
+  return 0;
 }
 
 function getPayrollLogDefaultHeaders_() {

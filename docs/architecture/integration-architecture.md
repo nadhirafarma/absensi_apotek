@@ -1,6 +1,6 @@
 # Arsitektur Integrasi — Indo Apotek
 
-Status: current-state terverifikasi source (BMM `bmad-document-project` step 7, 2026-07-27)
+Status: direkonsiliasi 2026-07-28; current-state terverifikasi source (BMM `bmad-document-project` step 7, 2026-07-27)
 Sumber: `assets/*.js`, `google-apps-script-api-search-box-final.gs`, `google-apps-script-absensi-api.gs`, `tools/gas-a/`, `tools/gas-script-1/`, `tools/gas-projects.json`
 Detail per-bagian: lihat `frontend-gas-data-store.md`; detail action/payload: `../api/gas-contracts.md`.
 
@@ -77,10 +77,26 @@ Properti kunci:
 
 Root `.clasp.json` = **GAS B** (canonical). Deploy GAS A dijalankan dari `tools/gas-a/`. Lihat `../ops/deploy-sop.md`.
 
-## 7. Risiko integrasi current-state
+## 7. Keputusan arsitektur yang sudah ditetapkan
 
-1. `ok` vs `success` antar backend → cabang penanganan ganda di frontend.
-2. Mirror ganda (root `.gs` vs clasp) bisa drift bila SOP salin-setelah-edit dilewati — mitigasi: cek hash (lihat §6).
-3. Cross-read GAS B → Spreadsheet A membuat GAS B bergantung pada schema `auth_sessions` yang dimiliki GAS A; perubahan kolom harus dikoordinasikan.
-4. Public read GAS A (`getPharmacyProfile` dll.) terbuka tanpa token — keputusan sadar, ditinjau ulang di epic hardening berikutnya.
-5. Kode repo GAS bisa lebih baru dari deployment live — status deploy dicatat per-epic di `gas-contracts.md` §3.3 (per 2026-07-27: gerbang session GAS A fase 2 terverifikasi aktif di production via smoke test).
+| Keputusan | Aturan |
+|---|---|
+| Source kanonik GAS | Clasp folder (`tools/gas-a/`, `tools/gas-script-1/`); root `.gs` mirror review/rollback |
+| Ownership auth_sessions | GAS A menerbitkan dan mengelola session; GAS B hanya cross-read |
+| Response key kanonik | `ok`; alias `success` transisi sampai cleanup post-regression |
+| Public GET allowlist | Hanya resource yang disetujui dokumen ini; deny-by-default untuk selain itu |
+| HTTP mutation | POST + LockService; GET tidak boleh mengubah Sheets, Drive, atau session |
+| Identitas | Server overwrite dari session; client field `role`/`username`/`actor`/`nama` tidak authoritative |
+| Schema change | Wajib update `gas-contracts.md` + regression checklist sebelum deploy |
+| GAS A write scope | Session + server-side role check wajib per action; UI hide bukan otorisasi (gap open, lihat §8) |
+
+## 8. Risiko integrasi current-state
+
+1. `ok` vs `success` antar backend → cabang penanganan ganda di frontend; cleanup Fase D setelah full regression.
+2. Mirror drift bila SOP salin-setelah-edit dilewati — mitigasi: `node tools/check_gas_mirrors.js` wajib sebelum deploy.
+3. GAS B bergantung schema `auth_sessions` GAS A; perubahan kolom wajib dikoordinasikan.
+4. Public read GAS A (`getPharmacyProfile`, `getAttendanceShiftSettings`, `getDataObatFilter`) terbuka by design, terdokumentasi dan ter-allowlist.
+5. **GAS A write authorization — gap terbuka (2026-07-28):** sensitive reads sudah gated (Epic 1); write handler di `doPost` belum semuanya punya session check dan role enforcement — lihat `security/role-permission-matrix.md §74-80` dan `api/gas-contracts.md` action classification table. Perbaikan via Story 3.1.
+6. **GAS A generic GET sheet — gap terbuka:** `doGet?sheet=<nama>` selain `user` dan `data_obat` tidak ada deny-by-default; termasuk potensi expose `auth_sessions`. Perbaikan via Story 3.1.
+7. **Credential — gap terbuka (perlu preflight):** source menunjukkan password plaintext di sheet dan reset tanpa token sekali pakai. Status live perlu dikonfirmasi sebelum scope fix ditetapkan.
+8. Kode repo GAS bisa lebih baru dari deployment live; deployment version dicatat per-story di `gas-contracts.md`.

@@ -240,26 +240,9 @@
   }
 
   async function fetchLoginUsers() {
-    const ensureSuccess = (result) => {
-      if (isApiOk(result)) return result;
-      throw new Error((result && result.message) || "Daftar user online belum tersedia.");
-    };
-
-    return new Promise((resolve, reject) => {
-      const errors = [];
-      var pending = 2;
-
-      function handleError(error) {
-        errors.push(error);
-        pending -= 1;
-        if (pending <= 0) {
-          reject(errors[errors.length - 1] || new Error("Daftar user online belum tersedia."));
-        }
-      }
-
-      requestLoginUsers("GET").then(ensureSuccess).then(resolve).catch(handleError);
-      requestLoginUsers("POST").then(ensureSuccess).then(resolve).catch(handleError);
-    });
+    const result = await requestLoginUsers("POST");
+    if (isApiOk(result)) return result;
+    throw new Error((result && result.message) || "Daftar user online belum tersedia.");
   }
 
   async function requestLoginUsers(method) {
@@ -530,28 +513,28 @@
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
       const session = raw ? JSON.parse(raw) : null;
+      const expiresAt = Number(session?.expiresAt);
 
-      if (!session || !session.expiresAt || Date.now() > Number(session.expiresAt)) {
+      if (!session || !Number.isFinite(expiresAt) || Date.now() >= expiresAt) {
         sessionStorage.removeItem(SESSION_KEY);
         return null;
       }
 
       return session;
     } catch (error) {
-      sessionStorage.removeItem(SESSION_KEY);
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+      } catch (_) {
+        /* storage unavailable: fail closed */
+      }
       return null;
     }
   }
 
   function getSafeNextUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get("next") || "index.html";
-
-    if (/^https?:\/\//i.test(next) || next.startsWith("//")) {
-      return "index.html";
-    }
-
-    return next || "index.html";
+    const next = String(new URLSearchParams(window.location.search).get("next") || "/");
+    if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || /[\x00-\x1f\x7f]/.test(next)) return "/";
+    return next;
   }
 
   function setStatus(message, type) {
