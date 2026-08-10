@@ -29,4 +29,5 @@
 # BMAD/BMM skills installed into the agent workspace — local AI tooling, not website runtime.
 /.agents/
 
-
+# Cline worktrees — local agent state, never a deployable submodule.
+/.claude/
