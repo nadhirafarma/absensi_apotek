@@ -472,13 +472,17 @@
       setStatus("GPS valid. Memeriksa waktu dan duplikasi absensi...");
       const attendanceResult = await safeCheckAttendanceToday(identity);
 
-      if (attendanceResult.checkFailed) {
-        setStatus("Tidak bisa mengecek data absensi di Google Sheet. Absensi dibatalkan agar tidak tercatat dobel.");
+      if (attendanceResult.checkFailed && !attendanceResult.transient) {
+        setStatus(attendanceResult.message || "Pemeriksaan absensi ditolak server.");
         els.retryButton.hidden = false;
         state.paused = true;
         state.processing = false;
         els.attendanceButton.disabled = false;
         return;
+      }
+
+      if (attendanceResult.checkFailed) {
+        setStatus("Server sedang lambat. Absensi tetap diproses; pengecekan duplikat dilakukan saat penyimpanan.");
       }
 
       const attendancePlan = buildRequestedAttendancePlan(attendanceResult);
@@ -675,23 +679,31 @@
       cache: "no-store"
     });
 
-    if (!response.ok) {
-      throw new Error(`Cek absensi gagal (${response.status}).`);
-    }
+    if (!response.ok) throw Object.assign(new Error(`Cek absensi gagal (${response.status}).`), { transient: response.status >= 500 });
 
-    return response.json();
+    const text = await response.text();
+    let result;
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch (_) {
+      throw Object.assign(new Error("Respons cek absensi tidak dikenali."), { transient: true });
+    }
+    if (!isApiOk(result)) throw Object.assign(new Error(result?.message || result?.error || "Pemeriksaan absensi ditolak server."), { transient: false });
+    return result;
   }
 
   async function safeCheckAttendanceToday(identity) {
-    try {
-      return await checkAttendanceToday(identity);
-    } catch (error) {
-      return {
-        sudahAbsen: false,
-        checkFailed: true,
-        message: error.message
-      };
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await checkAttendanceToday(identity);
+      } catch (error) {
+        lastError = error;
+        if (error?.transient === false) break;
+        if (attempt === 0) await new Promise(resolve => window.setTimeout(resolve, 800));
+      }
     }
+    return { sudahAbsen: false, checkFailed: true, transient: lastError?.transient !== false, message: lastError?.message || "Pemeriksaan absensi gagal." };
   }
 
   function buildAttendancePlan(result) {

@@ -11064,6 +11064,7 @@
           lemburRow: 0,
           warningMessage: "",
           warningFlag: "",
+          sourceSheet: record.sourceSheet || "",
           editable: record.editable !== false,
           records: []
         });
@@ -11071,6 +11072,7 @@
 
       const item = map.get(key);
       item.records.push(record);
+      if (!item.sourceSheet && record.sourceSheet) item.sourceSheet = record.sourceSheet;
       item.editable = item.editable && record.editable !== false;
       if (record.warningMessage && !item.warningMessage) item.warningMessage = record.warningMessage;
       if (record.warningFlag && !item.warningFlag) item.warningFlag = record.warningFlag;
@@ -11185,7 +11187,7 @@
     }
 
     els.attendanceTableBody.innerHTML = groups.map((group) => {
-      const actionCell = canEdit && group.editable !== false && !group.isOvertime
+      const actionCell = canEdit && group.editable !== false
         ? `<td class="attendance-action-cell"><button class="icon-button attendance-edit-button" type="button" data-attendance-key="${escapeHtml(group.key)}" aria-label="Edit presensi ${escapeHtml(group.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></td>`
         : canEdit ? `<td class="attendance-action-cell"></td>` : "";
       const displayDatang = group.isOvertime ? (group.lembur || "-") : (group.datang || "-");
@@ -11295,15 +11297,24 @@
     if (group?.editable !== false) openAttendanceEditModal(group);
   }
 
+  function setAttendanceEditOvertimeMode(isOvertime) {
+    const datangLabel = els.attendanceEditDatang?.closest("label");
+    const pulangLabel = els.attendanceEditPulang?.closest("label");
+    if (datangLabel?.firstChild) datangLabel.firstChild.textContent = isOvertime ? "Jam Lembur" : "Jam Datang";
+    if (pulangLabel) pulangLabel.hidden = isOvertime;
+    if (els.attendanceEditPulang) els.attendanceEditPulang.disabled = isOvertime;
+  }
+
   function openAttendanceEditModal(group) {
     if (!els.attendanceEditModal || !group) return;
     state.attendanceEditMode = "edit";
     state.editingAttendanceGroup = group;
+    setAttendanceEditOvertimeMode(group.isOvertime);
     populateAttendanceEmployeeSelect(group.name || "");
     if (els.attendanceEditDate) els.attendanceEditDate.value = group.date || getTodayDateKey();
-    if (els.attendanceEditShift) els.attendanceEditShift.value = normalizeAttendanceShift(group.shift || inferAttendanceShift(group.datang));
-    if (els.attendanceEditDatang) els.attendanceEditDatang.value = group.datang || "";
-    if (els.attendanceEditPulang) els.attendanceEditPulang.value = group.pulang || "";
+    if (els.attendanceEditShift) els.attendanceEditShift.value = normalizeAttendanceShift(group.shift || inferAttendanceShift(group.lembur || group.datang));
+    if (els.attendanceEditDatang) els.attendanceEditDatang.value = group.isOvertime ? (group.lembur || "") : (group.datang || "");
+    if (els.attendanceEditPulang) els.attendanceEditPulang.value = group.isOvertime ? "" : (group.pulang || "");
     if (els.attendanceEditWarning) els.attendanceEditWarning.value = group.warningMessage || "";
     if (els.attendanceEditModalTitle) els.attendanceEditModalTitle.textContent = "Edit Catatan Kehadiran";
     if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Perubahan disimpan langsung ke Google Sheet absensi.";
@@ -11315,6 +11326,7 @@
     if (!els.attendanceEditModal || !isAdminUser(getCurrentUserRecord())) return;
     const selectedDate = normalizeAttendanceDateKey(els.attendanceDateFilter?.value || state.attendanceDate || getTodayDateKey()) || getTodayDateKey();
     state.attendanceEditMode = "add";
+    setAttendanceEditOvertimeMode(false);
     state.editingAttendanceGroup = {
       key: `manual-${Date.now()}`,
       name: "",
@@ -11354,11 +11366,14 @@
     if (!isAdminUser(user) || !state.editingAttendanceGroup) return;
     const group = state.editingAttendanceGroup;
     const isAddMode = state.attendanceEditMode === "add";
+    const isOvertime = !isAddMode && group.isOvertime;
     const name = String(els.attendanceEditName?.value || group.name || "").trim();
     const date = normalizeAttendanceDateKey(els.attendanceEditDate?.value || group.date || "");
     const shift = normalizeAttendanceShift(els.attendanceEditShift?.value || group.shift || "SHIFT PAGI") || "SHIFT PAGI";
-    const jamDatang = normalizeAttendanceTime(els.attendanceEditDatang?.value || "");
-    const jamPulang = normalizeAttendanceTime(els.attendanceEditPulang?.value || "");
+    const primaryTime = normalizeAttendanceTime(els.attendanceEditDatang?.value || "");
+    const jamDatang = isOvertime ? "" : primaryTime;
+    const jamPulang = isOvertime ? "" : normalizeAttendanceTime(els.attendanceEditPulang?.value || "");
+    const jamLembur = isOvertime ? primaryTime : "";
     const warningMessage = String(els.attendanceEditWarning?.value || "").trim();
 
     if (!name) {
@@ -11371,7 +11386,12 @@
       showActionToast("Tanggal presensi wajib diisi.", "error");
       return;
     }
-    if (!jamDatang && !jamPulang) {
+    if (isOvertime && !jamLembur) {
+      if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Jam lembur wajib diisi.";
+      showActionToast("Jam lembur wajib diisi.", "error");
+      return;
+    }
+    if (!isOvertime && !jamDatang && !jamPulang) {
       if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Isi minimal jam datang atau jam pulang.";
       showActionToast("Isi minimal satu jam presensi.", "error");
       return;
@@ -11389,8 +11409,11 @@
         shift,
         jamDatang,
         jamPulang,
-        datangRow: isAddMode ? 0 : (group.datangRow || 0),
-        pulangRow: isAddMode ? 0 : (group.pulangRow || 0),
+        jamLembur,
+        sourceSheet: isAddMode ? "" : String(group.sourceSheet || ""),
+        datangRow: isAddMode || isOvertime ? 0 : (group.datangRow || 0),
+        pulangRow: isAddMode || isOvertime ? 0 : (group.pulangRow || 0),
+        lemburRow: isOvertime ? (group.lemburRow || 0) : 0,
         warningMessage,
         warningFlag: warningMessage ? "manual_note" : "",
         updatedBy: user.name || user.username || "Admin"

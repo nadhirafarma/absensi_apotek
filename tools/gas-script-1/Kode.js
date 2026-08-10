@@ -15,6 +15,8 @@
 
 var ABSENSI_SPREADSHEET_ID = '1L_MfAj7UOa9Ngb6VEY6G4PiMBbwOIAu3De_puVYvNw4';
 var ABSENSI_SHEET_NAME = 'Form_Responses';
+var ABSENSI_MONTHLY_SHEET_PREFIX = 'Absensi_';
+var ABSENSI_MIGRATION_CONFIRMATION = 'MIGRASI_JULI_AGUSTUS_2026';
 var ABSENSI_PHOTO_FOLDER_NAME = 'Foto_Absensi';
 var ABSENSI_TIMEZONE = 'Asia/Jakarta';
 var PAYROLL_SHEET_NAME = 'data_karyawan';
@@ -92,7 +94,6 @@ function doGet(e) {
     if (!session.ok) return jsonAbsensi_({ ok: false, success: false, message: session.message });
     applyAbsensiSession_(params, session);
     var spreadsheet = SpreadsheetApp.openById(ABSENSI_SPREADSHEET_ID);
-    var sheet = getAbsensiSheet_(spreadsheet);
 
     if (action == 'listAttendanceRecords') {
       return handleListAttendanceRecords_(params, spreadsheet);
@@ -111,7 +112,7 @@ function doGet(e) {
     }
 
     var nama = session.name;
-    var check = checkAbsensiHariIni_(sheet, nama);
+    var check = checkAbsensiHariIni_(spreadsheet, nama);
 
     return jsonAbsensi_({
       ok: true,
@@ -149,14 +150,17 @@ function doPost(e) {
     applyAbsensiSession_(payload, session);
     var nama = session.name;
     var spreadsheet = SpreadsheetApp.openById(ABSENSI_SPREADSHEET_ID);
-    var sheet = getAbsensiSheet_(spreadsheet);
 
     if (action == 'listAttendanceRecords') {
       return handleListAttendanceRecords_(payload, spreadsheet);
     }
 
     if (action == 'updateAttendanceRecord') {
-      return handleUpdateAttendanceRecord_(payload, sheet);
+      return handleUpdateAttendanceRecord_(payload, spreadsheet);
+    }
+
+    if (action == 'migrateAttendanceJulyAugust2026') {
+      return handleMigrateAttendanceJulyAugust2026_(payload, spreadsheet);
     }
 
     if (action == 'listPayrollEmployees') {
@@ -195,7 +199,7 @@ function doPost(e) {
       });
     }
 
-    var check = checkAbsensiHariIni_(sheet, nama);
+    var check = checkAbsensiHariIni_(spreadsheet, nama);
     var timestamp = new Date();
     var displayName = normalizeDisplayName_(nama);
     var status = normalizeAbsensiStatus_(payload.jenis_absen || payload.jenisAbsen || payload.status_kehadiran || payload.statusKehadiran || payload.status || 'DATANG');
@@ -228,9 +232,10 @@ function doPost(e) {
 
     var shift = normalizeAbsensiShift_(payload.shift || payload.SHIFT || getShiftLabel_(timestamp));
     var sheetShift = status == 'PULANG' ? '' : shift;
-    var photo = saveAbsensiPhoto_(payload, displayName, timestamp);
     var attendanceDate = getPayloadAttendanceDate_(payload, timestamp);
     var attendanceTime = getPayloadAttendanceTime_(payload, status, timestamp);
+    var sheet = getOrCreateAbsensiMonthSheet_(spreadsheet, attendanceDate);
+    var photo = saveAbsensiPhoto_(payload, displayName, timestamp);
 
     ensureAbsensiHeaders_(sheet);
     sheet.appendRow([
@@ -411,14 +416,30 @@ function parseAbsensiPayload_(e) {
 }
 
 function getAbsensiSheet_(spreadsheet) {
-  var sheet = spreadsheet.getSheetByName(ABSENSI_SHEET_NAME);
+  return getOrCreateAbsensiMonthSheet_(spreadsheet, getJakartaDateKey_(new Date()));
+}
 
-  if (!sheet) {
-    sheet = spreadsheet.insertSheet(ABSENSI_SHEET_NAME);
-  }
+function getAbsensiMonthSheetName_(dateKey) {
+  var match = String(dateKey || '').match(/^(\d{4})-(\d{2})/);
+  if (!match || Number(match[2]) < 1 || Number(match[2]) > 12) throw new Error('Tanggal absensi tidak valid untuk menentukan sheet bulanan.');
+  return ABSENSI_MONTHLY_SHEET_PREFIX + PAYROLL_MONTHS_ID[Number(match[2]) - 1] + match[1];
+}
 
+function getOrCreateAbsensiMonthSheet_(spreadsheet, dateKey) {
+  var name = getAbsensiMonthSheetName_(sanitizeAbsensiDateKey_(dateKey) || getJakartaDateKey_(dateKey));
+  var sheet = spreadsheet.getSheetByName(name);
+  if (!sheet) sheet = spreadsheet.insertSheet(name);
   ensureAbsensiHeaders_(sheet);
   return sheet;
+}
+
+function isAbsensiRecordSheet_(sheet) {
+  if (!sheet || sheet.getLastColumn() < 3) return false;
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(normalizeAbsensiHeader_);
+  return findHeaderIndex_(headers, ['namakaryawan', 'nama', 'karyawan', 'pegawai']) >= 0
+    && findHeaderIndex_(headers, ['statuskehadiran', 'status', 'jenisabsen', 'absen']) >= 0
+    && (findHeaderIndex_(headers, ['timestamp', 'waktu']) >= 0 || findHeaderIndex_(headers, ['tanggalabsen', 'tanggalkehadiran', 'tanggal']) >= 0)
+    && (/^absensi/i.test(sheet.getName()) || normalizeAbsensiKey_(sheet.getName()) == normalizeAbsensiKey_(ABSENSI_SHEET_NAME));
 }
 
 function ensureAbsensiHeaders_(sheet) {
@@ -455,49 +476,34 @@ function ensureAbsensiHeaders_(sheet) {
   }
 }
 
-function checkAbsensiHariIni_(sheet, nama) {
+function checkAbsensiHariIni_(spreadsheet, nama) {
   var targetName = normalizeAbsensiKey_(nama);
-
-  if (!targetName) {
-    return {
-      sudahAbsen: false,
-      datang: false,
-      pulang: false,
-      lembur: false
-    };
-  }
-
-  var lastRow = sheet.getLastRow();
-
-  if (lastRow < 2) {
-    return {
-      sudahAbsen: false,
-      datang: false,
-      pulang: false,
-      lembur: false
-    };
-  }
-
   var todayKey = getJakartaDateKey_(new Date());
+  var sheets = getAbsensiRecordSheets_(spreadsheet).filter(function(sheet) {
+    var monthName = getAbsensiMonthSheetName_(todayKey);
+    return sheet.getName() == monthName || sheet.getName() == ABSENSI_SHEET_NAME || !/^Absensi_/i.test(sheet.getName());
+  });
+  var result = createEmptyAbsensiCheck_();
+
+  if (!targetName) return result;
+  sheets.forEach(function(sheet) { mergeAbsensiCheckFromSheet_(result, sheet, targetName, todayKey); });
+  result.sudahAbsen = result.datang && result.pulang;
+  return result;
+}
+
+function createEmptyAbsensiCheck_() {
+  return { sudahAbsen: false, datang: false, pulang: false, lembur: false, row: null, datangRow: null, pulangRow: null, lemburRow: null, datangShift: '', pulangShift: '', lemburShift: '', sourceSheet: '' };
+}
+
+function mergeAbsensiCheckFromSheet_(result, sheet, targetName, todayKey) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
   var values = sheet.getRange(1, 1, lastRow, Math.max(sheet.getLastColumn(), 4)).getValues();
   var headers = values[0].map(normalizeAbsensiHeader_);
   var timestampIndex = findHeaderIndex_(headers, ['timestamp', 'tanggal', 'waktu']);
   var nameIndex = findHeaderIndex_(headers, ['namakaryawan', 'nama', 'karyawan', 'pegawai']);
   var statusIndex = findHeaderIndex_(headers, ['statuskehadiran', 'status', 'jenisabsen', 'absen']);
   var shiftIndex = findHeaderIndex_(headers, ['shift']);
-  var result = {
-    sudahAbsen: false,
-    datang: false,
-    pulang: false,
-    lembur: false,
-    row: null,
-    datangRow: null,
-    pulangRow: null,
-    lemburRow: null,
-    datangShift: '',
-    pulangShift: '',
-    lemburShift: ''
-  };
 
   if (timestampIndex < 0) timestampIndex = 0;
   if (nameIndex < 0) nameIndex = 1;
@@ -531,11 +537,9 @@ function checkAbsensiHariIni_(sheet, nama) {
       }
 
       if (!result.row) result.row = index + 1;
+      if (!result.sourceSheet) result.sourceSheet = sheet.getName();
     }
   }
-
-  result.sudahAbsen = result.datang && result.pulang;
-  return result;
 }
 
 function saveAbsensiPhoto_(payload, displayName, timestamp) {
@@ -635,7 +639,7 @@ function handleListAttendanceRecords_(params, source) {
     var headers = values[0].map(normalizeAbsensiHeader_);
     var columns = getAbsensiColumns_(headers);
     var sourceSheet = sheet.getName();
-    var editable = sourceSheet == ABSENSI_SHEET_NAME;
+    var editable = isAbsensiRecordSheet_(sheet);
     var sheetRecordCount = 0;
 
     for (var rowIndex = values.length - 1; rowIndex >= 1; rowIndex -= 1) {
@@ -720,12 +724,10 @@ function handleListAttendanceRecords_(params, source) {
 }
 
 function getAbsensiRecordSheets_(spreadsheet) {
-  var primary = getAbsensiSheet_(spreadsheet);
-  var primaryId = primary.getSheetId();
-  var candidates = [primary];
+  var candidates = [];
 
   spreadsheet.getSheets().forEach(function(sheet) {
-    if (sheet.getSheetId() == primaryId || sheet.getLastRow() < 2 || sheet.getLastColumn() < 3) return;
+    if (sheet.getLastRow() < 1 || sheet.getLastColumn() < 3) return;
 
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0].map(normalizeAbsensiHeader_);
     var timestampColumn = findHeaderIndex_(headers, ['timestamp', 'waktu']);
@@ -743,13 +745,226 @@ function getAbsensiRecordSheets_(spreadsheet) {
   return candidates;
 }
 
+function handleMigrateAttendanceJulyAugust2026_(payload, spreadsheet) {
+  if (!isAbsensiAdmin_(payload)) return jsonAbsensi_({ ok: false, success: false, message: 'Hanya owner/admin yang dapat menjalankan migrasi absensi.' });
+
+  var source = spreadsheet.getSheetByName(ABSENSI_SHEET_NAME);
+  var julyName = getAbsensiMonthSheetName_('2026-07-01');
+  var augustName = getAbsensiMonthSheetName_('2026-08-01');
+  if (!source) {
+    var alreadyDone = spreadsheet.getSheetByName(julyName) && spreadsheet.getSheetByName(augustName);
+    return jsonAbsensi_({ ok: alreadyDone, success: alreadyDone, migrated: alreadyDone, message: alreadyDone ? 'Migrasi sudah pernah selesai.' : 'Sheet Form_Responses tidak ditemukan.' });
+  }
+
+  var lastRow = source.getLastRow();
+  if (lastRow < 2) {
+    return jsonAbsensi_({
+      ok: true,
+      success: true,
+      migrated: true,
+      dryRun: String(payload.dryRun == null ? 'true' : payload.dryRun).toLowerCase() !== 'false',
+      report: {
+        sourceRows: 0,
+        julyRows: 0,
+        augustRows: 0,
+        invalidRows: [],
+        julySheet: { name: julyName, exists: !!spreadsheet.getSheetByName(julyName), currentRows: spreadsheet.getSheetByName(julyName) ? Math.max(0, spreadsheet.getSheetByName(julyName).getLastRow() - 1) : 0, appendable: 0, duplicates: 0, afterRows: spreadsheet.getSheetByName(julyName) ? Math.max(0, spreadsheet.getSheetByName(julyName).getLastRow() - 1) : 0 },
+        augustSheet: { name: augustName, exists: !!spreadsheet.getSheetByName(augustName), currentRows: spreadsheet.getSheetByName(augustName) ? Math.max(0, spreadsheet.getSheetByName(augustName).getLastRow() - 1) : 0, appendable: 0, duplicates: 0, afterRows: spreadsheet.getSheetByName(augustName) ? Math.max(0, spreadsheet.getSheetByName(augustName).getLastRow() - 1) : 0 }
+      },
+      message: 'Tidak ada data Form_Responses yang perlu dimigrasikan.'
+    });
+  }
+
+  var lastColumn = Math.max(source.getLastColumn(), 16);
+  var values = lastRow > 1 ? source.getRange(1, 1, lastRow, lastColumn).getValues() : [[]];
+  var headers = values[0].map(normalizeAbsensiHeader_);
+  var columns = getAbsensiColumns_(headers);
+  var julyRows = [];
+  var augustRows = [];
+  var invalidRows = [];
+  for (var i = 1; i < values.length; i += 1) {
+    if (!values[i].some(function(value) { return String(value || '').trim() !== ''; })) continue;
+    var key = sanitizeAbsensiDateKey_(values[i][columns.dateKey]) || getJakartaDateKey_(values[i][columns.timestamp]);
+    if (key.indexOf('2026-07-') === 0) julyRows.push(i + 1);
+    else if (key.indexOf('2026-08-') === 0) augustRows.push(i + 1);
+    else invalidRows.push({ row: i + 1, date: key || String(values[i][columns.timestamp] || '') });
+  }
+
+  var julyData = collectAbsensiMigrationRows_(values, columns, julyRows);
+  var augustData = collectAbsensiMigrationRows_(values, columns, augustRows);
+  var julySheet = spreadsheet.getSheetByName(julyName);
+  var augustSheet = spreadsheet.getSheetByName(augustName);
+  var julyExisting = readNormalizedAbsensiRowsFromSheet_(julySheet);
+  var augustExisting = readNormalizedAbsensiRowsFromSheet_(augustSheet);
+  var julyPlan = calculateAbsensiMigrationPlan_(julyExisting, julyData);
+  var augustPlan = calculateAbsensiMigrationPlan_(augustExisting, augustData);
+  var report = {
+    sourceRows: julyRows.length + augustRows.length + invalidRows.length,
+    julyRows: julyRows.length,
+    augustRows: augustRows.length,
+    invalidRows: invalidRows,
+    julySheet: {
+      name: julyName,
+      exists: !!julySheet,
+      currentRows: julyExisting.length,
+      appendable: julyPlan.appendable,
+      duplicates: julyPlan.duplicates,
+      afterRows: julyExisting.length + julyPlan.appendable
+    },
+    augustSheet: {
+      name: augustName,
+      exists: !!augustSheet,
+      currentRows: augustExisting.length,
+      appendable: augustPlan.appendable,
+      duplicates: augustPlan.duplicates,
+      afterRows: augustExisting.length + augustPlan.appendable
+    }
+  };
+  if (invalidRows.length) return jsonAbsensi_({ ok: false, success: false, dryRun: true, report: report, message: 'Migrasi dihentikan: ada tanggal di luar Juli/Agustus 2026 atau tidak valid.' });
+  if (String(payload.dryRun == null ? 'true' : payload.dryRun).toLowerCase() !== 'false') {
+    return jsonAbsensi_({ ok: true, success: true, dryRun: true, report: report, message: 'Dry-run valid. Tidak ada data yang diubah.' });
+  }
+  if (String(payload.confirmation || '') !== ABSENSI_MIGRATION_CONFIRMATION) return jsonAbsensi_({ ok: false, success: false, message: 'Kode konfirmasi migrasi tidak cocok.' });
+
+  var backup = DriveApp.getFileById(spreadsheet.getId()).makeCopy(spreadsheet.getName() + '_BACKUP_SEBELUM_MIGRASI_' + Utilities.formatDate(new Date(), ABSENSI_TIMEZONE, 'yyyyMMdd_HHmmss'));
+
+  if (julyData.length) {
+    if (!julySheet) julySheet = spreadsheet.insertSheet(julyName);
+    appendAbsensiMigrationRows_(julySheet, julyPlan.appendRows);
+  }
+  if (augustData.length) {
+    if (!augustSheet) augustSheet = spreadsheet.insertSheet(augustName);
+    appendAbsensiMigrationRows_(augustSheet, augustPlan.appendRows);
+  }
+  clearAbsensiDataRows_(source);
+  SpreadsheetApp.flush();
+
+  var verifiedJuly = julySheet ? Math.max(0, julySheet.getLastRow() - 1) : 0;
+  var verifiedAugust = augustSheet ? Math.max(0, augustSheet.getLastRow() - 1) : 0;
+  if (verifiedJuly !== report.julySheet.afterRows || verifiedAugust !== report.augustSheet.afterRows || source.getLastRow() > 1) {
+    throw new Error('Verifikasi migrasi gagal. Gunakan backup: ' + backup.getUrl());
+  }
+  report.backupCreated = true;
+  return jsonAbsensi_({ ok: true, success: true, migrated: true, report: report, backupUrl: backup.getUrl(), sheets: [julyName, augustName], message: 'Migrasi Juli/Agustus 2026 selesai dan terverifikasi.' });
+}
+
+function deleteRowsExcept_(sheet, keepRows) {
+  var keep = {};
+  keepRows.forEach(function(row) { keep[row] = true; });
+  for (var row = sheet.getLastRow(); row >= 2; row -= 1) if (!keep[row]) sheet.deleteRow(row);
+}
+
+function clearAbsensiDataRows_(sheet) {
+  if (!sheet) return;
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+  ensureAbsensiHeaders_(sheet);
+}
+
+function collectAbsensiMigrationRows_(values, columns, rowNumbers) {
+  return (rowNumbers || []).map(function(rowNumber) {
+    return normalizeAbsensiStoredRow_(values[rowNumber - 1] || [], columns);
+  }).filter(function(row) {
+    return Boolean(buildAbsensiMigrationRecordKey_(row));
+  });
+}
+
+function readNormalizedAbsensiRowsFromSheet_(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var values = sheet.getRange(1, 1, sheet.getLastRow(), Math.max(sheet.getLastColumn(), 16)).getValues();
+  var columns = getAbsensiColumns_(values[0].map(normalizeAbsensiHeader_));
+  var rows = [];
+  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    rows.push(normalizeAbsensiStoredRow_(values[rowIndex], columns));
+  }
+  return rows.filter(function(row) {
+    return Boolean(buildAbsensiMigrationRecordKey_(row));
+  });
+}
+
+function normalizeAbsensiStoredRow_(row, columns) {
+  row = row || [];
+  var timestamp = row[columns.timestamp];
+  var status = normalizeAbsensiStatus_(row[columns.status]);
+  var dateKey = sanitizeAbsensiDateKey_(row[columns.dateKey]) || getJakartaDateKey_(timestamp);
+  var timeText = sanitizeAbsensiTime_(row[columns.timeText]) || getAbsensiTimeFromTimestamp_(timestamp);
+  var normalizedTimestamp = timestamp;
+  if (!(normalizedTimestamp instanceof Date) || isNaN(normalizedTimestamp.getTime())) {
+    normalizedTimestamp = dateKey && timeText ? buildJakartaTimestamp_(dateKey, timeText) : (timestamp || '');
+  }
+  return [
+    normalizedTimestamp,
+    normalizeDisplayName_(row[columns.name]),
+    status,
+    status == 'PULANG' ? '' : normalizeAbsensiShift_(row[columns.shift] || ''),
+    row[columns.photo] || '',
+    row[columns.fileId] || '',
+    row[columns.latitude] || '',
+    row[columns.longitude] || '',
+    row[columns.gpsAccuracy] || '',
+    row[columns.gpsDistance] || '',
+    row[columns.warning] || '',
+    row[columns.warningFlag] || '',
+    row[columns.updatedAt] || '',
+    row[columns.updatedBy] || '',
+    dateKey,
+    timeText
+  ];
+}
+
+function buildAbsensiMigrationRecordKey_(row) {
+  row = row || [];
+  var dateKey = sanitizeAbsensiDateKey_(row[14]) || getJakartaDateKey_(row[0]);
+  var timeText = sanitizeAbsensiTime_(row[15]) || getAbsensiTimeFromTimestamp_(row[0]);
+  var nameKey = normalizeAbsensiKey_(row[1]);
+  if (!dateKey || !timeText || !nameKey) return '';
+  return [
+    dateKey,
+    timeText,
+    nameKey,
+    normalizeAbsensiStatus_(row[2]),
+    normalizeAbsensiKey_(normalizeAbsensiStatus_(row[2]) == 'PULANG' ? '' : normalizeAbsensiShift_(row[3] || ''))
+  ].join('|');
+}
+
+function calculateAbsensiMigrationPlan_(existingRows, incomingRows) {
+  var seen = {};
+  (existingRows || []).forEach(function(row) {
+    var key = buildAbsensiMigrationRecordKey_(row);
+    if (key) seen[key] = true;
+  });
+  var appendRows = [];
+  var duplicates = 0;
+  (incomingRows || []).forEach(function(row) {
+    var key = buildAbsensiMigrationRecordKey_(row);
+    if (!key) return;
+    if (seen[key]) {
+      duplicates += 1;
+      return;
+    }
+    seen[key] = true;
+    appendRows.push(row);
+  });
+  return {
+    appendRows: appendRows,
+    appendable: appendRows.length,
+    duplicates: duplicates
+  };
+}
+
+function appendAbsensiMigrationRows_(sheet, rows) {
+  ensureAbsensiHeaders_(sheet);
+  if (!rows || !rows.length) return;
+  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 16).setValues(rows);
+}
+
 function getAbsensiTimeFromTimestamp_(value) {
   var text = String(value || '').trim();
   var match = text.match(/(?:T|\s)(\d{1,2})[:.](\d{2})(?::\d{2})?/);
   return match ? ('0' + match[1]).slice(-2) + ':' + match[2] : '';
 }
 
-function handleUpdateAttendanceRecord_(payload, sheet) {
+function handleUpdateAttendanceRecord_(payload, spreadsheet) {
   if (!isAbsensiAdmin_(payload)) {
     return jsonAbsensi_({
       ok: false,
@@ -758,12 +973,21 @@ function handleUpdateAttendanceRecord_(payload, sheet) {
     });
   }
 
+  var sourceSheet = String(payload.sourceSheet || '').trim();
+  var dateKey = sanitizeAbsensiDateKey_(payload.date || payload.tanggal) || getJakartaDateKey_(new Date());
+  var expectedSheet = getAbsensiMonthSheetName_(dateKey);
+  if (sourceSheet && sourceSheet != ABSENSI_SHEET_NAME && sourceSheet != expectedSheet) {
+    return jsonAbsensi_({ ok: false, success: false, message: 'Sumber sheet absensi tidak valid.' });
+  }
+  var sheet = sourceSheet ? spreadsheet.getSheetByName(sourceSheet) : getOrCreateAbsensiMonthSheet_(spreadsheet, dateKey);
+  if (!sheet || !isAbsensiRecordSheet_(sheet)) {
+    return jsonAbsensi_({ ok: false, success: false, message: 'Sheet sumber absensi tidak ditemukan.' });
+  }
   ensureAbsensiHeaders_(sheet);
 
   var values = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), Math.max(sheet.getLastColumn(), 16)).getValues();
   var headers = values[0].map(normalizeAbsensiHeader_);
   var columns = getAbsensiColumns_(headers);
-  var dateKey = sanitizeAbsensiDateKey_(payload.date || payload.tanggal) || getJakartaDateKey_(new Date());
   var name = normalizeDisplayName_(payload.nama || payload.nama_karyawan || payload.namaKaryawan || payload.name || '');
   var shift = normalizeAbsensiShift_(payload.shift || payload.SHIFT || 'SHIFT PAGI');
   var updatedAt = new Date();
@@ -779,6 +1003,7 @@ function handleUpdateAttendanceRecord_(payload, sheet) {
 
   updateAttendanceRowByStatus_(sheet, columns, payload.datangRow || payload.arrivalRow, dateKey, payload.jamDatang || payload.datang || '', name, 'DATANG', shift, payload.warningMessage || '', payload.warningFlag || '', updatedAt, updatedBy);
   updateAttendanceRowByStatus_(sheet, columns, payload.pulangRow || payload.returnRow, dateKey, payload.jamPulang || payload.pulang || '', name, 'PULANG', shift, payload.warningMessage || '', payload.warningFlag || '', updatedAt, updatedBy);
+  updateAttendanceRowByStatus_(sheet, columns, payload.lemburRow || payload.overtimeRow, dateKey, payload.jamLembur || payload.lembur || '', name, 'LEMBUR', shift, payload.warningMessage || '', payload.warningFlag || '', updatedAt, updatedBy);
   SpreadsheetApp.flush();
 
   return jsonAbsensi_({
@@ -1645,53 +1870,30 @@ function buildPayrollPeriod_(monthValue, yearValue) {
 }
 
 function calculatePayrollAttendanceSummary_(spreadsheet, employee, period) {
-  var sheet = getAbsensiSheet_(spreadsheet);
-  var values = sheet.getDataRange().getValues();
   var groups = {};
   var targetName = normalizeAbsensiKey_(employee.name || '');
-
-  if (values.length < 2) {
-    return buildPayrollSummaryResult_({}, period);
-  }
-
-  var headers = values[0].map(normalizeAbsensiHeader_);
-  var columns = getAbsensiColumns_(headers);
-
-  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
-    var row = values[rowIndex];
-    var rowName = normalizeAbsensiKey_(row[columns.name]);
-    if (!targetName || rowName != targetName) continue;
-
-    var timestamp = row[columns.timestamp];
-    var dateKey = sanitizeAbsensiDateKey_(row[columns.dateKey]) || getJakartaDateKey_(timestamp);
-    if (!dateKey || dateKey < period.start || dateKey > period.end) continue;
-
-    var shift = String(row[columns.shift] || '').toUpperCase();
-    var shiftKey = shift.indexOf('SORE') >= 0 ? 'sore' : 'pagi';
-    var status = normalizeAbsensiStatus_(row[columns.status]);
-    var groupKey = status == 'LEMBUR'
-      ? dateKey + '|lembur|' + shiftKey + '|' + rowIndex
-      : dateKey + '|regular';
-    var warningText = normalizeAbsensiKey_([row[columns.warning], row[columns.warningFlag]].join(' '));
-
-    if (!groups[groupKey]) {
-      groups[groupKey] = {
-        date: dateKey,
-        shift: shiftKey,
-        datang: false,
-        pulang: false,
-        lembur: false,
-        late: false,
-        early: false
-      };
+  getAbsensiRecordSheets_(spreadsheet).forEach(function(sheet) {
+    if (sheet.getLastRow() < 2) return;
+    var values = sheet.getDataRange().getValues();
+    var columns = getAbsensiColumns_(values[0].map(normalizeAbsensiHeader_));
+    for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+      var row = values[rowIndex];
+      if (!targetName || normalizeAbsensiKey_(row[columns.name]) != targetName) continue;
+      var timestamp = row[columns.timestamp];
+      var dateKey = sanitizeAbsensiDateKey_(row[columns.dateKey]) || getJakartaDateKey_(timestamp);
+      if (!dateKey || dateKey < period.start || dateKey > period.end) continue;
+      var shiftKey = String(row[columns.shift] || '').toUpperCase().indexOf('SORE') >= 0 ? 'sore' : 'pagi';
+      var status = normalizeAbsensiStatus_(row[columns.status]);
+      var groupKey = status == 'LEMBUR' ? dateKey + '|lembur|' + shiftKey : dateKey + '|regular';
+      var warningText = normalizeAbsensiKey_([row[columns.warning], row[columns.warningFlag]].join(' '));
+      if (!groups[groupKey]) groups[groupKey] = { date: dateKey, shift: shiftKey, datang: false, pulang: false, lembur: false, late: false, early: false };
+      if (status == 'DATANG') groups[groupKey].datang = true;
+      if (status == 'PULANG') groups[groupKey].pulang = true;
+      if (status == 'LEMBUR') groups[groupKey].lembur = true;
+      if (/late|terlambat|telat/.test(warningText)) groups[groupKey].late = true;
+      if (/earlyreturn|pulangcepat|lebihcepat/.test(warningText)) groups[groupKey].early = true;
     }
-
-    if (status == 'DATANG') groups[groupKey].datang = true;
-    if (status == 'PULANG') groups[groupKey].pulang = true;
-    if (status == 'LEMBUR') groups[groupKey].lembur = true;
-    if (warningText.indexOf('late') >= 0 || warningText.indexOf('terlambat') >= 0 || warningText.indexOf('telat') >= 0) groups[groupKey].late = true;
-    if (warningText.indexOf('earlyreturn') >= 0 || warningText.indexOf('pulangcepat') >= 0 || warningText.indexOf('lebihcepat') >= 0) groups[groupKey].early = true;
-  }
+  });
 
   return buildPayrollSummaryResult_(groups, period);
 }

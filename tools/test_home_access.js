@@ -108,9 +108,9 @@ const appHtml = read("index.html");
 assert.ok(appHtml.includes("assets/auth-guard.js?v=20260731-auth-flow-v1"));
 assert.ok(appHtml.includes("assets/home-dashboard.js?v=20260803-salary-import-v1"));
 assert.ok(appHtml.includes("assets/ess.js?v=20260806-salary-fix-v2"));
-assert.ok(appHtml.includes("assets/styles.css?v=20260809-sidebar-png-v1"));
+assert.ok(appHtml.includes("assets/styles.css?v=20260810-sidebar-uniform-v5"));
 assert.ok(appHtml.includes("assets/ess.css?v=20260806-salary-fix-v2"));
-assert.ok(appHtml.includes("assets/ui-polish.css?v=20260809-sidebar-png-v1"));
+assert.ok(appHtml.includes("assets/ui-polish.css?v=20260810-sidebar-uniform-v5"));
 const sidebar = between(appHtml, '<aside class="app-sidebar"', '<div class="sidebar-scrim"');
 const sidebarLinks = sidebar.match(/<[^>]*class="sidebar-link(?:\s[^"]*)?"[\s\S]*?<\/(?:a|button)>/g) || [];
 const sidebarIconSources = [
@@ -136,7 +136,7 @@ const sidebarIcons = sidebarLinks.map((link, index) => {
   assert.doesNotMatch(link, /<svg\b/, `sidebar link ${index}: no SVG`);
   const match = link.match(/<img class="sidebar-icon" src="([^"]+)" alt="" aria-hidden="true">/);
   assert.ok(match, `sidebar link ${index}: decorative PNG icon`);
-  return match[1];
+  return match[1].split("?", 1)[0];
 });
 assert.deepStrictEqual(sidebarIcons, sidebarIconSources, "sidebar PNG mapping");
 for (const src of sidebarIconSources) assert.ok(fs.existsSync(path.join(root, src)), `sidebar asset: ${src}`);
@@ -191,8 +191,18 @@ assert.match(uiPolish, /\.dashboard-topbar:has\(\.header-profile-menu \.profile-
 
 const styles = read("assets/styles.css");
 assert.match(styles, /\.app-sidebar \.sidebar-icon \{[\s\S]*width: 30px;[\s\S]*height: 30px;[\s\S]*flex: 0 0 30px;[\s\S]*object-fit: contain;/);
-assert.match(uiPolish, /body\.sidebar-collapsed \.app-sidebar \.sidebar-link \.sidebar-icon \{\s*margin-inline: auto !important;/);
+assert.match(uiPolish, /2026-08-10 sidebar icons:[\s\S]*body\.theme-dark\.sidebar-open \.app-sidebar \.sidebar-link \.sidebar-icon \{[\s\S]*width: 36px !important;[\s\S]*height: 36px !important;[\s\S]*flex: 0 0 36px !important;[\s\S]*border-radius: 50% !important;[\s\S]*object-fit: contain !important;[\s\S]*clip-path: circle\(50%\) !important;[\s\S]*transition: none !important;[\s\S]*body\.theme-dark\.sidebar-collapsed \.app-sidebar \.sidebar-link \.sidebar-icon \{[\s\S]*width: 36px !important;[\s\S]*height: 36px !important;[\s\S]*flex: 0 0 36px !important;[\s\S]*border-radius: 50% !important;[\s\S]*object-fit: contain !important;[\s\S]*clip-path: circle\(50%\) !important;[\s\S]*transition: none !important;/);
 assert.doesNotMatch(uiPolish, /\.app-sidebar \.sidebar-link svg/);
+assert.match(source, /const actionCell = canEdit && group\.editable !== false/);
+assert.doesNotMatch(source, /const actionCell = canEdit && group\.editable !== false && !group\.isOvertime/);
+assert.match(source, /function setAttendanceEditOvertimeMode\(isOvertime\)[\s\S]*Jam Lembur[\s\S]*pulangLabel\.hidden = isOvertime[\s\S]*attendanceEditPulang\.disabled = isOvertime/);
+assert.match(source, /group\.isOvertime \? \(group\.lembur \|\| ""\) : \(group\.datang \|\| ""\)/);
+assert.match(source, /const isOvertime = !isAddMode && group\.isOvertime;[\s\S]*const jamLembur = isOvertime \? primaryTime : "";/);
+assert.match(source, /jamLembur,[\s\S]*lemburRow: isOvertime \? \(group\.lemburRow \|\| 0\) : 0/);
+const attendanceApi = read("tools/gas-script-1/Kode.js");
+const attendanceMirror = read("google-apps-script-absensi-api.gs");
+assert.strictEqual(attendanceApi, attendanceMirror, "attendance GAS mirror parity");
+assert.match(attendanceApi, /payload\.lemburRow \|\| payload\.overtimeRow[\s\S]*payload\.jamLembur \|\| payload\.lembur \|\| ''[\s\S]*'LEMBUR'/);
 assert.match(styles, /#view-data-role \.role-access-table \{\s*table-layout: fixed !important;\s*width: 100% !important;/);
 assert.match(styles, /#view-data-role \.role-access-table \.pill-tag \{[\s\S]*?max-width: 100% !important;[\s\S]*?white-space: normal !important;[\s\S]*?overflow-wrap: anywhere !important;/);
 assert.doesNotMatch(styles, /#view-akun-profil \.profile-avatar-large \{\s*margin-top: -48px/);
