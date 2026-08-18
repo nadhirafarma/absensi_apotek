@@ -13598,9 +13598,21 @@
     return /^-?\d{7,}$/.test(text) && !/000$/.test(text);
   }
 
+  function formatQuantityDisplay(numericValue) {
+    if (!Number.isFinite(numericValue)) return "";
+    const rounded = Math.round(numericValue * 10) / 10;
+    return new Intl.NumberFormat("id-ID", {
+      maximumFractionDigits: 1
+    }).format(rounded);
+  }
+
   function normalizeQuantityValue(value) {
     const text = String(value ?? "").trim();
     if (!text) return "";
+    const numeric = parseNumber(text);
+    if (Number.isFinite(numeric)) {
+      return formatQuantityDisplay(numeric);
+    }
     const cleaned = text.replace(/[^\d,.-]/g, "");
 
     if (/^-?\d+,\d{3}$/.test(cleaned)) {
@@ -13623,7 +13635,7 @@
   function cleanDecimalText(value) {
     const numeric = Number(String(value || "").replace(/[^\d.-]/g, ""));
     if (!Number.isFinite(numeric)) return String(value || "");
-    return String(numeric);
+    return formatQuantityDisplay(numeric);
   }
 
   function formatIntegerPrice(value) {

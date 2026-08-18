@@ -853,6 +853,8 @@
 
     if (isDateLikeValue(raw)) return "";
 
+    if (isStraySpreadsheetDate(raw)) return "";
+
     const numericText = raw.replace(",", ".").replace(/[^0-9.-]/g, "");
 
     if (!/[0-9]/.test(numericText)) return "";
@@ -869,6 +871,18 @@
 
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/i.test(raw)) return true;
 
+    return false;
+  }
+
+  function isStraySpreadsheetDate(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return false;
+    // Google Sheets epoch-zero default shown for empty/0 date-formatted cells
+    // e.g. 30/12/1899, 30-12-1899, 30.12.1899, 1899-12-30
+    if (/(^|\D)1899(\D|$)/.test(raw)) return true;
+    if (/^30[/.\-]12[/.\-]1899$/.test(raw)) return true;
+    // truncated display like "30.12" or "30,12" coming from a 30/12 date
+    if (/^30[.,]12$/.test(raw)) return true;
     return false;
   }
 
