@@ -10898,10 +10898,10 @@
     const identity = getAttendanceIdentity(user);
     const attendanceName = resolveAttendanceEmployeeName(user);
     const selectedDate = normalizeAttendanceDateKey(String(options.date || state.attendanceDate || "").trim()) || getTodayDateKey();
-    const selectedMonth = String(options.month || state.attendanceMonth || getCurrentMonthValue()).trim().padStart(2, "0");
-    const selectedYear = /^\d{4}$/.test(String(options.year || state.attendanceYear || "").trim())
-      ? String(options.year || state.attendanceYear).trim()
-      : String(new Date().getFullYear());
+    const selectedPeriod = options.date ? selectedDate.split("-") : [];
+    const selectedMonth = String((options.date ? selectedPeriod[1] : options.month) || state.attendanceMonth || getCurrentMonthValue()).trim().padStart(2, "0");
+    const selectedYearValue = String((options.date ? selectedPeriod[0] : options.year) || state.attendanceYear || "").trim();
+    const selectedYear = /^\d{4}$/.test(selectedYearValue) ? selectedYearValue : String(new Date().getFullYear());
     const monthStart = /^\d{4}$/.test(selectedYear) && /^\d{2}$/.test(selectedMonth)
       ? `${selectedYear}-${selectedMonth}-01`
       : "";

@@ -4,8 +4,10 @@ const vm = require("node:vm");
 
 const gasPath = "tools/gas-script-1/Kode.js";
 const frontendPath = "assets/attendance.js";
+const dashboardPath = "assets/home-dashboard.js";
 const gas = fs.readFileSync(gasPath, "utf8");
 const frontend = fs.readFileSync(frontendPath, "utf8");
+const dashboard = fs.readFileSync(dashboardPath, "utf8");
 const context = vm.createContext({ console });
 vm.runInContext(gas, context, { filename: gasPath });
 
@@ -26,5 +28,15 @@ assert.ok(gas.indexOf("checkAbsensiHariIni_(spreadsheet, nama)") < gas.indexOf("
 assert.match(gas, /makeCopy\(spreadsheet\.getName\(\) \+ '_BACKUP_SEBELUM_MIGRASI_/);
 assert.match(frontend, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
 assert.match(frontend, /transient: lastError\?\.transient !== false/);
+const periodCode = dashboard.slice(
+  dashboard.indexOf("    const selectedPeriod ="),
+  dashboard.indexOf("    const monthStart =", dashboard.indexOf("    const selectedPeriod ="))
+);
+assert.ok(periodCode.includes("selectedPeriod[1]") && periodCode.includes("selectedPeriod[0]"));
+const resolvePeriod = new Function("options", "selectedDate", "state", "getCurrentMonthValue", `${periodCode}\nreturn { month: selectedMonth, year: selectedYear };`);
+assert.deepEqual(resolvePeriod({ date: "2026-08-31" }, "2026-08-31", { attendanceMonth: "09", attendanceYear: "2026" }, () => "09"), { month: "08", year: "2026" });
+assert.deepEqual(resolvePeriod({ date: "2026-08-31", month: "09", year: "2027" }, "2026-08-31", { attendanceMonth: "09", attendanceYear: "2027" }, () => "09"), { month: "08", year: "2026" });
+assert.deepEqual(resolvePeriod({}, "2026-08-31", { attendanceMonth: "08", attendanceYear: "2026" }, () => "09"), { month: "08", year: "2026" });
+assert.deepEqual(resolvePeriod({ date: "2025-12-31" }, "2025-12-31", { attendanceMonth: "09", attendanceYear: "2026" }, () => "09"), { month: "12", year: "2025" });
 
 console.log("attendance monthly self-check: OK");
