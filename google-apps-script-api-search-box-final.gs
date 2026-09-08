@@ -2782,6 +2782,22 @@ function normalizeDataObatQuantityNumber_(value) {
   return parseDataObatImportNumber_(value);
 }
 
+function normalizeDataObatStockValue_(value) {
+  if (value == null || value === '') return 0;
+  if (typeof value == 'number') return value;
+  if (Object.prototype.toString.call(value) == '[object Date]' &&
+      !isNaN(value.getTime()) && (value.getFullYear() == 1899 || value.getUTCFullYear() == 1899)) return 0;
+
+  var text = String(value).trim();
+  if (/^-?\d+(?:[.,]\d+)?$/.test(text)) return value;
+  if (/^(?:\d{1,2}[./-]\d{1,2}[./-]1899|1899[./-]\d{1,2}[./-]\d{1,2})(?:\D|$)/.test(text)) return 0;
+
+  var parsedDate = new Date(text);
+  if (!isNaN(parsedDate.getTime()) && (parsedDate.getFullYear() == 1899 || parsedDate.getUTCFullYear() == 1899)) return 0;
+
+  return value;
+}
+
 function parseDataObatImportNumber_(value) {
   if (value == null || value === '') return '';
   if (typeof value == 'number') return value;
@@ -3174,9 +3190,10 @@ function buildResetPasswordHtml_(token) {
 }
 
 function readSheetAsObjects_(sheet, sheetName) {
-  var values = sheetName == DATA_OBAT_SHEET_NAME
-    ? sheet.getDataRange().getDisplayValues()
-    : sheet.getDataRange().getValues();
+  var isDataObat = sheetName == DATA_OBAT_SHEET_NAME;
+  var range = sheet.getDataRange();
+  var values = isDataObat ? range.getDisplayValues() : range.getValues();
+  var rawValues = isDataObat ? range.getValues() : null;
 
   if (!values.length) {
     return [];
@@ -3185,8 +3202,8 @@ function readSheetAsObjects_(sheet, sheetName) {
   var headers = values[0];
 
   return values.slice(1).map(function(row, index) {
-    if (sheetName == DATA_OBAT_SHEET_NAME) {
-      return normalizeDataObatRow_(headers, row, index);
+    if (isDataObat) {
+      return normalizeDataObatRow_(headers, row, index, rawValues[index + 1]);
     }
 
     var obj = {};
@@ -3201,9 +3218,10 @@ function readSheetAsObjects_(sheet, sheetName) {
   });
 }
 
-function normalizeDataObatRow_(headers, row, index) {
+function normalizeDataObatRow_(headers, row, index, rawRow) {
   var raw = mapNormalizedHeaders_(headers, row);
-  var stock = pickDataValue_(raw, ['stok']);
+  var rawStock = rawRow ? pickDataValue_(mapNormalizedHeaders_(headers, rawRow), ['stok']) : null;
+  var stock = normalizeDataObatStockValue_(rawStock != null ? rawStock : pickDataValue_(raw, ['stok']));
   var kode = pickDataValue_(raw, ['kode', 'barcode', 'kodebarcode', 'sku', 'idobat', 'id']) || row[0] || '';
   var nama = pickDataValue_(raw, ['nama', 'namaobat', 'namabarang', 'produk', 'item', 'obat']) || row[1] || kode;
 
