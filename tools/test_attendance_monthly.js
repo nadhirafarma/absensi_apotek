@@ -8,6 +8,7 @@ const dashboardPath = "assets/home-dashboard.js";
 const gas = fs.readFileSync(gasPath, "utf8");
 const frontend = fs.readFileSync(frontendPath, "utf8");
 const dashboard = fs.readFileSync(dashboardPath, "utf8");
+const presensi = fs.readFileSync("presensi/index.html", "utf8");
 const context = vm.createContext({ console });
 vm.runInContext(gas, context, { filename: gasPath });
 
@@ -38,5 +39,9 @@ assert.deepEqual(resolvePeriod({ date: "2026-08-31" }, "2026-08-31", { attendanc
 assert.deepEqual(resolvePeriod({ date: "2026-08-31", month: "09", year: "2027" }, "2026-08-31", { attendanceMonth: "09", attendanceYear: "2027" }, () => "09"), { month: "08", year: "2026" });
 assert.deepEqual(resolvePeriod({}, "2026-08-31", { attendanceMonth: "08", attendanceYear: "2026" }, () => "09"), { month: "08", year: "2026" });
 assert.deepEqual(resolvePeriod({ date: "2025-12-31" }, "2025-12-31", { attendanceMonth: "09", attendanceYear: "2026" }, () => "09"), { month: "12", year: "2025" });
+assert.match(presensi, /id="salarySlipHistoryFilters"/);
+assert.match(presensi, /id="salaryHistoryMonth"/);
+assert.match(presensi, /id="salaryHistoryYear"/);
+assert.doesNotMatch(presensi, /salaryHistory(StartDate|EndDate)/);
 
 console.log("attendance monthly self-check: OK");
