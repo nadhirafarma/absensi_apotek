@@ -1350,6 +1350,7 @@
     });
     if (els.attendanceTableBody) els.attendanceTableBody.addEventListener("click", handleAttendanceTableAction);
     if (els.attendanceEditForm) els.attendanceEditForm.addEventListener("submit", saveAttendanceEdit);
+    if (els.attendanceEditShift) els.attendanceEditShift.addEventListener("change", () => setAttendanceEditOvertimeMode(els.attendanceEditShift.value === "LEMBUR"));
     [els.closeAttendanceEditButton, els.cancelAttendanceEditButton].forEach((button) => {
       if (button) button.addEventListener("click", closeAttendanceEditModal);
     });
@@ -5099,7 +5100,7 @@
         : getDefaultAccessForRole(user.role || "Operator");
     }
 
-    return isAdminUser(user) ? access : access.filter((key) => key !== "import_data_obat");
+    return access.filter((key) => (isOwnerUser(user) || key !== "presensi") && (isAdminUser(user) || key !== "import_data_obat"));
   }
 
   function getDefaultAccessForRole(role) {
@@ -5256,6 +5257,7 @@
     if (viewName === "home") return true;
     const currentUser = getCurrentUserRecord();
     if (!isActiveRecord(currentUser)) return false;
+    if (viewName === "presensi" && !isOwnerUser(currentUser)) return false;
     if (!access) access = new Set(getEffectiveAccessForUser(currentUser));
     const map = {
       dashboard: "dashboard",
@@ -11303,6 +11305,7 @@
     if (datangLabel?.firstChild) datangLabel.firstChild.textContent = isOvertime ? "Jam Lembur" : "Jam Datang";
     if (pulangLabel) pulangLabel.hidden = isOvertime;
     if (els.attendanceEditPulang) els.attendanceEditPulang.disabled = isOvertime;
+    if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = isOvertime ? "Isi waktu absen lembur. Jam pulang dan durasi tidak digunakan." : "Isi jam datang dan/atau jam pulang.";
   }
 
   function openAttendanceEditModal(group) {
@@ -11312,12 +11315,16 @@
     setAttendanceEditOvertimeMode(group.isOvertime);
     populateAttendanceEmployeeSelect(group.name || "");
     if (els.attendanceEditDate) els.attendanceEditDate.value = group.date || getTodayDateKey();
-    if (els.attendanceEditShift) els.attendanceEditShift.value = normalizeAttendanceShift(group.shift || inferAttendanceShift(group.lembur || group.datang));
+    if (els.attendanceEditShift) {
+      els.attendanceEditShift.value = group.isOvertime ? "LEMBUR" : normalizeAttendanceShift(group.shift || inferAttendanceShift(group.datang));
+      els.attendanceEditShift.disabled = Boolean(group.isOvertime);
+      els.attendanceEditShift.querySelector('option[value="LEMBUR"]').disabled = !group.isOvertime;
+    }
     if (els.attendanceEditDatang) els.attendanceEditDatang.value = group.isOvertime ? (group.lembur || "") : (group.datang || "");
     if (els.attendanceEditPulang) els.attendanceEditPulang.value = group.isOvertime ? "" : (group.pulang || "");
     if (els.attendanceEditWarning) els.attendanceEditWarning.value = group.warningMessage || "";
     if (els.attendanceEditModalTitle) els.attendanceEditModalTitle.textContent = "Edit Catatan Kehadiran";
-    if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = "Perubahan disimpan langsung ke Google Sheet absensi.";
+    if (els.attendanceEditStatus) els.attendanceEditStatus.textContent = group.isOvertime ? "Isi waktu absen lembur. Jam pulang dan durasi tidak digunakan." : "Perubahan disimpan langsung ke Google Sheet absensi.";
     els.attendanceEditModal.hidden = false;
     document.body.classList.add("dashboard-modal-open");
   }
@@ -11343,7 +11350,11 @@
     };
     populateAttendanceEmployeeSelect("");
     if (els.attendanceEditDate) els.attendanceEditDate.value = selectedDate;
-    if (els.attendanceEditShift) els.attendanceEditShift.value = "SHIFT PAGI";
+    if (els.attendanceEditShift) {
+      els.attendanceEditShift.value = "SHIFT PAGI";
+      els.attendanceEditShift.disabled = false;
+      els.attendanceEditShift.querySelector('option[value="LEMBUR"]').disabled = false;
+    }
     if (els.attendanceEditDatang) els.attendanceEditDatang.value = "";
     if (els.attendanceEditPulang) els.attendanceEditPulang.value = "";
     if (els.attendanceEditWarning) els.attendanceEditWarning.value = "Input manual oleh admin.";
@@ -11366,10 +11377,13 @@
     if (!isAdminUser(user) || !state.editingAttendanceGroup) return;
     const group = state.editingAttendanceGroup;
     const isAddMode = state.attendanceEditMode === "add";
-    const isOvertime = !isAddMode && group.isOvertime;
+    const isOvertime = els.attendanceEditShift?.value === "LEMBUR";
     const name = String(els.attendanceEditName?.value || group.name || "").trim();
     const date = normalizeAttendanceDateKey(els.attendanceEditDate?.value || group.date || "");
-    const shift = normalizeAttendanceShift(els.attendanceEditShift?.value || group.shift || "SHIFT PAGI") || "SHIFT PAGI";
+    // Keep legacy shift metadata: overtime is stored as status LEMBUR, not a new backend shift.
+    const shift = isOvertime
+      ? normalizeAttendanceShift(group.shift && group.shift !== "LEMBUR" && !isAddMode ? group.shift : inferAttendanceShift(els.attendanceEditDatang?.value))
+      : normalizeAttendanceShift(els.attendanceEditShift?.value || group.shift || "SHIFT PAGI") || "SHIFT PAGI";
     const primaryTime = normalizeAttendanceTime(els.attendanceEditDatang?.value || "");
     const jamDatang = isOvertime ? "" : primaryTime;
     const jamPulang = isOvertime ? "" : normalizeAttendanceTime(els.attendanceEditPulang?.value || "");
@@ -12742,6 +12756,7 @@
 
   function switchView(viewName, options = {}) {
     if (!viewName || !VIEW_TITLES[viewName]) return;
+    if (viewName === "presensi" && !isOwnerUser(getCurrentUserRecord())) return;
     // Navigasi antarmenu tidak memerlukan overlay proses. Bersihkan overlay tertunda
     // agar logo loading tidak tertinggal di tengah layar pada perangkat mobile.
     if (state.appLoadingToken) endAppLoading(state.appLoadingToken, { force: true });

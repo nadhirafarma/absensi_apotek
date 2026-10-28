@@ -58,6 +58,12 @@
   function statusOf(g) { if (!g.datang) return "Tidak Hadir"; if (/terlambat|late/i.test(g.warning)) return "Terlambat"; return "Hadir"; }
   function duration(g) { if (!g.datang || !g.pulang) return "-"; const [ah, am] = g.datang.split(":").map(Number); const [bh, bm] = g.pulang.split(":").map(Number); let mins = bh * 60 + bm - ah * 60 - am; if (mins < 0) mins += 1440; return `${Math.floor(mins / 60)}j ${mins % 60}m`; }
   function summary(groups) { const month = groups.filter((g) => g.date.startsWith(monthKey())); return { month, hadir: month.filter((g) => g.datang).length, late: month.filter((g) => statusOf(g) === "Terlambat").length, overtime: month.filter((g) => g.overtime).length, today: groups.filter((g) => g.date === dateKey()) }; }
+  function personalGroups() {
+    const s = session();
+    const identityKey = (value) => norm(value).replace(/[^a-z0-9]+/g, "");
+    const names = [s.name || s.username || s.email].map(identityKey).filter(Boolean);
+    return groupRecords(state.records.filter((r) => names.includes(identityKey(r.name))).map((r) => ({ ...r, name: employeeName() })));
+  }
 
   async function load(force) {
     if (state.loading || (!force && Date.now() - state.loadedAt < 600000)) return;
@@ -110,7 +116,7 @@
   function errorLine() { return state.error ? `<div class="ess-error">${esc(state.error)}</div>` : ""; }
 
   function renderESSDashboard() {
-    const c = document.getElementById("essContent"); if (!c) return; const s = summary(state.groups);
+    const c = document.getElementById("essContent"); if (!c) return; const s = summary(personalGroups());
     const today = s.today[0];
     c.innerHTML = `<div class="ess-module-shell">${welcome(false)}${errorLine()}<section class="ess-stats">${stat("attendance", "is-blue", "Hadir", s.hadir, "Bulan ini")}${stat("schedule", "is-orange", "Terlambat", s.late, "Bulan ini")}${stat("leave", "is-red", "Tidak Hadir", Math.max(0, new Set(s.month.map((g) => g.date)).size - s.hadir), "Bulan ini")}${stat("leave", "is-purple", "Cuti", 0, "Bulan ini")}${stat("overtime", "is-green", "Lembur", s.overtime, "Bulan ini")}${stat("salary", "is-pink", "Estimasi Gaji", rupiah(0), "Bulan ini")}</section><section class="ess-grid-2"><article class="ess-panel"><div class="ess-panel-head"><div><h4>Akses Cepat</h4><p>Fungsi yang paling sering digunakan.</p></div></div><div class="ess-shortcut-grid">${quickButton("attendance", "attendance", "Presensi Saya")}${quickButton("leave", "leave", "Ajukan Cuti")}${quickButton("schedule", "schedule", "Jadwal Kerja")}${quickButton("salary", "salary", "Slip Gaji")}</div></article><article class="ess-panel"><div class="ess-panel-head"><div><h4>Hari Ini</h4><p>${esc(prettyDate(dateKey()))}</p></div></div><div class="ess-today-list"><div class="ess-today-row"><span>Presensi<strong>${esc(today?.datang || "Belum absen")}</strong></span>${badge(today ? statusOf(today) : "Belum Absen")}</div><div class="ess-today-row"><span>Jadwal<strong>${esc(today?.shift || "Belum tersedia")}</strong></span>${badge(today?.shift || "Info")}</div><div class="ess-today-row"><span>Pengajuan<strong>Tidak ada pengajuan aktif</strong></span>${badge("Selesai")}</div></div></article></section></div>`;
   }
@@ -125,7 +131,7 @@
     return `<div class="ess-table-wrap"><table class="ess-table ess-salary-table"><thead><tr><th>Nama File PDF</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function salaryErrorLine() { return state.salaryError ? `<div class="ess-error">${esc(state.salaryError)}</div>` : ""; }
-  function getEmployeeGroups() { return state.groups.filter((g) => (!state.employeeFilter.date || g.date === state.employeeFilter.date) && (!state.employeeFilter.status || statusOf(g) === state.employeeFilter.status)); }
+  function getEmployeeGroups() { return personalGroups().filter((g) => (!state.employeeFilter.date || g.date === state.employeeFilter.date) && (!state.employeeFilter.status || statusOf(g) === state.employeeFilter.status)); }
   function getMonitoringSalarySlips() { const search = norm(state.monitoringFilter.salarySearch); return state.salarySlips.filter((item) => !search || norm(`${item.name} ${item.nip} ${item.period}`).includes(search)); }
   function salaryMonthOptions(value) { return Array.from({ length: 12 }, (_, index) => { const month = String(index + 1).padStart(2, "0"); const label = new Intl.DateTimeFormat("id-ID", { month: "long" }).format(new Date(2026, index, 1)); return `<option value="${month}"${value === month ? " selected" : ""}>${esc(label)}</option>`; }).join(""); }
   function salaryYearOptions(value) { const currentYear = Number(monthKey().slice(0, 4)) || new Date().getFullYear(); return Array.from({ length: 5 }, (_, index) => { const year = currentYear - 2 + index; return `<option value="${year}"${String(year) === String(value) ? " selected" : ""}>${year}</option>`; }).join(""); }
